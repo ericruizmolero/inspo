@@ -1,0 +1,287 @@
+{
+  "url": "https://tellia.com",
+  "markdown": "# Tellia — DESIGN.md\n> campo al atardecer en crema condensada\n\n**Tema:** claro  \n**Origen:** https://tellia.com/ · 2026-09-20\n\nLas medidas de origen están normalizadas; los roles y las recomendaciones son interpretados.\n\nTellia se lee como un cartel de cooperativa agrícola reinterpretado por un producto de software: todo ocurre en una sola familia, Apercu Condensed Pro, con solo dos pesos vivos (500 para el 98% del texto y 900 para los titulares en versales). El fondo es crema #f6f3e8, un blanco cálido de papel reciclado que también hace de tinta cuando la sección se vuelve negra #141514 o verde surco #306241. La portada apila un vídeo de viñedo a sangre con un H1 de 112px en mayúsculas y line-height 104px, más apretado que el cuerpo, de modo que las líneas casi se tocan; más abajo un H2 mural de 204px con letter-spacing -4,2px atraviesa la página como señalética. El color se administra en bloques planos —verde surco, verde agua #53a092, azul bruma #75aab4— sin degradados ni sombras: la profundidad viene de solapes con márgenes negativos (-80 a -200px) y radios mínimos de 2-4px. Los grises fríos #414651 y #717680 quedan relegados al texto secundario.\n\n## Colores\n\n| Nombre | Valor | Grupo | Rol |\n|--------|-------|-------|-----|\n| Negro Surco | `#141514` | neutro | Fondo de las secciones oscuras y de las tarjetas de citas; también color de titulares sobre crema |\n| Tinta Pizarra | `#181d27` | neutro | Color de los títulos de sección y de los enlaces de navegación sobre fondo crema |\n| Gris Cantera | `#414651` | neutro | Texto de párrafo largo de 22px en las secciones claras |\n| Gris Rastrojo | `#717680` | neutro | Texto atenuado: pies, etiquetas y metadatos de testimonios |\n| Gris Rocío | `#dadbdd` | neutro | Separadores finos y anillo de foco de 2px, único vestigio de sombra del sistema |\n| Crema Sémola | `#f6f3e8` | marca | Fondo principal cálido y, invertido, el color del texto y los bordes sobre vídeo o bloques oscuros |\n| Verde Surco | `#306241` | marca | Verde agrícola de la marca: bloques de sección, tarjetas de testimonio y pestañas activas |\n| Verde Agua | `#53a092` | acento | Acento para pestañas seleccionadas, ilustraciones de producto y superficies secundarias |\n| Azul Bruma | `#75aab4` | acento | Tercer bloque de color en las retículas de funcionalidades, para dar aire frío entre verdes |\n| Rojo Alarma | `#ff6262` | semántico | Único semántico declarado en las variables CSS; reservado para errores de formulario, apenas visible en la home |\n\n## Tipografía\n\n### Apercu Condensed Pro — display\nEs la única familia del sitio: titula, rotula y escribe los párrafos. La decisión característica es la dieta de dos pesos —900 en versales para todo lo que grita y 500 para todo lo demás— sin cursivas ni una sola tipografía secundaria.\n- **Sustituto:** 'Oswald', 'Roboto Condensed', 'Archivo Narrow', 'Helvetica Neue Condensed', sans-serif\n- **Pesos:** 500, 900\n- **Tamaños:** 16-204px · 9 valores\n- **Interlineado:** 0,84-1,5 (más apretado cuanto mayor el cuerpo)\n- **Tracking:** normal en textos; -0,64px a -4,2px en titulares\n\n### Apercu Condensed Pro — cuerpo\nEl cuerpo arranca en 22px/28px, muy por encima del estándar, porque la condensada necesita tamaño para respirar. El 18px con -0,36px es el tamaño de interfaz: navegación, botones y etiquetas de pestaña.\n- **Sustituto:** 'Roboto Condensed', 'Archivo Narrow', system-ui, sans-serif\n- **Pesos:** 500\n- **Tamaños:** 18-28px · 3 valores\n- **Interlineado:** 1,14-1,33\n- **Tracking:** -0,36px en 18px, normal en 22px y 28px\n\n### Escala tipográfica\n\n| Rol | Familia | Peso | Tamaño | Interlineado | Tracking |\n|-----|---------|------|--------|--------------|----------|\n| leyenda | Apercu Condensed Pro | 400 | 16px | 1.5 | normal |\n| cuerpo-sm | Apercu Condensed Pro | 500 | 18px | 1.33 | -0.36px |\n| cuerpo | Apercu Condensed Pro | 500 | 22px | 1.27 | normal |\n| subtítulo | Apercu Condensed Pro | 500 | 28px | 1.14 | normal |\n| título-sm | Apercu Condensed Pro | 500 | 32px | 1.06 | -0.64px |\n| título | Apercu Condensed Pro | 900 | 48px | 1.08 | -0.96px |\n| título-lg | Apercu Condensed Pro | 900 | 64px | 1.03 | -1.28px |\n| display | Apercu Condensed Pro | 900 | 112px | 0.93 | normal |\n| display | Apercu Condensed Pro | 900 | 204px | 0.84 | -4.2px |\n\n## Espaciado y layout\n\n**Densidad:** aireada\n\n- **Unidad base:** 8px (con medios pasos de 4px)\n- **Ancho máximo de página:** 1256px\n- **Separación entre secciones:** 120px vertical (160px en secciones hero)\n- **Padding de tarjeta:** 24px (32px 0 24px en las filas de acordeón)\n- **Separación entre elementos:** 24px entre bloques; 8px entre elementos hermanos\n\n### Radios de borde\n\n- **Botones y tarjetas:** 4px\n- **Chips, selector de idioma y controles pequeños:** 2px\n- **Pestañas activas (solo arriba):** 3px 3px 0 0\n- **Bloques de color y vídeo a sangre:** 0px\n\n## Elevación\n\nSistema plano: no hay ni una sombra real en la página. La profundidad se fabrica con escalones de superficie (crema → verde surco → negro surco) y con solapes controlados por márgenes negativos de -80px, -100px, -120px y -200px que hacen cabalgar las tarjetas sobre la sección anterior. El único box-shadow medido es un anillo de foco de 2px sólido en #dadbdd (0 0 0 2px), sin desenfoque. El vídeo del hero aporta contraste mediante un oscurecimiento propio del metraje, no mediante capas de overlay.\n\n## Componentes\n\n### Barra de navegación\n**Rol:** Cabecera fija sobre fondo crema\n\nFondo #f6f3e8, altura ~82px, logotipo encajonado en un rectángulo con filete negro de 2px; enlaces en Apercu Condensed Pro 18px/500, -0,36px, color #181d27, separados 24px; hover a #306241 en 0,2s ease-in-out; a la derecha, selector de idioma 'EN' con flecha, padding 13px 16px y radio 2px.\n\n### Botón fantasma claro\n**Rol:** CTA principal sobre imagen o vídeo\n\nFondo transparente, borde 1px #f6f3e8, texto #f6f3e8 18px/500, padding 12px 16px, radio 4px, con un triángulo de reproducción a la derecha separado 24px; hover: relleno #f6f3e8 y texto #141514 en 0,2s ease-in-out.\n\n### Pestañas de segmento\n**Rol:** Conmutador de perfiles e industrias\n\nBotones de 18px/500 con padding 16px 56px; inactivo sobre crema #f6f3e8 con texto #141514; activo en #53a092 o #306241 con texto #f6f3e8 y radio 3px 3px 0 0, quedando pegado al panel inferior sin separación.\n\n### Tarjeta de bloque de color\n**Rol:** Retícula de funcionalidades y citas de voz\n\nRectángulo de radio 4px relleno plano en #306241, #141514 o #75aab4, sin borde ni sombra; texto crema #f6f3e8 entrecomillado a 22px/28px; se solapan con la sección anterior mediante margin-top negativo.\n\n### Acordeón de capacidades\n**Rol:** Lista expandible de casos de uso\n\nFilas sin fondo separadas por línea 1px #dadbdd, título en versales 900 y párrafo 22px #414651; padding 32px 0 24px; apertura con transición all 0.3s ease-in-out sobre la altura y rotación del icono.\n\n### Mural tipográfico\n**Rol:** Rótulo de sección a escala de señalética\n\nH2 de 204px/172px, peso 900, versales, letter-spacing -4,2px, color #181d27 sobre crema, alineado al contenedor de 1256px y frecuentemente recortado por el borde del viewport.\n\n### Carrusel de testimonios\n**Rol:** Prueba social de agrónomos\n\nDiapositivas de fondo #306241 con retrato a sangre, nombre en 900 versales crema, cargo y empresa en 18px #f6f3e8 al 70%; arrastre con transform 0.15s cubic-bezier(0.4,0,0.2,1) y paginación de puntos de 4px.\n\n### Pie oscuro\n**Rol:** Cierre y navegación secundaria\n\nFondo #141514, texto y enlaces #f6f3e8 18px/500 con -0,36px, columnas separadas 40px, enlaces sin subrayado que pasan a #53a092 al hover en 0,2s; enlaces legales y 'Cookie Settings' en el mismo tamaño, sin jerarquía reducida.\n\n## Movimiento\n\nTodo se mueve con la misma receta: transition: all 0.3s ease-in-out para aperturas de acordeón, cambios de sección y hovers ricos, y all 0.2s ease-in-out para estados simples de enlaces y botones. El carrusel usa transform 0.15s cubic-bezier(0.4,0,0.2,1), el único easing distinto. Hay animaciones ligadas al scroll: los bloques de color entran solapándose y los contadores tipo 'PROCESSING… / ACTIONS COMPLETED' alternan en bucle. No se anima nunca el tamaño del texto ni el color de fondo de las secciones grandes; el vídeo del hero reproduce en bucle, mudo y sin controles.\n\n## Layout\n\nContenedor centrado de 1256px con padding lateral de 16px; las secciones respiran con 120px arriba y abajo (160px en las de tipo hero). El hero es de pantalla completa con vídeo a sangre y contenido alineado a la izquierda en una columna de ~900px. El resto alterna franjas de color a ancho total con retículas de dos, tres y cuatro columnas separadas 24px. El ritmo lo marca la alternancia crema/oscuro y los solapes negativos que hacen que una retícula muerda la sección anterior. Todo se alinea a la izquierda: no hay titulares centrados salvo los rótulos de estado dentro de las animaciones.\n\n## Imagen\n\nFotografía y vídeo documental de campo real —viñedos, huertos, gente con gorra al atardecer— sin filtros de color ni overlays de marca, con luz dorada natural que ya de por sí oscurece los bordes y deja leer la crema. Se combinan con capturas de interfaz y burbujas de conversación recreadas en bloques planos de color. Densidad alta: 63 imágenes en una página de 10.351px. Los recortes son a sangre o con radio 4px, nunca circulares, y los iconos son pictogramas lineales mínimos en crema o negro.\n\n## Qué hacer y qué no\n\n### Sí\n- Usa Apercu Condensed Pro como única familia y limítate a los pesos 500 y 900; el 500 es el de batalla.\n- Pon todos los titulares 900 en versales con line-height menor que 1 y letter-spacing negativo (-1,28px a 64px, -4,2px a 204px).\n- Arranca el cuerpo en 22px/28px: la condensada necesita ese tamaño para ser legible.\n- Construye profundidad con bloques de color plano y márgenes negativos de -80 a -200px, nunca con sombras.\n- Mantén el contenedor en 1256px y separa las secciones 120px, subiendo a 160px en los bloques hero.\n- Invierte la pareja crema #f6f3e8 / negro surco #141514 en secciones alternas para marcar el ritmo de la página.\n- Usa el verde surco #306241 como color de marca y reserva #53a092 y #75aab4 para diferenciar bloques contiguos.\n\n### No\n- No introduzcas una segunda tipografía ni la variante no condensada de Apercu.\n- No uses pesos 400 o 700 en titulares: solo 500 y 900.\n- No apliques degradados, glow ni box-shadow difuminados; el único anillo permitido es 0 0 0 2px #dadbdd.\n- No redondees por encima de 4px: nada de píldoras ni de tarjetas de 16px de radio.\n- No centres párrafos ni titulares largos; el sistema es de alineación izquierda.\n- No pongas overlays de color sobre la fotografía de campo ni la satures: el metraje va tal cual.\n- No mezcles los grises fríos (#414651, #717680) con la crema en superficies grandes; son solo para texto secundario.\n\n## Marcas afines\n\n- **Oatly** — Tipografía desbordada en versales sobre fondo crema y un tono de marca artesanal aplicado a un producto industrial.\n- **Patagonia Provisions** — Paleta de verdes terrosos con fotografía documental sin retoque y tipografía condensada utilitaria.\n- **John Deere Operations Center** — Verde agrícola dominante, fotografía real de campo y una interfaz plana orientada a datos de explotación.\n- **Rivian** — Hero de vídeo a sangre, retícula ancha con bloques de color plano y titulares sin sombras ni adornos.\n\n## Prompt para agentes\n\nDiseña una web agro-tech con una sola tipografía condensada (Apercu Condensed Pro; fallback Oswald/Roboto Condensed) en pesos 500 y 900. Fondo crema #f6f3e8 alternando con bloques planos de negro #141514, verde surco #306241, verde agua #53a092 y azul bruma #75aab4. Titulares 900 en versales de 64 a 204px con line-height inferior a 1 y letter-spacing de -1,28px a -4,2px; cuerpo 22px/28px en #414651. Contenedor 1256px, secciones de 120px, radios de 2-4px, cero sombras: la profundidad viene de solapes con márgenes negativos. Hero con vídeo de campo a sangre y botón fantasma con borde crema de 1px. Transiciones all 0.2-0.3s ease-in-out.\n",
+  "spec": {
+    "brand": "Tellia",
+    "tagline": "campo al atardecer en crema condensada",
+    "theme": "light",
+    "description": "Tellia se lee como un cartel de cooperativa agrícola reinterpretado por un producto de software: todo ocurre en una sola familia, Apercu Condensed Pro, con solo dos pesos vivos (500 para el 98% del texto y 900 para los titulares en versales). El fondo es crema #f6f3e8, un blanco cálido de papel reciclado que también hace de tinta cuando la sección se vuelve negra #141514 o verde surco #306241. La portada apila un vídeo de viñedo a sangre con un H1 de 112px en mayúsculas y line-height 104px, más apretado que el cuerpo, de modo que las líneas casi se tocan; más abajo un H2 mural de 204px con letter-spacing -4,2px atraviesa la página como señalética. El color se administra en bloques planos —verde surco, verde agua #53a092, azul bruma #75aab4— sin degradados ni sombras: la profundidad viene de solapes con márgenes negativos (-80 a -200px) y radios mínimos de 2-4px. Los grises fríos #414651 y #717680 quedan relegados al texto secundario.",
+    "colors": [
+      {
+        "name": "Negro Surco",
+        "hex": "#141514",
+        "group": "neutral",
+        "role": "Fondo de las secciones oscuras y de las tarjetas de citas; también color de titulares sobre crema"
+      },
+      {
+        "name": "Tinta Pizarra",
+        "hex": "#181d27",
+        "group": "neutral",
+        "role": "Color de los títulos de sección y de los enlaces de navegación sobre fondo crema"
+      },
+      {
+        "name": "Gris Cantera",
+        "hex": "#414651",
+        "group": "neutral",
+        "role": "Texto de párrafo largo de 22px en las secciones claras"
+      },
+      {
+        "name": "Gris Rastrojo",
+        "hex": "#717680",
+        "group": "neutral",
+        "role": "Texto atenuado: pies, etiquetas y metadatos de testimonios"
+      },
+      {
+        "name": "Gris Rocío",
+        "hex": "#dadbdd",
+        "group": "neutral",
+        "role": "Separadores finos y anillo de foco de 2px, único vestigio de sombra del sistema"
+      },
+      {
+        "name": "Crema Sémola",
+        "hex": "#f6f3e8",
+        "group": "brand",
+        "role": "Fondo principal cálido y, invertido, el color del texto y los bordes sobre vídeo o bloques oscuros"
+      },
+      {
+        "name": "Verde Surco",
+        "hex": "#306241",
+        "group": "brand",
+        "role": "Verde agrícola de la marca: bloques de sección, tarjetas de testimonio y pestañas activas"
+      },
+      {
+        "name": "Verde Agua",
+        "hex": "#53a092",
+        "group": "accent",
+        "role": "Acento para pestañas seleccionadas, ilustraciones de producto y superficies secundarias"
+      },
+      {
+        "name": "Azul Bruma",
+        "hex": "#75aab4",
+        "group": "accent",
+        "role": "Tercer bloque de color en las retículas de funcionalidades, para dar aire frío entre verdes"
+      },
+      {
+        "name": "Rojo Alarma",
+        "hex": "#ff6262",
+        "group": "semantic",
+        "role": "Único semántico declarado en las variables CSS; reservado para errores de formulario, apenas visible en la home"
+      }
+    ],
+    "fonts": [
+      {
+        "family": "Apercu Condensed Pro",
+        "role": "display",
+        "weights": [
+          500,
+          900
+        ],
+        "sizes": "16-204px · 9 valores",
+        "lineHeight": "0,84-1,5 (más apretado cuanto mayor el cuerpo)",
+        "letterSpacing": "normal en textos; -0,64px a -4,2px en titulares",
+        "fallback": "'Oswald', 'Roboto Condensed', 'Archivo Narrow', 'Helvetica Neue Condensed', sans-serif",
+        "usage": "Es la única familia del sitio: titula, rotula y escribe los párrafos. La decisión característica es la dieta de dos pesos —900 en versales para todo lo que grita y 500 para todo lo demás— sin cursivas ni una sola tipografía secundaria."
+      },
+      {
+        "family": "Apercu Condensed Pro",
+        "role": "body",
+        "weights": [
+          500
+        ],
+        "sizes": "18-28px · 3 valores",
+        "lineHeight": "1,14-1,33",
+        "letterSpacing": "-0,36px en 18px, normal en 22px y 28px",
+        "fallback": "'Roboto Condensed', 'Archivo Narrow', system-ui, sans-serif",
+        "usage": "El cuerpo arranca en 22px/28px, muy por encima del estándar, porque la condensada necesita tamaño para respirar. El 18px con -0,36px es el tamaño de interfaz: navegación, botones y etiquetas de pestaña."
+      }
+    ],
+    "typeScale": [
+      {
+        "role": "leyenda",
+        "size": 16,
+        "weight": 400,
+        "lineHeight": 1.5,
+        "letterSpacing": "normal",
+        "family": "Apercu Condensed Pro"
+      },
+      {
+        "role": "cuerpo-sm",
+        "size": 18,
+        "weight": 500,
+        "lineHeight": 1.33,
+        "letterSpacing": "-0.36px",
+        "family": "Apercu Condensed Pro"
+      },
+      {
+        "role": "cuerpo",
+        "size": 22,
+        "weight": 500,
+        "lineHeight": 1.27,
+        "letterSpacing": "normal",
+        "family": "Apercu Condensed Pro"
+      },
+      {
+        "role": "subtítulo",
+        "size": 28,
+        "weight": 500,
+        "lineHeight": 1.14,
+        "letterSpacing": "normal",
+        "family": "Apercu Condensed Pro"
+      },
+      {
+        "role": "título-sm",
+        "size": 32,
+        "weight": 500,
+        "lineHeight": 1.06,
+        "letterSpacing": "-0.64px",
+        "family": "Apercu Condensed Pro"
+      },
+      {
+        "role": "título",
+        "size": 48,
+        "weight": 900,
+        "lineHeight": 1.08,
+        "letterSpacing": "-0.96px",
+        "family": "Apercu Condensed Pro"
+      },
+      {
+        "role": "título-lg",
+        "size": 64,
+        "weight": 900,
+        "lineHeight": 1.03,
+        "letterSpacing": "-1.28px",
+        "family": "Apercu Condensed Pro"
+      },
+      {
+        "role": "display",
+        "size": 112,
+        "weight": 900,
+        "lineHeight": 0.93,
+        "letterSpacing": "normal",
+        "family": "Apercu Condensed Pro"
+      },
+      {
+        "role": "display",
+        "size": 204,
+        "weight": 900,
+        "lineHeight": 0.84,
+        "letterSpacing": "-4.2px",
+        "family": "Apercu Condensed Pro"
+      }
+    ],
+    "spacing": {
+      "density": "airy",
+      "baseUnit": "8px (con medios pasos de 4px)",
+      "maxWidth": "1256px",
+      "sectionGap": "120px vertical (160px en secciones hero)",
+      "cardPadding": "24px (32px 0 24px en las filas de acordeón)",
+      "elementGap": "24px entre bloques; 8px entre elementos hermanos"
+    },
+    "radii": [
+      {
+        "element": "Botones y tarjetas",
+        "value": "4px"
+      },
+      {
+        "element": "Chips, selector de idioma y controles pequeños",
+        "value": "2px"
+      },
+      {
+        "element": "Pestañas activas (solo arriba)",
+        "value": "3px 3px 0 0"
+      },
+      {
+        "element": "Bloques de color y vídeo a sangre",
+        "value": "0px"
+      }
+    ],
+    "elevation": "Sistema plano: no hay ni una sombra real en la página. La profundidad se fabrica con escalones de superficie (crema → verde surco → negro surco) y con solapes controlados por márgenes negativos de -80px, -100px, -120px y -200px que hacen cabalgar las tarjetas sobre la sección anterior. El único box-shadow medido es un anillo de foco de 2px sólido en #dadbdd (0 0 0 2px), sin desenfoque. El vídeo del hero aporta contraste mediante un oscurecimiento propio del metraje, no mediante capas de overlay.",
+    "components": [
+      {
+        "name": "Barra de navegación",
+        "role": "Cabecera fija sobre fondo crema",
+        "spec": "Fondo #f6f3e8, altura ~82px, logotipo encajonado en un rectángulo con filete negro de 2px; enlaces en Apercu Condensed Pro 18px/500, -0,36px, color #181d27, separados 24px; hover a #306241 en 0,2s ease-in-out; a la derecha, selector de idioma 'EN' con flecha, padding 13px 16px y radio 2px."
+      },
+      {
+        "name": "Botón fantasma claro",
+        "role": "CTA principal sobre imagen o vídeo",
+        "spec": "Fondo transparente, borde 1px #f6f3e8, texto #f6f3e8 18px/500, padding 12px 16px, radio 4px, con un triángulo de reproducción a la derecha separado 24px; hover: relleno #f6f3e8 y texto #141514 en 0,2s ease-in-out."
+      },
+      {
+        "name": "Pestañas de segmento",
+        "role": "Conmutador de perfiles e industrias",
+        "spec": "Botones de 18px/500 con padding 16px 56px; inactivo sobre crema #f6f3e8 con texto #141514; activo en #53a092 o #306241 con texto #f6f3e8 y radio 3px 3px 0 0, quedando pegado al panel inferior sin separación."
+      },
+      {
+        "name": "Tarjeta de bloque de color",
+        "role": "Retícula de funcionalidades y citas de voz",
+        "spec": "Rectángulo de radio 4px relleno plano en #306241, #141514 o #75aab4, sin borde ni sombra; texto crema #f6f3e8 entrecomillado a 22px/28px; se solapan con la sección anterior mediante margin-top negativo."
+      },
+      {
+        "name": "Acordeón de capacidades",
+        "role": "Lista expandible de casos de uso",
+        "spec": "Filas sin fondo separadas por línea 1px #dadbdd, título en versales 900 y párrafo 22px #414651; padding 32px 0 24px; apertura con transición all 0.3s ease-in-out sobre la altura y rotación del icono."
+      },
+      {
+        "name": "Mural tipográfico",
+        "role": "Rótulo de sección a escala de señalética",
+        "spec": "H2 de 204px/172px, peso 900, versales, letter-spacing -4,2px, color #181d27 sobre crema, alineado al contenedor de 1256px y frecuentemente recortado por el borde del viewport."
+      },
+      {
+        "name": "Carrusel de testimonios",
+        "role": "Prueba social de agrónomos",
+        "spec": "Diapositivas de fondo #306241 con retrato a sangre, nombre en 900 versales crema, cargo y empresa en 18px #f6f3e8 al 70%; arrastre con transform 0.15s cubic-bezier(0.4,0,0.2,1) y paginación de puntos de 4px."
+      },
+      {
+        "name": "Pie oscuro",
+        "role": "Cierre y navegación secundaria",
+        "spec": "Fondo #141514, texto y enlaces #f6f3e8 18px/500 con -0,36px, columnas separadas 40px, enlaces sin subrayado que pasan a #53a092 al hover en 0,2s; enlaces legales y 'Cookie Settings' en el mismo tamaño, sin jerarquía reducida."
+      }
+    ],
+    "motion": "Todo se mueve con la misma receta: transition: all 0.3s ease-in-out para aperturas de acordeón, cambios de sección y hovers ricos, y all 0.2s ease-in-out para estados simples de enlaces y botones. El carrusel usa transform 0.15s cubic-bezier(0.4,0,0.2,1), el único easing distinto. Hay animaciones ligadas al scroll: los bloques de color entran solapándose y los contadores tipo 'PROCESSING… / ACTIONS COMPLETED' alternan en bucle. No se anima nunca el tamaño del texto ni el color de fondo de las secciones grandes; el vídeo del hero reproduce en bucle, mudo y sin controles.",
+    "layout": "Contenedor centrado de 1256px con padding lateral de 16px; las secciones respiran con 120px arriba y abajo (160px en las de tipo hero). El hero es de pantalla completa con vídeo a sangre y contenido alineado a la izquierda en una columna de ~900px. El resto alterna franjas de color a ancho total con retículas de dos, tres y cuatro columnas separadas 24px. El ritmo lo marca la alternancia crema/oscuro y los solapes negativos que hacen que una retícula muerda la sección anterior. Todo se alinea a la izquierda: no hay titulares centrados salvo los rótulos de estado dentro de las animaciones.",
+    "imagery": "Fotografía y vídeo documental de campo real —viñedos, huertos, gente con gorra al atardecer— sin filtros de color ni overlays de marca, con luz dorada natural que ya de por sí oscurece los bordes y deja leer la crema. Se combinan con capturas de interfaz y burbujas de conversación recreadas en bloques planos de color. Densidad alta: 63 imágenes en una página de 10.351px. Los recortes son a sangre o con radio 4px, nunca circulares, y los iconos son pictogramas lineales mínimos en crema o negro.",
+    "dos": [
+      "Usa Apercu Condensed Pro como única familia y limítate a los pesos 500 y 900; el 500 es el de batalla.",
+      "Pon todos los titulares 900 en versales con line-height menor que 1 y letter-spacing negativo (-1,28px a 64px, -4,2px a 204px).",
+      "Arranca el cuerpo en 22px/28px: la condensada necesita ese tamaño para ser legible.",
+      "Construye profundidad con bloques de color plano y márgenes negativos de -80 a -200px, nunca con sombras.",
+      "Mantén el contenedor en 1256px y separa las secciones 120px, subiendo a 160px en los bloques hero.",
+      "Invierte la pareja crema #f6f3e8 / negro surco #141514 en secciones alternas para marcar el ritmo de la página.",
+      "Usa el verde surco #306241 como color de marca y reserva #53a092 y #75aab4 para diferenciar bloques contiguos."
+    ],
+    "donts": [
+      "No introduzcas una segunda tipografía ni la variante no condensada de Apercu.",
+      "No uses pesos 400 o 700 en titulares: solo 500 y 900.",
+      "No apliques degradados, glow ni box-shadow difuminados; el único anillo permitido es 0 0 0 2px #dadbdd.",
+      "No redondees por encima de 4px: nada de píldoras ni de tarjetas de 16px de radio.",
+      "No centres párrafos ni titulares largos; el sistema es de alineación izquierda.",
+      "No pongas overlays de color sobre la fotografía de campo ni la satures: el metraje va tal cual.",
+      "No mezcles los grises fríos (#414651, #717680) con la crema en superficies grandes; son solo para texto secundario."
+    ],
+    "similar": [
+      {
+        "brand": "Oatly",
+        "why": "Tipografía desbordada en versales sobre fondo crema y un tono de marca artesanal aplicado a un producto industrial."
+      },
+      {
+        "brand": "Patagonia Provisions",
+        "why": "Paleta de verdes terrosos con fotografía documental sin retoque y tipografía condensada utilitaria."
+      },
+      {
+        "brand": "John Deere Operations Center",
+        "why": "Verde agrícola dominante, fotografía real de campo y una interfaz plana orientada a datos de explotación."
+      },
+      {
+        "brand": "Rivian",
+        "why": "Hero de vídeo a sangre, retícula ancha con bloques de color plano y titulares sin sombras ni adornos."
+      }
+    ],
+    "agentPrompt": "Diseña una web agro-tech con una sola tipografía condensada (Apercu Condensed Pro; fallback Oswald/Roboto Condensed) en pesos 500 y 900. Fondo crema #f6f3e8 alternando con bloques planos de negro #141514, verde surco #306241, verde agua #53a092 y azul bruma #75aab4. Titulares 900 en versales de 64 a 204px con line-height inferior a 1 y letter-spacing de -1,28px a -4,2px; cuerpo 22px/28px en #414651. Contenedor 1256px, secciones de 120px, radios de 2-4px, cero sombras: la profundidad viene de solapes con márgenes negativos. Hero con vídeo de campo a sangre y botón fantasma con borde crema de 1px. Transiciones all 0.2-0.3s ease-in-out."
+  },
+  "generatedAt": "2026-09-20T20:21:07.578Z",
+  "model": "claude-opus-5",
+  "screenshotUrl": "/design-md/76717ca8bf290d05.jpg?v=1789935667582",
+  "coverUrl": "/design-md/76717ca8bf290d05-cover.jpg?v=1789935667582",
+  "scrollUrl": "/design-md/76717ca8bf290d05-scroll.jpg?v=1789935667582"
+}

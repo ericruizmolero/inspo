@@ -1,0 +1,304 @@
+{
+  "url": "https://oryzo.ai",
+  "markdown": "# ORYZO — DESIGN.md\n> taller de maquetas a contraluz cálida\n\n**Tema:** oscuro  \n**Origen:** https://oryzo.ai/ · 2026-09-20\n\nLas medidas de origen están normalizadas; los roles y las recomendaciones son interpretados.\n\nORYZO se comporta como un estudio fotográfico de sobremesa: todo el interfaz flota sobre render 3D y vídeo a pantalla completa —madera, tapete de corte verde #445231, corcho— y la capa de UI aporta un único color, el crema #ffedd7, que funciona a la vez como texto, borde y fondo invertido de los bloques. El negro cálido #100904 sostiene la página cuando no hay imagen. La tipografía es monocultivo: halyard-display-variable en peso 500 para prácticamente todo (283 nodos), en mayúsculas y sin tracking adicional; el 400 queda para párrafos de 28,5px con interlineado 1,26. El logotipo hero explota a ~164 unidades de escala fluida mientras la navegación vive en 12px, un contraste brutal que es la firma de la página. El naranja #dc5000 aparece contado, solo en el enlace a Lusion y en el resplandor rgba(255,140,0,0.6) del botón de vídeo. Píldoras de 36px, bordes punteados de 1px y paneles crema translúcidos completan un sistema mínimo sobre imagen máxima.\n\n## Colores\n\n| Nombre | Valor | Grupo | Rol |\n|--------|-------|-------|-----|\n| Crema Papel | `#ffedd7` | marca | Color único de la marca: texto sobre imagen, bordes, iconografía y fondo de los paneles invertidos y del rótulo lateral. |\n| Naranja Corcho | `#dc5000` | acento | Acento escaso reservado al enlace de autoría (LUSION) y al borde activo de botones; nunca se usa para texto largo. |\n| Ámbar Resplandor | `#ff8c00` | acento | Halo luminoso del botón de reproducción (glow externo e inset), simula el LED cálido del escenario 3D. |\n| Verde Tapete | `#445231` | acento | Verde escenográfico del cutting mat que domina la fotografía; se reutiliza en fondos de sección para continuar la escena. |\n| Obsidiana Cálida | `#100904` | neutro | Fondo base del documento bajo los lienzos WebGL y velo de oscurecimiento sobre vídeo. |\n| Marrón Tostado | `#382416` | neutro | Superficie sólida de botones oscuros tipo píldora y de bloques de contenido apoyados en la madera. |\n| Café Ceniza | `#6c5f51` | neutro | Neutro medio para texto secundario y separadores cuando la composición cae sobre fondos claros. |\n| Marfil Cálido | `#f6e0c6` | neutro | Crema ligeramente apagado para superficies amplias que no deben competir con el texto principal. |\n| Filete Crema | `#ffedd733` | neutro | Crema al 20% para hairlines, subrayados punteados y bordes de campos e inputs sobre imagen. |\n\n## Tipografía\n\n### halyard-display-variable — display\nSostiene absolutamente toda la interfaz: logotipo, navegación, párrafos y botones. La decisión característica es que el peso 500 es el de batalla (283 de 377 nodos) y nunca se recurre a bold: la jerarquía se construye con tamaño y mayúsculas, no con grosor.\n- **Sustituto:** 'Halyard Display', 'Nimbus Sans', Helvetica Neue, Arial, sans-serif\n- **Pesos:** 400, 500\n- **Tamaños:** 7.5-51px medidos · 9 valores (el hero escala fluido hasta ~164 unidades)\n- **Interlineado:** 0.90 en display, 1.10-1.26 en textos\n- **Tracking:** normal en los 377 nodos medidos\n\n### halyard-text-variable — cuerpo\nDeclarada como --text-font para los pasajes de lectura corrida. Aparece poco en el viewport inicial: casi todo el copy de portada se resuelve con la display, por lo que su papel es de apoyo en secciones narrativas largas.\n- **Sustituto:** 'Halyard Text', Inter, system-ui, sans-serif\n- **Pesos:** 400, 500\n- **Tamaños:** 13.5-28.5px · variable --text-font\n- **Interlineado:** 1.20-1.26\n- **Tracking:** normal\n\n### Literata — cuerpo\nSerif cargada para citas y momentos editoriales del scroll largo; introduce contraste humanista frente a la grotesca. Uso muy puntual, siempre sobre fondo oscuro.\n- **Sustituto:** Georgia, 'Iowan Old Style', serif\n- **Pesos:** 200, 400, 700\n- **Tamaños:** 18-28.5px estimado en bloques editoriales\n- **Interlineado:** 1.26\n- **Tracking:** normal\n\n### DM Mono — mono\nReservada a etiquetas técnicas, contadores y micro-anotaciones tipo plano de taller. Siempre en mayúsculas y en el rango más pequeño de la escala.\n- **Sustituto:** ui-monospace, 'SF Mono', 'Roboto Mono', monospace\n- **Pesos:** 400\n- **Tamaños:** 7.5-12px\n- **Interlineado:** 1.10\n- **Tracking:** normal\n\n### Escala tipográfica\n\n| Rol | Familia | Peso | Tamaño | Interlineado | Tracking |\n|-----|---------|------|--------|--------------|----------|\n| leyenda | halyard-display-variable | 500 | 7.5px | 1.2 | normal |\n| cuerpo-sm | halyard-display-variable | 500 | 12px | 1.1 | normal |\n| cuerpo | halyard-display-variable | 500 | 13.5px | 1.2 | normal |\n| subtítulo | halyard-display-variable | 500 | 18px | 1 | normal |\n| título-sm | halyard-display-variable | 500 | 24px | 1.09 | normal |\n| título | halyard-display-variable | 400 | 28.5px | 1.26 | normal |\n| título-lg | halyard-display-variable | 500 | 40.8px | 1.1 | normal |\n| display | halyard-display-variable | 500 | 51px | 0.9 | normal |\n\n## Espaciado y layout\n\n**Densidad:** cómoda\n\n- **Unidad base:** 6px (la retícula real usa 3.125vw de margen lateral y múltiplos de 6: 12, 18, 24, 40.5)\n- **Ancho máximo de página:** sin contenedor fijo: 100vw menos 3.125vw a cada lado (≈45px a 1440px), grid de 16 columnas\n- **Separación entre secciones:** 204px de separación vertical entre bloques principales; 54px en cierres de bloque\n- **Padding de tarjeta:** 18px en paneles pequeños, 24px 45px en bloques anchos, 14.4px 24px en botones píldora\n- **Separación entre elementos:** 13.5px entre líneas de una lista, 24px entre elementos de un grupo, 40.5px entre grupos\n\n### Radios de borde\n\n- **Botón píldora (is-dark):** 36px\n- **Botón de borde punteado (copiar URL):** 22.5px\n- **Tarjeta de vídeo y paneles multimedia:** 12px\n- **Punto indicador y avatares:** 50%\n- **Bloques de texto y campos de formulario:** 0px\n\n## Elevación\n\nCasi no hay sombras CSS: la profundidad es fotográfica y viene del render 3D (madera, tapete, objetos con sombra propia proyectada en la imagen). La UI se separa por velos: paneles crema semitransparentes con degradado y hairlines de #ffedd733. La única sombra declarada es el halo del botón de reproducción: rgba(255,140,0,0.6) 0 0 10px 3px más el doble inset rgb(255,160,0) 0 0 3px 2px y rgb(224,112,16) 0 0 8px 4px, que imita un piloto encendido.\n\n## Componentes\n\n### Navegación superior\n**Rol:** Menú fijo de sección con estado activo\n\nEnlaces en halyard-display-variable 12px/1.09, peso 500, mayúsculas, color #ffedd7, separados 0 18px; el ítem activo lleva subrayado punteado de 1px #ffedd7; hover con transición color 0.2s ease hacia opacidad plena; sin fondo ni caja.\n\n### Botón píldora oscuro\n**Rol:** CTA principal (enlace a lusion.co)\n\nFondo #382416, texto #ffedd7 12px/1.1 peso 500 en mayúsculas, padding 14.4px 24px, radio 36px, borde 2px solid rgba(220,80,0,0) que se revela en #dc5000 con border-color 0.25s ease; las letras se duplican y giran verticalmente en hover (efecto flipper).\n\n### Botón punteado\n**Rol:** Acción secundaria tipo copiar URL\n\nFondo transparente, borde 1px dashed #ffedd7, radio 22.5px, texto 7.5px peso 500 en mayúsculas, padding 7.5px 0; hover anima la duplicación de glifos y sube la opacidad en 0.18s ease.\n\n### Panel de nota lateral\n**Rol:** Bloque de contexto sobre la imagen\n\nRectángulo sin radio con fondo crema al ~15% y degradado hacia transparente, padding 18px, texto #ffedd7 18px peso 500 en mayúsculas arriba y párrafo 13.5px alineado a la derecha abajo, separados por una línea punteada de 1px #ffedd733.\n\n### Rótulo de modelo\n**Rol:** Etiqueta de producto anclada a la esquina\n\nCaja sólida #ffedd7 con texto #100904 12px peso 500 en mayúsculas escrito en vertical (writing-mode) y un punto de 6px al inicio; sin radio, pegada al borde derecho del viewport.\n\n### Tarjeta de vídeo flotante\n**Rol:** Acceso al making-of\n\nMiniatura 150×75 aprox. con radio 12px, borde 1px #ffedd7, botón PLAY superpuesto con halo rgba(255,140,0,0.6) 0 0 10px 3px; escala con transform 0.3s ease en hover.\n\n### Campo de email\n**Rol:** Alta en newsletter\n\nInput sin fondo ni borde propio sobre hairline #ffedd733, texto y placeholder #ffedd7 12px peso 500 en mayúsculas, padding 1px 36px 1px 2px, con icono de envío alineado a la derecha.\n\n### Indicador de scroll\n**Rol:** Invitación a avanzar\n\nCírculo de 50% con borde 1px #ffedd733, chevron centrado y etiqueta 'SCROLL TO CONTINUE' en 12px mayúsculas; el chevron oscila en bucle y el conjunto desaparece con opacity 0.3s ease al iniciar el scroll.\n\n## Movimiento\n\nVocabulario cortísimo y todo con ease: opacity 0.18s ease como transición dominante (aparición de rótulos y hovers), opacity/transform 0.3s ease para tarjetas y capas, border-color 0.25s ease en botones y color 0.2s ease en enlaces. La animación de verdad no es CSS: la página mide 56.691px y está guiada por scroll sobre escenas WebGL con vídeo, donde cámara, objetos y máscaras de texto se sincronizan al progreso. Los textos entran por opacidad o por clip, nunca por rebote. No se anima el tamaño de la tipografía ni los colores de fondo de sección.\n\n## Layout\n\nRejilla de 16 columnas definida por variables (--grid-columns:16, gap proporcional 24/90) con márgenes laterales fluidos de 3.125vw y padding vertical derivado (--site-row-height × 4). No hay contenedor centrado máximo: los elementos se anclan a las esquinas del viewport —logo arriba a la izquierda, navegación arriba a la derecha, nota abajo a la izquierda, rótulo vertical pegado al borde— dejando el centro libre para el objeto 3D. El ritmo vertical se marca con saltos de 204px y la tipografía escala con --screen-unit, que combina ancho interior y alto de ventana, de modo que el hero mantiene su proporción en cualquier pantalla.\n\n## Imagen\n\nFotografía y render 3D fotorrealista al 100% del viewport: mesa de madera, tapete de corte verde milimetrado, lápiz, cúter y el posavasos de corcho como protagonista, con profundidad de campo real y sombras suaves. Cero ilustración plana, cero iconografía decorativa. El vídeo del making-of aparece como miniatura pequeña y cálida en la esquina. Tratamiento: luz lateral cálida, grano sutil y un ligero viñeteado que garantiza que el crema #ffedd7 se lea sobre cualquier zona de la escena.\n\n## Qué hacer y qué no\n\n### Sí\n- Usa #ffedd7 como color único de interfaz: texto, bordes, iconos y paneles invertidos salen todos de él.\n- Fija el peso 500 de halyard-display-variable como valor por defecto y construye jerarquía solo con tamaño y mayúsculas.\n- Ancla la UI a las cuatro esquinas del viewport y deja el centro despejado para el objeto 3D o el vídeo.\n- Mantén la navegación y las etiquetas en 12px mayúsculas, aunque el hero mida más de 100px: el contraste extremo es la firma.\n- Reserva #dc5000 para uno o dos elementos por pantalla como máximo (autoría, borde activo).\n- Separa bloques con 204px verticales y márgenes laterales de 3.125vw en lugar de cajas con sombra.\n- Anima solo opacidad y transform con ease entre 0.18s y 0.3s; el resto lo cuenta el scroll.\n\n### No\n- No pongas negritas (700+) ni letter-spacing negativo: el sistema medido usa 500 y tracking normal en todos los nodos.\n- No introduzcas grises fríos ni azules; cualquier neutro debe tener base cálida (#100904, #382416, #6c5f51).\n- No apliques box-shadow genérico a tarjetas: la profundidad viene de la fotografía, y la única sombra permitida es el halo ámbar del botón play.\n- No centres el contenido en un contenedor de 1200px: rompe la retícula de 16 columnas a sangre.\n- No uses el naranja #dc5000 en párrafos, fondos amplios ni bordes decorativos.\n- No mezcles más de dos radios distintos en la misma zona: píldora 36px, multimedia 12px, el resto a 0px.\n- No animes con rebotes, springs largos ni fundidos de más de 0.3s en la interfaz.\n\n## Marcas afines\n\n- **Lusion** — Es el estudio autor: misma lógica de WebGL a pantalla completa con una capa de UI mínima en mayúsculas pegada a las esquinas.\n- **Playdate (Panic)** — Producto físico contado como escena de sobremesa, con paleta cálida limitada y tipografía de peso único en mayúsculas.\n- **Igloo Inc** — Scroll larguísimo guiado por render 3D donde el texto es un HUD ligero y monocromo sobre la escena.\n- **Aarke** — Fotografía de producto matérica y tipografía grotesca discreta; el objeto manda y la interfaz casi desaparece.\n\n## Prompt para agentes\n\nDiseña una landing de producto tipo escena 3D: vídeo o render a pantalla completa (mesa de madera, tapete verde #445231, objeto de corcho) y una única capa de interfaz en crema #ffedd7 sobre fondo base #100904. Usa halyard-display-variable (fallback Helvetica Neue) en peso 500 para todo, mayúsculas, letter-spacing normal; logotipo hero enorme con line-height 0.9 frente a navegación de 12px. Ancla los elementos a las esquinas con márgenes de 3.125vw y rejilla de 16 columnas. Botones píldora #382416 radio 36px, medios radio 12px, hairlines #ffedd733. Naranja #dc5000 solo en un enlace. Transiciones opacity/transform 0.18-0.3s ease y narrativa por scroll.\n",
+  "spec": {
+    "brand": "ORYZO",
+    "tagline": "taller de maquetas a contraluz cálida",
+    "theme": "dark",
+    "description": "ORYZO se comporta como un estudio fotográfico de sobremesa: todo el interfaz flota sobre render 3D y vídeo a pantalla completa —madera, tapete de corte verde #445231, corcho— y la capa de UI aporta un único color, el crema #ffedd7, que funciona a la vez como texto, borde y fondo invertido de los bloques. El negro cálido #100904 sostiene la página cuando no hay imagen. La tipografía es monocultivo: halyard-display-variable en peso 500 para prácticamente todo (283 nodos), en mayúsculas y sin tracking adicional; el 400 queda para párrafos de 28,5px con interlineado 1,26. El logotipo hero explota a ~164 unidades de escala fluida mientras la navegación vive en 12px, un contraste brutal que es la firma de la página. El naranja #dc5000 aparece contado, solo en el enlace a Lusion y en el resplandor rgba(255,140,0,0.6) del botón de vídeo. Píldoras de 36px, bordes punteados de 1px y paneles crema translúcidos completan un sistema mínimo sobre imagen máxima.",
+    "colors": [
+      {
+        "name": "Crema Papel",
+        "hex": "#ffedd7",
+        "group": "brand",
+        "role": "Color único de la marca: texto sobre imagen, bordes, iconografía y fondo de los paneles invertidos y del rótulo lateral."
+      },
+      {
+        "name": "Naranja Corcho",
+        "hex": "#dc5000",
+        "group": "accent",
+        "role": "Acento escaso reservado al enlace de autoría (LUSION) y al borde activo de botones; nunca se usa para texto largo."
+      },
+      {
+        "name": "Ámbar Resplandor",
+        "hex": "#ff8c00",
+        "group": "accent",
+        "role": "Halo luminoso del botón de reproducción (glow externo e inset), simula el LED cálido del escenario 3D."
+      },
+      {
+        "name": "Verde Tapete",
+        "hex": "#445231",
+        "group": "accent",
+        "role": "Verde escenográfico del cutting mat que domina la fotografía; se reutiliza en fondos de sección para continuar la escena."
+      },
+      {
+        "name": "Obsidiana Cálida",
+        "hex": "#100904",
+        "group": "neutral",
+        "role": "Fondo base del documento bajo los lienzos WebGL y velo de oscurecimiento sobre vídeo."
+      },
+      {
+        "name": "Marrón Tostado",
+        "hex": "#382416",
+        "group": "neutral",
+        "role": "Superficie sólida de botones oscuros tipo píldora y de bloques de contenido apoyados en la madera."
+      },
+      {
+        "name": "Café Ceniza",
+        "hex": "#6c5f51",
+        "group": "neutral",
+        "role": "Neutro medio para texto secundario y separadores cuando la composición cae sobre fondos claros."
+      },
+      {
+        "name": "Marfil Cálido",
+        "hex": "#f6e0c6",
+        "group": "neutral",
+        "role": "Crema ligeramente apagado para superficies amplias que no deben competir con el texto principal."
+      },
+      {
+        "name": "Filete Crema",
+        "hex": "#ffedd733",
+        "group": "neutral",
+        "role": "Crema al 20% para hairlines, subrayados punteados y bordes de campos e inputs sobre imagen."
+      }
+    ],
+    "fonts": [
+      {
+        "family": "halyard-display-variable",
+        "role": "display",
+        "weights": [
+          400,
+          500
+        ],
+        "sizes": "7.5-51px medidos · 9 valores (el hero escala fluido hasta ~164 unidades)",
+        "lineHeight": "0.90 en display, 1.10-1.26 en textos",
+        "letterSpacing": "normal en los 377 nodos medidos",
+        "fallback": "'Halyard Display', 'Nimbus Sans', Helvetica Neue, Arial, sans-serif",
+        "usage": "Sostiene absolutamente toda la interfaz: logotipo, navegación, párrafos y botones. La decisión característica es que el peso 500 es el de batalla (283 de 377 nodos) y nunca se recurre a bold: la jerarquía se construye con tamaño y mayúsculas, no con grosor."
+      },
+      {
+        "family": "halyard-text-variable",
+        "role": "body",
+        "weights": [
+          400,
+          500
+        ],
+        "sizes": "13.5-28.5px · variable --text-font",
+        "lineHeight": "1.20-1.26",
+        "letterSpacing": "normal",
+        "fallback": "'Halyard Text', Inter, system-ui, sans-serif",
+        "usage": "Declarada como --text-font para los pasajes de lectura corrida. Aparece poco en el viewport inicial: casi todo el copy de portada se resuelve con la display, por lo que su papel es de apoyo en secciones narrativas largas."
+      },
+      {
+        "family": "Literata",
+        "role": "body",
+        "weights": [
+          200,
+          400,
+          700
+        ],
+        "sizes": "18-28.5px estimado en bloques editoriales",
+        "lineHeight": "1.26",
+        "letterSpacing": "normal",
+        "fallback": "Georgia, 'Iowan Old Style', serif",
+        "usage": "Serif cargada para citas y momentos editoriales del scroll largo; introduce contraste humanista frente a la grotesca. Uso muy puntual, siempre sobre fondo oscuro."
+      },
+      {
+        "family": "DM Mono",
+        "role": "mono",
+        "weights": [
+          400
+        ],
+        "sizes": "7.5-12px",
+        "lineHeight": "1.10",
+        "letterSpacing": "normal",
+        "fallback": "ui-monospace, 'SF Mono', 'Roboto Mono', monospace",
+        "usage": "Reservada a etiquetas técnicas, contadores y micro-anotaciones tipo plano de taller. Siempre en mayúsculas y en el rango más pequeño de la escala."
+      }
+    ],
+    "typeScale": [
+      {
+        "role": "leyenda",
+        "size": 7.5,
+        "weight": 500,
+        "lineHeight": 1.2,
+        "letterSpacing": "normal",
+        "family": "halyard-display-variable"
+      },
+      {
+        "role": "cuerpo-sm",
+        "size": 12,
+        "weight": 500,
+        "lineHeight": 1.1,
+        "letterSpacing": "normal",
+        "family": "halyard-display-variable"
+      },
+      {
+        "role": "cuerpo",
+        "size": 13.5,
+        "weight": 500,
+        "lineHeight": 1.2,
+        "letterSpacing": "normal",
+        "family": "halyard-display-variable"
+      },
+      {
+        "role": "subtítulo",
+        "size": 18,
+        "weight": 500,
+        "lineHeight": 1,
+        "letterSpacing": "normal",
+        "family": "halyard-display-variable"
+      },
+      {
+        "role": "título-sm",
+        "size": 24,
+        "weight": 500,
+        "lineHeight": 1.09,
+        "letterSpacing": "normal",
+        "family": "halyard-display-variable"
+      },
+      {
+        "role": "título",
+        "size": 28.5,
+        "weight": 400,
+        "lineHeight": 1.26,
+        "letterSpacing": "normal",
+        "family": "halyard-display-variable"
+      },
+      {
+        "role": "título-lg",
+        "size": 40.8,
+        "weight": 500,
+        "lineHeight": 1.1,
+        "letterSpacing": "normal",
+        "family": "halyard-display-variable"
+      },
+      {
+        "role": "display",
+        "size": 51,
+        "weight": 500,
+        "lineHeight": 0.9,
+        "letterSpacing": "normal",
+        "family": "halyard-display-variable"
+      }
+    ],
+    "spacing": {
+      "density": "comfortable",
+      "baseUnit": "6px (la retícula real usa 3.125vw de margen lateral y múltiplos de 6: 12, 18, 24, 40.5)",
+      "maxWidth": "sin contenedor fijo: 100vw menos 3.125vw a cada lado (≈45px a 1440px), grid de 16 columnas",
+      "sectionGap": "204px de separación vertical entre bloques principales; 54px en cierres de bloque",
+      "cardPadding": "18px en paneles pequeños, 24px 45px en bloques anchos, 14.4px 24px en botones píldora",
+      "elementGap": "13.5px entre líneas de una lista, 24px entre elementos de un grupo, 40.5px entre grupos"
+    },
+    "radii": [
+      {
+        "element": "Botón píldora (is-dark)",
+        "value": "36px"
+      },
+      {
+        "element": "Botón de borde punteado (copiar URL)",
+        "value": "22.5px"
+      },
+      {
+        "element": "Tarjeta de vídeo y paneles multimedia",
+        "value": "12px"
+      },
+      {
+        "element": "Punto indicador y avatares",
+        "value": "50%"
+      },
+      {
+        "element": "Bloques de texto y campos de formulario",
+        "value": "0px"
+      }
+    ],
+    "elevation": "Casi no hay sombras CSS: la profundidad es fotográfica y viene del render 3D (madera, tapete, objetos con sombra propia proyectada en la imagen). La UI se separa por velos: paneles crema semitransparentes con degradado y hairlines de #ffedd733. La única sombra declarada es el halo del botón de reproducción: rgba(255,140,0,0.6) 0 0 10px 3px más el doble inset rgb(255,160,0) 0 0 3px 2px y rgb(224,112,16) 0 0 8px 4px, que imita un piloto encendido.",
+    "components": [
+      {
+        "name": "Navegación superior",
+        "role": "Menú fijo de sección con estado activo",
+        "spec": "Enlaces en halyard-display-variable 12px/1.09, peso 500, mayúsculas, color #ffedd7, separados 0 18px; el ítem activo lleva subrayado punteado de 1px #ffedd7; hover con transición color 0.2s ease hacia opacidad plena; sin fondo ni caja."
+      },
+      {
+        "name": "Botón píldora oscuro",
+        "role": "CTA principal (enlace a lusion.co)",
+        "spec": "Fondo #382416, texto #ffedd7 12px/1.1 peso 500 en mayúsculas, padding 14.4px 24px, radio 36px, borde 2px solid rgba(220,80,0,0) que se revela en #dc5000 con border-color 0.25s ease; las letras se duplican y giran verticalmente en hover (efecto flipper)."
+      },
+      {
+        "name": "Botón punteado",
+        "role": "Acción secundaria tipo copiar URL",
+        "spec": "Fondo transparente, borde 1px dashed #ffedd7, radio 22.5px, texto 7.5px peso 500 en mayúsculas, padding 7.5px 0; hover anima la duplicación de glifos y sube la opacidad en 0.18s ease."
+      },
+      {
+        "name": "Panel de nota lateral",
+        "role": "Bloque de contexto sobre la imagen",
+        "spec": "Rectángulo sin radio con fondo crema al ~15% y degradado hacia transparente, padding 18px, texto #ffedd7 18px peso 500 en mayúsculas arriba y párrafo 13.5px alineado a la derecha abajo, separados por una línea punteada de 1px #ffedd733."
+      },
+      {
+        "name": "Rótulo de modelo",
+        "role": "Etiqueta de producto anclada a la esquina",
+        "spec": "Caja sólida #ffedd7 con texto #100904 12px peso 500 en mayúsculas escrito en vertical (writing-mode) y un punto de 6px al inicio; sin radio, pegada al borde derecho del viewport."
+      },
+      {
+        "name": "Tarjeta de vídeo flotante",
+        "role": "Acceso al making-of",
+        "spec": "Miniatura 150×75 aprox. con radio 12px, borde 1px #ffedd7, botón PLAY superpuesto con halo rgba(255,140,0,0.6) 0 0 10px 3px; escala con transform 0.3s ease en hover."
+      },
+      {
+        "name": "Campo de email",
+        "role": "Alta en newsletter",
+        "spec": "Input sin fondo ni borde propio sobre hairline #ffedd733, texto y placeholder #ffedd7 12px peso 500 en mayúsculas, padding 1px 36px 1px 2px, con icono de envío alineado a la derecha."
+      },
+      {
+        "name": "Indicador de scroll",
+        "role": "Invitación a avanzar",
+        "spec": "Círculo de 50% con borde 1px #ffedd733, chevron centrado y etiqueta 'SCROLL TO CONTINUE' en 12px mayúsculas; el chevron oscila en bucle y el conjunto desaparece con opacity 0.3s ease al iniciar el scroll."
+      }
+    ],
+    "motion": "Vocabulario cortísimo y todo con ease: opacity 0.18s ease como transición dominante (aparición de rótulos y hovers), opacity/transform 0.3s ease para tarjetas y capas, border-color 0.25s ease en botones y color 0.2s ease en enlaces. La animación de verdad no es CSS: la página mide 56.691px y está guiada por scroll sobre escenas WebGL con vídeo, donde cámara, objetos y máscaras de texto se sincronizan al progreso. Los textos entran por opacidad o por clip, nunca por rebote. No se anima el tamaño de la tipografía ni los colores de fondo de sección.",
+    "layout": "Rejilla de 16 columnas definida por variables (--grid-columns:16, gap proporcional 24/90) con márgenes laterales fluidos de 3.125vw y padding vertical derivado (--site-row-height × 4). No hay contenedor centrado máximo: los elementos se anclan a las esquinas del viewport —logo arriba a la izquierda, navegación arriba a la derecha, nota abajo a la izquierda, rótulo vertical pegado al borde— dejando el centro libre para el objeto 3D. El ritmo vertical se marca con saltos de 204px y la tipografía escala con --screen-unit, que combina ancho interior y alto de ventana, de modo que el hero mantiene su proporción en cualquier pantalla.",
+    "imagery": "Fotografía y render 3D fotorrealista al 100% del viewport: mesa de madera, tapete de corte verde milimetrado, lápiz, cúter y el posavasos de corcho como protagonista, con profundidad de campo real y sombras suaves. Cero ilustración plana, cero iconografía decorativa. El vídeo del making-of aparece como miniatura pequeña y cálida en la esquina. Tratamiento: luz lateral cálida, grano sutil y un ligero viñeteado que garantiza que el crema #ffedd7 se lea sobre cualquier zona de la escena.",
+    "dos": [
+      "Usa #ffedd7 como color único de interfaz: texto, bordes, iconos y paneles invertidos salen todos de él.",
+      "Fija el peso 500 de halyard-display-variable como valor por defecto y construye jerarquía solo con tamaño y mayúsculas.",
+      "Ancla la UI a las cuatro esquinas del viewport y deja el centro despejado para el objeto 3D o el vídeo.",
+      "Mantén la navegación y las etiquetas en 12px mayúsculas, aunque el hero mida más de 100px: el contraste extremo es la firma.",
+      "Reserva #dc5000 para uno o dos elementos por pantalla como máximo (autoría, borde activo).",
+      "Separa bloques con 204px verticales y márgenes laterales de 3.125vw en lugar de cajas con sombra.",
+      "Anima solo opacidad y transform con ease entre 0.18s y 0.3s; el resto lo cuenta el scroll."
+    ],
+    "donts": [
+      "No pongas negritas (700+) ni letter-spacing negativo: el sistema medido usa 500 y tracking normal en todos los nodos.",
+      "No introduzcas grises fríos ni azules; cualquier neutro debe tener base cálida (#100904, #382416, #6c5f51).",
+      "No apliques box-shadow genérico a tarjetas: la profundidad viene de la fotografía, y la única sombra permitida es el halo ámbar del botón play.",
+      "No centres el contenido en un contenedor de 1200px: rompe la retícula de 16 columnas a sangre.",
+      "No uses el naranja #dc5000 en párrafos, fondos amplios ni bordes decorativos.",
+      "No mezcles más de dos radios distintos en la misma zona: píldora 36px, multimedia 12px, el resto a 0px.",
+      "No animes con rebotes, springs largos ni fundidos de más de 0.3s en la interfaz."
+    ],
+    "similar": [
+      {
+        "brand": "Lusion",
+        "why": "Es el estudio autor: misma lógica de WebGL a pantalla completa con una capa de UI mínima en mayúsculas pegada a las esquinas."
+      },
+      {
+        "brand": "Playdate (Panic)",
+        "why": "Producto físico contado como escena de sobremesa, con paleta cálida limitada y tipografía de peso único en mayúsculas."
+      },
+      {
+        "brand": "Igloo Inc",
+        "why": "Scroll larguísimo guiado por render 3D donde el texto es un HUD ligero y monocromo sobre la escena."
+      },
+      {
+        "brand": "Aarke",
+        "why": "Fotografía de producto matérica y tipografía grotesca discreta; el objeto manda y la interfaz casi desaparece."
+      }
+    ],
+    "agentPrompt": "Diseña una landing de producto tipo escena 3D: vídeo o render a pantalla completa (mesa de madera, tapete verde #445231, objeto de corcho) y una única capa de interfaz en crema #ffedd7 sobre fondo base #100904. Usa halyard-display-variable (fallback Helvetica Neue) en peso 500 para todo, mayúsculas, letter-spacing normal; logotipo hero enorme con line-height 0.9 frente a navegación de 12px. Ancla los elementos a las esquinas con márgenes de 3.125vw y rejilla de 16 columnas. Botones píldora #382416 radio 36px, medios radio 12px, hairlines #ffedd733. Naranja #dc5000 solo en un enlace. Transiciones opacity/transform 0.18-0.3s ease y narrativa por scroll."
+  },
+  "generatedAt": "2026-09-20T20:21:17.289Z",
+  "model": "claude-opus-5",
+  "screenshotUrl": "/design-md/6002995176632572.jpg?v=1789935677290",
+  "coverUrl": "/design-md/6002995176632572-cover.jpg?v=1789935677291",
+  "scrollUrl": "/design-md/6002995176632572-scroll.jpg?v=1789935677291"
+}

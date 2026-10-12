@@ -1,0 +1,263 @@
+{
+  "url": "https://recent.design",
+  "markdown": "# Recent — DESIGN.md\n> tablón blanco de galería silenciosa\n\n**Tema:** claro  \n**Origen:** https://recent.design/ · 2026-09-20\n\nLas medidas de origen están normalizadas; los roles y las recomendaciones son interpretados.\n\nRecent es un tablón de inspiración que desaparece detrás de su contenido: todo el cromatismo lo ponen las imágenes y la interfaz se reduce a blanco #ffffff, un lienzo gris apenas perceptible #f5f5f5 para los huecos de las tarjetas y tinta casi negra #0b0b0b para el texto activo. Inter es la única familia, y el 13px es el tamaño de batalla —59 de 61 elementos medidos— con interlineado 18,2px (1,4) y un tracking negativo de -0,041px reservado a los elementos de chrome; solo el h1 'Design' sube a 16px/500. La jerarquía no se construye con tamaño sino con opacidad: negro al 100%, al 48% (#0000007c) para lo secundario y al 27% (#00000044) para los epígrafes 'Browse' y 'Resources'. Las tarjetas usan radio 8px y sombra hairline de 1px; los chips de filtro, botones y avatares son píldoras de 9999px. Densidad compacta: gaps de 12px, secciones separadas 32px, contenedor de 1680px.\n\n## Colores\n\n| Nombre | Valor | Grupo | Rol |\n|--------|-------|-------|-----|\n| Tinta | `#0b0b0b` | neutro | Texto principal, ítem de navegación activo y fondo del botón 'Sign up'. |\n| Velo Control | `#00000072` | neutro | Fondo semitransparente de los botones circulares que flotan sobre las miniaturas. |\n| Gris Lectura | `#0000007c` | neutro | Texto secundario: descriptores, enlaces inactivos del sidebar y etiquetas de chips. |\n| Gris Susurro | `#00000044` | neutro | Epígrafes de sección del sidebar ('Browse', 'Resources'), el nivel más tenue del sistema. |\n| Filete | `#00000010` | neutro | Bordes hairline, separadores y fondo de los chips de filtro inactivos. |\n| Bruma | `#00000006` | neutro | Velo casi invisible sobre superficies claras y estados hover suaves. |\n| Niebla Lienzo | `#f5f5f5` | neutro | Placeholder de las tarjetas del grid y superficie de reposo mientras cargan las imágenes; es el color de mayor superficie medida. |\n| Blanco Papel | `#ffffff` | neutro | Fondo general de la página, sidebar y botones secundarios tipo 'Log in'. |\n| Filete Interior | `#ffffff29` | neutro | Inset de 1px que define el borde de los controles oscuros sobre fotografía. |\n| Violeta Destello | `#a855f7` | acento | Único color saturado del sistema, aislado en el bloque patrocinado; aparece una sola vez, tratarlo como excepción y no como color de marca. |\n\n## Tipografía\n\n### Inter — interfaz\nFamilia única para absolutamente todo: navegación, titulares, cuerpo y metadatos. La decisión característica es que el 13px/400 hace el 95% del trabajo y el único ascenso jerárquico es 16px/500 en el h1; nada va en negrita ni en mayúsculas.\n- **Sustituto:** -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif\n- **Pesos:** 400, 500\n- **Tamaños:** 12-16px · 3 valores\n- **Interlineado:** 1.4 (18,2px sobre 13px)\n- **Tracking:** normal en contenido; -0.041px en chrome y botones\n\n### Escala tipográfica\n\n| Rol | Familia | Peso | Tamaño | Interlineado | Tracking |\n|-----|---------|------|--------|--------------|----------|\n| leyenda | Inter | 400 | 12px | 1 | normal |\n| cuerpo-sm | Inter | 400 | 13px | 1.4 | -0.041px |\n| cuerpo | Inter | 400 | 13px | 1.4 | normal |\n| subtítulo | Inter | 500 | 13px | 1.4 | normal |\n| título-sm | Inter | 500 | 16px | 1.4 | normal |\n| título | Inter | 500 | 20px | 1.35 | -0.2px |\n| título-lg | Inter | 500 | 24px | 1.3 | -0.3px |\n\n## Espaciado y layout\n\n**Densidad:** compacta\n\n- **Unidad base:** 4px\n- **Ancho máximo de página:** 1680px\n- **Separación entre secciones:** 32px\n- **Padding de tarjeta:** 12px 16px (las tarjetas de imagen van a sangre, sin padding)\n- **Separación entre elementos:** 12px\n\n### Radios de borde\n\n- **Tarjeta de imagen / panel:** 8px\n- **Chip de filtro y botones:** 9999px\n- **Botón circular sobre imagen:** 9999px\n- **Avatar:** 50%\n\n## Elevación\n\nCasi plana. La profundidad se consigue con contornos de 1px, no con sombras difusas: las tarjetas y logos usan `0 1px 2px #0000000f, 0 0 0 1px #0000000d`; los controles oscuros sobre fotografía llevan un inset `0 0 0 1px #ffffff29` que los recorta contra la imagen; los botones píldora blancos usan una sombra triple muy fina `0 0 0 0.5px #00000014, 0 1px 1px -1px #00000033, 0 1px 2px #00000014`. El resto de la jerarquía es un escalón de superficie entre #ffffff y #f5f5f5.\n\n## Componentes\n\n### Sidebar de navegación\n**Rol:** Índice permanente a la izquierda con secciones Browse y Resources\n\nFondo #ffffff, ancho fijo ~268px, epígrafes 13px/400 en #00000044, enlaces 13px/400 en #0000007c con padding 2px 14px 2px 0, el activo pasa a #0b0b0b con un punto de 4px a la derecha; sin fondos ni cajas, transición color 0.12s.\n\n### Chips de filtro\n**Rol:** Barra horizontal de categorías (All, Web, Interface…)\n\nPíldoras de radio 9999px, padding 0 12px con altura ~28px, gap 4px; inactivo con fondo #00000010 y texto #0000007c, activo con fondo #0b0b0b y texto #ffffff; borde 1px transparente para evitar salto; hover anima background-color 0.18s.\n\n### Botón primario píldora\n**Rol:** CTA 'Sign up' del bloque de suscripción\n\nFondo #0b0b0b, texto #ffffff 13px/400 con tracking -0.041px, padding 0 12px, radio 9999px, borde 1px #0b0b0b, sin sombra; hover aclara ligeramente el fondo en 0.18s.\n\n### Botón secundario píldora\n**Rol:** 'Log in' en la esquina superior izquierda\n\nFondo #ffffff, texto #0b0b0b 13px/400, padding 0 12px, radio 9999px, sin borde declarado y sombra hairline 0 0 0 0.5px #00000014 + 0 1px 2px #00000014.\n\n### Tarjeta del grid masonry\n**Rol:** Miniatura de cada pieza de inspiración\n\nImagen o vídeo a sangre sobre placeholder #f5f5f5, radio 8px, sin padding ni borde, gap de 12px entre celdas; al hover aparecen avatar del autor y botón circular, con transform 0.12s y opacity 0.18s.\n\n### Botón circular sobre imagen\n**Rol:** Acción de abrir enlace externo en la esquina de la tarjeta\n\nCírculo de 28px, fondo #00000072, icono #ffffff, radio 9999px, inset 0 0 0 1px #ffffff29, sin padding; visible solo en hover mediante opacidad.\n\n### Lista de empleos\n**Rol:** Columna derecha con ofertas y logo cuadrado\n\nFila con logo de 32px en radio 8px y sombra hairline, título en #0b0b0b 13px/500 y compañía en #0000007c 13px/400, gap 12px, separador 1px #00000010, cierre con enlace 'See all jobs' y flecha alineada a la derecha.\n\n### Bloque patrocinado\n**Rol:** Módulo 'Sponsored' al pie del sidebar\n\nLogo 32px radio 8px, etiqueta 'Sponsored' en #0000007c, copy 13px/400 en #0000007c, regla superior de 1px #00000010 y separación 32px del bloque siguiente; el único lugar donde se admite color saturado.\n\n## Movimiento\n\nTodo con la misma curva cubic-bezier(0.2, …) y duraciones de dos valores: 0.12s para respuestas táctiles (transform, color, border-color) y 0.18s para cambios de superficie (background-color, opacity); un único fundido lento de 0.5s reservado a la aparición de imágenes al hacer scroll. Se anima la opacidad de los overlays de tarjeta y una escala mínima al pulsar; nunca se animan tamaños de tipografía, alturas de layout ni desplazamientos del grid.\n\n## Layout\n\nTres zonas fijas dentro de un contenedor de 1680px: sidebar de navegación a la izquierda (~268px), área central de contenido con cabecera de título + descripción y barra de chips, y columna derecha de ~285px con empleos y destacados. El cuerpo es un masonry de 3 columnas con gap uniforme de 12px y alturas libres, sin recortes forzados. Ritmo vertical de 32px entre bloques del sidebar y 12px dentro de cada grupo; todo alineado a la izquierda, sin centrados ni secciones a ancho completo.\n\n## Imagen\n\nEl contenido es 100% obra ajena: capturas de producto, vídeos de UI, 3D y fotografía de producto, con 143 imágenes por página y reproducción en bucle al hover. Sin filtros, viñetas ni superposiciones de color: la interfaz jamás tiñe la imagen y solo añade un avatar circular de 24px y un botón oscuro translúcido en las esquinas. El placeholder gris #f5f5f5 mantiene el ritmo del grid mientras carga. Los logos de empresa se presentan en cuadrados de 32px con radio 8px y contorno hairline.\n\n## Qué hacer y qué no\n\n### Sí\n- Usar 13px/400 Inter como tamaño por defecto para casi todo y reservar el 16px/500 al título de la vista.\n- Construir la jerarquía con opacidades de negro (100%, 48%, 27%) en lugar de con más tamaños o negritas.\n- Mantener el radio en dos valores: 8px para superficies rectangulares y 9999px para cualquier control.\n- Dejar las imágenes a sangre sobre placeholder #f5f5f5 y respetar el gap de 12px del masonry.\n- Recortar los controles oscuros sobre fotografía con un inset blanco de 1px #ffffff29 para asegurar el contorno.\n- Limitar las sombras a contornos hairline de 1px; la profundidad se sugiere, no se dramatiza.\n- Animar solo color, opacidad y transform, con 0.12s o 0.18s y la misma curva.\n\n### No\n- No introducir una segunda familia tipográfica ni pesos por encima de 500.\n- No usar mayúsculas forzadas ni tracking positivo en epígrafes; 'Browse' va en caja baja al 27% de negro.\n- No aplicar color de marca a la interfaz: el violeta del bloque patrocinado es una excepción publicitaria.\n- No añadir sombras difusas, gradientes ni glassmorphism a tarjetas o paneles.\n- No superponer degradados, filtros ni etiquetas grandes sobre las miniaturas de terceros.\n- No ampliar el padding de las tarjetas ni separar el grid más de 12px: la densidad es parte del producto.\n- No centrar texto ni introducir titulares de tamaño editorial; el layout es un tablón, no una landing.\n\n## Marcas afines\n\n- **Mobbin** — Mismo esquema de tablón blanco con sidebar de filtros, tipografía pequeña neutra y protagonismo total de las capturas.\n- **Cosmos** — Grid masonry denso de gap mínimo y controles píldora translúcidos que aparecen al hover sobre la imagen.\n- **Land-book** — Directorio de inspiración con chips de categoría, tipografía de 13px y cromatismo delegado al contenido.\n- **Linear** — Inter en pesos 400/500, tracking ligeramente negativo, radios de 8px y sombras hairline en lugar de elevaciones blandas.\n- **Savee** — Interfaz casi invisible, retícula de imágenes a sangre y jerarquía resuelta solo con opacidad del negro.\n\n## Prompt para agentes\n\nDiseña un tablón de inspiración en tema claro: fondo #ffffff, placeholders #f5f5f5, texto #0b0b0b y jerarquía por opacidad (#0000007c secundario, #00000044 epígrafes), bordes hairline #00000010. Inter como única fuente: 13px/400 con line-height 1.4 para casi todo, tracking -0.041px en botones y chrome, y 16px/500 solo en el título de vista. Contenedor de 1680px con sidebar de enlaces a la izquierda, masonry de 3 columnas con gap 12px y columna derecha de empleos. Radios 8px en tarjetas y 9999px en chips, botones y avatares. Sombras de 1px, nunca difusas. Transiciones de 0.12s y 0.18s en color, opacidad y transform.\n",
+  "spec": {
+    "brand": "Recent",
+    "tagline": "tablón blanco de galería silenciosa",
+    "theme": "light",
+    "description": "Recent es un tablón de inspiración que desaparece detrás de su contenido: todo el cromatismo lo ponen las imágenes y la interfaz se reduce a blanco #ffffff, un lienzo gris apenas perceptible #f5f5f5 para los huecos de las tarjetas y tinta casi negra #0b0b0b para el texto activo. Inter es la única familia, y el 13px es el tamaño de batalla —59 de 61 elementos medidos— con interlineado 18,2px (1,4) y un tracking negativo de -0,041px reservado a los elementos de chrome; solo el h1 'Design' sube a 16px/500. La jerarquía no se construye con tamaño sino con opacidad: negro al 100%, al 48% (#0000007c) para lo secundario y al 27% (#00000044) para los epígrafes 'Browse' y 'Resources'. Las tarjetas usan radio 8px y sombra hairline de 1px; los chips de filtro, botones y avatares son píldoras de 9999px. Densidad compacta: gaps de 12px, secciones separadas 32px, contenedor de 1680px.",
+    "colors": [
+      {
+        "name": "Tinta",
+        "hex": "#0b0b0b",
+        "group": "neutral",
+        "role": "Texto principal, ítem de navegación activo y fondo del botón 'Sign up'."
+      },
+      {
+        "name": "Velo Control",
+        "hex": "#00000072",
+        "group": "neutral",
+        "role": "Fondo semitransparente de los botones circulares que flotan sobre las miniaturas."
+      },
+      {
+        "name": "Gris Lectura",
+        "hex": "#0000007c",
+        "group": "neutral",
+        "role": "Texto secundario: descriptores, enlaces inactivos del sidebar y etiquetas de chips."
+      },
+      {
+        "name": "Gris Susurro",
+        "hex": "#00000044",
+        "group": "neutral",
+        "role": "Epígrafes de sección del sidebar ('Browse', 'Resources'), el nivel más tenue del sistema."
+      },
+      {
+        "name": "Filete",
+        "hex": "#00000010",
+        "group": "neutral",
+        "role": "Bordes hairline, separadores y fondo de los chips de filtro inactivos."
+      },
+      {
+        "name": "Bruma",
+        "hex": "#00000006",
+        "group": "neutral",
+        "role": "Velo casi invisible sobre superficies claras y estados hover suaves."
+      },
+      {
+        "name": "Niebla Lienzo",
+        "hex": "#f5f5f5",
+        "group": "neutral",
+        "role": "Placeholder de las tarjetas del grid y superficie de reposo mientras cargan las imágenes; es el color de mayor superficie medida."
+      },
+      {
+        "name": "Blanco Papel",
+        "hex": "#ffffff",
+        "group": "neutral",
+        "role": "Fondo general de la página, sidebar y botones secundarios tipo 'Log in'."
+      },
+      {
+        "name": "Filete Interior",
+        "hex": "#ffffff29",
+        "group": "neutral",
+        "role": "Inset de 1px que define el borde de los controles oscuros sobre fotografía."
+      },
+      {
+        "name": "Violeta Destello",
+        "hex": "#a855f7",
+        "group": "accent",
+        "role": "Único color saturado del sistema, aislado en el bloque patrocinado; aparece una sola vez, tratarlo como excepción y no como color de marca."
+      }
+    ],
+    "fonts": [
+      {
+        "family": "Inter",
+        "role": "ui",
+        "weights": [
+          400,
+          500
+        ],
+        "sizes": "12-16px · 3 valores",
+        "lineHeight": "1.4 (18,2px sobre 13px)",
+        "letterSpacing": "normal en contenido; -0.041px en chrome y botones",
+        "fallback": "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif",
+        "usage": "Familia única para absolutamente todo: navegación, titulares, cuerpo y metadatos. La decisión característica es que el 13px/400 hace el 95% del trabajo y el único ascenso jerárquico es 16px/500 en el h1; nada va en negrita ni en mayúsculas."
+      }
+    ],
+    "typeScale": [
+      {
+        "role": "leyenda",
+        "size": 12,
+        "weight": 400,
+        "lineHeight": 1,
+        "letterSpacing": "normal",
+        "family": "Inter"
+      },
+      {
+        "role": "cuerpo-sm",
+        "size": 13,
+        "weight": 400,
+        "lineHeight": 1.4,
+        "letterSpacing": "-0.041px",
+        "family": "Inter"
+      },
+      {
+        "role": "cuerpo",
+        "size": 13,
+        "weight": 400,
+        "lineHeight": 1.4,
+        "letterSpacing": "normal",
+        "family": "Inter"
+      },
+      {
+        "role": "subtítulo",
+        "size": 13,
+        "weight": 500,
+        "lineHeight": 1.4,
+        "letterSpacing": "normal",
+        "family": "Inter"
+      },
+      {
+        "role": "título-sm",
+        "size": 16,
+        "weight": 500,
+        "lineHeight": 1.4,
+        "letterSpacing": "normal",
+        "family": "Inter"
+      },
+      {
+        "role": "título",
+        "size": 20,
+        "weight": 500,
+        "lineHeight": 1.35,
+        "letterSpacing": "-0.2px",
+        "family": "Inter"
+      },
+      {
+        "role": "título-lg",
+        "size": 24,
+        "weight": 500,
+        "lineHeight": 1.3,
+        "letterSpacing": "-0.3px",
+        "family": "Inter"
+      }
+    ],
+    "spacing": {
+      "density": "compact",
+      "baseUnit": "4px",
+      "maxWidth": "1680px",
+      "sectionGap": "32px",
+      "cardPadding": "12px 16px (las tarjetas de imagen van a sangre, sin padding)",
+      "elementGap": "12px"
+    },
+    "radii": [
+      {
+        "element": "Tarjeta de imagen / panel",
+        "value": "8px"
+      },
+      {
+        "element": "Chip de filtro y botones",
+        "value": "9999px"
+      },
+      {
+        "element": "Botón circular sobre imagen",
+        "value": "9999px"
+      },
+      {
+        "element": "Avatar",
+        "value": "50%"
+      }
+    ],
+    "elevation": "Casi plana. La profundidad se consigue con contornos de 1px, no con sombras difusas: las tarjetas y logos usan `0 1px 2px #0000000f, 0 0 0 1px #0000000d`; los controles oscuros sobre fotografía llevan un inset `0 0 0 1px #ffffff29` que los recorta contra la imagen; los botones píldora blancos usan una sombra triple muy fina `0 0 0 0.5px #00000014, 0 1px 1px -1px #00000033, 0 1px 2px #00000014`. El resto de la jerarquía es un escalón de superficie entre #ffffff y #f5f5f5.",
+    "components": [
+      {
+        "name": "Sidebar de navegación",
+        "role": "Índice permanente a la izquierda con secciones Browse y Resources",
+        "spec": "Fondo #ffffff, ancho fijo ~268px, epígrafes 13px/400 en #00000044, enlaces 13px/400 en #0000007c con padding 2px 14px 2px 0, el activo pasa a #0b0b0b con un punto de 4px a la derecha; sin fondos ni cajas, transición color 0.12s."
+      },
+      {
+        "name": "Chips de filtro",
+        "role": "Barra horizontal de categorías (All, Web, Interface…)",
+        "spec": "Píldoras de radio 9999px, padding 0 12px con altura ~28px, gap 4px; inactivo con fondo #00000010 y texto #0000007c, activo con fondo #0b0b0b y texto #ffffff; borde 1px transparente para evitar salto; hover anima background-color 0.18s."
+      },
+      {
+        "name": "Botón primario píldora",
+        "role": "CTA 'Sign up' del bloque de suscripción",
+        "spec": "Fondo #0b0b0b, texto #ffffff 13px/400 con tracking -0.041px, padding 0 12px, radio 9999px, borde 1px #0b0b0b, sin sombra; hover aclara ligeramente el fondo en 0.18s."
+      },
+      {
+        "name": "Botón secundario píldora",
+        "role": "'Log in' en la esquina superior izquierda",
+        "spec": "Fondo #ffffff, texto #0b0b0b 13px/400, padding 0 12px, radio 9999px, sin borde declarado y sombra hairline 0 0 0 0.5px #00000014 + 0 1px 2px #00000014."
+      },
+      {
+        "name": "Tarjeta del grid masonry",
+        "role": "Miniatura de cada pieza de inspiración",
+        "spec": "Imagen o vídeo a sangre sobre placeholder #f5f5f5, radio 8px, sin padding ni borde, gap de 12px entre celdas; al hover aparecen avatar del autor y botón circular, con transform 0.12s y opacity 0.18s."
+      },
+      {
+        "name": "Botón circular sobre imagen",
+        "role": "Acción de abrir enlace externo en la esquina de la tarjeta",
+        "spec": "Círculo de 28px, fondo #00000072, icono #ffffff, radio 9999px, inset 0 0 0 1px #ffffff29, sin padding; visible solo en hover mediante opacidad."
+      },
+      {
+        "name": "Lista de empleos",
+        "role": "Columna derecha con ofertas y logo cuadrado",
+        "spec": "Fila con logo de 32px en radio 8px y sombra hairline, título en #0b0b0b 13px/500 y compañía en #0000007c 13px/400, gap 12px, separador 1px #00000010, cierre con enlace 'See all jobs' y flecha alineada a la derecha."
+      },
+      {
+        "name": "Bloque patrocinado",
+        "role": "Módulo 'Sponsored' al pie del sidebar",
+        "spec": "Logo 32px radio 8px, etiqueta 'Sponsored' en #0000007c, copy 13px/400 en #0000007c, regla superior de 1px #00000010 y separación 32px del bloque siguiente; el único lugar donde se admite color saturado."
+      }
+    ],
+    "motion": "Todo con la misma curva cubic-bezier(0.2, …) y duraciones de dos valores: 0.12s para respuestas táctiles (transform, color, border-color) y 0.18s para cambios de superficie (background-color, opacity); un único fundido lento de 0.5s reservado a la aparición de imágenes al hacer scroll. Se anima la opacidad de los overlays de tarjeta y una escala mínima al pulsar; nunca se animan tamaños de tipografía, alturas de layout ni desplazamientos del grid.",
+    "layout": "Tres zonas fijas dentro de un contenedor de 1680px: sidebar de navegación a la izquierda (~268px), área central de contenido con cabecera de título + descripción y barra de chips, y columna derecha de ~285px con empleos y destacados. El cuerpo es un masonry de 3 columnas con gap uniforme de 12px y alturas libres, sin recortes forzados. Ritmo vertical de 32px entre bloques del sidebar y 12px dentro de cada grupo; todo alineado a la izquierda, sin centrados ni secciones a ancho completo.",
+    "imagery": "El contenido es 100% obra ajena: capturas de producto, vídeos de UI, 3D y fotografía de producto, con 143 imágenes por página y reproducción en bucle al hover. Sin filtros, viñetas ni superposiciones de color: la interfaz jamás tiñe la imagen y solo añade un avatar circular de 24px y un botón oscuro translúcido en las esquinas. El placeholder gris #f5f5f5 mantiene el ritmo del grid mientras carga. Los logos de empresa se presentan en cuadrados de 32px con radio 8px y contorno hairline.",
+    "dos": [
+      "Usar 13px/400 Inter como tamaño por defecto para casi todo y reservar el 16px/500 al título de la vista.",
+      "Construir la jerarquía con opacidades de negro (100%, 48%, 27%) en lugar de con más tamaños o negritas.",
+      "Mantener el radio en dos valores: 8px para superficies rectangulares y 9999px para cualquier control.",
+      "Dejar las imágenes a sangre sobre placeholder #f5f5f5 y respetar el gap de 12px del masonry.",
+      "Recortar los controles oscuros sobre fotografía con un inset blanco de 1px #ffffff29 para asegurar el contorno.",
+      "Limitar las sombras a contornos hairline de 1px; la profundidad se sugiere, no se dramatiza.",
+      "Animar solo color, opacidad y transform, con 0.12s o 0.18s y la misma curva."
+    ],
+    "donts": [
+      "No introducir una segunda familia tipográfica ni pesos por encima de 500.",
+      "No usar mayúsculas forzadas ni tracking positivo en epígrafes; 'Browse' va en caja baja al 27% de negro.",
+      "No aplicar color de marca a la interfaz: el violeta del bloque patrocinado es una excepción publicitaria.",
+      "No añadir sombras difusas, gradientes ni glassmorphism a tarjetas o paneles.",
+      "No superponer degradados, filtros ni etiquetas grandes sobre las miniaturas de terceros.",
+      "No ampliar el padding de las tarjetas ni separar el grid más de 12px: la densidad es parte del producto.",
+      "No centrar texto ni introducir titulares de tamaño editorial; el layout es un tablón, no una landing."
+    ],
+    "similar": [
+      {
+        "brand": "Mobbin",
+        "why": "Mismo esquema de tablón blanco con sidebar de filtros, tipografía pequeña neutra y protagonismo total de las capturas."
+      },
+      {
+        "brand": "Cosmos",
+        "why": "Grid masonry denso de gap mínimo y controles píldora translúcidos que aparecen al hover sobre la imagen."
+      },
+      {
+        "brand": "Land-book",
+        "why": "Directorio de inspiración con chips de categoría, tipografía de 13px y cromatismo delegado al contenido."
+      },
+      {
+        "brand": "Linear",
+        "why": "Inter en pesos 400/500, tracking ligeramente negativo, radios de 8px y sombras hairline en lugar de elevaciones blandas."
+      },
+      {
+        "brand": "Savee",
+        "why": "Interfaz casi invisible, retícula de imágenes a sangre y jerarquía resuelta solo con opacidad del negro."
+      }
+    ],
+    "agentPrompt": "Diseña un tablón de inspiración en tema claro: fondo #ffffff, placeholders #f5f5f5, texto #0b0b0b y jerarquía por opacidad (#0000007c secundario, #00000044 epígrafes), bordes hairline #00000010. Inter como única fuente: 13px/400 con line-height 1.4 para casi todo, tracking -0.041px en botones y chrome, y 16px/500 solo en el título de vista. Contenedor de 1680px con sidebar de enlaces a la izquierda, masonry de 3 columnas con gap 12px y columna derecha de empleos. Radios 8px en tarjetas y 9999px en chips, botones y avatares. Sombras de 1px, nunca difusas. Transiciones de 0.12s y 0.18s en color, opacidad y transform."
+  },
+  "generatedAt": "2026-09-20T20:30:50.389Z",
+  "model": "claude-opus-5",
+  "screenshotUrl": "/design-md/5275170f8fb45e6a.jpg?v=1789936250391",
+  "coverUrl": "/design-md/5275170f8fb45e6a-cover.jpg?v=1789936250391",
+  "scrollUrl": "/design-md/5275170f8fb45e6a-scroll.jpg?v=1789936250391"
+}

@@ -11,6 +11,8 @@ Una familia y ocho pasos. Un solo sitio: el bloque "Type: the one place" de `app
 
 Sin segunda fuente. Los títulos tienen su propio token (`--font-title`) para que una segunda familia sea una sola línea. Bricolage Grotesque, Archivo, Inter, Family y Söhne se retiraron. → [Satoshi es la única familia](../decisiones/2026-10-08-satoshi-es-la-unica-familia.md), [sin mono, menos bordes](../decisiones/2026-10-03-sin-mono-menos-bordes.md)
 
+**Prueba en curso (09-10-2026, solo en local, rama `polish-morph`).** Söhne de Klim para texto e interfaz (`--font-sans`), con los títulos en Satoshi (`--font-title`), para ver la propuesta de Andoni antes de la reunión del 14. Los ficheros son los de prueba de Klim (Test Font Licence: solo evaluación interna, nunca se publican ni entran en git; `app/fonts/soehne-test/` está ignorada) y traen 68 glifos: A-Z, a-z, 0-9, coma, punto, guion y Öö. Por eso la reserva de `--font-sans` es `system-ui` (SF Pro en Mac) y no Satoshi: tildes, ñ, ¿¡ y casi toda la puntuación salen de la reserva, y SF Pro se parece a Söhne mucho más que Satoshi. La licencia comercial trae el latín completo; si se compra, esta nota desaparece y la cadena vuelve a su forma normal.
+
 **Los ficheros de Satoshi no están en git.** Su licencia (ITF Free Font License) deja alojarla en nuestra web y meterla en nuestras apps, pero no compartirla en un repositorio público, y este lo es. `scripts/fetch-fonts.mjs` (`npm run fonts`, y solo antes de `dev` y `build`) descarga de Fontshare los ficheros oficiales: las variables normal e itálica para la app, las dos TTF estáticas para la imagen OG y la variable de la extensión. No se recortan ni se convierten, y Satoshi nunca se ofrece como fuente elegible a los usuarios (marca, DESIGN.md, plantillas).
 
 ## Escala

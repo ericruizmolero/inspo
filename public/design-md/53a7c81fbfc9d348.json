@@ -1,0 +1,306 @@
+{
+  "url": "https://bymonolog.com",
+  "markdown": "# MONOLOG — DESIGN.md\n> humo nocturno con grano analógico\n\n**Tema:** oscuro  \n**Origen:** https://bymonolog.com/ · 2026-09-20\n\nLas medidas de origen están normalizadas; los roles y las recomendaciones son interpretados.\n\nMONOLOG se presenta como un estudio que habla bajo y pisa fuerte: casi toda la superficie es Obsidiana #080807 y Negro Telón #000000, cubierta por un vídeo atmosférico desenfocado con trama de puntos que aporta grano analógico. Sobre ese fondo, el texto en Hueso #e8e8e3 aparece en Khteka, una grotesca neutra que solo usa dos pesos: 500 para todo lo que se lee y 700 para lo que se grita. El contraste jerárquico no viene del color sino de la escala: párrafos de 17,75px centrados y estrechos frente a un wordmark de 139,5px con tracking de -1,59px que sangra fuera del viewport. Los grises cálidos (#938f8a, #6b645c, #524d47) degradan la información secundaria sin romper la monocromía, y los bordes #393632 dibujan estructura donde no hay sombras. Suisse Mono aparece en micro-etiquetas de 10,3px. El único golpe de luz es el botón «Start a project»: rectángulo Hueso con radio de 2,4px y flecha diagonal en negativo. Los modales invierten todo a Lino #d1d1c7.\n\n## Colores\n\n| Nombre | Valor | Grupo | Rol |\n|--------|-------|-------|-----|\n| Negro Telón | `#000000` | neutro | Fondo de los bloques de vídeo y media a sangre, donde se busca negro absoluto sin tinte. |\n| Obsidiana | `#080807` | marca | Fondo dominante del sitio y color de texto sobre las superficies claras invertidas. |\n| Carbón Tarjeta | `#181715` | neutro | Superficie elevada: tarjetas, filas de proceso y paneles que necesitan despegarse del fondo. |\n| Grafito Borde | `#393632` | neutro | Filete de 1,5px que delimita tarjetas, separadores y botones secundarios en modo oscuro. |\n| Topo Apagado | `#524d47` | neutro | Texto terciario, numeración de listas y bordes de mayor contraste en estados hover. |\n| Ceniza Tibia | `#6b645c` | neutro | Párrafos de apoyo y descripciones de valores, un escalón por debajo del cuerpo principal. |\n| Piedra Cálida | `#938f8a` | neutro | Texto atenuado y enlaces en reposo, que aclaran a Hueso al pasar el cursor. |\n| Lino | `#d1d1c7` | acento | Superficie invertida de los modales y del wordmark gigante del hero sobre fondo oscuro. |\n| Arena | `#bfbfb1` | acento | Fondo del botón primario y de los bordes en las secciones de tema claro. |\n| Hueso | `#e8e8e3` | marca | Color de texto principal, logotipo y fondo del CTA «Start a project». |\n| Velo Claro | `#e8e8e31a` | neutro | Veladura al 10% para hairlines, fondos de chip y divisores sobre imagen. |\n\n## Tipografía\n\n### Khteka — display\nEs la voz única del sitio: titula, rotula y compone el cuerpo. La decisión característica es el binarismo de pesos —500 para absolutamente todo lo legible y 700 solo para titulares— sin cursivas ni versalitas. El tracking siempre es negativo y se aprieta a medida que crece el tamaño.\n- **Sustituto:** Arial, Helvetica Neue, sans-serif\n- **Pesos:** 500, 700\n- **Tamaños:** 10,3-139,5px · 11 valores\n- **Interlineado:** 0.9 en display, 1.1 en titulares, 1.3 en texto\n- **Tracking:** -1.59px a -0.1575px (aprox. -0.01em constante)\n\n### Suisse Mono — mono\nReservada a micro-etiquetas: índices de sección, contadores, créditos y marcas de tiempo. Aparece en tamaños minúsculos (10,3px) y en Piedra Cálida, funcionando como anotación técnica frente a la tipografía principal.\n- **Sustituto:** ui-monospace, SFMono-Regular, Menlo, monospace\n- **Pesos:** 400, 500\n- **Tamaños:** 7,5-11,8px · 3 valores\n- **Interlineado:** 1.0-1.3\n- **Tracking:** normal\n\n### Animo — interfaz\nFuente terciaria casi testimonial: solo se detecta en cuatro nodos, probablemente el símbolo del globo y algún glifo decorativo del logotipo. No debe usarse para texto corrido.\n- **Sustituto:** Arial, sans-serif\n- **Pesos:** 400\n- **Tamaños:** uso puntual, 4 apariciones\n- **Interlineado:** 1.0\n- **Tracking:** normal\n\n### Escala tipográfica\n\n| Rol | Familia | Peso | Tamaño | Interlineado | Tracking |\n|-----|---------|------|--------|--------------|----------|\n| leyenda | Suisse Mono | 500 | 10.3px | 1 | normal |\n| cuerpo-sm | Khteka | 500 | 15.75px | 1.3 | -0.1575px |\n| cuerpo | Khteka | 500 | 17.75px | 1.3 | -0.1775px |\n| subtítulo | Khteka | 500 | 19.75px | 1.3 | -0.1775px |\n| título-sm | Khteka | 700 | 23.75px | 1.1 | -0.35625px |\n| título | Khteka | 700 | 45px | 1.1 | -1.35px |\n| título-lg | Khteka | 700 | 72.5px | 0.9 | -1.59px |\n| display | Khteka | 700 | 139.5px | 0.9 | -1.59px |\n\n## Espaciado y layout\n\n**Densidad:** cómoda\n\n- **Unidad base:** 4px (gutter de 16px, escala fluida en clamp de 6 a 64px)\n- **Ancho máximo de página:** 1600px de contenedor con margen lateral fluido de 12 a 28px; bloques de texto limitados a 612px\n- **Separación entre secciones:** clamp(64px, 7vw, 112px) estándar; 88-160px en secciones grandes y hasta 224px en el tope de página\n- **Padding de tarjeta:** 26px en tarjetas estándar, 76px en paneles y modales grandes\n- **Separación entre elementos:** 11,75px entre elementos próximos, 16px en rejillas, 23,5-31,5px entre bloques\n\n### Radios de borde\n\n- **Botones, chips y campos:** 2.4px\n- **Tarjetas y paneles multimedia:** 16px (--radius--main)\n- **Etiquetas y toggles redondeados:** 1440px (pill, 100vw)\n- **Micro-elementos e iconos:** 5.6px (--radius--medium, .35rem)\n- **Imágenes a sangre y wordmark:** 0px\n\n## Elevación\n\nNo hay sombras: el array de box-shadow está vacío. La profundidad se construye por escalones de superficie y por filetes. El fondo Obsidiana #080807 sostiene tarjetas en Carbón Tarjeta #181715, y sobre ellas se dibuja un borde de 1,5px (--border-width--main: .094rem) en Grafito Borde #393632 o un velo blanco al 10% (#e8e8e31a). Los overlays usan rgba(0,0,0,0.3) para oscurecer vídeo bajo texto. Los modales rompen la jerarquía invirtiendo el tema a Lino #d1d1c7 con texto Obsidiana, lo que genera más separación que cualquier sombra.\n\n## Componentes\n\n### Barra de navegación flotante\n**Rol:** Navegación principal fija sobre el hero\n\nFondo transparente sobre el vídeo, altura ~84px, logotipo Hueso #e8e8e3 a la izquierda, enlaces centrados en Khteka 500 de 15,75px con padding 8px 7,75px y color #e8e8e3; el hover atenúa a #938f8a con transición color 0.25s ease. Sin borde inferior ni fondo sólido.\n\n### Botón primario\n**Rol:** CTA «Start a project»\n\nFondo Hueso #e8e8e3, texto Obsidiana #080807, Khteka 500 de 15,75px con tracking -0.1575px, padding 3,94px 3,94px 3,94px 7,75px, radio 2,4px, sin borde ni sombra, y cuadro de flecha diagonal ↗ en negativo (fondo #080807, icono #e8e8e3) pegado al lado derecho. En hover el bloque de flecha se desplaza con transform 0.35s.\n\n### Botón secundario\n**Rol:** Acción de baja prioridad en fondo oscuro\n\nFondo transparente, borde de 1,5px en #393632, texto #e8e8e3, Khteka 500 de 15,75px, padding 8px 16px, radio 2,4px. Hover: fondo se rellena a #e8e8e3 y el texto invierte a #080807 con background-color 0.65s cubic-bezier(0.16,1,0.3,1).\n\n### Toggle de sonido\n**Rol:** Silenciar/activar el vídeo de fondo\n\nCuadrado de 34px, fondo Carbón Tarjeta #181715, icono de altavoz tachado en #e8e8e3, radio 2,4px, borde ninguno; situado a la izquierda del CTA con gap de 11,75px.\n\n### Tarjeta de proyecto\n**Rol:** Contenedor de caso de estudio en la rejilla de trabajo\n\nFondo #181715 con radio 16px, padding 26px, imagen o vídeo recortado dentro con el mismo radio, título Khteka 700 de 23,75px en #e8e8e3 y metadatos en Suisse Mono 10,3px en #938f8a. Hover: la media escala con transform 0.65s cubic-bezier(0.16,1,0.3,1) sin cambiar el marco.\n\n### Modal invertido\n**Rol:** Panel de información (About, Clientes)\n\nSuperficie Lino #d1d1c7 a pantalla casi completa, texto y titulares en Obsidiana #080807, h2 en Khteka 700 de 23,75px con tracking -0.35625px, padding interior 76px, botón «Close / ESC» en Khteka 500 de 17,75px sin borde en la esquina superior derecha. Entra con transform 0.65s y opacity 0.3s.\n\n### Wordmark de sangrado\n**Rol:** Firma tipográfica gigante al pie del hero\n\n«MONOLOG» en Khteka 700 a 139,5px (fluido hasta 8rem), color #d1d1c7 al ~70% sobre el vídeo, line-height 0.9, tracking -1,59px, recortado por los bordes del viewport; el glifo «O» sustituido por la marca gráfica.\n\n### Enlace de texto atenuado\n**Rol:** Enlaces en línea y de contacto\n\nKhteka 500 de 17,75px en Piedra Cálida #938f8a, tracking -0.1775px, sin subrayado en reposo; en hover pasa a #e8e8e3 y aparece un filete inferior de 1,5px en #524d47, con color 0.25s ease.\n\n## Movimiento\n\nTodo el movimiento se apoya en dos curvas: un ease-out muy largo, cubic-bezier(0.16,1,0.3,1), a 0.65s para transform y background-color —revelados al hacer scroll, desplazamientos de imagen, rellenos de botón— y una versión corta de 0.35s con cubic-bezier(0.48,…) para microinteracciones como la flecha del CTA. El color cambia en 0.25s ease y las opacidades en 0.3s. Hay animaciones ligadas al scroll (parallax del vídeo, entradas por máscara y desplazamiento vertical del texto). No se animan radios, bordes ni tamaños tipográficos, y nunca hay rebote ni easing elástico.\n\n## Layout\n\nRejilla de 12 columnas con gutter de 1rem, contenedor máximo de 1600px y margen lateral fluido de 12 a 28px. El hero es una pieza a pantalla completa: vídeo a sangre, navegación flotante superior, un bloque de texto centrado y estrecho (máx. 612px) en el centro óptico, y el wordmark recortado ocupando el tercio inferior. A partir de ahí el ritmo alterna secciones a sangre con bloques contenidos, separadas por clamp(64px, 7vw, 112px) y hasta 160px en los cambios de capítulo. Página muy larga (más de 13.000px) con alineación a izquierda por defecto y centrado reservado a los momentos manifiesto.\n\n## Imagen\n\nPredomina el vídeo ambiental: planos desenfocados, oscuros y cálidos, cubiertos por una trama de semitono y grano que los convierte en textura más que en imagen. Las capturas de proyecto llegan recortadas con radio de 16px dentro de tarjetas Carbón, tratadas con poca saturación para no romper la monocromía. La iconografía es lineal, de trazo fino en Hueso (globo de wireframe, flechas diagonales). 44 imágenes en toda la página: densidad media, siempre supeditadas a la tipografía.\n\n## Qué hacer y qué no\n\n### Sí\n- Mantén el 90% de la página en Obsidiana #080807 y Carbón #181715, y reserva Hueso #e8e8e3 para texto y un único CTA.\n- Usa solo dos pesos de Khteka: 500 para todo el texto y 700 para titulares; nada intermedio.\n- Aprieta el tracking a medida que sube el tamaño: -0.1575px en 15,75px, -1,35px en 45px, -1,59px por encima de 72px.\n- Construye profundidad con escalones de superficie y filetes de 1,5px en #393632 o velo #e8e8e31a, nunca con box-shadow.\n- Rotula datos técnicos (índices, años, categorías) en Suisse Mono a 10,3px y color #938f8a.\n- Anima con transform y background-color a 0.65s cubic-bezier(0.16,1,0.3,1); reserva 0.25s ease para los cambios de color.\n- Invierte a Lino #d1d1c7 con texto #080807 cuando abras un modal o una sección-manifiesto para marcar el corte.\n\n### No\n- No introduzcas color cromático (azules, verdes, rojos): la paleta es gris cálido monocroma de extremo a extremo.\n- No apliques sombras ni glows; el sistema no tiene ninguna sombra declarada.\n- No redondees los botones más de 2,4px ni las tarjetas más de 16px; nada de pills salvo chips y toggles.\n- No uses pesos 400 ni 600 de Khteka, ni cursivas o versalitas.\n- No pongas texto de cuerpo sobre el vídeo sin una veladura rgba(0,0,0,0.3) que garantice la legibilidad.\n- No centres párrafos largos fuera del hero: el cuerpo se alinea a la izquierda y se limita a 612px.\n- No recortes el wordmark gigante para que quepa; su gracia es sangrar fuera del viewport.\n\n## Marcas afines\n\n- **Basement Studio** — Estudio digital con fondo casi negro, grotesca neutra en dos pesos y tipografía gigante recortada como firma.\n- **Locomotive** — Comparte la mezcla de vídeo ambiental a pantalla completa, easing largo ligado al scroll y paleta monocroma cálida.\n- **Obys Agency** — Misma lógica de micro-etiquetas en monoespaciada sobre fondo oscuro y jerarquía basada en salto de escala, no en color.\n- **Studio Freight** — Interfaz oscura sin sombras, profundidad por escalones de superficie y transiciones cubic-bezier muy suaves.\n- **Uncommon** — Manifiestos tipográficos centrados, contraste beige-negro y momentos de inversión total de tema como recurso narrativo.\n\n## Prompt para agentes\n\nDiseña un sitio de estudio creativo en modo oscuro monocromo cálido: fondo #080807, superficies #181715, texto #e8e8e3, atenuados #938f8a y #6b645c, bordes de 1,5px en #393632 y superficies invertidas en #d1d1c7. Tipografía única Khteka (fallback Arial) con solo dos pesos —500 para cuerpo, 700 para titulares— escala de 10,3 a 139,5px y tracking siempre negativo (-0.01em, hasta -1,59px en display); Suisse Mono a 10,3px para índices y metadatos. Radios de 2,4px en botones y 16px en tarjetas, sin sombras. Hero con vídeo desenfocado granulado, texto centrado a 612px y wordmark gigante sangrando por los bordes. Anima transform y fondo a 0.65s cubic-bezier(0.16,1,0.3,1).\n",
+  "spec": {
+    "brand": "MONOLOG",
+    "tagline": "humo nocturno con grano analógico",
+    "theme": "dark",
+    "description": "MONOLOG se presenta como un estudio que habla bajo y pisa fuerte: casi toda la superficie es Obsidiana #080807 y Negro Telón #000000, cubierta por un vídeo atmosférico desenfocado con trama de puntos que aporta grano analógico. Sobre ese fondo, el texto en Hueso #e8e8e3 aparece en Khteka, una grotesca neutra que solo usa dos pesos: 500 para todo lo que se lee y 700 para lo que se grita. El contraste jerárquico no viene del color sino de la escala: párrafos de 17,75px centrados y estrechos frente a un wordmark de 139,5px con tracking de -1,59px que sangra fuera del viewport. Los grises cálidos (#938f8a, #6b645c, #524d47) degradan la información secundaria sin romper la monocromía, y los bordes #393632 dibujan estructura donde no hay sombras. Suisse Mono aparece en micro-etiquetas de 10,3px. El único golpe de luz es el botón «Start a project»: rectángulo Hueso con radio de 2,4px y flecha diagonal en negativo. Los modales invierten todo a Lino #d1d1c7.",
+    "colors": [
+      {
+        "name": "Negro Telón",
+        "hex": "#000000",
+        "group": "neutral",
+        "role": "Fondo de los bloques de vídeo y media a sangre, donde se busca negro absoluto sin tinte."
+      },
+      {
+        "name": "Obsidiana",
+        "hex": "#080807",
+        "group": "brand",
+        "role": "Fondo dominante del sitio y color de texto sobre las superficies claras invertidas."
+      },
+      {
+        "name": "Carbón Tarjeta",
+        "hex": "#181715",
+        "group": "neutral",
+        "role": "Superficie elevada: tarjetas, filas de proceso y paneles que necesitan despegarse del fondo."
+      },
+      {
+        "name": "Grafito Borde",
+        "hex": "#393632",
+        "group": "neutral",
+        "role": "Filete de 1,5px que delimita tarjetas, separadores y botones secundarios en modo oscuro."
+      },
+      {
+        "name": "Topo Apagado",
+        "hex": "#524d47",
+        "group": "neutral",
+        "role": "Texto terciario, numeración de listas y bordes de mayor contraste en estados hover."
+      },
+      {
+        "name": "Ceniza Tibia",
+        "hex": "#6b645c",
+        "group": "neutral",
+        "role": "Párrafos de apoyo y descripciones de valores, un escalón por debajo del cuerpo principal."
+      },
+      {
+        "name": "Piedra Cálida",
+        "hex": "#938f8a",
+        "group": "neutral",
+        "role": "Texto atenuado y enlaces en reposo, que aclaran a Hueso al pasar el cursor."
+      },
+      {
+        "name": "Lino",
+        "hex": "#d1d1c7",
+        "group": "accent",
+        "role": "Superficie invertida de los modales y del wordmark gigante del hero sobre fondo oscuro."
+      },
+      {
+        "name": "Arena",
+        "hex": "#bfbfb1",
+        "group": "accent",
+        "role": "Fondo del botón primario y de los bordes en las secciones de tema claro."
+      },
+      {
+        "name": "Hueso",
+        "hex": "#e8e8e3",
+        "group": "brand",
+        "role": "Color de texto principal, logotipo y fondo del CTA «Start a project»."
+      },
+      {
+        "name": "Velo Claro",
+        "hex": "#e8e8e31a",
+        "group": "neutral",
+        "role": "Veladura al 10% para hairlines, fondos de chip y divisores sobre imagen."
+      }
+    ],
+    "fonts": [
+      {
+        "family": "Khteka",
+        "role": "display",
+        "weights": [
+          500,
+          700
+        ],
+        "sizes": "10,3-139,5px · 11 valores",
+        "lineHeight": "0.9 en display, 1.1 en titulares, 1.3 en texto",
+        "letterSpacing": "-1.59px a -0.1575px (aprox. -0.01em constante)",
+        "fallback": "Arial, Helvetica Neue, sans-serif",
+        "usage": "Es la voz única del sitio: titula, rotula y compone el cuerpo. La decisión característica es el binarismo de pesos —500 para absolutamente todo lo legible y 700 solo para titulares— sin cursivas ni versalitas. El tracking siempre es negativo y se aprieta a medida que crece el tamaño."
+      },
+      {
+        "family": "Suisse Mono",
+        "role": "mono",
+        "weights": [
+          400,
+          500
+        ],
+        "sizes": "7,5-11,8px · 3 valores",
+        "lineHeight": "1.0-1.3",
+        "letterSpacing": "normal",
+        "fallback": "ui-monospace, SFMono-Regular, Menlo, monospace",
+        "usage": "Reservada a micro-etiquetas: índices de sección, contadores, créditos y marcas de tiempo. Aparece en tamaños minúsculos (10,3px) y en Piedra Cálida, funcionando como anotación técnica frente a la tipografía principal."
+      },
+      {
+        "family": "Animo",
+        "role": "ui",
+        "weights": [
+          400
+        ],
+        "sizes": "uso puntual, 4 apariciones",
+        "lineHeight": "1.0",
+        "letterSpacing": "normal",
+        "fallback": "Arial, sans-serif",
+        "usage": "Fuente terciaria casi testimonial: solo se detecta en cuatro nodos, probablemente el símbolo del globo y algún glifo decorativo del logotipo. No debe usarse para texto corrido."
+      }
+    ],
+    "typeScale": [
+      {
+        "role": "leyenda",
+        "size": 10.3,
+        "weight": 500,
+        "lineHeight": 1,
+        "letterSpacing": "normal",
+        "family": "Suisse Mono"
+      },
+      {
+        "role": "cuerpo-sm",
+        "size": 15.75,
+        "weight": 500,
+        "lineHeight": 1.3,
+        "letterSpacing": "-0.1575px",
+        "family": "Khteka"
+      },
+      {
+        "role": "cuerpo",
+        "size": 17.75,
+        "weight": 500,
+        "lineHeight": 1.3,
+        "letterSpacing": "-0.1775px",
+        "family": "Khteka"
+      },
+      {
+        "role": "subtítulo",
+        "size": 19.75,
+        "weight": 500,
+        "lineHeight": 1.3,
+        "letterSpacing": "-0.1775px",
+        "family": "Khteka"
+      },
+      {
+        "role": "título-sm",
+        "size": 23.75,
+        "weight": 700,
+        "lineHeight": 1.1,
+        "letterSpacing": "-0.35625px",
+        "family": "Khteka"
+      },
+      {
+        "role": "título",
+        "size": 45,
+        "weight": 700,
+        "lineHeight": 1.1,
+        "letterSpacing": "-1.35px",
+        "family": "Khteka"
+      },
+      {
+        "role": "título-lg",
+        "size": 72.5,
+        "weight": 700,
+        "lineHeight": 0.9,
+        "letterSpacing": "-1.59px",
+        "family": "Khteka"
+      },
+      {
+        "role": "display",
+        "size": 139.5,
+        "weight": 700,
+        "lineHeight": 0.9,
+        "letterSpacing": "-1.59px",
+        "family": "Khteka"
+      }
+    ],
+    "spacing": {
+      "density": "comfortable",
+      "baseUnit": "4px (gutter de 16px, escala fluida en clamp de 6 a 64px)",
+      "maxWidth": "1600px de contenedor con margen lateral fluido de 12 a 28px; bloques de texto limitados a 612px",
+      "sectionGap": "clamp(64px, 7vw, 112px) estándar; 88-160px en secciones grandes y hasta 224px en el tope de página",
+      "cardPadding": "26px en tarjetas estándar, 76px en paneles y modales grandes",
+      "elementGap": "11,75px entre elementos próximos, 16px en rejillas, 23,5-31,5px entre bloques"
+    },
+    "radii": [
+      {
+        "element": "Botones, chips y campos",
+        "value": "2.4px"
+      },
+      {
+        "element": "Tarjetas y paneles multimedia",
+        "value": "16px (--radius--main)"
+      },
+      {
+        "element": "Etiquetas y toggles redondeados",
+        "value": "1440px (pill, 100vw)"
+      },
+      {
+        "element": "Micro-elementos e iconos",
+        "value": "5.6px (--radius--medium, .35rem)"
+      },
+      {
+        "element": "Imágenes a sangre y wordmark",
+        "value": "0px"
+      }
+    ],
+    "elevation": "No hay sombras: el array de box-shadow está vacío. La profundidad se construye por escalones de superficie y por filetes. El fondo Obsidiana #080807 sostiene tarjetas en Carbón Tarjeta #181715, y sobre ellas se dibuja un borde de 1,5px (--border-width--main: .094rem) en Grafito Borde #393632 o un velo blanco al 10% (#e8e8e31a). Los overlays usan rgba(0,0,0,0.3) para oscurecer vídeo bajo texto. Los modales rompen la jerarquía invirtiendo el tema a Lino #d1d1c7 con texto Obsidiana, lo que genera más separación que cualquier sombra.",
+    "components": [
+      {
+        "name": "Barra de navegación flotante",
+        "role": "Navegación principal fija sobre el hero",
+        "spec": "Fondo transparente sobre el vídeo, altura ~84px, logotipo Hueso #e8e8e3 a la izquierda, enlaces centrados en Khteka 500 de 15,75px con padding 8px 7,75px y color #e8e8e3; el hover atenúa a #938f8a con transición color 0.25s ease. Sin borde inferior ni fondo sólido."
+      },
+      {
+        "name": "Botón primario",
+        "role": "CTA «Start a project»",
+        "spec": "Fondo Hueso #e8e8e3, texto Obsidiana #080807, Khteka 500 de 15,75px con tracking -0.1575px, padding 3,94px 3,94px 3,94px 7,75px, radio 2,4px, sin borde ni sombra, y cuadro de flecha diagonal ↗ en negativo (fondo #080807, icono #e8e8e3) pegado al lado derecho. En hover el bloque de flecha se desplaza con transform 0.35s."
+      },
+      {
+        "name": "Botón secundario",
+        "role": "Acción de baja prioridad en fondo oscuro",
+        "spec": "Fondo transparente, borde de 1,5px en #393632, texto #e8e8e3, Khteka 500 de 15,75px, padding 8px 16px, radio 2,4px. Hover: fondo se rellena a #e8e8e3 y el texto invierte a #080807 con background-color 0.65s cubic-bezier(0.16,1,0.3,1)."
+      },
+      {
+        "name": "Toggle de sonido",
+        "role": "Silenciar/activar el vídeo de fondo",
+        "spec": "Cuadrado de 34px, fondo Carbón Tarjeta #181715, icono de altavoz tachado en #e8e8e3, radio 2,4px, borde ninguno; situado a la izquierda del CTA con gap de 11,75px."
+      },
+      {
+        "name": "Tarjeta de proyecto",
+        "role": "Contenedor de caso de estudio en la rejilla de trabajo",
+        "spec": "Fondo #181715 con radio 16px, padding 26px, imagen o vídeo recortado dentro con el mismo radio, título Khteka 700 de 23,75px en #e8e8e3 y metadatos en Suisse Mono 10,3px en #938f8a. Hover: la media escala con transform 0.65s cubic-bezier(0.16,1,0.3,1) sin cambiar el marco."
+      },
+      {
+        "name": "Modal invertido",
+        "role": "Panel de información (About, Clientes)",
+        "spec": "Superficie Lino #d1d1c7 a pantalla casi completa, texto y titulares en Obsidiana #080807, h2 en Khteka 700 de 23,75px con tracking -0.35625px, padding interior 76px, botón «Close / ESC» en Khteka 500 de 17,75px sin borde en la esquina superior derecha. Entra con transform 0.65s y opacity 0.3s."
+      },
+      {
+        "name": "Wordmark de sangrado",
+        "role": "Firma tipográfica gigante al pie del hero",
+        "spec": "«MONOLOG» en Khteka 700 a 139,5px (fluido hasta 8rem), color #d1d1c7 al ~70% sobre el vídeo, line-height 0.9, tracking -1,59px, recortado por los bordes del viewport; el glifo «O» sustituido por la marca gráfica."
+      },
+      {
+        "name": "Enlace de texto atenuado",
+        "role": "Enlaces en línea y de contacto",
+        "spec": "Khteka 500 de 17,75px en Piedra Cálida #938f8a, tracking -0.1775px, sin subrayado en reposo; en hover pasa a #e8e8e3 y aparece un filete inferior de 1,5px en #524d47, con color 0.25s ease."
+      }
+    ],
+    "motion": "Todo el movimiento se apoya en dos curvas: un ease-out muy largo, cubic-bezier(0.16,1,0.3,1), a 0.65s para transform y background-color —revelados al hacer scroll, desplazamientos de imagen, rellenos de botón— y una versión corta de 0.35s con cubic-bezier(0.48,…) para microinteracciones como la flecha del CTA. El color cambia en 0.25s ease y las opacidades en 0.3s. Hay animaciones ligadas al scroll (parallax del vídeo, entradas por máscara y desplazamiento vertical del texto). No se animan radios, bordes ni tamaños tipográficos, y nunca hay rebote ni easing elástico.",
+    "layout": "Rejilla de 12 columnas con gutter de 1rem, contenedor máximo de 1600px y margen lateral fluido de 12 a 28px. El hero es una pieza a pantalla completa: vídeo a sangre, navegación flotante superior, un bloque de texto centrado y estrecho (máx. 612px) en el centro óptico, y el wordmark recortado ocupando el tercio inferior. A partir de ahí el ritmo alterna secciones a sangre con bloques contenidos, separadas por clamp(64px, 7vw, 112px) y hasta 160px en los cambios de capítulo. Página muy larga (más de 13.000px) con alineación a izquierda por defecto y centrado reservado a los momentos manifiesto.",
+    "imagery": "Predomina el vídeo ambiental: planos desenfocados, oscuros y cálidos, cubiertos por una trama de semitono y grano que los convierte en textura más que en imagen. Las capturas de proyecto llegan recortadas con radio de 16px dentro de tarjetas Carbón, tratadas con poca saturación para no romper la monocromía. La iconografía es lineal, de trazo fino en Hueso (globo de wireframe, flechas diagonales). 44 imágenes en toda la página: densidad media, siempre supeditadas a la tipografía.",
+    "dos": [
+      "Mantén el 90% de la página en Obsidiana #080807 y Carbón #181715, y reserva Hueso #e8e8e3 para texto y un único CTA.",
+      "Usa solo dos pesos de Khteka: 500 para todo el texto y 700 para titulares; nada intermedio.",
+      "Aprieta el tracking a medida que sube el tamaño: -0.1575px en 15,75px, -1,35px en 45px, -1,59px por encima de 72px.",
+      "Construye profundidad con escalones de superficie y filetes de 1,5px en #393632 o velo #e8e8e31a, nunca con box-shadow.",
+      "Rotula datos técnicos (índices, años, categorías) en Suisse Mono a 10,3px y color #938f8a.",
+      "Anima con transform y background-color a 0.65s cubic-bezier(0.16,1,0.3,1); reserva 0.25s ease para los cambios de color.",
+      "Invierte a Lino #d1d1c7 con texto #080807 cuando abras un modal o una sección-manifiesto para marcar el corte."
+    ],
+    "donts": [
+      "No introduzcas color cromático (azules, verdes, rojos): la paleta es gris cálido monocroma de extremo a extremo.",
+      "No apliques sombras ni glows; el sistema no tiene ninguna sombra declarada.",
+      "No redondees los botones más de 2,4px ni las tarjetas más de 16px; nada de pills salvo chips y toggles.",
+      "No uses pesos 400 ni 600 de Khteka, ni cursivas o versalitas.",
+      "No pongas texto de cuerpo sobre el vídeo sin una veladura rgba(0,0,0,0.3) que garantice la legibilidad.",
+      "No centres párrafos largos fuera del hero: el cuerpo se alinea a la izquierda y se limita a 612px.",
+      "No recortes el wordmark gigante para que quepa; su gracia es sangrar fuera del viewport."
+    ],
+    "similar": [
+      {
+        "brand": "Basement Studio",
+        "why": "Estudio digital con fondo casi negro, grotesca neutra en dos pesos y tipografía gigante recortada como firma."
+      },
+      {
+        "brand": "Locomotive",
+        "why": "Comparte la mezcla de vídeo ambiental a pantalla completa, easing largo ligado al scroll y paleta monocroma cálida."
+      },
+      {
+        "brand": "Obys Agency",
+        "why": "Misma lógica de micro-etiquetas en monoespaciada sobre fondo oscuro y jerarquía basada en salto de escala, no en color."
+      },
+      {
+        "brand": "Studio Freight",
+        "why": "Interfaz oscura sin sombras, profundidad por escalones de superficie y transiciones cubic-bezier muy suaves."
+      },
+      {
+        "brand": "Uncommon",
+        "why": "Manifiestos tipográficos centrados, contraste beige-negro y momentos de inversión total de tema como recurso narrativo."
+      }
+    ],
+    "agentPrompt": "Diseña un sitio de estudio creativo en modo oscuro monocromo cálido: fondo #080807, superficies #181715, texto #e8e8e3, atenuados #938f8a y #6b645c, bordes de 1,5px en #393632 y superficies invertidas en #d1d1c7. Tipografía única Khteka (fallback Arial) con solo dos pesos —500 para cuerpo, 700 para titulares— escala de 10,3 a 139,5px y tracking siempre negativo (-0.01em, hasta -1,59px en display); Suisse Mono a 10,3px para índices y metadatos. Radios de 2,4px en botones y 16px en tarjetas, sin sombras. Hero con vídeo desenfocado granulado, texto centrado a 612px y wordmark gigante sangrando por los bordes. Anima transform y fondo a 0.65s cubic-bezier(0.16,1,0.3,1)."
+  },
+  "generatedAt": "2026-09-20T22:12:02.873Z",
+  "model": "claude-opus-5",
+  "screenshotUrl": "/design-md/53a7c81fbfc9d348.jpg?v=1789942322879",
+  "coverUrl": "/design-md/53a7c81fbfc9d348-cover.jpg?v=1789942322878",
+  "scrollUrl": "/design-md/53a7c81fbfc9d348-scroll.jpg?v=1789942322879"
+}

@@ -1,0 +1,300 @@
+{
+  "url": "https://www.osmo.supply",
+  "markdown": "# Osmo — DESIGN.md\n> taller gris claro con chispa eléctrica\n\n**Tema:** claro  \n**Origen:** https://www.osmo.supply/ · 2026-09-20\n\nLas medidas de origen están normalizadas; los roles y las recomendaciones son interpretados.\n\nOsmo se lee como un taller de desarrollo creativo: lienzo gris papel #f4f4f4, tinta casi negra #201d1d y una tipografía que hace todo el trabajo. El titular usa Haffer XH a 112px con line-height 1:1 y un tracking brutalmente negativo (-6.72px, es decir -0,06em) que aprieta 'Dev Toolkit ✳ Built to Flex' hasta convertirlo en un bloque compacto; en el escalón mayor llega a 150px. Todo el texto va en peso 400: no hay negritas, la jerarquía es puramente de tamaño y de espacio. Haffer VF sostiene el cuerpo (22px descriptivo, 16px UI, 13px en etiquetas de tarjeta) y Haffer Mono aparece en versalitas de 11px para el ticker verde eléctrico #a1ff62 y los microtítulos. La barra de navegación es una píldora oscura #151313 flotante con botón 'Join' en verde eléctrico. El morado #6840ff y el coral #f84131 salen en dosis mínimas: un asterisco, un dato. Radios diminutos (2-5px) conviven con píldoras de 48px; sin sombras, la profundidad viene del contraste claro/oscuro.\n\n## Colores\n\n| Nombre | Valor | Grupo | Rol |\n|--------|-------|-------|-----|\n| Obsidiana | `#151313` | neutro | Negro más profundo: barra de navegación flotante, footer y fondos de sección a pantalla completa. |\n| Tinta Osmo | `#201d1d` | marca | Color de texto principal sobre el gris y fondo por defecto de tarjetas y paneles oscuros. |\n| Grafito | `#2a2727` | neutro | Superficie elevada dentro de fondos oscuros: paneles del mega-menú y banners de navegación. |\n| Filete Carbón | `#312e2e` | neutro | Borde de 1px sobre superficies oscuras; también separadores tenues del menú. |\n| Gris Medio | `#817f7f` | neutro | Texto atenuado, metadatos y etiquetas secundarias sobre fondo claro. |\n| Niebla | `#eaeaea` | neutro | Superficie clara elevada: campos de formulario, chips del subtítulo y bloques resaltados. |\n| Papel Osmo | `#f4f4f4` | marca | Fondo global de la web y color de texto sobre todas las superficies oscuras. |\n| Verde Eléctrico | `#a1ff62` | acento | Acento de acción: botón 'Join', ticker de anuncio y destacados sobre negro. |\n| Violeta Señal | `#6840ff` | acento | Acento gráfico: el asterisco del titular, iconografía y estados destacados puntuales. |\n| Coral Alerta | `#f84131` | semántico | Errores de formulario y avisos; aparición muy escasa, nunca decorativa. |\n\n## Tipografía\n\n### Haffer XH — display\nCorte extra-ancho reservado a titulares. La decisión característica es el tracking hipernegativo con interlineado 1:1: las palabras se tocan y forman un bloque tipográfico. Siempre peso 400, nunca bold.\n- **Sustituto:** 'Helvetica Now Display', Inter, Helvetica Neue, Arial, sans-serif\n- **Pesos:** 400\n- **Tamaños:** 40-150px · 5 valores (40, 62, 64, 80, 112, 150)\n- **Interlineado:** 1,0-1,05 (112px sobre 112px; 135px sobre 150px)\n- **Tracking:** -0,04em a -0,06em (-1.2px a -7.5px)\n\n### Haffer VF — cuerpo\nFuente de batalla: párrafos, botones, enlaces, navegación y etiquetas de tarjeta. El 400 lo hace todo; el 500 solo aparece dentro de los inputs. Interlineado corto de 1,2 que mantiene los bloques densos.\n- **Sustituto:** Inter, -apple-system, Segoe UI, Helvetica Neue, sans-serif\n- **Pesos:** 400, 500\n- **Tamaños:** 13-22px · 5 valores (13, 16, 18, 20, 22)\n- **Interlineado:** 1,2 (16px→20px; 22px→26px; 13px→15.6px)\n- **Tracking:** -0.16px en cuerpo y UI; -0.36px en 18px\n\n### Haffer Mono — mono\nVoz técnica de la marca: ticker de anuncios en verde eléctrico, microetiquetas tipo 'OUR PRODUCTS' y datos. Siempre en mayúsculas y a tamaño mínimo (11px), nunca en párrafos.\n- **Sustituto:** 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace\n- **Pesos:** 400\n- **Tamaños:** 11-13px · 2 valores\n- **Interlineado:** 1,0 (11px sobre 11px)\n- **Tracking:** normal, con tracking positivo aparente por el ancho fijo\n\n### Brisa Pro — display\nCursiva expresiva de acento, usada en contadas palabras destacadas o firmas. Aparición mínima (15 nodos); nunca para texto corrido.\n- **Sustituto:** Georgia, 'Times New Roman', serif\n- **Pesos:** 400\n- **Tamaños:** uso puntual, 20-40px\n- **Interlineado:** 1,0-1,1\n- **Tracking:** normal\n\n### Escala tipográfica\n\n| Rol | Familia | Peso | Tamaño | Interlineado | Tracking |\n|-----|---------|------|--------|--------------|----------|\n| leyenda | Haffer Mono | 400 | 11px | 1 | normal |\n| cuerpo-sm | Haffer VF | 400 | 13px | 1.2 | -0.16px |\n| cuerpo | Haffer VF | 400 | 16px | 1.25 | -0.16px |\n| subtítulo | Haffer VF | 400 | 22px | 1.2 | -0.16px |\n| título-sm | Haffer XH | 400 | 40px | 1.05 | -0.03em |\n| título | Haffer XH | 400 | 64px | 1 | -0.04em |\n| título-lg | Haffer XH | 400 | 80px | 1 | -0.04em |\n| display | Haffer XH | 400 | 112px | 1 | -0.06em |\n\n## Espaciado y layout\n\n**Densidad:** cómoda\n\n- **Unidad base:** 8px (con escala em: 0.5 / 0.75 / 1 / 1.5 / 2 / 2.5em)\n- **Ancho máximo de página:** 1440px de lienzo, 1188px de contenido; texto largo a 608-700px\n- **Separación entre secciones:** 120-200px (variables --padding-xs 60px a --padding-xl 200px)\n- **Padding de tarjeta:** 40px en paneles grandes; 6px en tarjetas de miniatura y 12-16px en inputs\n- **Separación entre elementos:** 8px y 10px en clústeres, 20-24px entre bloques, 40-64px entre grupos\n\n### Radios de borde\n\n- **Botón primario y tarjeta pequeña:** 2px\n- **Input de formulario:** 3px\n- **Chip y contenedor de miniatura:** 4-5px\n- **Panel y tarjeta grande:** 16px\n- **Botón píldora y barra de navegación:** 48px\n- **Elementos totalmente redondos (avatares, badges):** 1600px\n\n## Elevación\n\nSin sombras: el sistema mide box-shadow nulo en toda la página. La profundidad se construye por escalones de superficie (Papel #f4f4f4 → Niebla #eaeaea → Tinta #201d1d → Grafito #2a2727 → Obsidiana #151313), por filetes de 1px (--stroke-weight) en Filete Carbón #312e2e o Papel al 20% sobre oscuro, y por la barra de navegación flotante que se separa del fondo solo por contraste de valor. Cuando algo debe 'levantarse', se rota o se escala ligeramente en lugar de proyectar sombra.\n\n## Componentes\n\n### Botón primario\n**Rol:** Acción de conversión principal: 'Join', altas y compras.\n\nFondo Verde Eléctrico sobre oscuro o Tinta Osmo sobre claro, texto en cuerpo (16px Haffer VF), altura 40px (--btn-height 2.5em), padding 0 18px 1px, radio 2px. Hover: cambio de fondo en 0.2s ease, sin desplazamiento ni sombra. Activo: mismo color con ligera bajada de luminosidad.\n\n### Botón secundario\n**Rol:** Acción de apoyo en la barra ('Login') y conmutadores tipo 'Annually'.\n\nPíldora de radio 48px, fondo Grafito sobre la nav Obsidiana o transparente con filete de 1px en Filete Carbón, texto en cuerpo color Papel. Misma altura 40px y padding 0 18px 1px que el primario. Hover: el fondo sube un escalón de superficie en 0.2s ease.\n\n### Input\n**Rol:** Campos de alta y formularios de acceso.\n\nAltura 48px (--input-height 3em), padding 12px 16px, fondo Niebla, borde 1px transparente, radio 3px, texto en cuerpo peso 500. Placeholder en Gris Medio. Foco: el borde pasa a Tinta Osmo; error, a Coral Alerta. Sin sombra de foco.\n\n### Enlace\n**Rol:** Navegación textual y llamadas secundarias tipo 'View all benefits'.\n\nTexto en cuerpo, color heredado (Tinta Osmo sobre claro, Papel sobre oscuro), subrayado de 1px que se dibuja de izquierda a derecha en hover con 0.6s cubic-bezier(0.625, 0.05, 0, 1). Sin cambio de color ni de peso.\n\n### Tarjeta\n**Rol:** Miniaturas de recursos y paneles del mega-menú.\n\nDos variantes: miniatura con fondo Tinta Osmo, radio 5px, padding 6px 6px 0 y pie en cuerpo-sm color Papel; panel con fondo Grafito, radio 16px y padding 40px. Hover en la miniatura: escala y rotación sutiles en 0.6s cubic-bezier, nunca sombra.\n\n## Movimiento\n\nDos velocidades y nada más. Los microestados (color, fondo, opacidad de botones, enlaces y iconos) usan 0.2s ease, con algún 0.4s ease en fundidos. Los movimientos con carácter —tarjetas, transformaciones, subrayados, aperturas de menú— usan 0.6s con cubic-bezier(0.625, 0.05, 0, 1), una curva de arranque rápido y frenada larga. Hay animación al scroll: el marquesina radial de tarjetas gira, los titulares entran por líneas y el ticker mono se desplaza en bucle continuo. No se animan sombras (no existen) ni tamaños de fuente; el layout nunca salta.\n\n## Layout\n\nLienzo de 1440px máximo con padding lateral de 30px (--container-padding 1.875em) y contenido a 1188px; los bloques de texto largo se limitan a 608-700px y se centran. La cabecera es una barra flotante centrada de 74px de alto (--nav-bar-height 4.625em) con ancho reducido, bajo la cual corre un ticker monoespaciado verde. El hero centra el titular a todo el ancho con un asterisco morado como pivote y una composición de tarjetas rotadas en arco por debajo. Guías verticales finas de 1px atraviesan la página y refuerzan la sensación de plano técnico. Ritmo vertical de secciones entre 60px y 200px según jerarquía, con gaps internos de 8/20/40/64px.\n\n## Imagen\n\nCasi todo el imaginario son capturas de la propia herramienta: miniaturas de componentes web dentro de marcos oscuros con radio 5px, rotadas y dispuestas en arco o en marquesina radial, cada una con su pie en 13px. Hay vídeo en bucle para demostrar interacciones. Las fotografías que aparecen están dentro de esas maquetas, nunca sueltas a sangre. Sin ilustración decorativa ni iconografía redundante: la única gráfica abstracta es el asterisco morado de la marca y los filetes de guía. Tratamiento limpio, sin filtros ni degradados.\n\n## Qué hacer y qué no\n\n### Sí\n- Componer los titulares en Haffer XH peso 400 con line-height 1 y tracking de -0,04 a -0,06em para que formen bloque.\n- Mantener todo el texto en peso 400: la jerarquía se resuelve solo con tamaño, color y espacio.\n- Reservar Haffer Mono a 11px en mayúsculas para etiquetas, tickers y datos técnicos.\n- Usar el Verde Eléctrico #a1ff62 únicamente para la acción principal y el ticker; el Violeta #6840ff solo como marca gráfica.\n- Construir profundidad con escalones de superficie (#f4f4f4 → #eaeaea → #201d1d → #151313) y filetes de 1px, nunca con sombras.\n- Respetar las dos velocidades de animación: 0.2s ease para estados, 0.6s cubic-bezier(0.625,0.05,0,1) para movimiento con carácter.\n- Combinar radios diminutos (2-5px) en superficies rectangulares con píldoras de 48px en controles.\n\n### No\n- No poner negritas ni pesos 600+ en los titulares: rompe la voz de Haffer XH.\n- No usar tracking normal o positivo en tamaños display; el apretón negativo es la firma.\n- No añadir box-shadow ni glows: la página no tiene ni una sombra.\n- No pintar fondos grandes de Verde Eléctrico o Violeta; son acentos puntuales sobre neutros.\n- No mezclar radios: un mismo componente no lleva 16px arriba y 2px abajo.\n- No estirar el texto de lectura más allá de 700px ni el contenido más allá de 1188px.\n- No usar Brisa Pro para texto corrido ni Haffer Mono por encima de 13px.\n\n## Marcas afines\n\n- **Linear** — Misma disciplina de una sola familia geométrica en peso regular, tracking negativo en titulares y ausencia total de sombras.\n- **Vercel** — Neutros extremos, superficie casi sin color y acentos de señal reservados a una única acción.\n- **Framer** — Escaparate de producto con capturas rotadas, radios pequeños y transiciones de curva larga como argumento de venta.\n- **Readymag** — Sensibilidad editorial de agencia: display enorme, monoespaciada como voz secundaria y color eléctrico puntual.\n- **Rive** — Fondo claro casi gris, tipografía ancha de titular y demostraciones animadas incrustadas en el propio layout.\n\n## Prompt para agentes\n\nDiseña en tema claro sobre #f4f4f4 con tinta #201d1d y superficies oscuras #201d1d/#151313. Usa Haffer XH (fallback Inter) para titulares de 40 a 150px, siempre peso 400, line-height 1 y letter-spacing de -0,04 a -0,06em; Haffer VF para cuerpo de 13-22px con interlineado 1,2 y tracking -0.16px; Haffer Mono 11px en mayúsculas para etiquetas y tickers. Acento verde #a1ff62 solo en la acción principal y violeta #6840ff como grafismo. Radios de 2-5px en superficies, 48px en botones píldora, 16px en paneles. Prohibidas las sombras: profundidad por escalones de fondo y filetes de 1px. Transiciones 0.2s ease y 0.6s cubic-bezier(0.625,0.05,0,1). Contenedor 1188px dentro de 1440px.\n",
+  "spec": {
+    "brand": "Osmo",
+    "tagline": "taller gris claro con chispa eléctrica",
+    "theme": "light",
+    "description": "Osmo se lee como un taller de desarrollo creativo: lienzo gris papel #f4f4f4, tinta casi negra #201d1d y una tipografía que hace todo el trabajo. El titular usa Haffer XH a 112px con line-height 1:1 y un tracking brutalmente negativo (-6.72px, es decir -0,06em) que aprieta 'Dev Toolkit ✳ Built to Flex' hasta convertirlo en un bloque compacto; en el escalón mayor llega a 150px. Todo el texto va en peso 400: no hay negritas, la jerarquía es puramente de tamaño y de espacio. Haffer VF sostiene el cuerpo (22px descriptivo, 16px UI, 13px en etiquetas de tarjeta) y Haffer Mono aparece en versalitas de 11px para el ticker verde eléctrico #a1ff62 y los microtítulos. La barra de navegación es una píldora oscura #151313 flotante con botón 'Join' en verde eléctrico. El morado #6840ff y el coral #f84131 salen en dosis mínimas: un asterisco, un dato. Radios diminutos (2-5px) conviven con píldoras de 48px; sin sombras, la profundidad viene del contraste claro/oscuro.",
+    "colors": [
+      {
+        "name": "Obsidiana",
+        "hex": "#151313",
+        "group": "neutral",
+        "role": "Negro más profundo: barra de navegación flotante, footer y fondos de sección a pantalla completa."
+      },
+      {
+        "name": "Tinta Osmo",
+        "hex": "#201d1d",
+        "group": "brand",
+        "role": "Color de texto principal sobre el gris y fondo por defecto de tarjetas y paneles oscuros."
+      },
+      {
+        "name": "Grafito",
+        "hex": "#2a2727",
+        "group": "neutral",
+        "role": "Superficie elevada dentro de fondos oscuros: paneles del mega-menú y banners de navegación."
+      },
+      {
+        "name": "Filete Carbón",
+        "hex": "#312e2e",
+        "group": "neutral",
+        "role": "Borde de 1px sobre superficies oscuras; también separadores tenues del menú."
+      },
+      {
+        "name": "Gris Medio",
+        "hex": "#817f7f",
+        "group": "neutral",
+        "role": "Texto atenuado, metadatos y etiquetas secundarias sobre fondo claro."
+      },
+      {
+        "name": "Niebla",
+        "hex": "#eaeaea",
+        "group": "neutral",
+        "role": "Superficie clara elevada: campos de formulario, chips del subtítulo y bloques resaltados."
+      },
+      {
+        "name": "Papel Osmo",
+        "hex": "#f4f4f4",
+        "group": "brand",
+        "role": "Fondo global de la web y color de texto sobre todas las superficies oscuras."
+      },
+      {
+        "name": "Verde Eléctrico",
+        "hex": "#a1ff62",
+        "group": "accent",
+        "role": "Acento de acción: botón 'Join', ticker de anuncio y destacados sobre negro."
+      },
+      {
+        "name": "Violeta Señal",
+        "hex": "#6840ff",
+        "group": "accent",
+        "role": "Acento gráfico: el asterisco del titular, iconografía y estados destacados puntuales."
+      },
+      {
+        "name": "Coral Alerta",
+        "hex": "#f84131",
+        "group": "semantic",
+        "role": "Errores de formulario y avisos; aparición muy escasa, nunca decorativa."
+      }
+    ],
+    "fonts": [
+      {
+        "family": "Haffer XH",
+        "role": "display",
+        "weights": [
+          400
+        ],
+        "sizes": "40-150px · 5 valores (40, 62, 64, 80, 112, 150)",
+        "lineHeight": "1,0-1,05 (112px sobre 112px; 135px sobre 150px)",
+        "letterSpacing": "-0,04em a -0,06em (-1.2px a -7.5px)",
+        "fallback": "'Helvetica Now Display', Inter, Helvetica Neue, Arial, sans-serif",
+        "usage": "Corte extra-ancho reservado a titulares. La decisión característica es el tracking hipernegativo con interlineado 1:1: las palabras se tocan y forman un bloque tipográfico. Siempre peso 400, nunca bold."
+      },
+      {
+        "family": "Haffer VF",
+        "role": "body",
+        "weights": [
+          400,
+          500
+        ],
+        "sizes": "13-22px · 5 valores (13, 16, 18, 20, 22)",
+        "lineHeight": "1,2 (16px→20px; 22px→26px; 13px→15.6px)",
+        "letterSpacing": "-0.16px en cuerpo y UI; -0.36px en 18px",
+        "fallback": "Inter, -apple-system, Segoe UI, Helvetica Neue, sans-serif",
+        "usage": "Fuente de batalla: párrafos, botones, enlaces, navegación y etiquetas de tarjeta. El 400 lo hace todo; el 500 solo aparece dentro de los inputs. Interlineado corto de 1,2 que mantiene los bloques densos."
+      },
+      {
+        "family": "Haffer Mono",
+        "role": "mono",
+        "weights": [
+          400
+        ],
+        "sizes": "11-13px · 2 valores",
+        "lineHeight": "1,0 (11px sobre 11px)",
+        "letterSpacing": "normal, con tracking positivo aparente por el ancho fijo",
+        "fallback": "'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace",
+        "usage": "Voz técnica de la marca: ticker de anuncios en verde eléctrico, microetiquetas tipo 'OUR PRODUCTS' y datos. Siempre en mayúsculas y a tamaño mínimo (11px), nunca en párrafos."
+      },
+      {
+        "family": "Brisa Pro",
+        "role": "display",
+        "weights": [
+          400
+        ],
+        "sizes": "uso puntual, 20-40px",
+        "lineHeight": "1,0-1,1",
+        "letterSpacing": "normal",
+        "fallback": "Georgia, 'Times New Roman', serif",
+        "usage": "Cursiva expresiva de acento, usada en contadas palabras destacadas o firmas. Aparición mínima (15 nodos); nunca para texto corrido."
+      }
+    ],
+    "typeScale": [
+      {
+        "role": "leyenda",
+        "size": 11,
+        "weight": 400,
+        "lineHeight": 1,
+        "letterSpacing": "normal",
+        "family": "Haffer Mono"
+      },
+      {
+        "role": "cuerpo-sm",
+        "size": 13,
+        "weight": 400,
+        "lineHeight": 1.2,
+        "letterSpacing": "-0.16px",
+        "family": "Haffer VF"
+      },
+      {
+        "role": "cuerpo",
+        "size": 16,
+        "weight": 400,
+        "lineHeight": 1.25,
+        "letterSpacing": "-0.16px",
+        "family": "Haffer VF"
+      },
+      {
+        "role": "subtítulo",
+        "size": 22,
+        "weight": 400,
+        "lineHeight": 1.2,
+        "letterSpacing": "-0.16px",
+        "family": "Haffer VF"
+      },
+      {
+        "role": "título-sm",
+        "size": 40,
+        "weight": 400,
+        "lineHeight": 1.05,
+        "letterSpacing": "-0.03em",
+        "family": "Haffer XH"
+      },
+      {
+        "role": "título",
+        "size": 64,
+        "weight": 400,
+        "lineHeight": 1,
+        "letterSpacing": "-0.04em",
+        "family": "Haffer XH"
+      },
+      {
+        "role": "título-lg",
+        "size": 80,
+        "weight": 400,
+        "lineHeight": 1,
+        "letterSpacing": "-0.04em",
+        "family": "Haffer XH"
+      },
+      {
+        "role": "display",
+        "size": 112,
+        "weight": 400,
+        "lineHeight": 1,
+        "letterSpacing": "-0.06em",
+        "family": "Haffer XH"
+      }
+    ],
+    "spacing": {
+      "density": "comfortable",
+      "baseUnit": "8px (con escala em: 0.5 / 0.75 / 1 / 1.5 / 2 / 2.5em)",
+      "maxWidth": "1440px de lienzo, 1188px de contenido; texto largo a 608-700px",
+      "sectionGap": "120-200px (variables --padding-xs 60px a --padding-xl 200px)",
+      "cardPadding": "40px en paneles grandes; 6px en tarjetas de miniatura y 12-16px en inputs",
+      "elementGap": "8px y 10px en clústeres, 20-24px entre bloques, 40-64px entre grupos"
+    },
+    "radii": [
+      {
+        "element": "Botón primario y tarjeta pequeña",
+        "value": "2px"
+      },
+      {
+        "element": "Input de formulario",
+        "value": "3px"
+      },
+      {
+        "element": "Chip y contenedor de miniatura",
+        "value": "4-5px"
+      },
+      {
+        "element": "Panel y tarjeta grande",
+        "value": "16px"
+      },
+      {
+        "element": "Botón píldora y barra de navegación",
+        "value": "48px"
+      },
+      {
+        "element": "Elementos totalmente redondos (avatares, badges)",
+        "value": "1600px"
+      }
+    ],
+    "elevation": "Sin sombras: el sistema mide box-shadow nulo en toda la página. La profundidad se construye por escalones de superficie (Papel #f4f4f4 → Niebla #eaeaea → Tinta #201d1d → Grafito #2a2727 → Obsidiana #151313), por filetes de 1px (--stroke-weight) en Filete Carbón #312e2e o Papel al 20% sobre oscuro, y por la barra de navegación flotante que se separa del fondo solo por contraste de valor. Cuando algo debe 'levantarse', se rota o se escala ligeramente en lugar de proyectar sombra.",
+    "components": [
+      {
+        "name": "Botón primario",
+        "role": "Acción de conversión principal: 'Join', altas y compras.",
+        "spec": "Fondo Verde Eléctrico sobre oscuro o Tinta Osmo sobre claro, texto en cuerpo (16px Haffer VF), altura 40px (--btn-height 2.5em), padding 0 18px 1px, radio 2px. Hover: cambio de fondo en 0.2s ease, sin desplazamiento ni sombra. Activo: mismo color con ligera bajada de luminosidad."
+      },
+      {
+        "name": "Botón secundario",
+        "role": "Acción de apoyo en la barra ('Login') y conmutadores tipo 'Annually'.",
+        "spec": "Píldora de radio 48px, fondo Grafito sobre la nav Obsidiana o transparente con filete de 1px en Filete Carbón, texto en cuerpo color Papel. Misma altura 40px y padding 0 18px 1px que el primario. Hover: el fondo sube un escalón de superficie en 0.2s ease."
+      },
+      {
+        "name": "Input",
+        "role": "Campos de alta y formularios de acceso.",
+        "spec": "Altura 48px (--input-height 3em), padding 12px 16px, fondo Niebla, borde 1px transparente, radio 3px, texto en cuerpo peso 500. Placeholder en Gris Medio. Foco: el borde pasa a Tinta Osmo; error, a Coral Alerta. Sin sombra de foco."
+      },
+      {
+        "name": "Enlace",
+        "role": "Navegación textual y llamadas secundarias tipo 'View all benefits'.",
+        "spec": "Texto en cuerpo, color heredado (Tinta Osmo sobre claro, Papel sobre oscuro), subrayado de 1px que se dibuja de izquierda a derecha en hover con 0.6s cubic-bezier(0.625, 0.05, 0, 1). Sin cambio de color ni de peso."
+      },
+      {
+        "name": "Tarjeta",
+        "role": "Miniaturas de recursos y paneles del mega-menú.",
+        "spec": "Dos variantes: miniatura con fondo Tinta Osmo, radio 5px, padding 6px 6px 0 y pie en cuerpo-sm color Papel; panel con fondo Grafito, radio 16px y padding 40px. Hover en la miniatura: escala y rotación sutiles en 0.6s cubic-bezier, nunca sombra."
+      }
+    ],
+    "motion": "Dos velocidades y nada más. Los microestados (color, fondo, opacidad de botones, enlaces y iconos) usan 0.2s ease, con algún 0.4s ease en fundidos. Los movimientos con carácter —tarjetas, transformaciones, subrayados, aperturas de menú— usan 0.6s con cubic-bezier(0.625, 0.05, 0, 1), una curva de arranque rápido y frenada larga. Hay animación al scroll: el marquesina radial de tarjetas gira, los titulares entran por líneas y el ticker mono se desplaza en bucle continuo. No se animan sombras (no existen) ni tamaños de fuente; el layout nunca salta.",
+    "layout": "Lienzo de 1440px máximo con padding lateral de 30px (--container-padding 1.875em) y contenido a 1188px; los bloques de texto largo se limitan a 608-700px y se centran. La cabecera es una barra flotante centrada de 74px de alto (--nav-bar-height 4.625em) con ancho reducido, bajo la cual corre un ticker monoespaciado verde. El hero centra el titular a todo el ancho con un asterisco morado como pivote y una composición de tarjetas rotadas en arco por debajo. Guías verticales finas de 1px atraviesan la página y refuerzan la sensación de plano técnico. Ritmo vertical de secciones entre 60px y 200px según jerarquía, con gaps internos de 8/20/40/64px.",
+    "imagery": "Casi todo el imaginario son capturas de la propia herramienta: miniaturas de componentes web dentro de marcos oscuros con radio 5px, rotadas y dispuestas en arco o en marquesina radial, cada una con su pie en 13px. Hay vídeo en bucle para demostrar interacciones. Las fotografías que aparecen están dentro de esas maquetas, nunca sueltas a sangre. Sin ilustración decorativa ni iconografía redundante: la única gráfica abstracta es el asterisco morado de la marca y los filetes de guía. Tratamiento limpio, sin filtros ni degradados.",
+    "dos": [
+      "Componer los titulares en Haffer XH peso 400 con line-height 1 y tracking de -0,04 a -0,06em para que formen bloque.",
+      "Mantener todo el texto en peso 400: la jerarquía se resuelve solo con tamaño, color y espacio.",
+      "Reservar Haffer Mono a 11px en mayúsculas para etiquetas, tickers y datos técnicos.",
+      "Usar el Verde Eléctrico #a1ff62 únicamente para la acción principal y el ticker; el Violeta #6840ff solo como marca gráfica.",
+      "Construir profundidad con escalones de superficie (#f4f4f4 → #eaeaea → #201d1d → #151313) y filetes de 1px, nunca con sombras.",
+      "Respetar las dos velocidades de animación: 0.2s ease para estados, 0.6s cubic-bezier(0.625,0.05,0,1) para movimiento con carácter.",
+      "Combinar radios diminutos (2-5px) en superficies rectangulares con píldoras de 48px en controles."
+    ],
+    "donts": [
+      "No poner negritas ni pesos 600+ en los titulares: rompe la voz de Haffer XH.",
+      "No usar tracking normal o positivo en tamaños display; el apretón negativo es la firma.",
+      "No añadir box-shadow ni glows: la página no tiene ni una sombra.",
+      "No pintar fondos grandes de Verde Eléctrico o Violeta; son acentos puntuales sobre neutros.",
+      "No mezclar radios: un mismo componente no lleva 16px arriba y 2px abajo.",
+      "No estirar el texto de lectura más allá de 700px ni el contenido más allá de 1188px.",
+      "No usar Brisa Pro para texto corrido ni Haffer Mono por encima de 13px."
+    ],
+    "similar": [
+      {
+        "brand": "Linear",
+        "why": "Misma disciplina de una sola familia geométrica en peso regular, tracking negativo en titulares y ausencia total de sombras."
+      },
+      {
+        "brand": "Vercel",
+        "why": "Neutros extremos, superficie casi sin color y acentos de señal reservados a una única acción."
+      },
+      {
+        "brand": "Framer",
+        "why": "Escaparate de producto con capturas rotadas, radios pequeños y transiciones de curva larga como argumento de venta."
+      },
+      {
+        "brand": "Readymag",
+        "why": "Sensibilidad editorial de agencia: display enorme, monoespaciada como voz secundaria y color eléctrico puntual."
+      },
+      {
+        "brand": "Rive",
+        "why": "Fondo claro casi gris, tipografía ancha de titular y demostraciones animadas incrustadas en el propio layout."
+      }
+    ],
+    "agentPrompt": "Diseña en tema claro sobre #f4f4f4 con tinta #201d1d y superficies oscuras #201d1d/#151313. Usa Haffer XH (fallback Inter) para titulares de 40 a 150px, siempre peso 400, line-height 1 y letter-spacing de -0,04 a -0,06em; Haffer VF para cuerpo de 13-22px con interlineado 1,2 y tracking -0.16px; Haffer Mono 11px en mayúsculas para etiquetas y tickers. Acento verde #a1ff62 solo en la acción principal y violeta #6840ff como grafismo. Radios de 2-5px en superficies, 48px en botones píldora, 16px en paneles. Prohibidas las sombras: profundidad por escalones de fondo y filetes de 1px. Transiciones 0.2s ease y 0.6s cubic-bezier(0.625,0.05,0,1). Contenedor 1188px dentro de 1440px."
+  },
+  "generatedAt": "2026-09-20T23:31:48.036Z",
+  "model": "claude-opus-5",
+  "screenshotUrl": "/design-md/f7f51dc49ee96a51.jpg?v=1789947108040",
+  "coverUrl": "/design-md/f7f51dc49ee96a51-cover.jpg?v=1789947108040",
+  "scrollUrl": "/design-md/f7f51dc49ee96a51-scroll.jpg?v=1789947108040"
+}

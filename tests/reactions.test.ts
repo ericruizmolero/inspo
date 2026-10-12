@@ -73,7 +73,7 @@ describe("reactions", () => {
     // The account's name now, not the one stored with the reaction
     const who = fx.b.owner.name;
     const mine = bell.lines.filter((l) => l.text.startsWith(`${who} reaccionó`) && /👀|🎉/.test(l.text));
-    expect(mine.map((l) => l.text).sort()).toEqual([`${who} reaccionó 👀 a lo que dijiste en ${fx.a.secret} ${item}`, `${who} reaccionó 🎉 a lo que dijiste en ${fx.a.secret} ${item}`].sort());
+    expect(mine.map((l) => l.text).sort()).toEqual([`${who} reaccionó 👀 a lo que dijiste`, `${who} reaccionó 🎉 a lo que dijiste`].sort());
     expect(mine.every((l) => l.path === `/i/${item}`), "each line opens the reference").toBe(true);
     expect(await latestTeamEvent(team, owner.id) > before, "the board's pulse sees news for the bell").toBe(true);
     expect((await teamEvents(team, new Date(0))).some((e) => e.kind === "reaction"), "never in the shared list, so never in the digest").toBe(false);

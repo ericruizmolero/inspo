@@ -1,0 +1,280 @@
+{
+  "url": "https://cozyjournal.app",
+  "markdown": "# Cozy — DESIGN.md\n> cacao tibio a la luz de una vela\n\n**Tema:** oscuro  \n**Origen:** https://cozyjournal.app/ · 2026-09-20\n\nLas medidas de origen están normalizadas; los roles y las recomendaciones son interpretados.\n\nCozy viste su discurso de privacidad con un oscuro que no es negro sino marrón: el fondo #1a1310 y sus dos escalones de superficie (#241b17 para tarjetas, inputs y píldoras; #302620 para la fila seleccionada) son neutros con un punto de calidez que hace que la pantalla parezca papel a media luz en vez de un panel técnico. Todo el texto es Inter, y la decisión característica es que nada llega a negrita: el display de 64px va en weight 500 con -1.92px de tracking, los h3 de 24px también en 500, y el 400 sostiene el cuerpo de 16/26.4px. La jerarquía se construye bajando el tono del crema #f7efe3 al lino #d0c6b6 y a la arena #b5aa9a, no subiendo pesos. El único gesto lúdico es Caveat 600 en la etiqueta manuscrita «Interactive demo» y las flores recortadas rosa y azul que asoman tras el mockup. Bordes hairline #f7efe30f, radios de 24px en tarjetas, secciones de 128px.\n\n## Colores\n\n| Nombre | Valor | Grupo | Rol |\n|--------|-------|-------|-----|\n| Cacao Nocturno | `#1a1310` | neutro | Fondo base de toda la página y de las tarjetas de feature, que se apoyan sobre él sin contorno |\n| Tinta Tostada | `#241b17` | neutro | Superficie elevada: panel del editor, mockups, inputs, píldoras activas y bloques de código |\n| Corteza Cálida | `#302620` | neutro | Segundo escalón de superficie para estado seleccionado y hover en listas y filas de entrada |\n| Arena Apagada | `#b5aa9a` | neutro | Texto terciario: enlaces de navegación, pies legales y notas de plataforma de 14px |\n| Lino | `#d0c6b6` | neutro | Texto secundario: subtítulo de 20px, párrafos de apoyo y etiquetas de pestañas inactivas |\n| Crema Papel | `#f7efe3` | marca | Color de marca: titulares, texto principal y fondo del botón primario, que invierte a oscuro |\n| Filete Crema | `#f7efe30f` | neutro | Borde hairline al 6% que dibuja tarjetas de captura y campos sin añadir peso visual |\n| Velo Nocturno | `#1a131080` | neutro | Capa translúcida al 50% para la barra superior fija y las superposiciones sobre el mockup |\n\n## Tipografía\n\n### Inter — cuerpo\nSostiene el 100% de la interfaz: titulares, cuerpo, botones, navegación y la UI simulada del producto. La decisión clave es que el peso máximo real es 500 (con algún 600 en etiquetas de UI): no hay negritas, la jerarquía se hace con tamaño, tono y tracking negativo progresivo.\n- **Sustituto:** ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif\n- **Pesos:** 400, 500, 600\n- **Tamaños:** 12-64px · 7 valores\n- **Interlineado:** 1.05 en display, 1.25 en títulos, 1.65 en cuerpo\n- **Tracking:** -1.92px a 0, normal en cuerpo\n\n### Caveat — display\nAparece una sola vez, en la anotación manuscrita «Interactive demo» con flecha dibujada junto al mockup. Es el único guiño humano del sistema y su valor depende de esa escasez: nunca se usa en titulares ni en cuerpo.\n- **Sustituto:** 'Bradley Hand', 'Segoe Script', cursive\n- **Pesos:** 600\n- **Tamaños:** 16px · 1 valor\n- **Interlineado:** normal\n- **Tracking:** normal\n\n### Escala tipográfica\n\n| Rol | Familia | Peso | Tamaño | Interlineado | Tracking |\n|-----|---------|------|--------|--------------|----------|\n| leyenda | Inter | 500 | 12px | 1.35 | normal |\n| cuerpo-sm | Inter | 400 | 14px | 1.55 | normal |\n| cuerpo | Inter | 400 | 16px | 1.65 | normal |\n| subtítulo | Inter | 400 | 20px | 1.55 | normal |\n| título-sm | Inter | 500 | 24px | 1.25 | -0.36px |\n| título | Inter | 500 | 38.4px | 1.1 | -0.96px |\n| display | Inter | 500 | 64px | 1.05 | -1.92px |\n\n## Espaciado y layout\n\n**Densidad:** aireada\n\n- **Unidad base:** 4px\n- **Ancho máximo de página:** 1024px (prosa y bloques de texto a 672px)\n- **Separación entre secciones:** 128px vertical entre secciones\n- **Padding de tarjeta:** 40px en tarjetas de feature; 12px 16px en inputs\n- **Separación entre elementos:** 16px, con 8px y 12px para grupos de controles\n\n### Radios de borde\n\n- **Botón de navegación compacto:** 6px\n- **Botón primario grande y enlaces con área táctil:** 8px\n- **Input de email:** 8px\n- **Píldora de vista (List / Calendar / Map):** 7px\n- **Fila de entrada en la lista del mockup:** 11px\n- **Tarjeta de captura de producto:** 16px\n- **Tarjeta de feature:** 24px\n- **Avatares e iconos circulares:** 50%\n\n## Elevación\n\nProfundidad casi sin sombras: la norma es un filete interior oklch(1 0 0 / 0.1) 0 0 0 1px inset o un borde de 1px #f7efe30f que separa la superficie #241b17 del fondo #1a1310. Solo los elementos que 'flotan' sobre el hero llevan sombra real y siempre en tono crema, no negra: ventana del mockup con #f7efe314 0 0 0 0.5px, #f7efe338 0 8px 28px -6px y un realce interior #241b171a 0 0.5px 0 inset; las tarjetas pequeñas del demo usan #f7efe338 0 1px 4px con halo de 0.5px. Todo lo demás se eleva por escalón de superficie (#1a1310 → #241b17 → #302620).\n\n## Componentes\n\n### Barra de navegación\n**Rol:** Navegación global fija en la parte superior\n\nFondo translúcido #1a131080 sobre el hero, logo con icono cuadrado crema de 6px de radio, enlaces Inter 16px/400 en #b5aa9a que pasan a #f7efe3 en hover con transición color 0.15s ease-out, altura mínima táctil de 44px y CTA a la derecha.\n\n### Botón primario\n**Rol:** Acción principal: «Get Cozy» / «Buy Cozy»\n\nFondo #f7efe3, texto #1a1310 Inter 16px/500, sin borde; 12px 24px de padding y radio 8px en el hero, versión compacta de 6px 14px y radio 6px en la barra. En hover baja ligeramente el crema manteniendo el texto oscuro; sin sombra.\n\n### Enlace fantasma con flecha\n**Rol:** Acción secundaria junto al CTA\n\nSin fondo ni borde, texto #d0c6b6 Inter 16px/500, padding 12px 10px con margen negativo para alinear ópticamente, radio 8px en el foco y una flecha → que se desplaza 2-3px a la derecha en hover (transform 0.2s cubic-bezier).\n\n### Tarjeta de feature\n**Rol:** Bloque de la retícula «What can you find in Cozy?»\n\nFondo #1a1310 sin borde, radio 24px, padding 40px; h3 de 24px/500 en #f7efe3 con -0.36px de tracking, cuerpo 16/26px en #d0c6b6 y una captura interna sobre #241b17 con borde #f7efe30f y radio 16px.\n\n### Input de correo\n**Rol:** Campo de la lista de novedades\n\nFondo #241b17, borde 1px #f7efe326 (crema al 15%), radio 8px, padding 12px 16px, texto e inserción en #f7efe3 con placeholder en #b5aa9a; el foco engrosa el borde a crema sin glow de color.\n\n### Píldora de vista\n**Rol:** Conmutador List / Calendar / Map del demo\n\nPíldoras de 13px/500 con padding 0 7px y radio 7px; la activa lleva fondo #241b17, texto #f7efe3 y sombra 0 1px 2px rgba(0,0,0,0.05); las inactivas son transparentes con texto #d0c6b6.\n\n### Fila de entrada\n**Rol:** Item de la lista de diario en el mockup\n\nBotón de ancho completo, padding 7px, radio 11px, transparente por defecto; el estado seleccionado usa fondo #302620, fecha en dos líneas (WED/3) en #b5aa9a y miniatura cuadrada de 40px con radio 6px a la derecha.\n\n### Anotación manuscrita\n**Rol:** Señal editorial que apunta al demo interactivo\n\nTexto en Caveat 600 a 16px, color #d0c6b6, acompañado de una flecha curva dibujada a trazo fino; se coloca rotada unos grados fuera de la retícula y nunca se repite en la misma pantalla.\n\n## Movimiento\n\nVocabulario mínimo y rápido: background-color y color a 0.15s ease-out en casi todos los interactivos (58 y 42 apariciones), scale y width también a 0.15s para iconos y barras. Los desplazamientos usan transform 0.2s con cubic-bezier suave (flechas, filas del demo) y un cambio de panel más largo, 0.32s, para el fondo de la vista activa. Hay animaciones de entrada ligadas al scroll (aparición con leve desplazamiento vertical) en las secciones de features. No se anima el tipo, no hay parallax agresivo ni bucles infinitos: el movimiento acompaña al puntero y se detiene.\n\n## Layout\n\nCentrado y de una sola columna en el hero: contenedor de 1024px con la prosa restringida a 672px, todo alineado al eje y con text-balance en titulares para cortar las líneas de forma limpia. El ritmo vertical es amplio, 128px entre secciones, con 40px de padding interno en tarjetas y saltos de 16/20/24px dentro de los bloques. Las features se organizan en una retícula de tarjetas de radio 24px que alternan texto arriba y captura abajo. El mockup del producto rompe el borde inferior del hero, asomando recortado, y las ilustraciones florales invaden los márgenes izquierdo y derecho para desbordar la caja.\n\n## Imagen\n\nNada de fotografía de stock: el protagonista es la interfaz real de la app, renderizada en ventanas macOS con semáforo y en un iPhone que entra en escena desde la esquina, todo sobre superficies #241b17. Dentro de las capturas sí hay fotos pequeñas (paisajes de viaje, miniaturas cuadradas de 40px con radio 6px) que humanizan el contenido del diario. El contrapunto gráfico son flores planas y recortadas —una rosa magenta, otra azul cobalto— colocadas a media altura para que queden parcialmente fuera del viewport; son el único color saturado de la página y funcionan como recortes de papel, sin sombra ni degradado.\n\n## Qué hacer y qué no\n\n### Sí\n- Construye el fondo con tres escalones marrones: #1a1310 base, #241b17 superficie, #302620 selección; nunca uses gris neutro ni negro puro.\n- Limita el peso tipográfico a 400 y 500 (600 solo en etiquetas de UI diminutas) y resuelve la jerarquía con tamaño y tono.\n- Aplica tracking negativo creciente con el tamaño: -0.36px a 24px, -0.96px a 38.4px y -1.92px a 64px.\n- Separa superficies con filetes de 1px en crema al 6% (#f7efe30f) antes que con sombras.\n- Respeta los 128px entre secciones y los 40px de padding en tarjetas: el aire es parte del argumento de calma.\n- Cuando algo deba flotar, usa sombras teñidas de crema (#f7efe338 0 8px 28px -6px), jamás negras.\n- Deja que el mockup y las flores se recorten contra el borde del viewport en vez de encajarlos dentro del contenedor.\n\n### No\n- No introduzcas un azul o verde de marca: el acento es el propio crema #f7efe3 invertido sobre oscuro.\n- No pongas titulares en 700 u 800 ni en mayúsculas; el display de 64px va en 500.\n- No uses Caveat más de una vez por pantalla ni para textos de más de tres palabras.\n- No añadas degradados, glassmorphism ni glows de color en los botones; el primario es un plano crema sólido.\n- No bajes el texto secundario por debajo de #b5aa9a sobre #1a1310: se pierde el contraste.\n- No apliques radios de 24px a botones o inputs; ese radio es exclusivo de las tarjetas grandes.\n- No animes con duraciones largas ni efectos elásticos: por encima de 0.32s el sistema deja de sentirse tranquilo.\n\n## Marcas afines\n\n- **Bear** — Misma promesa de escritura local en texto plano resuelta con un oscuro cálido, tipografía sin negritas y capturas de la app como única imagen.\n- **Craft** — Retícula de tarjetas de radio grande con mockups incrustados, paleta neutra de tres escalones y titulares con tracking negativo.\n- **Things 3** — Comparte la sobriedad de producto indie de pago único: interfaz real como héroe, cero stock y microdetalles ilustrados como respiro.\n- **Reeder** — Oscuro tostado en lugar de gris frío, texto crema y sombras teñidas de luz cálida sobre las ventanas flotantes.\n- **Obsidian** — Discurso de archivos propios y privacidad expresado con fondo casi negro, acentos mínimos y tipografía de sistema en pesos medios.\n\n## Prompt para agentes\n\nDiseña una landing oscura y cálida para una app de diario local. Fondo #1a1310, superficies #241b17 y #302620, texto #f7efe3, secundario #d0c6b6, terciario #b5aa9a, bordes crema al 6% (#f7efe30f). Todo en Inter con pesos 400 y 500 —sin negritas—: display 64px/1.05 con -1.92px de tracking, h2 38.4px, h3 24px, cuerpo 16/26.4px, contenedor 1024px y prosa a 672px. Secciones separadas 128px, tarjetas con radio 24px y padding 40px, botón primario crema con texto oscuro, radio 8px, padding 12px 24px. Transiciones de color y fondo a 0.15s ease-out. Usa capturas reales de la app flotando con sombras teñidas de crema y una anotación manuscrita en Caveat 600.\n",
+  "spec": {
+    "brand": "Cozy",
+    "tagline": "cacao tibio a la luz de una vela",
+    "theme": "dark",
+    "description": "Cozy viste su discurso de privacidad con un oscuro que no es negro sino marrón: el fondo #1a1310 y sus dos escalones de superficie (#241b17 para tarjetas, inputs y píldoras; #302620 para la fila seleccionada) son neutros con un punto de calidez que hace que la pantalla parezca papel a media luz en vez de un panel técnico. Todo el texto es Inter, y la decisión característica es que nada llega a negrita: el display de 64px va en weight 500 con -1.92px de tracking, los h3 de 24px también en 500, y el 400 sostiene el cuerpo de 16/26.4px. La jerarquía se construye bajando el tono del crema #f7efe3 al lino #d0c6b6 y a la arena #b5aa9a, no subiendo pesos. El único gesto lúdico es Caveat 600 en la etiqueta manuscrita «Interactive demo» y las flores recortadas rosa y azul que asoman tras el mockup. Bordes hairline #f7efe30f, radios de 24px en tarjetas, secciones de 128px.",
+    "colors": [
+      {
+        "name": "Cacao Nocturno",
+        "hex": "#1a1310",
+        "group": "neutral",
+        "role": "Fondo base de toda la página y de las tarjetas de feature, que se apoyan sobre él sin contorno"
+      },
+      {
+        "name": "Tinta Tostada",
+        "hex": "#241b17",
+        "group": "neutral",
+        "role": "Superficie elevada: panel del editor, mockups, inputs, píldoras activas y bloques de código"
+      },
+      {
+        "name": "Corteza Cálida",
+        "hex": "#302620",
+        "group": "neutral",
+        "role": "Segundo escalón de superficie para estado seleccionado y hover en listas y filas de entrada"
+      },
+      {
+        "name": "Arena Apagada",
+        "hex": "#b5aa9a",
+        "group": "neutral",
+        "role": "Texto terciario: enlaces de navegación, pies legales y notas de plataforma de 14px"
+      },
+      {
+        "name": "Lino",
+        "hex": "#d0c6b6",
+        "group": "neutral",
+        "role": "Texto secundario: subtítulo de 20px, párrafos de apoyo y etiquetas de pestañas inactivas"
+      },
+      {
+        "name": "Crema Papel",
+        "hex": "#f7efe3",
+        "group": "brand",
+        "role": "Color de marca: titulares, texto principal y fondo del botón primario, que invierte a oscuro"
+      },
+      {
+        "name": "Filete Crema",
+        "hex": "#f7efe30f",
+        "group": "neutral",
+        "role": "Borde hairline al 6% que dibuja tarjetas de captura y campos sin añadir peso visual"
+      },
+      {
+        "name": "Velo Nocturno",
+        "hex": "#1a131080",
+        "group": "neutral",
+        "role": "Capa translúcida al 50% para la barra superior fija y las superposiciones sobre el mockup"
+      }
+    ],
+    "fonts": [
+      {
+        "family": "Inter",
+        "role": "body",
+        "weights": [
+          400,
+          500,
+          600
+        ],
+        "sizes": "12-64px · 7 valores",
+        "lineHeight": "1.05 en display, 1.25 en títulos, 1.65 en cuerpo",
+        "letterSpacing": "-1.92px a 0, normal en cuerpo",
+        "fallback": "ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif",
+        "usage": "Sostiene el 100% de la interfaz: titulares, cuerpo, botones, navegación y la UI simulada del producto. La decisión clave es que el peso máximo real es 500 (con algún 600 en etiquetas de UI): no hay negritas, la jerarquía se hace con tamaño, tono y tracking negativo progresivo."
+      },
+      {
+        "family": "Caveat",
+        "role": "display",
+        "weights": [
+          600
+        ],
+        "sizes": "16px · 1 valor",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "fallback": "'Bradley Hand', 'Segoe Script', cursive",
+        "usage": "Aparece una sola vez, en la anotación manuscrita «Interactive demo» con flecha dibujada junto al mockup. Es el único guiño humano del sistema y su valor depende de esa escasez: nunca se usa en titulares ni en cuerpo."
+      }
+    ],
+    "typeScale": [
+      {
+        "role": "leyenda",
+        "size": 12,
+        "weight": 500,
+        "lineHeight": 1.35,
+        "letterSpacing": "normal",
+        "family": "Inter"
+      },
+      {
+        "role": "cuerpo-sm",
+        "size": 14,
+        "weight": 400,
+        "lineHeight": 1.55,
+        "letterSpacing": "normal",
+        "family": "Inter"
+      },
+      {
+        "role": "cuerpo",
+        "size": 16,
+        "weight": 400,
+        "lineHeight": 1.65,
+        "letterSpacing": "normal",
+        "family": "Inter"
+      },
+      {
+        "role": "subtítulo",
+        "size": 20,
+        "weight": 400,
+        "lineHeight": 1.55,
+        "letterSpacing": "normal",
+        "family": "Inter"
+      },
+      {
+        "role": "título-sm",
+        "size": 24,
+        "weight": 500,
+        "lineHeight": 1.25,
+        "letterSpacing": "-0.36px",
+        "family": "Inter"
+      },
+      {
+        "role": "título",
+        "size": 38.4,
+        "weight": 500,
+        "lineHeight": 1.1,
+        "letterSpacing": "-0.96px",
+        "family": "Inter"
+      },
+      {
+        "role": "display",
+        "size": 64,
+        "weight": 500,
+        "lineHeight": 1.05,
+        "letterSpacing": "-1.92px",
+        "family": "Inter"
+      }
+    ],
+    "spacing": {
+      "density": "airy",
+      "baseUnit": "4px",
+      "maxWidth": "1024px (prosa y bloques de texto a 672px)",
+      "sectionGap": "128px vertical entre secciones",
+      "cardPadding": "40px en tarjetas de feature; 12px 16px en inputs",
+      "elementGap": "16px, con 8px y 12px para grupos de controles"
+    },
+    "radii": [
+      {
+        "element": "Botón de navegación compacto",
+        "value": "6px"
+      },
+      {
+        "element": "Botón primario grande y enlaces con área táctil",
+        "value": "8px"
+      },
+      {
+        "element": "Input de email",
+        "value": "8px"
+      },
+      {
+        "element": "Píldora de vista (List / Calendar / Map)",
+        "value": "7px"
+      },
+      {
+        "element": "Fila de entrada en la lista del mockup",
+        "value": "11px"
+      },
+      {
+        "element": "Tarjeta de captura de producto",
+        "value": "16px"
+      },
+      {
+        "element": "Tarjeta de feature",
+        "value": "24px"
+      },
+      {
+        "element": "Avatares e iconos circulares",
+        "value": "50%"
+      }
+    ],
+    "elevation": "Profundidad casi sin sombras: la norma es un filete interior oklch(1 0 0 / 0.1) 0 0 0 1px inset o un borde de 1px #f7efe30f que separa la superficie #241b17 del fondo #1a1310. Solo los elementos que 'flotan' sobre el hero llevan sombra real y siempre en tono crema, no negra: ventana del mockup con #f7efe314 0 0 0 0.5px, #f7efe338 0 8px 28px -6px y un realce interior #241b171a 0 0.5px 0 inset; las tarjetas pequeñas del demo usan #f7efe338 0 1px 4px con halo de 0.5px. Todo lo demás se eleva por escalón de superficie (#1a1310 → #241b17 → #302620).",
+    "components": [
+      {
+        "name": "Barra de navegación",
+        "role": "Navegación global fija en la parte superior",
+        "spec": "Fondo translúcido #1a131080 sobre el hero, logo con icono cuadrado crema de 6px de radio, enlaces Inter 16px/400 en #b5aa9a que pasan a #f7efe3 en hover con transición color 0.15s ease-out, altura mínima táctil de 44px y CTA a la derecha."
+      },
+      {
+        "name": "Botón primario",
+        "role": "Acción principal: «Get Cozy» / «Buy Cozy»",
+        "spec": "Fondo #f7efe3, texto #1a1310 Inter 16px/500, sin borde; 12px 24px de padding y radio 8px en el hero, versión compacta de 6px 14px y radio 6px en la barra. En hover baja ligeramente el crema manteniendo el texto oscuro; sin sombra."
+      },
+      {
+        "name": "Enlace fantasma con flecha",
+        "role": "Acción secundaria junto al CTA",
+        "spec": "Sin fondo ni borde, texto #d0c6b6 Inter 16px/500, padding 12px 10px con margen negativo para alinear ópticamente, radio 8px en el foco y una flecha → que se desplaza 2-3px a la derecha en hover (transform 0.2s cubic-bezier)."
+      },
+      {
+        "name": "Tarjeta de feature",
+        "role": "Bloque de la retícula «What can you find in Cozy?»",
+        "spec": "Fondo #1a1310 sin borde, radio 24px, padding 40px; h3 de 24px/500 en #f7efe3 con -0.36px de tracking, cuerpo 16/26px en #d0c6b6 y una captura interna sobre #241b17 con borde #f7efe30f y radio 16px."
+      },
+      {
+        "name": "Input de correo",
+        "role": "Campo de la lista de novedades",
+        "spec": "Fondo #241b17, borde 1px #f7efe326 (crema al 15%), radio 8px, padding 12px 16px, texto e inserción en #f7efe3 con placeholder en #b5aa9a; el foco engrosa el borde a crema sin glow de color."
+      },
+      {
+        "name": "Píldora de vista",
+        "role": "Conmutador List / Calendar / Map del demo",
+        "spec": "Píldoras de 13px/500 con padding 0 7px y radio 7px; la activa lleva fondo #241b17, texto #f7efe3 y sombra 0 1px 2px rgba(0,0,0,0.05); las inactivas son transparentes con texto #d0c6b6."
+      },
+      {
+        "name": "Fila de entrada",
+        "role": "Item de la lista de diario en el mockup",
+        "spec": "Botón de ancho completo, padding 7px, radio 11px, transparente por defecto; el estado seleccionado usa fondo #302620, fecha en dos líneas (WED/3) en #b5aa9a y miniatura cuadrada de 40px con radio 6px a la derecha."
+      },
+      {
+        "name": "Anotación manuscrita",
+        "role": "Señal editorial que apunta al demo interactivo",
+        "spec": "Texto en Caveat 600 a 16px, color #d0c6b6, acompañado de una flecha curva dibujada a trazo fino; se coloca rotada unos grados fuera de la retícula y nunca se repite en la misma pantalla."
+      }
+    ],
+    "motion": "Vocabulario mínimo y rápido: background-color y color a 0.15s ease-out en casi todos los interactivos (58 y 42 apariciones), scale y width también a 0.15s para iconos y barras. Los desplazamientos usan transform 0.2s con cubic-bezier suave (flechas, filas del demo) y un cambio de panel más largo, 0.32s, para el fondo de la vista activa. Hay animaciones de entrada ligadas al scroll (aparición con leve desplazamiento vertical) en las secciones de features. No se anima el tipo, no hay parallax agresivo ni bucles infinitos: el movimiento acompaña al puntero y se detiene.",
+    "layout": "Centrado y de una sola columna en el hero: contenedor de 1024px con la prosa restringida a 672px, todo alineado al eje y con text-balance en titulares para cortar las líneas de forma limpia. El ritmo vertical es amplio, 128px entre secciones, con 40px de padding interno en tarjetas y saltos de 16/20/24px dentro de los bloques. Las features se organizan en una retícula de tarjetas de radio 24px que alternan texto arriba y captura abajo. El mockup del producto rompe el borde inferior del hero, asomando recortado, y las ilustraciones florales invaden los márgenes izquierdo y derecho para desbordar la caja.",
+    "imagery": "Nada de fotografía de stock: el protagonista es la interfaz real de la app, renderizada en ventanas macOS con semáforo y en un iPhone que entra en escena desde la esquina, todo sobre superficies #241b17. Dentro de las capturas sí hay fotos pequeñas (paisajes de viaje, miniaturas cuadradas de 40px con radio 6px) que humanizan el contenido del diario. El contrapunto gráfico son flores planas y recortadas —una rosa magenta, otra azul cobalto— colocadas a media altura para que queden parcialmente fuera del viewport; son el único color saturado de la página y funcionan como recortes de papel, sin sombra ni degradado.",
+    "dos": [
+      "Construye el fondo con tres escalones marrones: #1a1310 base, #241b17 superficie, #302620 selección; nunca uses gris neutro ni negro puro.",
+      "Limita el peso tipográfico a 400 y 500 (600 solo en etiquetas de UI diminutas) y resuelve la jerarquía con tamaño y tono.",
+      "Aplica tracking negativo creciente con el tamaño: -0.36px a 24px, -0.96px a 38.4px y -1.92px a 64px.",
+      "Separa superficies con filetes de 1px en crema al 6% (#f7efe30f) antes que con sombras.",
+      "Respeta los 128px entre secciones y los 40px de padding en tarjetas: el aire es parte del argumento de calma.",
+      "Cuando algo deba flotar, usa sombras teñidas de crema (#f7efe338 0 8px 28px -6px), jamás negras.",
+      "Deja que el mockup y las flores se recorten contra el borde del viewport en vez de encajarlos dentro del contenedor."
+    ],
+    "donts": [
+      "No introduzcas un azul o verde de marca: el acento es el propio crema #f7efe3 invertido sobre oscuro.",
+      "No pongas titulares en 700 u 800 ni en mayúsculas; el display de 64px va en 500.",
+      "No uses Caveat más de una vez por pantalla ni para textos de más de tres palabras.",
+      "No añadas degradados, glassmorphism ni glows de color en los botones; el primario es un plano crema sólido.",
+      "No bajes el texto secundario por debajo de #b5aa9a sobre #1a1310: se pierde el contraste.",
+      "No apliques radios de 24px a botones o inputs; ese radio es exclusivo de las tarjetas grandes.",
+      "No animes con duraciones largas ni efectos elásticos: por encima de 0.32s el sistema deja de sentirse tranquilo."
+    ],
+    "similar": [
+      {
+        "brand": "Bear",
+        "why": "Misma promesa de escritura local en texto plano resuelta con un oscuro cálido, tipografía sin negritas y capturas de la app como única imagen."
+      },
+      {
+        "brand": "Craft",
+        "why": "Retícula de tarjetas de radio grande con mockups incrustados, paleta neutra de tres escalones y titulares con tracking negativo."
+      },
+      {
+        "brand": "Things 3",
+        "why": "Comparte la sobriedad de producto indie de pago único: interfaz real como héroe, cero stock y microdetalles ilustrados como respiro."
+      },
+      {
+        "brand": "Reeder",
+        "why": "Oscuro tostado en lugar de gris frío, texto crema y sombras teñidas de luz cálida sobre las ventanas flotantes."
+      },
+      {
+        "brand": "Obsidian",
+        "why": "Discurso de archivos propios y privacidad expresado con fondo casi negro, acentos mínimos y tipografía de sistema en pesos medios."
+      }
+    ],
+    "agentPrompt": "Diseña una landing oscura y cálida para una app de diario local. Fondo #1a1310, superficies #241b17 y #302620, texto #f7efe3, secundario #d0c6b6, terciario #b5aa9a, bordes crema al 6% (#f7efe30f). Todo en Inter con pesos 400 y 500 —sin negritas—: display 64px/1.05 con -1.92px de tracking, h2 38.4px, h3 24px, cuerpo 16/26.4px, contenedor 1024px y prosa a 672px. Secciones separadas 128px, tarjetas con radio 24px y padding 40px, botón primario crema con texto oscuro, radio 8px, padding 12px 24px. Transiciones de color y fondo a 0.15s ease-out. Usa capturas reales de la app flotando con sombras teñidas de crema y una anotación manuscrita en Caveat 600."
+  },
+  "generatedAt": "2026-09-20T20:19:27.839Z",
+  "model": "claude-opus-5",
+  "screenshotUrl": "/design-md/a5e2cbf6f44e833e.jpg?v=1789935567848",
+  "coverUrl": "/design-md/a5e2cbf6f44e833e-cover.jpg?v=1789935567848",
+  "scrollUrl": "/design-md/a5e2cbf6f44e833e-scroll.jpg?v=1789935567848"
+}

@@ -1,0 +1,263 @@
+{
+  "url": "https://styles.refero.design",
+  "markdown": "# Refero Styles — DESIGN.md\n> catálogo nocturno con serifa editorial\n\n**Tema:** oscuro  \n**Origen:** https://styles.refero.design/ · 2026-09-21\n\nLas medidas de origen están normalizadas; los roles y las recomendaciones son interpretados.\n\nInterfaz de catálogo oscura y silenciosa donde el contenido —miniaturas de webs reales— aporta todo el color. El lienzo es Obsidiana #101216 y las tarjetas suben un escalón a Carbón #181a20, sin sombras: la profundidad se consigue solo con ese salto de superficie y un filete Velo Lila #ded2f113 de 1px. La tensión visual está en el contraste tipográfico: el h1 va en Kalice, una serifa editorial de 64px en peso 400 con interlineado 69px, mientras que absolutamente todo lo demás usa neueMontreal, un grotesco neutro cuyo peso de batalla es el 530 (párrafos de 16px, tracking -0.32px) con 500 para leyendas de 13px y 600 para títulos de tarjeta de 20px. El texto secundario es Lavanda Tenue #d1dbffb3, un blanco frío ligeramente azulado que evita el gris sucio. Los radios son binarios: 8px en input y botón de búsqueda, 32px en tarjetas y píldora completa en los chips de filtro. Densidad airosa, contenedor de 1100px centrado y transiciones de 150-200ms.\n\n## Colores\n\n| Nombre | Valor | Grupo | Rol |\n|--------|-------|-------|-----|\n| Obsidiana | `#101216` | neutro | Fondo global de la página y de los chips inactivos de la barra de pestañas. |\n| Carbón | `#181a20` | neutro | Superficie elevada: tarjetas de estilo, chips de categoría, campo de búsqueda. |\n| Velo Nocturno | `#101216e6` | neutro | Capa semitransparente al 90% para cabecera fija y overlays sobre contenido. |\n| Blanco Señal | `#ffffff` | marca | Titulares, nombres de tarjeta, estado activo y fondo del botón primario. |\n| Lavanda Tenue | `#d1dbffb3` | neutro | Texto secundario: párrafo de intro, leyendas de tarjeta, enlaces y chips en reposo. |\n| Filete Lila | `#ded2f113` | neutro | Borde de 1px de chips, tarjetas y separadores; único recurso de delimitación. |\n| Rojo Alerta | `#e40014` | semántico | Estado destructivo declarado en variables; apenas visible en la interfaz pública. |\n| Verde Éxito | `#10b981` | semántico | Confirmaciones y estados correctos, reservado a feedback puntual. |\n| Ámbar Aviso | `#f59e0b` | semántico | Avisos no bloqueantes; token declarado, uso residual. |\n\n## Tipografía\n\n### Kalice — display\nSerifa editorial reservada exclusivamente al h1 del hero. Va en peso 400, sin tracking negativo ni versalitas: su elegancia depende de no tocarla. Aparece solo dos veces en toda la página, y ese es el motivo de que funcione.\n- **Sustituto:** 'Times New Roman', Georgia, serif\n- **Pesos:** 400\n- **Tamaños:** 52-64px · 2 valores\n- **Interlineado:** 1.08 (69px sobre 64px)\n- **Tracking:** normal\n\n### neueMontreal — cuerpo\nCubre toda la interfaz: navegación, párrafos, botones, leyendas y títulos de tarjeta. El peso característico es el 530 —ni regular ni medium— para cuerpo y chips; 500 en leyendas de 13px y 600 solo en h3 de 20px. Nunca se usa el 700.\n- **Sustituto:** 'Inter', 'Helvetica Neue', Arial, sans-serif\n- **Pesos:** 500, 530, 600\n- **Tamaños:** 12-25px · 6 valores\n- **Interlineado:** 1.4-1.5\n- **Tracking:** -0.5 a -0.26px; +0.28px en chips de pestaña\n\n### Escala tipográfica\n\n| Rol | Familia | Peso | Tamaño | Interlineado | Tracking |\n|-----|---------|------|--------|--------------|----------|\n| leyenda | neueMontreal | 500 | 12px | 1.33 | -0.24px |\n| cuerpo-sm | neueMontreal | 500 | 13px | 1.54 | -0.26px |\n| cuerpo | neueMontreal | 530 | 14px | 1.43 | -0.28px |\n| subtítulo | neueMontreal | 530 | 16px | 1.5 | -0.32px |\n| título-sm | neueMontreal | 600 | 20px | 1.4 | -0.5px |\n| título | neueMontreal | 530 | 25px | 1.28 | -0.625px |\n| título-lg | Kalice | 400 | 52px | 1.06 | normal |\n| display | Kalice | 400 | 64px | 1.08 | normal |\n\n## Espaciado y layout\n\n**Densidad:** aireada\n\n- **Unidad base:** 4px\n- **Ancho máximo de página:** 1100px (envoltura externa hasta 1800px)\n- **Separación entre secciones:** 64-96px\n- **Padding de tarjeta:** 48px en la caja de preview; 8px por encima del pie de tarjeta\n- **Separación entre elementos:** 8px (12-16px en filas de chips, 40px×32px en el grid de tarjetas)\n\n### Radios de borde\n\n- **Botón primario e input de búsqueda:** 8px\n- **Chips de categoría y pestañas:** 9999px (píldora)\n- **Tarjeta de estilo:** 32px\n- **Etiqueta pequeña tipo 'Beta':** 9999px\n- **Miniaturas internas:** 16px\n\n## Elevación\n\nSin sombras en todo el sistema (shadows vacío). La profundidad se construye con escalones de superficie: Obsidiana #101216 de fondo, Carbón #181a20 para tarjetas y controles, y un filete de 1px en Velo Lila #ded2f113 que dibuja el borde. La cabecera fija usa un velo al 90% de opacidad sobre el fondo para separarse del scroll.\n\n## Componentes\n\n### Botón primario\n**Rol:** Acción principal del buscador ('Search').\n\nAltura 44px, padding lateral 20px, fondo Blanco Señal con texto Obsidiana en cuerpo, radio pequeño de 8px, sin borde ni sombra. Hover: baja a ~92% de opacidad con transición de 150ms.\n\n### Chip de filtro\n**Rol:** Botón secundario en forma de píldora para categorías y pestañas Trending/Popular/Newest.\n\nAltura 40px, padding 0 16px, fondo Carbón, borde 1px Filete Lila, texto Lavanda Tenue en cuerpo peso 530. Estado activo: texto Blanco Señal y peso 600; las pestañas usan tracking positivo +0.28px. Transición de background-color 150ms.\n\n### Input de búsqueda\n**Rol:** Campo único del buscador de ejemplos DESIGN.md.\n\nContenedor Carbón con radio 8px y padding 7px 7px 7px 20px que aloja el botón primario a la derecha; el input es transparente, sin borde, texto Blanco Señal en subtítulo y placeholder en Lavanda Tenue. Foco: el borde del contenedor sube a Filete Lila más opaco, sin anillo de color.\n\n### Tarjeta de estilo\n**Rol:** Unidad del catálogo: preview de la web más nombre y descripción.\n\nFondo Carbón, radio grande de 32px, padding 48px alrededor del preview, sin borde ni sombra; el pie lleva título-sm en Blanco Señal y leyenda en Lavanda Tenue con 4px de separación. Hover: la imagen escala suavemente (transform 300ms) dentro del recorte.\n\n### Cabecera\n**Rol:** Barra superior fija con logotipo y ruta '/ Styles'.\n\nAltura 80px, padding lateral 24px, fondo Velo Nocturno al 90% con desenfoque, separador inferior de 1px en Filete Lila; el breadcrumb en título 25px peso 530.\n\n## Movimiento\n\nVocabulario corto y contenido: 90ms instantáneo, 150ms rápido y 200ms normal, con cubic-bezier(.4,0,.2,1) por defecto y cubic-bezier(0,0,.2,1) para salidas. Se anima color (200ms) y background-color (150ms) en enlaces y chips, transform 300ms en las imágenes de tarjeta al hover y opacity 500ms en las apariciones por scroll. No se animan tamaños, sombras ni radios; nada rebota.\n\n## Layout\n\nColumna central de 1100px sobre un contenedor externo de hasta 1800px, con padding lateral de 24-96px. El hero va centrado y apilado: etiqueta 'Beta', display en Kalice, párrafo limitado a 560px, buscador de 635px y dos filas de chips de 4 columnas. El catálogo pasa a un grid de 3 columnas con gaps de 40px verticales y 32px horizontales, ritmo de sección de 64-96px y alineación a la izquierda dentro de cada tarjeta.\n\n## Imagen\n\nCapturas reales de páginas de producto como único contenido gráfico: se muestran sin filtros ni tintes, recortadas con radio interno de 16px y sentadas sobre un generoso marco de Carbón que las convierte en objetos de galería. Son ellas las que aportan todo el color a una interfaz por lo demás monocroma; no hay ilustración, iconografía decorativa ni degradados.\n\n## Qué hacer y qué no\n\n### Sí\n- Usa Kalice únicamente para el titular principal y siempre en peso 400.\n- Emplea el peso 530 de neueMontreal como texto por defecto, no el 400 ni el 700.\n- Construye profundidad subiendo de Obsidiana #101216 a Carbón #181a20 y añadiendo un filete de 1px #ded2f113.\n- Reserva el blanco puro para títulos, estado activo y el botón primario; el resto del texto va en Lavanda Tenue #d1dbffb3.\n- Respeta la jerarquía de radios: 8px en controles, píldora en chips, 32px en tarjetas.\n- Centra el hero en 1100px y deja que las capturas aporten el color.\n- Mantén las transiciones entre 150 y 300ms con cubic-bezier(.4,0,.2,1).\n\n### No\n- No añadas box-shadow: el sistema no tiene ni una sola sombra.\n- No introduzcas un color de marca saturado; los semánticos son para estados, no para acentos.\n- No uses negrita 700 ni mayúsculas forzadas en la interfaz.\n- No apliques radio de 32px a botones ni de 8px a tarjetas.\n- No pongas Kalice en párrafos, botones o títulos de tarjeta.\n- No apliques tracking negativo a los chips de pestaña: ahí va +0.28px.\n- No coloques bordes de color vivo ni anillos de foco saturados sobre el input.\n\n## Marcas afines\n\n- **Linear** — Misma base casi negra con superficies apenas un escalón más claras y bordes translúcidos en lugar de sombras.\n- **Vercel** — Catálogo oscuro de tarjetas con previews de web, grotesco neutro y controles de 8px de radio.\n- **Resend** — Contraste entre una serifa editorial de display y una sans neutra para todo el resto sobre fondo oscuro.\n- **Mobbin** — Galería de capturas reales como único aporte cromático, con chips píldora para filtrar.\n\n## Prompt para agentes\n\nCrea una interfaz de catálogo oscura: fondo #101216, tarjetas y controles en #181a20, bordes de 1px en #ded2f113 y cero sombras. Titular en la serifa Kalice a 64px peso 400 (fallback Georgia); todo lo demás en neueMontreal (fallback Inter) con peso 530 por defecto, 500 en leyendas de 13px y 600 en títulos de 20px, tracking -0.28 a -0.5px. Texto principal blanco, secundario #d1dbffb3. Radios: 8px en input y botón, píldora en chips, 32px en tarjetas. Contenedor de 1100px centrado, gaps de 8px y grid de 3 columnas con 40px. Transiciones de 150-200ms con cubic-bezier(.4,0,.2,1).\n",
+  "spec": {
+    "brand": "Refero Styles",
+    "tagline": "catálogo nocturno con serifa editorial",
+    "theme": "dark",
+    "description": "Interfaz de catálogo oscura y silenciosa donde el contenido —miniaturas de webs reales— aporta todo el color. El lienzo es Obsidiana #101216 y las tarjetas suben un escalón a Carbón #181a20, sin sombras: la profundidad se consigue solo con ese salto de superficie y un filete Velo Lila #ded2f113 de 1px. La tensión visual está en el contraste tipográfico: el h1 va en Kalice, una serifa editorial de 64px en peso 400 con interlineado 69px, mientras que absolutamente todo lo demás usa neueMontreal, un grotesco neutro cuyo peso de batalla es el 530 (párrafos de 16px, tracking -0.32px) con 500 para leyendas de 13px y 600 para títulos de tarjeta de 20px. El texto secundario es Lavanda Tenue #d1dbffb3, un blanco frío ligeramente azulado que evita el gris sucio. Los radios son binarios: 8px en input y botón de búsqueda, 32px en tarjetas y píldora completa en los chips de filtro. Densidad airosa, contenedor de 1100px centrado y transiciones de 150-200ms.",
+    "colors": [
+      {
+        "name": "Obsidiana",
+        "hex": "#101216",
+        "group": "neutral",
+        "role": "Fondo global de la página y de los chips inactivos de la barra de pestañas."
+      },
+      {
+        "name": "Carbón",
+        "hex": "#181a20",
+        "group": "neutral",
+        "role": "Superficie elevada: tarjetas de estilo, chips de categoría, campo de búsqueda."
+      },
+      {
+        "name": "Velo Nocturno",
+        "hex": "#101216e6",
+        "group": "neutral",
+        "role": "Capa semitransparente al 90% para cabecera fija y overlays sobre contenido."
+      },
+      {
+        "name": "Blanco Señal",
+        "hex": "#ffffff",
+        "group": "brand",
+        "role": "Titulares, nombres de tarjeta, estado activo y fondo del botón primario."
+      },
+      {
+        "name": "Lavanda Tenue",
+        "hex": "#d1dbffb3",
+        "group": "neutral",
+        "role": "Texto secundario: párrafo de intro, leyendas de tarjeta, enlaces y chips en reposo."
+      },
+      {
+        "name": "Filete Lila",
+        "hex": "#ded2f113",
+        "group": "neutral",
+        "role": "Borde de 1px de chips, tarjetas y separadores; único recurso de delimitación."
+      },
+      {
+        "name": "Rojo Alerta",
+        "hex": "#e40014",
+        "group": "semantic",
+        "role": "Estado destructivo declarado en variables; apenas visible en la interfaz pública."
+      },
+      {
+        "name": "Verde Éxito",
+        "hex": "#10b981",
+        "group": "semantic",
+        "role": "Confirmaciones y estados correctos, reservado a feedback puntual."
+      },
+      {
+        "name": "Ámbar Aviso",
+        "hex": "#f59e0b",
+        "group": "semantic",
+        "role": "Avisos no bloqueantes; token declarado, uso residual."
+      }
+    ],
+    "fonts": [
+      {
+        "family": "Kalice",
+        "role": "display",
+        "weights": [
+          400
+        ],
+        "sizes": "52-64px · 2 valores",
+        "lineHeight": "1.08 (69px sobre 64px)",
+        "letterSpacing": "normal",
+        "fallback": "'Times New Roman', Georgia, serif",
+        "usage": "Serifa editorial reservada exclusivamente al h1 del hero. Va en peso 400, sin tracking negativo ni versalitas: su elegancia depende de no tocarla. Aparece solo dos veces en toda la página, y ese es el motivo de que funcione."
+      },
+      {
+        "family": "neueMontreal",
+        "role": "body",
+        "weights": [
+          500,
+          530,
+          600
+        ],
+        "sizes": "12-25px · 6 valores",
+        "lineHeight": "1.4-1.5",
+        "letterSpacing": "-0.5 a -0.26px; +0.28px en chips de pestaña",
+        "fallback": "'Inter', 'Helvetica Neue', Arial, sans-serif",
+        "usage": "Cubre toda la interfaz: navegación, párrafos, botones, leyendas y títulos de tarjeta. El peso característico es el 530 —ni regular ni medium— para cuerpo y chips; 500 en leyendas de 13px y 600 solo en h3 de 20px. Nunca se usa el 700."
+      }
+    ],
+    "typeScale": [
+      {
+        "role": "leyenda",
+        "size": 12,
+        "weight": 500,
+        "lineHeight": 1.33,
+        "letterSpacing": "-0.24px",
+        "family": "neueMontreal"
+      },
+      {
+        "role": "cuerpo-sm",
+        "size": 13,
+        "weight": 500,
+        "lineHeight": 1.54,
+        "letterSpacing": "-0.26px",
+        "family": "neueMontreal"
+      },
+      {
+        "role": "cuerpo",
+        "size": 14,
+        "weight": 530,
+        "lineHeight": 1.43,
+        "letterSpacing": "-0.28px",
+        "family": "neueMontreal"
+      },
+      {
+        "role": "subtítulo",
+        "size": 16,
+        "weight": 530,
+        "lineHeight": 1.5,
+        "letterSpacing": "-0.32px",
+        "family": "neueMontreal"
+      },
+      {
+        "role": "título-sm",
+        "size": 20,
+        "weight": 600,
+        "lineHeight": 1.4,
+        "letterSpacing": "-0.5px",
+        "family": "neueMontreal"
+      },
+      {
+        "role": "título",
+        "size": 25,
+        "weight": 530,
+        "lineHeight": 1.28,
+        "letterSpacing": "-0.625px",
+        "family": "neueMontreal"
+      },
+      {
+        "role": "título-lg",
+        "size": 52,
+        "weight": 400,
+        "lineHeight": 1.06,
+        "letterSpacing": "normal",
+        "family": "Kalice"
+      },
+      {
+        "role": "display",
+        "size": 64,
+        "weight": 400,
+        "lineHeight": 1.08,
+        "letterSpacing": "normal",
+        "family": "Kalice"
+      }
+    ],
+    "spacing": {
+      "density": "airy",
+      "baseUnit": "4px",
+      "maxWidth": "1100px (envoltura externa hasta 1800px)",
+      "sectionGap": "64-96px",
+      "cardPadding": "48px en la caja de preview; 8px por encima del pie de tarjeta",
+      "elementGap": "8px (12-16px en filas de chips, 40px×32px en el grid de tarjetas)"
+    },
+    "radii": [
+      {
+        "element": "Botón primario e input de búsqueda",
+        "value": "8px"
+      },
+      {
+        "element": "Chips de categoría y pestañas",
+        "value": "9999px (píldora)"
+      },
+      {
+        "element": "Tarjeta de estilo",
+        "value": "32px"
+      },
+      {
+        "element": "Etiqueta pequeña tipo 'Beta'",
+        "value": "9999px"
+      },
+      {
+        "element": "Miniaturas internas",
+        "value": "16px"
+      }
+    ],
+    "elevation": "Sin sombras en todo el sistema (shadows vacío). La profundidad se construye con escalones de superficie: Obsidiana #101216 de fondo, Carbón #181a20 para tarjetas y controles, y un filete de 1px en Velo Lila #ded2f113 que dibuja el borde. La cabecera fija usa un velo al 90% de opacidad sobre el fondo para separarse del scroll.",
+    "components": [
+      {
+        "name": "Botón primario",
+        "role": "Acción principal del buscador ('Search').",
+        "spec": "Altura 44px, padding lateral 20px, fondo Blanco Señal con texto Obsidiana en cuerpo, radio pequeño de 8px, sin borde ni sombra. Hover: baja a ~92% de opacidad con transición de 150ms."
+      },
+      {
+        "name": "Chip de filtro",
+        "role": "Botón secundario en forma de píldora para categorías y pestañas Trending/Popular/Newest.",
+        "spec": "Altura 40px, padding 0 16px, fondo Carbón, borde 1px Filete Lila, texto Lavanda Tenue en cuerpo peso 530. Estado activo: texto Blanco Señal y peso 600; las pestañas usan tracking positivo +0.28px. Transición de background-color 150ms."
+      },
+      {
+        "name": "Input de búsqueda",
+        "role": "Campo único del buscador de ejemplos DESIGN.md.",
+        "spec": "Contenedor Carbón con radio 8px y padding 7px 7px 7px 20px que aloja el botón primario a la derecha; el input es transparente, sin borde, texto Blanco Señal en subtítulo y placeholder en Lavanda Tenue. Foco: el borde del contenedor sube a Filete Lila más opaco, sin anillo de color."
+      },
+      {
+        "name": "Tarjeta de estilo",
+        "role": "Unidad del catálogo: preview de la web más nombre y descripción.",
+        "spec": "Fondo Carbón, radio grande de 32px, padding 48px alrededor del preview, sin borde ni sombra; el pie lleva título-sm en Blanco Señal y leyenda en Lavanda Tenue con 4px de separación. Hover: la imagen escala suavemente (transform 300ms) dentro del recorte."
+      },
+      {
+        "name": "Cabecera",
+        "role": "Barra superior fija con logotipo y ruta '/ Styles'.",
+        "spec": "Altura 80px, padding lateral 24px, fondo Velo Nocturno al 90% con desenfoque, separador inferior de 1px en Filete Lila; el breadcrumb en título 25px peso 530."
+      }
+    ],
+    "motion": "Vocabulario corto y contenido: 90ms instantáneo, 150ms rápido y 200ms normal, con cubic-bezier(.4,0,.2,1) por defecto y cubic-bezier(0,0,.2,1) para salidas. Se anima color (200ms) y background-color (150ms) en enlaces y chips, transform 300ms en las imágenes de tarjeta al hover y opacity 500ms en las apariciones por scroll. No se animan tamaños, sombras ni radios; nada rebota.",
+    "layout": "Columna central de 1100px sobre un contenedor externo de hasta 1800px, con padding lateral de 24-96px. El hero va centrado y apilado: etiqueta 'Beta', display en Kalice, párrafo limitado a 560px, buscador de 635px y dos filas de chips de 4 columnas. El catálogo pasa a un grid de 3 columnas con gaps de 40px verticales y 32px horizontales, ritmo de sección de 64-96px y alineación a la izquierda dentro de cada tarjeta.",
+    "imagery": "Capturas reales de páginas de producto como único contenido gráfico: se muestran sin filtros ni tintes, recortadas con radio interno de 16px y sentadas sobre un generoso marco de Carbón que las convierte en objetos de galería. Son ellas las que aportan todo el color a una interfaz por lo demás monocroma; no hay ilustración, iconografía decorativa ni degradados.",
+    "dos": [
+      "Usa Kalice únicamente para el titular principal y siempre en peso 400.",
+      "Emplea el peso 530 de neueMontreal como texto por defecto, no el 400 ni el 700.",
+      "Construye profundidad subiendo de Obsidiana #101216 a Carbón #181a20 y añadiendo un filete de 1px #ded2f113.",
+      "Reserva el blanco puro para títulos, estado activo y el botón primario; el resto del texto va en Lavanda Tenue #d1dbffb3.",
+      "Respeta la jerarquía de radios: 8px en controles, píldora en chips, 32px en tarjetas.",
+      "Centra el hero en 1100px y deja que las capturas aporten el color.",
+      "Mantén las transiciones entre 150 y 300ms con cubic-bezier(.4,0,.2,1)."
+    ],
+    "donts": [
+      "No añadas box-shadow: el sistema no tiene ni una sola sombra.",
+      "No introduzcas un color de marca saturado; los semánticos son para estados, no para acentos.",
+      "No uses negrita 700 ni mayúsculas forzadas en la interfaz.",
+      "No apliques radio de 32px a botones ni de 8px a tarjetas.",
+      "No pongas Kalice en párrafos, botones o títulos de tarjeta.",
+      "No apliques tracking negativo a los chips de pestaña: ahí va +0.28px.",
+      "No coloques bordes de color vivo ni anillos de foco saturados sobre el input."
+    ],
+    "similar": [
+      {
+        "brand": "Linear",
+        "why": "Misma base casi negra con superficies apenas un escalón más claras y bordes translúcidos en lugar de sombras."
+      },
+      {
+        "brand": "Vercel",
+        "why": "Catálogo oscuro de tarjetas con previews de web, grotesco neutro y controles de 8px de radio."
+      },
+      {
+        "brand": "Resend",
+        "why": "Contraste entre una serifa editorial de display y una sans neutra para todo el resto sobre fondo oscuro."
+      },
+      {
+        "brand": "Mobbin",
+        "why": "Galería de capturas reales como único aporte cromático, con chips píldora para filtrar."
+      }
+    ],
+    "agentPrompt": "Crea una interfaz de catálogo oscura: fondo #101216, tarjetas y controles en #181a20, bordes de 1px en #ded2f113 y cero sombras. Titular en la serifa Kalice a 64px peso 400 (fallback Georgia); todo lo demás en neueMontreal (fallback Inter) con peso 530 por defecto, 500 en leyendas de 13px y 600 en títulos de 20px, tracking -0.28 a -0.5px. Texto principal blanco, secundario #d1dbffb3. Radios: 8px en input y botón, píldora en chips, 32px en tarjetas. Contenedor de 1100px centrado, gaps de 8px y grid de 3 columnas con 40px. Transiciones de 150-200ms con cubic-bezier(.4,0,.2,1)."
+  },
+  "generatedAt": "2026-09-21T00:54:51.998Z",
+  "model": "claude-opus-5",
+  "screenshotUrl": "/design-md/fda03b2f62ac2be4.jpg?v=1789952092001",
+  "coverUrl": "/design-md/fda03b2f62ac2be4-cover.jpg?v=1789952092000",
+  "scrollUrl": "/design-md/fda03b2f62ac2be4-scroll.jpg?v=1789952092000"
+}

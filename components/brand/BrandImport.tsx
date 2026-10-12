@@ -4,7 +4,7 @@
 // with the board and keep improving it; only what the team edits by hand stays fixed.
 import { useState } from "react";
 import { useT } from "../I18nProvider";
-import { Dialog, DialogDescription, DialogWindow } from "@/components/ui/dialog";
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Busy, Button, Icon, IconButton, SegmentedControl, TextArea } from "@/components/criterio";
 import type { InspoItem } from "@/types/inspo";
 import { brandId, type BrandFace, type BrandFile, type BrandSections, type BrandSpec } from "@/types/brand";
@@ -116,11 +116,16 @@ export default function BrandImport({ projectId, brand, onClose, onAddSite, onCl
   const tabs: Tab[] = ["site", "files", "text"];
   return (
     <Dialog open onOpenChange={(o) => { if (!o && !busy) onClose(); }}>
-      <DialogWindow className="bimp" bar={s.open} heading={s.title} closeLabel={t.common.close}>
-        <div className="bimp__body">
+      {/* The flat modal (a form, not a notice): title and close in the header, no moss bar */}
+      <DialogContent className="bimp">
+        <div className="modal__header">
+          <DialogTitle className="t-title-s">{s.title}</DialogTitle>
+          <DialogClose render={<IconButton icon="close" variant="default" size="s" label={t.common.close} />} />
+        </div>
+        <div className="modal__body bimp__body">
           <DialogDescription className="bimp__lead">{s.lead}</DialogDescription>
           {/* While it runs the tabs stay put: a press on another one waits for the steps to finish */}
-          <SegmentedControl tone="paper" className="bimp__tabs" label={s.title} active={tabs.indexOf(tab)}
+          <SegmentedControl tone="paper" size="s" className="bimp__tabs" label={s.title} active={tabs.indexOf(tab)}
             onChange={(i) => { if (!busy) setTab(tabs[i]); }} items={tabs.map((k) => ({ label: s.tabs[k] }))} />
           {steps.length > 0 ? (
             <ol className="bimp__steps" aria-live="polite">
@@ -128,9 +133,12 @@ export default function BrandImport({ projectId, brand, onClose, onAddSite, onCl
             </ol>
           ) : tab === "site" ? (
             <form className="bimp__form" onSubmit={(e) => { e.preventDefault(); if (url.trim()) void fromSite(); }}>
-              <input className="cr-input" type="url" inputMode="url" placeholder="https://" aria-label={s.tabs.site} value={url} onChange={(e) => setUrl(e.currentTarget.value)} autoFocus />
+              {/* The address and its answer on one row, as in Import */}
+              <div className="bimp__row">
+                <input className="cr-input" type="url" inputMode="url" placeholder="https://" aria-label={s.tabs.site} value={url} onChange={(e) => setUrl(e.currentTarget.value)} autoFocus />
+                <Button variant="primary" type="submit" disabled={!url.trim() || busy}>{s.bring}</Button>
+              </div>
               <p className="bimp__hint">{s.siteHint}</p>
-              <Button variant="primary" type="submit" disabled={!url.trim() || busy}>{s.bring}</Button>
             </form>
           ) : tab === "files" ? (
             <div className="bimp__form">
@@ -151,7 +159,7 @@ export default function BrandImport({ projectId, brand, onClose, onAddSite, onCl
           )}
           {error && <p className="sysv-error" role="alert">{error}</p>}
         </div>
-      </DialogWindow>
+      </DialogContent>
     </Dialog>
   );
 }

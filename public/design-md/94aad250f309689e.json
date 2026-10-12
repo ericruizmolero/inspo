@@ -1,0 +1,281 @@
+{
+  "url": "https://tinycomputer.co",
+  "markdown": "# Tiny Computer Co. — DESIGN.md\n> cuaderno tipográfico a medianoche\n\n**Tema:** oscuro  \n**Origen:** https://tinycomputer.co/ · 2026-09-20\n\nLas medidas de origen están normalizadas; los roles y las recomendaciones son interpretados.\n\nUna página de estudio de software que se comporta como una hoja de imprenta: todo cae sobre una retícula de línea base de 37px y casi nada se sale de ella. El fondo es un negro cálido y mate (#111111), y la profundidad se construye con dos escalones mínimos de superficie (#171717 para ventanas y tarjetas, #1c1c1c para las celdas del mosaico) más filetes de un píxel, nunca con sombras dramáticas. El titular usa una serif de alto contraste (la 'family' del sitio, tipo Signifier/Editorial New) a 107,8px/111px con tracking −2,156px, y a partir de ahí manda sohneMono 400 a 18px/37px: cuerpo, enlaces, botones, inputs y changelog comparten exactamente el mismo tamaño y peso. El texto es blanco al 93% (#ffffffed) y los secundarios caen al 40% (#ffffff66); el único color real es el violeta de colecciones #b335d4. Los radios son sólo 8px (miniaturas) y 12px (ventana), y el movimiento se limita a fondos y colores en 150–200ms.\n\n## Colores\n\n| Nombre | Valor | Grupo | Rol |\n|--------|-------|-------|-----|\n| Tinta Nocturna | `#111111` | neutro | Fondo base de toda la página; negro cálido y mate que deja respirar el mosaico de imágenes. |\n| Grafito | `#171717` | neutro | Superficie de la ventana de producto y de las tarjetas; primer escalón sobre el fondo. |\n| Pizarra | `#1c1c1c` | neutro | Celdas y paneles interiores del mosaico; el tono con más área visible de la página. |\n| Velo Blanco | `#ffffff12` | neutro | Filete interior de 1px, fila activa de la barra lateral y estados hover de los paneles. |\n| Gris Susurro | `#ffffff66` | neutro | Texto atenuado: contadores, etiquetas de 11px, fechas y elementos inactivos del menú. |\n| Blanco Papel | `#ffffffed` | neutro | Color de texto por defecto, al 93% de opacidad para evitar el contraste duro del blanco puro. |\n| Blanco Puro | `#ffffff` | acento | Solo en estados activos: enlace en hover, botón enfocado y cita destacada. |\n| Violeta Colección | `#b335d4` | semántico | Marca las colecciones dentro de la interfaz de Boardwalk; único color cromático con función real. |\n| Ámbar Señal | `#ffd500` | acento | Acento declarado en --accent y su relleno al 40%; apenas aparece en el viewport oscuro medido, resérvalo para subrayados o marcas puntuales. |\n\n## Tipografía\n\n### family (serif display propietaria del sitio) — display\nSe usa exclusivamente para el titular gigante y la firma 'Tiny Computer Co.'. Es una serif de alto contraste con terminaciones finas; a 107,8px el interlineado 111px casi se pega al tamaño y el tracking negativo cierra las palabras en un bloque. Nunca aparece en cuerpo ni en interfaz.\n- **Sustituto:** Signifier, 'Editorial New', 'Times New Roman', Georgia, serif\n- **Pesos:** 400, 500\n- **Tamaños:** 19-107.8px · 3 valores\n- **Interlineado:** 1.03 en display, 1.95 en el masthead\n- **Tracking:** -0.02em (hero) · -0.01em (masthead)\n\n### sohneMono — cuerpo\nEs la voz del sitio: párrafos, changelog, enlaces, botones e inputs comparten 18px/37px en peso 400. La decisión característica es que no hay negritas ni tamaños intermedios: la jerarquía se hace con opacidad y con posición en la retícula, no con peso.\n- **Sustituto:** 'Söhne Mono', 'Berkeley Mono', 'IBM Plex Mono', ui-monospace, monospace\n- **Pesos:** 400\n- **Tamaños:** 11-18px · 3 valores\n- **Interlineado:** 37px fijo (2.06) en cuerpo · 16px en leyendas\n- **Tracking:** normal\n\n### symbols — interfaz\nFuente de iconos empleada dentro de la maqueta de la app (lupa de búsqueda, corazón, carpetas). Siempre a 11px y en gris al 40%, alineada ópticamente con la etiqueta de texto contigua.\n- **Sustituto:** 'SF Symbols', 'Phosphor', sans-serif\n- **Pesos:** 500\n- **Tamaños:** 11px · 1 valor\n- **Interlineado:** 1.45\n- **Tracking:** normal\n\n### Escala tipográfica\n\n| Rol | Familia | Peso | Tamaño | Interlineado | Tracking |\n|-----|---------|------|--------|--------------|----------|\n| leyenda | sohneMono | 400 | 11px | 1.45 | normal |\n| cuerpo-sm | sohneMono | 400 | 13px | 1.85 | normal |\n| cuerpo | sohneMono | 400 | 18px | 2.06 | normal |\n| subtítulo | family (serif) | 500 | 19px | 1.95 | -0.19px |\n| título-sm | family (serif) | 400 | 36px | 1.03 | -0.02em |\n| título | family (serif) | 400 | 56px | 1.32 | -0.02em |\n| display | family (serif) | 400 | 107.8px | 1.03 | -2.156px |\n\n## Espaciado y layout\n\n**Densidad:** aireada\n\n- **Unidad base:** 37px (línea base --baseline; retícula secundaria de 10px para la interfaz)\n- **Ancho máximo de página:** 868px (columna de lectura 720px, copia 420px)\n- **Separación entre secciones:** 111px (3 × línea base)\n- **Padding de tarjeta:** 10px en celdas del mosaico · 74px de padding vertical de página\n- **Separación entre elementos:** 37px entre bloques · 10px entre miniaturas\n\n### Radios de borde\n\n- **Miniatura y celda del mosaico:** 8px\n- **Tarjeta y ventana de producto:** 12px\n- **Panel grande / recorte exterior:** 26-32px\n- **Puntos de ventana y píldoras:** 9999px\n\n## Elevación\n\nLa profundidad es casi toda por escalones de superficie y filetes: #111111 → #171717 → #1c1c1c, cada uno con un anillo de 1px. Las 516 miniaturas llevan un simple 'rgba(0,0,0,0.04) 0 0 0 1px'; los paneles usan un filete interior 'rgba(255,255,255,0.04) 0 0 0 1px inset'. La ventana de producto añade una sombra compuesta muy contenida: 'rgba(0,0,0,0.04) 0 0 0 1px, rgba(0,0,0,0.21) 0 0.48px 0.39px -1.5px, rgba(0,0,0,0.18) 0 1.83px 1.46px -3px, rgba(0,0,0,0.02) 0 8px 6.4px -4.5px' más un brillo superior 'rgba(255,255,255,0.05) 0 1px 0 0 inset'. Hay un único efecto gráfico: un desplazamiento sólido '-37px 37px 0 0 rgba(0,0,0,0.4)' que proyecta la ventana exactamente una línea base.\n\n## Componentes\n\n### Firma de cabecera\n**Rol:** Masthead / identidad\n\nTexto 'Tiny Computer Co.' en la serif del sitio a 19px/37px, peso 500, tracking -0.19px, color #ffffffed, sin fondo ni borde, anclado a 74px del borde superior y 74px del izquierdo.\n\n### Titular manifiesto\n**Rol:** Hero editorial\n\nSerif 400 a 107.8px/111px, tracking -2.156px, color #ffffffed, dos líneas forzadas, ancho máximo 868px; sin fondo, sin botón adyacente y con 111px de aire antes del subtítulo mono.\n\n### Línea de entrada\n**Rol:** Changelog / bitácora\n\nFila mono de 18px/37px con columna de fecha fija (6 celdas ≈ 64.8px) en #ffffff66, flecha '→' y texto en #ffffffed; padding-right 138.8px, separación entre entradas de 37px y sin divisores visibles.\n\n### Ventana de producto\n**Rol:** Maqueta de la app Boardwalk\n\nContenedor #171717 con radio 12px, padding 10px, filete rgba(0,0,0,0.04) 1px, brillo interior blanco al 5% en el borde superior y desplazamiento sólido -37px/37px en negro al 40%; altura 14 × 37px; tres puntos circulares grises (#3a3a3a) arriba a la izquierda.\n\n### Celda de miniatura\n**Rol:** Mosaico de capturas\n\nImagen a sangre con radio 8px sobre #1c1c1c, separación de 10px en columnas tipo masonry, anillo rgba(0,0,0,0.04) 1px y sin sombra propia; hover sube el fondo al velo #ffffff12 en 150ms.\n\n### Fila de barra lateral\n**Rol:** Navegación interna de la maqueta\n\nIcono 'symbols' 11px + etiqueta mono 11px en #ffffff66, altura de fila 22px, padding 0 10px, radio 8px; estado activo con fondo #ffffff12 y texto #ffffffed; contador alineado a la derecha en gris.\n\n### Enlace de texto\n**Rol:** Vínculos en prosa\n\nMisma mono 18px/37px que el cuerpo, sin subrayado permanente; en reposo #ffffffed y en hover pasa a #ffffff con un fondo de resalte que entra con 'background-color 0.2s cubic-bezier' — el resalte marca el enlace, no el color.\n\n### Campo de lista de espera\n**Rol:** Captura de email\n\nInput transparente sin borde ni radio, placeholder 'email@address.com' en mono 18px al 40%, texto escrito en #ffffffed, apoyado sobre un filete inferior de 1px blanco al 7%; el botón contiguo es texto mono sin caja, en blanco puro.\n\n## Movimiento\n\nMovimiento mínimo y siempre de color: 'background-color 0.15s ease' para filas y miniaturas, y 'background-color / color 0.2s cubic-bezier(...)' para enlaces y botones. No hay transiciones de transform, escala ni opacidad en los elementos de interfaz; lo único que se mueve es el desplazamiento del mosaico ligado al scroll (hay animaciones de scroll y un vídeo en la maqueta). Nada rebota, nada se desliza al entrar: el texto aparece ya en su sitio sobre la retícula.\n\n## Layout\n\nUna sola columna centrada, contenido a 720px y máximo 868px, con padding horizontal de 37px y vertical de 74px (1× y 2× línea base). Todo el ritmo vertical deriva de --baseline: 37px, secciones a 111px, bloques mayores a 148px, y los huecos se calculan restando el 'lead' de cada estilo para que las líneas caigan exactas en la retícula. El changelog usa un canalón fijo para la fecha (6 celdas del ancho de carácter mono) que crea una segunda columna implícita. Debajo, el mosaico de capturas rompe la columna a todo ancho con 10px de separación. Todo alineado a la izquierda, sin centrados.\n\n## Imagen\n\nFotografía y capturas reales, nunca ilustración: cientos de miniaturas editoriales (tipografía impresa, teclados, prendas, packaging) que funcionan como contenido de la propia app y como muestrario de gusto. Se presentan a color pleno, sin filtros ni duotonos, recortadas a 8px de radio y separadas 10px en un mosaico tipo masonry que sale del marco inferior. La densidad es deliberadamente alta para contrastar con el vacío del hero; ninguna imagen lleva pie de foto ni overlay.\n\n## Qué hacer y qué no\n\n### Sí\n- Cuadra cada bloque a la línea base de 37px y calcula los huecos restando el lead del estilo, como hacen las variables --gap-*.\n- Usa sohneMono 400 a 18px/37px para absolutamente todo el texto que no sea el titular o la firma.\n- Construye jerarquía con opacidad (#ffffffed → #ffffff66) y con posición, nunca con negritas.\n- Reserva la serif de alto contraste para uno o dos momentos por página, siempre con tracking -0.02em.\n- Separa superficies con escalones de 5-11 puntos (#111111 / #171717 / #1c1c1c) y un filete de 1px, no con sombras fuertes.\n- Limita los radios a 8px (miniaturas) y 12px (ventana); las píldoras solo para los puntos de la ventana.\n- Anima únicamente background-color y color, en 150-200ms.\n\n### No\n- No introduzcas un peso 600 o 700: el sitio vive entre 400 y un único 500 en la firma.\n- No uses blanco puro para párrafos; el texto de lectura va al 93% (#ffffffed).\n- No añadas botones con relleno de color ni CTA en cápsula: los botones son texto mono sin caja.\n- No metas sombras difusas ni glows de color; el desenfoque máximo es 8px con opacidad 0.05.\n- No centres el texto ni ensanches la columna más allá de 868px.\n- No amplíes la paleta cromática: el violeta #b335d4 es el único color de interfaz y solo etiqueta colecciones.\n- No animes entradas con fades o desplazamientos: el contenido se muestra ya colocado en la retícula.\n\n## Marcas afines\n\n- **Linear** — Mismo dark mate con escalones de superficie casi idénticos, filetes de 1px y brillos interiores blancos al 5% en lugar de sombras.\n- **Panic** — Estudio pequeño que se presenta con voz seca, producto en primer plano y maquetas de ventana macOS con puntos de semáforo.\n- **Cultured Code (Things)** — Comparte la calma tipográfica, la mezcla de serif editorial con texto técnico y la obsesión por el ritmo vertical.\n- **Arc / The Browser Company** — Titular en serif de alto contraste sobre fondo casi monocromo, copy corto y mosaico de imágenes como argumento visual.\n- **Teenage Engineering** — Mono como fuente de sistema, retícula estricta y ausencia total de adorno cromático fuera de un acento puntual.\n\n## Prompt para agentes\n\nDiseña una página oscura de estudio de software sobre #111111, con superficies #171717 y #1c1c1c separadas por filetes de 1px rgba(0,0,0,0.04) y brillos interiores blancos al 5%. Cuadra todo a una línea base de 37px: columna de 720px (máx. 868px), padding 37px/74px, secciones a 111px. Titular en serif de alto contraste a 107.8px/111px con tracking -2.156px; el resto en mono (Söhne Mono) 400 a 18px/37px, con etiquetas de 11px. Texto #ffffffed, secundario #ffffff66, un único acento violeta #b335d4. Radios 8px y 12px. Anima solo background-color y color en 150-200ms. Sin negritas, sin botones rellenos, sin sombras difusas.\n",
+  "spec": {
+    "brand": "Tiny Computer Co.",
+    "tagline": "cuaderno tipográfico a medianoche",
+    "theme": "dark",
+    "description": "Una página de estudio de software que se comporta como una hoja de imprenta: todo cae sobre una retícula de línea base de 37px y casi nada se sale de ella. El fondo es un negro cálido y mate (#111111), y la profundidad se construye con dos escalones mínimos de superficie (#171717 para ventanas y tarjetas, #1c1c1c para las celdas del mosaico) más filetes de un píxel, nunca con sombras dramáticas. El titular usa una serif de alto contraste (la 'family' del sitio, tipo Signifier/Editorial New) a 107,8px/111px con tracking −2,156px, y a partir de ahí manda sohneMono 400 a 18px/37px: cuerpo, enlaces, botones, inputs y changelog comparten exactamente el mismo tamaño y peso. El texto es blanco al 93% (#ffffffed) y los secundarios caen al 40% (#ffffff66); el único color real es el violeta de colecciones #b335d4. Los radios son sólo 8px (miniaturas) y 12px (ventana), y el movimiento se limita a fondos y colores en 150–200ms.",
+    "colors": [
+      {
+        "name": "Tinta Nocturna",
+        "hex": "#111111",
+        "group": "neutral",
+        "role": "Fondo base de toda la página; negro cálido y mate que deja respirar el mosaico de imágenes."
+      },
+      {
+        "name": "Grafito",
+        "hex": "#171717",
+        "group": "neutral",
+        "role": "Superficie de la ventana de producto y de las tarjetas; primer escalón sobre el fondo."
+      },
+      {
+        "name": "Pizarra",
+        "hex": "#1c1c1c",
+        "group": "neutral",
+        "role": "Celdas y paneles interiores del mosaico; el tono con más área visible de la página."
+      },
+      {
+        "name": "Velo Blanco",
+        "hex": "#ffffff12",
+        "group": "neutral",
+        "role": "Filete interior de 1px, fila activa de la barra lateral y estados hover de los paneles."
+      },
+      {
+        "name": "Gris Susurro",
+        "hex": "#ffffff66",
+        "group": "neutral",
+        "role": "Texto atenuado: contadores, etiquetas de 11px, fechas y elementos inactivos del menú."
+      },
+      {
+        "name": "Blanco Papel",
+        "hex": "#ffffffed",
+        "group": "neutral",
+        "role": "Color de texto por defecto, al 93% de opacidad para evitar el contraste duro del blanco puro."
+      },
+      {
+        "name": "Blanco Puro",
+        "hex": "#ffffff",
+        "group": "accent",
+        "role": "Solo en estados activos: enlace en hover, botón enfocado y cita destacada."
+      },
+      {
+        "name": "Violeta Colección",
+        "hex": "#b335d4",
+        "group": "semantic",
+        "role": "Marca las colecciones dentro de la interfaz de Boardwalk; único color cromático con función real."
+      },
+      {
+        "name": "Ámbar Señal",
+        "hex": "#ffd500",
+        "group": "accent",
+        "role": "Acento declarado en --accent y su relleno al 40%; apenas aparece en el viewport oscuro medido, resérvalo para subrayados o marcas puntuales."
+      }
+    ],
+    "fonts": [
+      {
+        "family": "family (serif display propietaria del sitio)",
+        "role": "display",
+        "weights": [
+          400,
+          500
+        ],
+        "sizes": "19-107.8px · 3 valores",
+        "lineHeight": "1.03 en display, 1.95 en el masthead",
+        "letterSpacing": "-0.02em (hero) · -0.01em (masthead)",
+        "fallback": "Signifier, 'Editorial New', 'Times New Roman', Georgia, serif",
+        "usage": "Se usa exclusivamente para el titular gigante y la firma 'Tiny Computer Co.'. Es una serif de alto contraste con terminaciones finas; a 107,8px el interlineado 111px casi se pega al tamaño y el tracking negativo cierra las palabras en un bloque. Nunca aparece en cuerpo ni en interfaz."
+      },
+      {
+        "family": "sohneMono",
+        "role": "body",
+        "weights": [
+          400
+        ],
+        "sizes": "11-18px · 3 valores",
+        "lineHeight": "37px fijo (2.06) en cuerpo · 16px en leyendas",
+        "letterSpacing": "normal",
+        "fallback": "'Söhne Mono', 'Berkeley Mono', 'IBM Plex Mono', ui-monospace, monospace",
+        "usage": "Es la voz del sitio: párrafos, changelog, enlaces, botones e inputs comparten 18px/37px en peso 400. La decisión característica es que no hay negritas ni tamaños intermedios: la jerarquía se hace con opacidad y con posición en la retícula, no con peso."
+      },
+      {
+        "family": "symbols",
+        "role": "ui",
+        "weights": [
+          500
+        ],
+        "sizes": "11px · 1 valor",
+        "lineHeight": "1.45",
+        "letterSpacing": "normal",
+        "fallback": "'SF Symbols', 'Phosphor', sans-serif",
+        "usage": "Fuente de iconos empleada dentro de la maqueta de la app (lupa de búsqueda, corazón, carpetas). Siempre a 11px y en gris al 40%, alineada ópticamente con la etiqueta de texto contigua."
+      }
+    ],
+    "typeScale": [
+      {
+        "role": "leyenda",
+        "size": 11,
+        "weight": 400,
+        "lineHeight": 1.45,
+        "letterSpacing": "normal",
+        "family": "sohneMono"
+      },
+      {
+        "role": "cuerpo-sm",
+        "size": 13,
+        "weight": 400,
+        "lineHeight": 1.85,
+        "letterSpacing": "normal",
+        "family": "sohneMono"
+      },
+      {
+        "role": "cuerpo",
+        "size": 18,
+        "weight": 400,
+        "lineHeight": 2.06,
+        "letterSpacing": "normal",
+        "family": "sohneMono"
+      },
+      {
+        "role": "subtítulo",
+        "size": 19,
+        "weight": 500,
+        "lineHeight": 1.95,
+        "letterSpacing": "-0.19px",
+        "family": "family (serif)"
+      },
+      {
+        "role": "título-sm",
+        "size": 36,
+        "weight": 400,
+        "lineHeight": 1.03,
+        "letterSpacing": "-0.02em",
+        "family": "family (serif)"
+      },
+      {
+        "role": "título",
+        "size": 56,
+        "weight": 400,
+        "lineHeight": 1.32,
+        "letterSpacing": "-0.02em",
+        "family": "family (serif)"
+      },
+      {
+        "role": "display",
+        "size": 107.8,
+        "weight": 400,
+        "lineHeight": 1.03,
+        "letterSpacing": "-2.156px",
+        "family": "family (serif)"
+      }
+    ],
+    "spacing": {
+      "density": "airy",
+      "baseUnit": "37px (línea base --baseline; retícula secundaria de 10px para la interfaz)",
+      "maxWidth": "868px (columna de lectura 720px, copia 420px)",
+      "sectionGap": "111px (3 × línea base)",
+      "cardPadding": "10px en celdas del mosaico · 74px de padding vertical de página",
+      "elementGap": "37px entre bloques · 10px entre miniaturas"
+    },
+    "radii": [
+      {
+        "element": "Miniatura y celda del mosaico",
+        "value": "8px"
+      },
+      {
+        "element": "Tarjeta y ventana de producto",
+        "value": "12px"
+      },
+      {
+        "element": "Panel grande / recorte exterior",
+        "value": "26-32px"
+      },
+      {
+        "element": "Puntos de ventana y píldoras",
+        "value": "9999px"
+      }
+    ],
+    "elevation": "La profundidad es casi toda por escalones de superficie y filetes: #111111 → #171717 → #1c1c1c, cada uno con un anillo de 1px. Las 516 miniaturas llevan un simple 'rgba(0,0,0,0.04) 0 0 0 1px'; los paneles usan un filete interior 'rgba(255,255,255,0.04) 0 0 0 1px inset'. La ventana de producto añade una sombra compuesta muy contenida: 'rgba(0,0,0,0.04) 0 0 0 1px, rgba(0,0,0,0.21) 0 0.48px 0.39px -1.5px, rgba(0,0,0,0.18) 0 1.83px 1.46px -3px, rgba(0,0,0,0.02) 0 8px 6.4px -4.5px' más un brillo superior 'rgba(255,255,255,0.05) 0 1px 0 0 inset'. Hay un único efecto gráfico: un desplazamiento sólido '-37px 37px 0 0 rgba(0,0,0,0.4)' que proyecta la ventana exactamente una línea base.",
+    "components": [
+      {
+        "name": "Firma de cabecera",
+        "role": "Masthead / identidad",
+        "spec": "Texto 'Tiny Computer Co.' en la serif del sitio a 19px/37px, peso 500, tracking -0.19px, color #ffffffed, sin fondo ni borde, anclado a 74px del borde superior y 74px del izquierdo."
+      },
+      {
+        "name": "Titular manifiesto",
+        "role": "Hero editorial",
+        "spec": "Serif 400 a 107.8px/111px, tracking -2.156px, color #ffffffed, dos líneas forzadas, ancho máximo 868px; sin fondo, sin botón adyacente y con 111px de aire antes del subtítulo mono."
+      },
+      {
+        "name": "Línea de entrada",
+        "role": "Changelog / bitácora",
+        "spec": "Fila mono de 18px/37px con columna de fecha fija (6 celdas ≈ 64.8px) en #ffffff66, flecha '→' y texto en #ffffffed; padding-right 138.8px, separación entre entradas de 37px y sin divisores visibles."
+      },
+      {
+        "name": "Ventana de producto",
+        "role": "Maqueta de la app Boardwalk",
+        "spec": "Contenedor #171717 con radio 12px, padding 10px, filete rgba(0,0,0,0.04) 1px, brillo interior blanco al 5% en el borde superior y desplazamiento sólido -37px/37px en negro al 40%; altura 14 × 37px; tres puntos circulares grises (#3a3a3a) arriba a la izquierda."
+      },
+      {
+        "name": "Celda de miniatura",
+        "role": "Mosaico de capturas",
+        "spec": "Imagen a sangre con radio 8px sobre #1c1c1c, separación de 10px en columnas tipo masonry, anillo rgba(0,0,0,0.04) 1px y sin sombra propia; hover sube el fondo al velo #ffffff12 en 150ms."
+      },
+      {
+        "name": "Fila de barra lateral",
+        "role": "Navegación interna de la maqueta",
+        "spec": "Icono 'symbols' 11px + etiqueta mono 11px en #ffffff66, altura de fila 22px, padding 0 10px, radio 8px; estado activo con fondo #ffffff12 y texto #ffffffed; contador alineado a la derecha en gris."
+      },
+      {
+        "name": "Enlace de texto",
+        "role": "Vínculos en prosa",
+        "spec": "Misma mono 18px/37px que el cuerpo, sin subrayado permanente; en reposo #ffffffed y en hover pasa a #ffffff con un fondo de resalte que entra con 'background-color 0.2s cubic-bezier' — el resalte marca el enlace, no el color."
+      },
+      {
+        "name": "Campo de lista de espera",
+        "role": "Captura de email",
+        "spec": "Input transparente sin borde ni radio, placeholder 'email@address.com' en mono 18px al 40%, texto escrito en #ffffffed, apoyado sobre un filete inferior de 1px blanco al 7%; el botón contiguo es texto mono sin caja, en blanco puro."
+      }
+    ],
+    "motion": "Movimiento mínimo y siempre de color: 'background-color 0.15s ease' para filas y miniaturas, y 'background-color / color 0.2s cubic-bezier(...)' para enlaces y botones. No hay transiciones de transform, escala ni opacidad en los elementos de interfaz; lo único que se mueve es el desplazamiento del mosaico ligado al scroll (hay animaciones de scroll y un vídeo en la maqueta). Nada rebota, nada se desliza al entrar: el texto aparece ya en su sitio sobre la retícula.",
+    "layout": "Una sola columna centrada, contenido a 720px y máximo 868px, con padding horizontal de 37px y vertical de 74px (1× y 2× línea base). Todo el ritmo vertical deriva de --baseline: 37px, secciones a 111px, bloques mayores a 148px, y los huecos se calculan restando el 'lead' de cada estilo para que las líneas caigan exactas en la retícula. El changelog usa un canalón fijo para la fecha (6 celdas del ancho de carácter mono) que crea una segunda columna implícita. Debajo, el mosaico de capturas rompe la columna a todo ancho con 10px de separación. Todo alineado a la izquierda, sin centrados.",
+    "imagery": "Fotografía y capturas reales, nunca ilustración: cientos de miniaturas editoriales (tipografía impresa, teclados, prendas, packaging) que funcionan como contenido de la propia app y como muestrario de gusto. Se presentan a color pleno, sin filtros ni duotonos, recortadas a 8px de radio y separadas 10px en un mosaico tipo masonry que sale del marco inferior. La densidad es deliberadamente alta para contrastar con el vacío del hero; ninguna imagen lleva pie de foto ni overlay.",
+    "dos": [
+      "Cuadra cada bloque a la línea base de 37px y calcula los huecos restando el lead del estilo, como hacen las variables --gap-*.",
+      "Usa sohneMono 400 a 18px/37px para absolutamente todo el texto que no sea el titular o la firma.",
+      "Construye jerarquía con opacidad (#ffffffed → #ffffff66) y con posición, nunca con negritas.",
+      "Reserva la serif de alto contraste para uno o dos momentos por página, siempre con tracking -0.02em.",
+      "Separa superficies con escalones de 5-11 puntos (#111111 / #171717 / #1c1c1c) y un filete de 1px, no con sombras fuertes.",
+      "Limita los radios a 8px (miniaturas) y 12px (ventana); las píldoras solo para los puntos de la ventana.",
+      "Anima únicamente background-color y color, en 150-200ms."
+    ],
+    "donts": [
+      "No introduzcas un peso 600 o 700: el sitio vive entre 400 y un único 500 en la firma.",
+      "No uses blanco puro para párrafos; el texto de lectura va al 93% (#ffffffed).",
+      "No añadas botones con relleno de color ni CTA en cápsula: los botones son texto mono sin caja.",
+      "No metas sombras difusas ni glows de color; el desenfoque máximo es 8px con opacidad 0.05.",
+      "No centres el texto ni ensanches la columna más allá de 868px.",
+      "No amplíes la paleta cromática: el violeta #b335d4 es el único color de interfaz y solo etiqueta colecciones.",
+      "No animes entradas con fades o desplazamientos: el contenido se muestra ya colocado en la retícula."
+    ],
+    "similar": [
+      {
+        "brand": "Linear",
+        "why": "Mismo dark mate con escalones de superficie casi idénticos, filetes de 1px y brillos interiores blancos al 5% en lugar de sombras."
+      },
+      {
+        "brand": "Panic",
+        "why": "Estudio pequeño que se presenta con voz seca, producto en primer plano y maquetas de ventana macOS con puntos de semáforo."
+      },
+      {
+        "brand": "Cultured Code (Things)",
+        "why": "Comparte la calma tipográfica, la mezcla de serif editorial con texto técnico y la obsesión por el ritmo vertical."
+      },
+      {
+        "brand": "Arc / The Browser Company",
+        "why": "Titular en serif de alto contraste sobre fondo casi monocromo, copy corto y mosaico de imágenes como argumento visual."
+      },
+      {
+        "brand": "Teenage Engineering",
+        "why": "Mono como fuente de sistema, retícula estricta y ausencia total de adorno cromático fuera de un acento puntual."
+      }
+    ],
+    "agentPrompt": "Diseña una página oscura de estudio de software sobre #111111, con superficies #171717 y #1c1c1c separadas por filetes de 1px rgba(0,0,0,0.04) y brillos interiores blancos al 5%. Cuadra todo a una línea base de 37px: columna de 720px (máx. 868px), padding 37px/74px, secciones a 111px. Titular en serif de alto contraste a 107.8px/111px con tracking -2.156px; el resto en mono (Söhne Mono) 400 a 18px/37px, con etiquetas de 11px. Texto #ffffffed, secundario #ffffff66, un único acento violeta #b335d4. Radios 8px y 12px. Anima solo background-color y color en 150-200ms. Sin negritas, sin botones rellenos, sin sombras difusas."
+  },
+  "generatedAt": "2026-09-20T20:02:48.888Z",
+  "model": "claude-opus-5",
+  "screenshotUrl": "/design-md/94aad250f309689e.jpg?v=1789934568891",
+  "coverUrl": "/design-md/94aad250f309689e-cover.jpg?v=1789934568891",
+  "scrollUrl": "/design-md/94aad250f309689e-scroll.jpg?v=1789934568890"
+}

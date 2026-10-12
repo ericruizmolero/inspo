@@ -1,0 +1,300 @@
+{
+  "url": "https://linear.app",
+  "markdown": "# Linear: DESIGN.md\n> obsidian instrument panel, one lime signal\n\n**Theme:** dark  \n**Source:** https://linear.app/ · 2026-09-29\n\nSource measurements are normalised; roles and recommendations are interpreted.\n\nLinear is a black room with the lights kept deliberately low. The base is Obsidian, panels float above it in a barely lighter Ink, and edges are drawn with one white hairline at eight percent instead of any visible border. Nearly everything is Inter Variable, and the hierarchy rests on a single unusual weight: 510 for every headline, a value between regular and medium that reads as confident without ever becoming bold. Small titles step up to 590, body copy sits at 400, and Berkeley Mono appears only for eyebrows, code and machine voice, uppercase and quietly spaced. Text falls through five greys, from Silver down to Slate, so labels recede rather than shout. One lime, Voltage, lands as a real signal on an otherwise monochrome surface, and the white pill is the only inverted element on the page. Corners stay tight: 8px on chrome, 12px on floating panels, full pills on anything you press.\n\n## At a glance\n\n- **Typography:** Inter Variable does all the work at weight 510; Berkeley Mono speaks only in labels and code.\n- **Imagery:** Product UI screenshots, dark and tightly cropped, glowing faintly against the page. No photography and no people, only interface windows and diagrams.\n- **Logo:** A small white wordmark with a rounded glyph, drawn at 22px, understated and confident.\n- **Motion:** Quick and switch-like: cubic-bezier(0.25, 0.46, 0.45, 0.94) at 0.1s.\n- **Color:** Matte blacks and five greys, broken once by a lime signal.\n- **Iconography:** Filled 14px glyphs at 1.5px stroke, tight geometric corners, no library detected.\n- **Voice:** Declarative and product-first, third person: \"Purpose-built for planning and building products.\"\n- **Framework:** Next.js, styled-components\n\n## Colors\n\n| Name | Value | Group | Role |\n|------|-------|-------|------|\n| Obsidian | `#08090a` | neutral | Page base and the deepest layer; also the text colour that sits on white pills. |\n| Ink Panel | `#0f1011` | neutral | The dominant surface: product windows, comment cards and every embedded UI frame. |\n| Graphite | `#161718` | neutral | Raised chips and message bubbles that sit one step above a panel. |\n| Silver | `#f7f8f8` | neutral | Primary text and every headline; the system's maximum contrast. |\n| Mist | `#d0d6e0` | neutral | Secondary headings, active nav items and dense UI labels inside mockups. |\n| Fog | `#8a8f98` | neutral | Body copy, navigation and descriptions; the default reading grey. |\n| Slate | `#62666d` | neutral | Tertiary text: placeholders, column headers, legal links, mono eyebrows. |\n| Voltage | `#e4f222` | accent | The single lime signal, used on small status marks and product highlights only. |\n| Paper | `#e5e5e6` | neutral | Inverted button surface for the one high-emphasis action in the header. |\n| Hairline | `#ffffff14` | neutral | The universal border and divider: 8 percent white, sometimes 12 percent on floating panels. |\n\n## Typography\n\n### Inter Variable (display)\nEverything that speaks: headlines, body, navigation, buttons, interface text. The signature move is weight 510 doing the work of bold at display size, with tighter tracking (-1.056px at 48px, -1.408px at 64px); nothing on the page is ever truly bold.\n- **Fallback:** system-ui, sans-serif\n- **Weights:** 300, 400, 500, 510, 590\n- **Sizes:** 12, 13, 14, 15, 16, 18, 20, 24, 32, 48, 64\n- **Line height:** 1.5\n- **Letter spacing:** -0.182px\n\n### Berkeley Mono (mono)\nThe machine voice: uppercase eyebrow labels at 12px/16.8px and every line of code inside an editor at 14px/24px. Never used for body prose, so monospace always reads as metadata.\n- **Fallback:** ui-monospace, monospace\n- **Weights:** 400\n- **Sizes:** 12, 14\n- **Line height:** 1.2\n- **Letter spacing:** normal\n\n### Type scale\n\n| Role | Family | Weight | Size | Line height | Letter spacing |\n|------|--------|--------|------|-------------|----------------|\n| caption | Berkeley Mono | 400 | 12px | 1.4 | normal |\n| body-sm | Inter Variable | 400 | 13px | 1.5 | -0.13px |\n| body | Inter Variable | 400 | 14px | 1.5 | -0.182px |\n| subtitle | Inter Variable | 400 | 16px | 1.5 | normal |\n| title-sm | Inter Variable | 590 | 20px | 1.33 | -0.24px |\n| title | Inter Variable | 510 | 32px | 1.1 | -0.5px |\n| title-lg | Inter Variable | 510 | 48px | 1 | -1.056px |\n| display | Inter Variable | 510 | 64px | 1 | -1.408px |\n\n## Spacing and layout\n\n**Density:** compact\n\n- **Base unit:** 4px\n- **Max page width:** 1436px\n- **Section gap:** 48px\n- **Card padding:** 12px 16px 16px\n- **Element gap:** 6-8px\n\n### Border radii\n\n- **chip, small control:** 4px\n- **button, nav item, textarea:** 8px\n- **nested card, message bubble:** 9px\n- **floating panel:** 12px\n- **pill button, avatar, status dot:** 9999px\n\n## Elevation\n\nDepth is drawn, not thrown: a 1px inset ring (#ffffff14, #ffffff1f when floating, #232529 inset on solid chips) plus one soft ambient shadow, rgba(0,0,0,0.25) 0 2px 32px for panels and rgba(0,0,0,0.2) 0 0 0 1px for nested cards. No large blur, no coloured glow.\n\n## Components\n\n### primary button\n**Role:** The single inverted action, header only.\n\nPaper #e5e5e6 background, Obsidian text, Inter Variable 13px weight 510, line-height 32px, radius 9999px, padding 0 12px, 1px solid Paper border, layered near-invisible drop shadow. Inverts the whole page in one 32px pill.\n\n### secondary button\n**Role:** Dark pill for the quieter equivalent action.\n\nrgba(255,255,255,0.05) fill, Silver text, Inter Variable 16px weight 510, line-height 44px, padding 0 20px, radius 9999px, 1px inset ring rgba(255,255,255,0.03) plus a 1px rgba(0,0,0,0.6) outer ring and a 4px drop shadow. Hover lightens the fill, never the text.\n\n### nav link\n**Role:** Header and footer navigation.\n\nFog #8a8f98 text, transparent background, Inter Variable 13px weight 400, line-height 19.5px, radius 9999px, padding 0 12px. Hover lifts the colour to Silver over color 0.1s cubic-bezier(0.25, 0.46, 0.45, 0.94); active items use one of the two 12px pills in the header.\n\n### panel card\n**Role:** Any floating surface: product window, agent panel, changelog entry.\n\nInk Panel #0f1011 background, 12px radius, 1px solid Hairline #ffffff1f, shadow rgba(0,0,0,0.25) 0 2px 32px, no padding on the shell itself. Nested content cards drop to Graphite #161718, 9px radius and a 1px #ffffff14 ring with 12px 16px 16px padding.\n\n### composer input\n**Role:** Chat and code entry inside a panel.\n\nrgba(255,255,255,0.02) fill, 1px solid rgba(255,255,255,0.05), radius 8px, padding 16px, Silver text in Inter Variable 16px/1.5. The code variant swaps to Berkeley Mono 14px with line-height 24px and no background of its own. Placeholder is Slate #62666d.\n\n## Motion\n\nFast and switch-like, never decorative: colour and background change in 0.1s on cubic-bezier(0.25, 0.46, 0.45, 0.94), filter at 0.16s for hover on visuals, and only the long reveals use transform 0.7s cubic-bezier(0.32, 0.72, 0, 1) for scroll-in panels.\n\n## Layout\n\nA centred 1436px shell with a fixed 32px gutters rule (0px 32px appears 65 times, the system's most repeated value). Content is left-aligned and asymmetric: an oversized display headline sits left with a small right-aligned link on the same baseline, then a full-width product window breaks the grid. Vertical rhythm is built from 4, 6 and 8px gaps inside components and 48px between sections.\n\n## Imagery\n\nProduct UI screenshots, dark and tightly cropped, glowing faintly against the page. No photography, no people, only interface windows, agent panels and diagrams rendered in the app's own palette.\n\n## Do and don't\n\n### Do\n- Set every headline in Inter Variable at weight 510 with negative tracking; never use 700.\n- Build surfaces as Obsidian base, Ink Panel for anything floating, Graphite only for nested chips inside a panel.\n- Draw edges with a 1px #ffffff14 hairline instead of a heavier border or a shadow alone.\n- Keep pills at 9999px for all buttons and nav items, and cap everything else at 8px or 12px.\n- Spend Voltage #e4f222 on one small status mark at a time; it loses all meaning past that.\n- Use Berkeley Mono only uppercase at 12px for eyebrows and at 14px inside code, never for prose.\n\n### Don't\n- Never introduce a second accent hue: no blue links, no gradients, no coloured buttons.\n- Do not add photographs, stock people or illustration; imagery is always the interface itself.\n- Never set body copy lighter than Fog #8a8f98 on a dark surface, the greys do the whole hierarchy.\n- Do not use large radii on panels or square corners on buttons; the 8/12/pill split is fixed.\n- Avoid heavy borders, drop shadows over 32px blur, or any glow behind an element.\n- Do not repeat the lime, the white pill or the display size more than once per view.\n\n## Similar brands\n\n\n## Agent prompt\n\nDesign a dark product site in the Linear system: Obsidian #08090a base, Ink Panel #0f1011 floating surfaces, Graphite #161718 nested chips, text falling through Silver #f7f8f8, Mist #d0d6e0, Fog #8a8f98 and Slate #62666d, one Voltage #e4f222 signal, and Paper #e5e5e6 for a single inverted pill. Type is Inter Variable with headlines at weight 510 and negative tracking, Berkeley Mono for uppercase eyebrow labels and code only. Borders are 1px #ffffff14, radii are 8px, 12px or full pills, spacing runs on 4px with 32px page gutters, and transitions use cubic-bezier(0.25, 0.46, 0.45, 0.94) at 0.1s.\n",
+  "spec": {
+    "brand": "Linear",
+    "tagline": "obsidian instrument panel, one lime signal",
+    "theme": "dark",
+    "description": "Linear is a black room with the lights kept deliberately low. The base is Obsidian, panels float above it in a barely lighter Ink, and edges are drawn with one white hairline at eight percent instead of any visible border. Nearly everything is Inter Variable, and the hierarchy rests on a single unusual weight: 510 for every headline, a value between regular and medium that reads as confident without ever becoming bold. Small titles step up to 590, body copy sits at 400, and Berkeley Mono appears only for eyebrows, code and machine voice, uppercase and quietly spaced. Text falls through five greys, from Silver down to Slate, so labels recede rather than shout. One lime, Voltage, lands as a real signal on an otherwise monochrome surface, and the white pill is the only inverted element on the page. Corners stay tight: 8px on chrome, 12px on floating panels, full pills on anything you press.",
+    "colors": [
+      {
+        "name": "Obsidian",
+        "hex": "#08090a",
+        "group": "neutral",
+        "role": "Page base and the deepest layer; also the text colour that sits on white pills."
+      },
+      {
+        "name": "Ink Panel",
+        "hex": "#0f1011",
+        "group": "neutral",
+        "role": "The dominant surface: product windows, comment cards and every embedded UI frame."
+      },
+      {
+        "name": "Graphite",
+        "hex": "#161718",
+        "group": "neutral",
+        "role": "Raised chips and message bubbles that sit one step above a panel."
+      },
+      {
+        "name": "Silver",
+        "hex": "#f7f8f8",
+        "group": "neutral",
+        "role": "Primary text and every headline; the system's maximum contrast."
+      },
+      {
+        "name": "Mist",
+        "hex": "#d0d6e0",
+        "group": "neutral",
+        "role": "Secondary headings, active nav items and dense UI labels inside mockups."
+      },
+      {
+        "name": "Fog",
+        "hex": "#8a8f98",
+        "group": "neutral",
+        "role": "Body copy, navigation and descriptions; the default reading grey."
+      },
+      {
+        "name": "Slate",
+        "hex": "#62666d",
+        "group": "neutral",
+        "role": "Tertiary text: placeholders, column headers, legal links, mono eyebrows."
+      },
+      {
+        "name": "Voltage",
+        "hex": "#e4f222",
+        "group": "accent",
+        "role": "The single lime signal, used on small status marks and product highlights only."
+      },
+      {
+        "name": "Paper",
+        "hex": "#e5e5e6",
+        "group": "neutral",
+        "role": "Inverted button surface for the one high-emphasis action in the header."
+      },
+      {
+        "name": "Hairline",
+        "hex": "#ffffff14",
+        "group": "neutral",
+        "role": "The universal border and divider: 8 percent white, sometimes 12 percent on floating panels."
+      }
+    ],
+    "fonts": [
+      {
+        "family": "Inter Variable",
+        "role": "display",
+        "weights": [
+          300,
+          400,
+          500,
+          510,
+          590
+        ],
+        "sizes": "12, 13, 14, 15, 16, 18, 20, 24, 32, 48, 64",
+        "lineHeight": "1.5",
+        "letterSpacing": "-0.182px",
+        "fallback": "system-ui, sans-serif",
+        "usage": "Everything that speaks: headlines, body, navigation, buttons, interface text. The signature move is weight 510 doing the work of bold at display size, with tighter tracking (-1.056px at 48px, -1.408px at 64px); nothing on the page is ever truly bold."
+      },
+      {
+        "family": "Berkeley Mono",
+        "role": "mono",
+        "weights": [
+          400
+        ],
+        "sizes": "12, 14",
+        "lineHeight": "1.2",
+        "letterSpacing": "normal",
+        "fallback": "ui-monospace, monospace",
+        "usage": "The machine voice: uppercase eyebrow labels at 12px/16.8px and every line of code inside an editor at 14px/24px. Never used for body prose, so monospace always reads as metadata."
+      }
+    ],
+    "typeScale": [
+      {
+        "role": "caption",
+        "size": 12,
+        "weight": 400,
+        "lineHeight": 1.4,
+        "letterSpacing": "normal",
+        "family": "Berkeley Mono"
+      },
+      {
+        "role": "body-sm",
+        "size": 13,
+        "weight": 400,
+        "lineHeight": 1.5,
+        "letterSpacing": "-0.13px",
+        "family": "Inter Variable"
+      },
+      {
+        "role": "body",
+        "size": 14,
+        "weight": 400,
+        "lineHeight": 1.5,
+        "letterSpacing": "-0.182px",
+        "family": "Inter Variable"
+      },
+      {
+        "role": "subtitle",
+        "size": 16,
+        "weight": 400,
+        "lineHeight": 1.5,
+        "letterSpacing": "normal",
+        "family": "Inter Variable"
+      },
+      {
+        "role": "title-sm",
+        "size": 20,
+        "weight": 590,
+        "lineHeight": 1.33,
+        "letterSpacing": "-0.24px",
+        "family": "Inter Variable"
+      },
+      {
+        "role": "title",
+        "size": 32,
+        "weight": 510,
+        "lineHeight": 1.1,
+        "letterSpacing": "-0.5px",
+        "family": "Inter Variable"
+      },
+      {
+        "role": "title-lg",
+        "size": 48,
+        "weight": 510,
+        "lineHeight": 1,
+        "letterSpacing": "-1.056px",
+        "family": "Inter Variable"
+      },
+      {
+        "role": "display",
+        "size": 64,
+        "weight": 510,
+        "lineHeight": 1,
+        "letterSpacing": "-1.408px",
+        "family": "Inter Variable"
+      }
+    ],
+    "spacing": {
+      "density": "compact",
+      "baseUnit": "4px",
+      "maxWidth": "1436px",
+      "sectionGap": "48px",
+      "cardPadding": "12px 16px 16px",
+      "elementGap": "6-8px"
+    },
+    "radii": [
+      {
+        "element": "chip, small control",
+        "value": "4px"
+      },
+      {
+        "element": "button, nav item, textarea",
+        "value": "8px"
+      },
+      {
+        "element": "nested card, message bubble",
+        "value": "9px"
+      },
+      {
+        "element": "floating panel",
+        "value": "12px"
+      },
+      {
+        "element": "pill button, avatar, status dot",
+        "value": "9999px"
+      }
+    ],
+    "elevation": "Depth is drawn, not thrown: a 1px inset ring (#ffffff14, #ffffff1f when floating, #232529 inset on solid chips) plus one soft ambient shadow, rgba(0,0,0,0.25) 0 2px 32px for panels and rgba(0,0,0,0.2) 0 0 0 1px for nested cards. No large blur, no coloured glow.",
+    "components": [
+      {
+        "name": "primary button",
+        "role": "The single inverted action, header only.",
+        "spec": "Paper #e5e5e6 background, Obsidian text, Inter Variable 13px weight 510, line-height 32px, radius 9999px, padding 0 12px, 1px solid Paper border, layered near-invisible drop shadow. Inverts the whole page in one 32px pill."
+      },
+      {
+        "name": "secondary button",
+        "role": "Dark pill for the quieter equivalent action.",
+        "spec": "rgba(255,255,255,0.05) fill, Silver text, Inter Variable 16px weight 510, line-height 44px, padding 0 20px, radius 9999px, 1px inset ring rgba(255,255,255,0.03) plus a 1px rgba(0,0,0,0.6) outer ring and a 4px drop shadow. Hover lightens the fill, never the text."
+      },
+      {
+        "name": "nav link",
+        "role": "Header and footer navigation.",
+        "spec": "Fog #8a8f98 text, transparent background, Inter Variable 13px weight 400, line-height 19.5px, radius 9999px, padding 0 12px. Hover lifts the colour to Silver over color 0.1s cubic-bezier(0.25, 0.46, 0.45, 0.94); active items use one of the two 12px pills in the header."
+      },
+      {
+        "name": "panel card",
+        "role": "Any floating surface: product window, agent panel, changelog entry.",
+        "spec": "Ink Panel #0f1011 background, 12px radius, 1px solid Hairline #ffffff1f, shadow rgba(0,0,0,0.25) 0 2px 32px, no padding on the shell itself. Nested content cards drop to Graphite #161718, 9px radius and a 1px #ffffff14 ring with 12px 16px 16px padding."
+      },
+      {
+        "name": "composer input",
+        "role": "Chat and code entry inside a panel.",
+        "spec": "rgba(255,255,255,0.02) fill, 1px solid rgba(255,255,255,0.05), radius 8px, padding 16px, Silver text in Inter Variable 16px/1.5. The code variant swaps to Berkeley Mono 14px with line-height 24px and no background of its own. Placeholder is Slate #62666d."
+      }
+    ],
+    "motion": "Fast and switch-like, never decorative: colour and background change in 0.1s on cubic-bezier(0.25, 0.46, 0.45, 0.94), filter at 0.16s for hover on visuals, and only the long reveals use transform 0.7s cubic-bezier(0.32, 0.72, 0, 1) for scroll-in panels.",
+    "layout": "A centred 1436px shell with a fixed 32px gutters rule (0px 32px appears 65 times, the system's most repeated value). Content is left-aligned and asymmetric: an oversized display headline sits left with a small right-aligned link on the same baseline, then a full-width product window breaks the grid. Vertical rhythm is built from 4, 6 and 8px gaps inside components and 48px between sections.",
+    "imagery": "Product UI screenshots, dark and tightly cropped, glowing faintly against the page. No photography, no people, only interface windows, agent panels and diagrams rendered in the app's own palette.",
+    "dos": [
+      "Set every headline in Inter Variable at weight 510 with negative tracking; never use 700.",
+      "Build surfaces as Obsidian base, Ink Panel for anything floating, Graphite only for nested chips inside a panel.",
+      "Draw edges with a 1px #ffffff14 hairline instead of a heavier border or a shadow alone.",
+      "Keep pills at 9999px for all buttons and nav items, and cap everything else at 8px or 12px.",
+      "Spend Voltage #e4f222 on one small status mark at a time; it loses all meaning past that.",
+      "Use Berkeley Mono only uppercase at 12px for eyebrows and at 14px inside code, never for prose."
+    ],
+    "donts": [
+      "Never introduce a second accent hue: no blue links, no gradients, no coloured buttons.",
+      "Do not add photographs, stock people or illustration; imagery is always the interface itself.",
+      "Never set body copy lighter than Fog #8a8f98 on a dark surface, the greys do the whole hierarchy.",
+      "Do not use large radii on panels or square corners on buttons; the 8/12/pill split is fixed.",
+      "Avoid heavy borders, drop shadows over 32px blur, or any glow behind an element.",
+      "Do not repeat the lime, the white pill or the display size more than once per view."
+    ],
+    "similar": [],
+    "agentPrompt": "Design a dark product site in the Linear system: Obsidian #08090a base, Ink Panel #0f1011 floating surfaces, Graphite #161718 nested chips, text falling through Silver #f7f8f8, Mist #d0d6e0, Fog #8a8f98 and Slate #62666d, one Voltage #e4f222 signal, and Paper #e5e5e6 for a single inverted pill. Type is Inter Variable with headlines at weight 510 and negative tracking, Berkeley Mono for uppercase eyebrow labels and code only. Borders are 1px #ffffff14, radii are 8px, 12px or full pills, spacing runs on 4px with 32px page gutters, and transitions use cubic-bezier(0.25, 0.46, 0.45, 0.94) at 0.1s.",
+    "brief": {
+      "typography": "Inter Variable does all the work at weight 510; Berkeley Mono speaks only in labels and code.",
+      "imagery": "Product UI screenshots, dark and tightly cropped, glowing faintly against the page. No photography and no people, only interface windows and diagrams.",
+      "logo": "A small white wordmark with a rounded glyph, drawn at 22px, understated and confident.",
+      "motion": "Quick and switch-like: cubic-bezier(0.25, 0.46, 0.45, 0.94) at 0.1s.",
+      "color": "Matte blacks and five greys, broken once by a lime signal.",
+      "iconography": "Filled 14px glyphs at 1.5px stroke, tight geometric corners, no library detected.",
+      "voice": "Declarative and product-first, third person: \"Purpose-built for planning and building products.\"",
+      "framework": "Next.js, styled-components"
+    },
+    "es": {
+      "tagline": "panel de instrumentos de obsidiana",
+      "brief": {
+        "typography": "Inter Variable lo hace todo en peso 510; Berkeley Mono solo habla en etiquetas y código.",
+        "imagery": "Capturas de la interfaz, oscuras y muy recortadas, brillando apenas sobre la página. Sin fotos ni personas, solo ventanas de producto y diagramas.",
+        "logo": "Logotipo blanco pequeño con glifo redondeado, dibujado a 22px, discreto y seguro.",
+        "motion": "Rápida y de interruptor: cubic-bezier(0.25, 0.46, 0.45, 0.94) a 0.1s.",
+        "color": "Negros mate y cinco grises, rotos una vez por una señal lima.",
+        "iconography": "Glifos rellenos de 14px con trazo de 1.5px, esquinas geométricas, sin librería detectada.",
+        "voice": "Declarativa y centrada en el producto, en tercera persona: «Purpose-built for planning and building products».",
+        "framework": "Next.js, styled-components"
+      }
+    }
+  },
+  "generatedAt": "2026-09-29T16:00:22.793Z",
+  "model": "deepseek/deepseek-v4.1-flash",
+  "icons": [
+    "<svg width=\"16\" height=\"16\" viewBox=\"0 0 16 16\" role=\"img\" focusable=\"false\" aria-hidden=\"true\" xmlns=\"http://www.w3.org/2000/svg\" fill=\"var(--label-faint)\"><path d=\"M4.53 5.47a.75.75 0 0 0-1.06 1.06l4 4a.75.75 0 0 0 1.054.007l4-3.903a.75.75 0 0 0-1.048-1.073l-3.47 3.385L4.53 5.47Z\" fill=\"rgb(247, 248, 248)\" stroke=\"none\"/></svg>",
+    "<svg width=\"16\" height=\"16\" viewBox=\"0 0 16 16\" role=\"img\" focusable=\"false\" aria-hidden=\"true\" xmlns=\"http://www.w3.org/2000/svg\" fill=\"currentColor\"><path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M7 2C9.76142 2 12 4.23858 12 7C12 8.11012 11.6375 9.13519 11.0254 9.96484L13.7803 12.7197L13.832 12.7764C14.0723 13.0709 14.0549 13.5057 13.7803 13.7803C13.5057 14.0549 13.0709 14.0723 12.7764 13.832L12.7197 13.7803L9.96484 11.0254C9.13519 11.6375 8.11012 12 7 12C4.23858 12 2 9.76142 2 7C2 4.23858 4.23858 2 7 2ZM7 3.5C5.067 3.5 3.5 5.067 3.5 7C3.5 8.933 5.067 10.5 7 10.5C8.933 10.5 10.5 8.933 10.5 7C10.5 5.067 8.933 3.5 7 3.5Z\" fill=\"rgb(247, 248, 248)\" stroke=\"none\"/></svg>",
+    "<svg width=\"15\" height=\"15\" viewBox=\"0 0 16 16\" role=\"img\" focusable=\"false\" aria-hidden=\"true\" xmlns=\"http://www.w3.org/2000/svg\" fill=\"currentColor\"><path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M7.25 1C7.66414 1 7.99988 1.33589 8 1.75C8 2.16421 7.66421 2.5 7.25 2.5H4.75C3.50745 2.5 2.50012 3.50744 2.5 4.75V11.25C2.5 12.4926 3.50736 13.5 4.75 13.5H11.25C12.4926 13.5 13.5 12.4926 13.5 11.25V8.75C13.5001 8.33589 13.8359 8 14.25 8C14.6641 8 14.9999 8.33589 15 8.75V11.25C15 13.3211 13.3211 15 11.25 15H4.75C2.67893 15 1 13.3211 1 11.25V4.75C1.00012 2.67905 2.67899 1 4.75 1H7.25Z\" fill=\"rgb(247, 248, 248)\" stroke=\"none\"/><path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M13.4326 1.26953C13.7913 0.910937 14.3728 0.910883 14.7314 1.26953C15.0897 1.6282 15.0899 2.20981 14.7314 2.56836L9.2373 8.06152C8.68101 8.6177 7.94043 8.95161 7.15527 9C7.06754 9.0052 6.99468 8.93248 7 8.84473C7.04847 8.05961 7.38232 7.31897 7.93848 6.7627L13.4326 1.26953Z\" fill=\"rgb(247, 248, 248)\" stroke=\"none\"/></svg>",
+    "<svg width=\"14\" height=\"14\" viewBox=\"0 0 16 16\" role=\"img\" focusable=\"false\" aria-hidden=\"true\" xmlns=\"http://www.w3.org/2000/svg\" fill=\"#9c9da1\"><path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M11.3354 1.08228C11.7059 1.27438 11.8561 1.74156 11.6708 2.12576L9.5593 6.50508C9.39923 6.83707 9.64113 7.22224 10.0097 7.22224H14C14 7.22224 14.2275 7.22219 14.25 7.22219C14.6642 7.22219 15 7.57041 15 7.99996C15 8.4295 14.6642 8.77772 14.25 8.77772C10.4465 8.77772 7.32888 11.131 5.67083 14.5699C5.48559 14.9541 5.03507 15.1098 4.66459 14.9177C4.29411 14.7256 4.14394 14.2584 4.32918 13.8742L6.44081 9.49467C6.60085 9.16275 6.35907 8.77764 5.99059 8.77759C4.57706 8.7774 3.16352 8.77781 1.75 8.77781C1.33579 8.77781 1 8.42959 1 8.00004C1 7.5705 1.33579 7.22228 1.75 7.22228C5.55362 7.22228 8.67116 4.86885 10.3292 1.43003C10.5145 1.04588 10.965 0.890196 11.3354 1.08228Z\" fill=\"rgb(247, 248, 248)\" stroke=\"none\"/></svg>",
+    "<svg width=\"14\" height=\"14\" viewBox=\"0 0 16 16\" role=\"img\" focusable=\"false\" aria-hidden=\"true\" xmlns=\"http://www.w3.org/2000/svg\" fill=\"#9c9da1\"><path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M11.0069 1.00879C12.0235 1.09224 12.8967 1.78967 13.1944 2.78027L14.8907 8.42871C15.0034 8.80411 15.0258 9.20103 14.9571 9.58691L14.5069 12.1143L14.4375 12.4219C14.0542 13.8306 12.8312 14.8559 11.378 14.9863L11.0625 15H4.92875L4.6143 14.9863C3.16087 14.8561 1.93819 13.8307 1.55473 12.4219L1.48539 12.1143L1.03422 9.58691C0.974045 9.24914 0.984493 8.90311 1.06352 8.57031L1.1016 8.42871L2.79691 2.78027C3.09453 1.78948 3.96862 1.09214 4.98539 1.00879L5.19047 1H10.8018L11.0069 1.00879ZM2.96098 11.8516C3.13119 12.8053 3.96043 13.4999 4.92875 13.5H11.0625C12.031 13.5 12.8611 12.8054 13.0313 11.8516L13.2715 10.5H11.6211C11.2249 10.5 10.8512 10.6738 10.5957 10.9697L10.4932 11.1035C10.1201 11.6634 9.49195 11.9999 8.81938 12H7.17191C6.54154 11.9998 5.95019 11.7042 5.57133 11.2061L5.49809 11.1035C5.24687 10.7266 4.82396 10.5 4.37113 10.5H2.71977L2.96098 11.8516ZM5.19047 2.5C4.80433 2.50005 4.45748 2.72173 4.29203 3.06055L4.23246 3.21191L2.53715 8.86035C2.5234 8.90613 2.514 8.95293 2.50688 9H4.37113C5.32524 9.00001 6.21689 9.47715 6.74613 10.2715L6.78422 10.3223C6.88083 10.4341 7.02214 10.4998 7.17191 10.5H8.81938C8.99076 10.4999 9.15106 10.4142 9.24613 10.2715L9.34965 10.126C9.88713 9.41919 10.7268 9 11.6211 9H13.4854C13.4785 8.95295 13.4689 8.90616 13.4551 8.86035L11.7588 3.21191C11.6318 2.78947 11.2427 2.50018 10.8018 2.5H5.19047Z\" fill=\"rgb(247, 248, 248)\" stroke=\"none\"/></svg>",
+    "<svg width=\"14\" height=\"14\" viewBox=\"0 0 16 16\" role=\"img\" focusable=\"false\" aria-hidden=\"true\" xmlns=\"http://www.w3.org/2000/svg\" fill=\"#9c9da1\"><path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M1 4.75V4.25C1 2.45507 2.45507 1 4.25 1H4.75C5.16421 1 5.5 1.33579 5.5 1.75C5.5 2.16421 5.16421 2.5 4.75 2.5H4.25C3.2835 2.5 2.5 3.2835 2.5 4.25V4.75C2.5 5.16421 2.16421 5.5 1.75 5.5C1.33579 5.5 1 5.16421 1 4.75Z\" fill=\"rgb(247, 248, 248)\" stroke=\"none\"/><path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M11.25 1L11.75 1C13.5449 1 15 2.45507 15 4.25V4.75L14.9961 4.82715C14.9575 5.20512 14.6382 5.5 14.25 5.5C13.8618 5.5 13.5425 5.20512 13.5039 4.82715L13.5 4.75V4.25C13.5 3.2835 12.7165 2.5 11.75 2.5H11.25C10.8358 2.5 10.5 2.16421 10.5 1.75C10.5 1.33579 10.8358 1 11.25 1Z\" fill=\"rgb(247, 248, 248)\" stroke=\"none\"/><path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M4.75 14.9951H4.25C2.45507 14.9951 1 13.54 1 11.7451L1 11.2451L1.00391 11.168C1.04253 10.79 1.36183 10.4951 1.75 10.4951C2.13817 10.4951 2.45747 10.79 2.49609 11.168L2.5 11.2451V11.7451C2.5 12.7116 3.2835 13.4951 4.25 13.4951H4.75C5.16421 13.4951 5.5 13.8309 5.5 14.2451C5.5 14.6593 5.16421 14.9951 4.75 14.9951Z\" fill=\"rgb(247, 248, 248)\" stroke=\"none\"/><path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M11.25 15H11.75C13.5449 15 15 13.5449 15 11.75V11.25L14.9961 11.1729C14.9575 10.7949 14.6382 10.5 14.25 10.5C13.8618 10.5 13.5425 10.7949 13.5039 11.1729L13.5 11.25V11.75C13.5 12.7165 12.7165 13.5 11.75 13.5H11.25C10.8358 13.5 10.5 13.8358 10.5 14.25C10.5 14.6642 10.8358 15 11.25 15Z\" fill=\"rgb(247, 248, 248)\" stroke=\"none\"/><path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M10 8C10 9.10457 9.10457 10 8 10C6.89543 10 6 9.10457 6 8C6 6.89543 6.89543 6 8 6C9.10457 6 10 6.89543 10 8Z\" fill=\"rgb(247, 248, 248)\" stroke=\"none\"/></svg>",
+    "<svg width=\"14\" height=\"14\" viewBox=\"0 0 16 16\" role=\"img\" focusable=\"false\" aria-hidden=\"true\" xmlns=\"http://www.w3.org/2000/svg\" fill=\"#9c9da1\"><path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M3.5 1C4.88043 1.00021 5.99974 2.11959 6 3.5C5.99983 4.61924 5.26408 5.56623 4.25 5.88477V14.251C4.24971 14.6649 3.91396 15.0009 3.5 15.001C3.08597 15.001 2.75029 14.6649 2.75 14.251V5.88477C1.73602 5.56608 1.00017 4.61906 1 3.5C1.00026 2.11962 2.11962 1.00026 3.5 1ZM3.5 2.48535C2.93987 2.48561 2.48561 2.93987 2.48535 3.5C2.48556 4.06017 2.93984 4.51439 3.5 4.51465C4.0602 4.51444 4.51444 4.0602 4.51465 3.5C4.51439 2.93984 4.06017 2.48556 3.5 2.48535Z\" fill=\"rgb(247, 248, 248)\" stroke=\"none\"/><path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M10 5C11.7949 5 13.25 6.45507 13.25 8.25V10.1143C14.2642 10.4328 14.9998 11.3807 15 12.5C14.9998 13.8805 13.8805 14.9998 12.5 15C11.1196 14.9997 10.0002 13.8804 10 12.5C10.0002 11.3809 10.7359 10.433 11.75 10.1143V8.25C11.75 7.2835 10.9665 6.5 10 6.5H8.25C7.83579 6.5 7.5 6.16421 7.5 5.75C7.5 5.33579 7.83579 5 8.25 5H10ZM12.5 11.5C12.4628 11.5 12.4264 11.4955 12.3906 11.4902C11.8819 11.545 11.4856 11.9768 11.4854 12.5C11.4856 13.0602 11.9398 13.5144 12.5 13.5146C13.0602 13.5144 13.5144 13.0602 13.5146 12.5C13.5144 11.9766 13.1184 11.5447 12.6094 11.4902C12.5736 11.4955 12.5372 11.5 12.5 11.5Z\" fill=\"rgb(247, 248, 248)\" stroke=\"none\"/></svg>",
+    "<svg width=\"16\" height=\"16\" viewBox=\"0 0 16 16\" role=\"img\" focusable=\"false\" aria-hidden=\"true\" xmlns=\"http://www.w3.org/2000/svg\" fill=\"currentColor\"><path d=\"M7.00194 10.6239C6.66861 10.8183 6.25 10.5779 6.25 10.192V5.80802C6.25 5.42212 6.66861 5.18169 7.00194 5.37613L10.7596 7.56811C11.0904 7.76105 11.0904 8.23895 10.7596 8.43189L7.00194 10.6239Z\" fill=\"rgb(247, 248, 248)\" stroke=\"none\"/></svg>"
+  ],
+  "fontFiles": [
+    {
+      "family": "Inter Variable",
+      "formats": [
+        "woff2"
+      ]
+    },
+    {
+      "family": "Berkeley Mono",
+      "formats": [
+        "woff2"
+      ]
+    }
+  ],
+  "screenshotUrl": "/design-md/521f3583da1e0468.jpg?v=1790697622801",
+  "coverUrl": "/design-md/521f3583da1e0468-cover.jpg?v=1790697622801",
+  "scrollUrl": "/design-md/521f3583da1e0468-scroll.jpg?v=1790697622801",
+  "logoUrl": "/design-md/521f3583da1e0468-logo.png?v=1790697622808"
+}

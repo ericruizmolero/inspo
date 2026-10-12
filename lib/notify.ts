@@ -256,7 +256,7 @@ export async function latestTeamEvent(organizationId: string, userId: string): P
 }
 
 /** A line as the bell and the digest show it: the words, where it goes, and the comment quoted */
-export interface ActivityLine { text: string; path: string; quote?: string; at: string; who: string; image: string | null; projectId: string | null }
+export interface ActivityLine { text: string; path: string; quote?: string; /** The quote is someone's words (a comment), not a decision's text */ said?: boolean; /** The place the line names (a reference, an area, a project), drawn in bold in the bell */ place?: string; at: string; who: string; image: string | null; projectId: string | null }
 
 /**
  * Events turned into lines, oldest first. Several references added or votes cast by one person in one project fold
@@ -286,13 +286,13 @@ export function activityLines(events: TeamEvent[], locale: Locale): ActivityLine
         }
         break;
       }
-      case "project": lines.push({ ...base, text: t.createdProject(who, e.what) }); break;
-      case "comment": lines.push({ ...base, text: t.commented(who, e.what), quote: clip(e.quote ?? "") }); break;
-      case "areaTalk": lines.push({ ...base, text: t.talked(who, areaName(locale, e.what)), quote: clip(e.quote ?? "") }); break;
-      case "proposal": lines.push({ ...base, text: t.proposed(who, areaName(locale, e.what)), quote: clip(e.quote ?? "") }); break;
-      case "decision": lines.push({ ...base, text: t.decided(who, areaName(locale, e.what)), quote: clip(e.quote ?? "") }); break;
+      case "project": lines.push({ ...base, text: t.createdProject(who, e.what), place: e.what }); break;
+      case "comment": lines.push({ ...base, text: t.commented(who), quote: clip(e.quote ?? ""), said: true }); break;
+      case "areaTalk": lines.push({ ...base, text: t.talked(who, areaName(locale, e.what)), place: areaName(locale, e.what), quote: clip(e.quote ?? ""), said: true }); break;
+      case "proposal": lines.push({ ...base, text: t.proposed(who, areaName(locale, e.what)), place: areaName(locale, e.what), quote: clip(e.quote ?? "") }); break;
+      case "decision": lines.push({ ...base, text: t.decided(who, areaName(locale, e.what)), place: areaName(locale, e.what), quote: clip(e.quote ?? "") }); break;
       case "polishClosed": lines.push({ ...base, text: t.closedPolish(who) }); break;
-      case "reaction": lines.push({ ...base, text: t.reacted(who, e.emoji ?? "", e.what), quote: clip(e.quote ?? "") }); break;
+      case "reaction": lines.push({ ...base, text: t.reacted(who, e.emoji ?? ""), quote: clip(e.quote ?? ""), said: true }); break;
     }
   }
   return lines;

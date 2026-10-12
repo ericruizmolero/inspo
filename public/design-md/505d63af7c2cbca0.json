@@ -1,0 +1,257 @@
+{
+  "url": "https://openai.com",
+  "markdown": "# OpenAI — DESIGN.md\n> negro absoluto con luz difusa\n\n**Tema:** oscuro  \n**Origen:** https://openai.com/ · 2026-09-21\n\nLas medidas de origen están normalizadas; los roles y las recomendaciones son interpretados.\n\nLa home de OpenAI es un lienzo de negro puro #000000 sobre el que casi todo flota en blanco #ffffff y sus velos de opacidad. No hay sombras: la profundidad se construye con filetes de 1px en blanco al 20% (#ffffff33) y rellenos translúcidos al 12% (#ffffff1f), de modo que las píldoras y el campo de prompt parecen vidrio esmerilado apoyado en la nada. Toda la tipografía es OpenAI Sans, una grotesca geométrica de terminaciones limpias, y la decisión que la define es que el peso 500 lo hace prácticamente todo —navegación, botones, titulares de 22px y el display de 48px—; el 400 queda para párrafos largos y el 600 apenas aparece. El tracking se aprieta a medida que crece el cuerpo (-1,44px en 48px), lo que da a 'What can I help with?' un aire compacto y seguro. La retícula respira dentro de 1440px con márgenes de 32px, y el color de marca real llega solo por las imágenes: nebulosas, vídeo y viñetas de producto sobre un fondo que nunca compite.\n\n## Colores\n\n| Nombre | Valor | Grupo | Rol |\n|--------|-------|-------|-----|\n| Negro Absoluto | `#000000` | neutro | Fondo global de página, cabecera y tarjetas; es el lienzo dominante de todo el sitio. |\n| Grafito Panel | `#1f1f1f` | neutro | Superficie sólida elevada para selectores y chips opacos como el de idioma en el footer. |\n| Humo Prompt | `#333333cc` | neutro | Relleno del campo de prompt del hero: gris al 80% que separa el input del negro sin borde duro. |\n| Velo Doce | `#ffffff1f` | neutro | Relleno translúcido de botones secundarios y del botón de envío circular; el 'vidrio' del sistema. |\n| Filete Veinte | `#ffffff33` | neutro | Borde de 1px de píldoras, inputs y separadores; única línea estructural del sistema. |\n| Gris Sesenta | `#ffffff99` | neutro | Texto atenuado: descripciones, pies, enlaces legales y placeholders. |\n| Blanco Señal | `#ffffff` | marca | Texto principal, logotipo y fondo del botón primario 'Try ChatGPT'. |\n| Azul Dato | `#2c67c5` | acento | Acento de gráficas y visualizaciones definido en los tokens; ausente del chrome de la interfaz. |\n| Rojo Alerta | `#fa423e` | semántico | Estado de error definido en las primitivas de color; uso puntual en formularios. |\n| Verde Confirma | `#53b559` | semántico | Estado de éxito de las primitivas; reservado para feedback de formulario. |\n\n## Tipografía\n\n### OpenAI Sans — interfaz\nFuente única para todo: navegación, titulares, cuerpo y microcopy. La decisión característica es que el peso 500 es el de batalla (136 de 144 usos) y el 600 es casi anecdótico: no hay negritas, la jerarquía la marcan el tamaño y el tracking negativo. En botones el line-height se colapsa a 1,0 para centrar el texto en píldoras de altura fija.\n- **Sustituto:** 'Söhne', Inter, 'Helvetica Neue', Arial, system-ui, sans-serif\n- **Pesos:** 400, 500, 600\n- **Tamaños:** 13-48px · 8 valores\n- **Interlineado:** 1,0 en botones · 1,4-1,65 en texto · 1,16 en display\n- **Tracking:** normal en 13-14px; -0,14 a -1,44px según crece el cuerpo\n\n### Escala tipográfica\n\n| Rol | Familia | Peso | Tamaño | Interlineado | Tracking |\n|-----|---------|------|--------|--------------|----------|\n| leyenda | OpenAI Sans | 500 | 13px | 1.51 | normal |\n| cuerpo-sm | OpenAI Sans | 500 | 14px | 1.4 | normal |\n| cuerpo | OpenAI Sans | 400 | 16px | 1.5 | -0.16px |\n| subtítulo | OpenAI Sans | 400 | 17px | 1.65 | -0.17px |\n| título-sm | OpenAI Sans | 500 | 18px | 1.32 | -0.18px |\n| título | OpenAI Sans | 500 | 22px | 1.26 | -0.22px |\n| título-lg | OpenAI Sans | 500 | 28px | 1.2 | -0.28px |\n| display | OpenAI Sans | 500 | 48px | 1.16 | -1.44px |\n\n## Espaciado y layout\n\n**Densidad:** aireada\n\n- **Unidad base:** 4px\n- **Ancho máximo de página:** 1440px (texto a 670-840px)\n- **Separación entre secciones:** 120px\n- **Padding de tarjeta:** 32px\n- **Separación entre elementos:** 12-16px\n\n### Radios de borde\n\n- **Botones, píldoras, input de búsqueda:** 9999px\n- **Botón de cabecera (Log in / Try ChatGPT):** 40px\n- **Campo de prompt del hero:** 24px\n- **Tarjetas y miniaturas de contenido:** 6px\n- **Enlaces con foco y chips pequeños:** 4px\n\n## Elevación\n\nSin sombras en todo el sistema (boxShadow: none). La profundidad se obtiene por escalones de superficie sobre Negro Absoluto: velo blanco al 12% (#ffffff1f) para elementos interactivos, gris al 80% (#333333cc) para el campo de prompt y sólido #1f1f1f para chips opacos, con filetes de 1px en #ffffff33 cuando hace falta delimitar sin relleno.\n\n## Componentes\n\n### Botón primario\n**Rol:** CTA principal de cabecera y cierres de página ('Try ChatGPT').\n\nFondo Blanco Señal con texto Negro Absoluto en cuerpo-sm peso 500, radio 40px, altura 40px, padding lateral 20px; en hover baja a ~90% de opacidad con transición de 0,3s; icono de enlace externo opcional a la derecha.\n\n### Botón secundario\n**Rol:** Acciones de apoyo y píldoras de navegación rápida ('Log in', 'Research', 'More').\n\nDos variantes: relleno Velo Doce sin borde, o transparente con filete de 1px en Filete Veinte; texto Blanco Señal en cuerpo-sm peso 500, radio completo (9999px o 40px), altura 32-40px, padding lateral 12-20px; hover sube el velo hacia 20% animando solo background.\n\n### Input\n**Rol:** Campo de prompt del hero y buscador del sitio.\n\nFondo Humo Prompt sobre Negro Absoluto, radio 24px, padding interno 16-20px, sin borde; placeholder en Gris Sesenta, texto en cuerpo 16px peso 400; el buscador usa radio completo con padding 10px 24px y 52px a la izquierda para el icono; botón de envío circular con fondo Velo Doce.\n\n### Enlace\n**Rol:** Navegación de cabecera, índices y enlaces legales en línea.\n\nTexto Blanco Señal en leyenda o cuerpo-sm peso 500, sin subrayado en navegación y subrayado en enlaces dentro de párrafo; los legales van en Gris Sesenta peso 400 y pasan a Blanco Señal en hover con transición de color de 0,25s.\n\n### Tarjeta\n**Rol:** Piezas de noticia, investigación e historias de las rejillas.\n\nFondo Negro Absoluto sin borde ni sombra: la imagen con radio 6px es la tarjeta; título en título-sm peso 500 y metadato en leyenda Gris Sesenta, separados 12-16px bajo la imagen; hover escala ligeramente la imagen (transform 0,3s) manteniendo el recorte.\n\n## Movimiento\n\nTransiciones cortas y de una sola propiedad: color 0,1-0,25s, opacity 0,3s, background 0,3s y transform 0,3s, siempre con cubic-bezier personalizados tipo ease-curve (salida suave). Se animan color de texto, opacidad y escala de imágenes en hover; no se animan tamaños, bordes ni sombras. Hay revelados por scroll sutiles (fade y desplazamiento corto) y vídeo en bucle en piezas destacadas; nada rebota ni gira.\n\n## Layout\n\nContenedor máximo de 1440px con padding lateral de 32px y bloques de texto restringidos a 670-840px para mantener la medida lectora. Rejillas asimétricas de 2 columnas (pieza grande + columna estrecha) para noticias e historias, con gaps de 16-24px y separaciones verticales entre secciones de 120px. El hero es una excepción centrada: titular display, campo de prompt de ~768px y una fila de píldoras bajo él, todo en eje vertical con enorme aire arriba y abajo. Alineación a la izquierda en todo el resto.\n\n## Imagen\n\nFotografía y render abstracto a pantalla completa dentro de recortes de radio 6px: campos estelares, nebulosas y texturas luminosas sobre negro que aportan el único color saturado de la página, más retratos y escenas de producto. Alta densidad de piezas (≈19 imágenes) y vídeo en bucle silencioso en destacados. Nada de ilustración plana ni iconografía decorativa; los iconos son lineales, mínimos y monocromos en blanco.\n\n## Qué hacer y qué no\n\n### Sí\n- Usar #000000 como fondo por defecto y construir la jerarquía con velos blancos al 12%, 20% y 60%.\n- Poner el peso 500 de OpenAI Sans en casi todo y reservar el 400 solo para párrafos largos.\n- Apretar el tracking a medida que crece el cuerpo: -0,18px a 18px y -1,44px a 48px.\n- Dar radio completo (9999px o 40px) a todo lo clicable pequeño y radio 6px a las imágenes.\n- Respirar con 120px entre secciones y limitar el texto a 670-840px dentro del contenedor de 1440px.\n- Animar solo color, opacidad, background y transform, con duraciones de 0,1 a 0,3s.\n- Dejar que el color venga exclusivamente de las imágenes y los gráficos de datos.\n\n### No\n- No añadir box-shadow: este sistema no tiene ni una sombra.\n- No usar el azul #2c67c5 ni los demás primitivos de color en botones o enlaces del chrome.\n- No poner texto en peso 700 ni en versalitas o mayúsculas forzadas.\n- No mezclar otra familia tipográfica: OpenAI Sans es la única voz.\n- No usar grises opacos intermedios para texto secundario; usar #ffffff99 sobre negro.\n- No dar bordes de más de 1px ni bordes de color distinto a #ffffff33.\n- No comprimir el ritmo vertical: evitar separaciones de sección inferiores a 80px.\n\n## Marcas afines\n\n- **Anthropic** — Misma lógica de una sola grotesca propia, jerarquía por tamaño y tracking, y cero sombras.\n- **Vercel** — Interfaz oscura sobre negro puro con bordes de 1px translúcidos y botón primario blanco sobre negro.\n- **Linear** — Superficies apiladas por opacidad, radios grandes en controles y microtransiciones de 0,2-0,3s.\n- **Arc / The Browser Company** — Hero centrado minimalista con imágenes ricas como único aporte de color sobre fondo neutro.\n\n## Prompt para agentes\n\nDiseña en modo oscuro sobre #000000 con texto #ffffff y secundario #ffffff99. Usa una única grotesca geométrica (OpenAI Sans; fallback Inter) con peso 500 para casi todo y 400 solo en párrafos; escala 13/14/16/17/18/22/28/48px con tracking que pasa de normal a -1,44px en display. Nada de sombras: la profundidad viene de rellenos #ffffff1f, paneles #333333cc y filetes de 1px #ffffff33. Botón primario blanco con texto negro, radio 40px, altura 40px, padding lateral 20px; secundarios en píldora translúcida. Contenedor 1440px, padding 32px, texto a 670-840px, secciones separadas 120px. Imágenes con radio 6px aportan el único color. Transiciones de 0,1-0,3s en color, opacidad y transform.\n",
+  "spec": {
+    "brand": "OpenAI",
+    "tagline": "negro absoluto con luz difusa",
+    "theme": "dark",
+    "description": "La home de OpenAI es un lienzo de negro puro #000000 sobre el que casi todo flota en blanco #ffffff y sus velos de opacidad. No hay sombras: la profundidad se construye con filetes de 1px en blanco al 20% (#ffffff33) y rellenos translúcidos al 12% (#ffffff1f), de modo que las píldoras y el campo de prompt parecen vidrio esmerilado apoyado en la nada. Toda la tipografía es OpenAI Sans, una grotesca geométrica de terminaciones limpias, y la decisión que la define es que el peso 500 lo hace prácticamente todo —navegación, botones, titulares de 22px y el display de 48px—; el 400 queda para párrafos largos y el 600 apenas aparece. El tracking se aprieta a medida que crece el cuerpo (-1,44px en 48px), lo que da a 'What can I help with?' un aire compacto y seguro. La retícula respira dentro de 1440px con márgenes de 32px, y el color de marca real llega solo por las imágenes: nebulosas, vídeo y viñetas de producto sobre un fondo que nunca compite.",
+    "colors": [
+      {
+        "name": "Negro Absoluto",
+        "hex": "#000000",
+        "group": "neutral",
+        "role": "Fondo global de página, cabecera y tarjetas; es el lienzo dominante de todo el sitio."
+      },
+      {
+        "name": "Grafito Panel",
+        "hex": "#1f1f1f",
+        "group": "neutral",
+        "role": "Superficie sólida elevada para selectores y chips opacos como el de idioma en el footer."
+      },
+      {
+        "name": "Humo Prompt",
+        "hex": "#333333cc",
+        "group": "neutral",
+        "role": "Relleno del campo de prompt del hero: gris al 80% que separa el input del negro sin borde duro."
+      },
+      {
+        "name": "Velo Doce",
+        "hex": "#ffffff1f",
+        "group": "neutral",
+        "role": "Relleno translúcido de botones secundarios y del botón de envío circular; el 'vidrio' del sistema."
+      },
+      {
+        "name": "Filete Veinte",
+        "hex": "#ffffff33",
+        "group": "neutral",
+        "role": "Borde de 1px de píldoras, inputs y separadores; única línea estructural del sistema."
+      },
+      {
+        "name": "Gris Sesenta",
+        "hex": "#ffffff99",
+        "group": "neutral",
+        "role": "Texto atenuado: descripciones, pies, enlaces legales y placeholders."
+      },
+      {
+        "name": "Blanco Señal",
+        "hex": "#ffffff",
+        "group": "brand",
+        "role": "Texto principal, logotipo y fondo del botón primario 'Try ChatGPT'."
+      },
+      {
+        "name": "Azul Dato",
+        "hex": "#2c67c5",
+        "group": "accent",
+        "role": "Acento de gráficas y visualizaciones definido en los tokens; ausente del chrome de la interfaz."
+      },
+      {
+        "name": "Rojo Alerta",
+        "hex": "#fa423e",
+        "group": "semantic",
+        "role": "Estado de error definido en las primitivas de color; uso puntual en formularios."
+      },
+      {
+        "name": "Verde Confirma",
+        "hex": "#53b559",
+        "group": "semantic",
+        "role": "Estado de éxito de las primitivas; reservado para feedback de formulario."
+      }
+    ],
+    "fonts": [
+      {
+        "family": "OpenAI Sans",
+        "role": "ui",
+        "weights": [
+          400,
+          500,
+          600
+        ],
+        "sizes": "13-48px · 8 valores",
+        "lineHeight": "1,0 en botones · 1,4-1,65 en texto · 1,16 en display",
+        "letterSpacing": "normal en 13-14px; -0,14 a -1,44px según crece el cuerpo",
+        "fallback": "'Söhne', Inter, 'Helvetica Neue', Arial, system-ui, sans-serif",
+        "usage": "Fuente única para todo: navegación, titulares, cuerpo y microcopy. La decisión característica es que el peso 500 es el de batalla (136 de 144 usos) y el 600 es casi anecdótico: no hay negritas, la jerarquía la marcan el tamaño y el tracking negativo. En botones el line-height se colapsa a 1,0 para centrar el texto en píldoras de altura fija."
+      }
+    ],
+    "typeScale": [
+      {
+        "role": "leyenda",
+        "size": 13,
+        "weight": 500,
+        "lineHeight": 1.51,
+        "letterSpacing": "normal",
+        "family": "OpenAI Sans"
+      },
+      {
+        "role": "cuerpo-sm",
+        "size": 14,
+        "weight": 500,
+        "lineHeight": 1.4,
+        "letterSpacing": "normal",
+        "family": "OpenAI Sans"
+      },
+      {
+        "role": "cuerpo",
+        "size": 16,
+        "weight": 400,
+        "lineHeight": 1.5,
+        "letterSpacing": "-0.16px",
+        "family": "OpenAI Sans"
+      },
+      {
+        "role": "subtítulo",
+        "size": 17,
+        "weight": 400,
+        "lineHeight": 1.65,
+        "letterSpacing": "-0.17px",
+        "family": "OpenAI Sans"
+      },
+      {
+        "role": "título-sm",
+        "size": 18,
+        "weight": 500,
+        "lineHeight": 1.32,
+        "letterSpacing": "-0.18px",
+        "family": "OpenAI Sans"
+      },
+      {
+        "role": "título",
+        "size": 22,
+        "weight": 500,
+        "lineHeight": 1.26,
+        "letterSpacing": "-0.22px",
+        "family": "OpenAI Sans"
+      },
+      {
+        "role": "título-lg",
+        "size": 28,
+        "weight": 500,
+        "lineHeight": 1.2,
+        "letterSpacing": "-0.28px",
+        "family": "OpenAI Sans"
+      },
+      {
+        "role": "display",
+        "size": 48,
+        "weight": 500,
+        "lineHeight": 1.16,
+        "letterSpacing": "-1.44px",
+        "family": "OpenAI Sans"
+      }
+    ],
+    "spacing": {
+      "density": "airy",
+      "baseUnit": "4px",
+      "maxWidth": "1440px (texto a 670-840px)",
+      "sectionGap": "120px",
+      "cardPadding": "32px",
+      "elementGap": "12-16px"
+    },
+    "radii": [
+      {
+        "element": "Botones, píldoras, input de búsqueda",
+        "value": "9999px"
+      },
+      {
+        "element": "Botón de cabecera (Log in / Try ChatGPT)",
+        "value": "40px"
+      },
+      {
+        "element": "Campo de prompt del hero",
+        "value": "24px"
+      },
+      {
+        "element": "Tarjetas y miniaturas de contenido",
+        "value": "6px"
+      },
+      {
+        "element": "Enlaces con foco y chips pequeños",
+        "value": "4px"
+      }
+    ],
+    "elevation": "Sin sombras en todo el sistema (boxShadow: none). La profundidad se obtiene por escalones de superficie sobre Negro Absoluto: velo blanco al 12% (#ffffff1f) para elementos interactivos, gris al 80% (#333333cc) para el campo de prompt y sólido #1f1f1f para chips opacos, con filetes de 1px en #ffffff33 cuando hace falta delimitar sin relleno.",
+    "components": [
+      {
+        "name": "Botón primario",
+        "role": "CTA principal de cabecera y cierres de página ('Try ChatGPT').",
+        "spec": "Fondo Blanco Señal con texto Negro Absoluto en cuerpo-sm peso 500, radio 40px, altura 40px, padding lateral 20px; en hover baja a ~90% de opacidad con transición de 0,3s; icono de enlace externo opcional a la derecha."
+      },
+      {
+        "name": "Botón secundario",
+        "role": "Acciones de apoyo y píldoras de navegación rápida ('Log in', 'Research', 'More').",
+        "spec": "Dos variantes: relleno Velo Doce sin borde, o transparente con filete de 1px en Filete Veinte; texto Blanco Señal en cuerpo-sm peso 500, radio completo (9999px o 40px), altura 32-40px, padding lateral 12-20px; hover sube el velo hacia 20% animando solo background."
+      },
+      {
+        "name": "Input",
+        "role": "Campo de prompt del hero y buscador del sitio.",
+        "spec": "Fondo Humo Prompt sobre Negro Absoluto, radio 24px, padding interno 16-20px, sin borde; placeholder en Gris Sesenta, texto en cuerpo 16px peso 400; el buscador usa radio completo con padding 10px 24px y 52px a la izquierda para el icono; botón de envío circular con fondo Velo Doce."
+      },
+      {
+        "name": "Enlace",
+        "role": "Navegación de cabecera, índices y enlaces legales en línea.",
+        "spec": "Texto Blanco Señal en leyenda o cuerpo-sm peso 500, sin subrayado en navegación y subrayado en enlaces dentro de párrafo; los legales van en Gris Sesenta peso 400 y pasan a Blanco Señal en hover con transición de color de 0,25s."
+      },
+      {
+        "name": "Tarjeta",
+        "role": "Piezas de noticia, investigación e historias de las rejillas.",
+        "spec": "Fondo Negro Absoluto sin borde ni sombra: la imagen con radio 6px es la tarjeta; título en título-sm peso 500 y metadato en leyenda Gris Sesenta, separados 12-16px bajo la imagen; hover escala ligeramente la imagen (transform 0,3s) manteniendo el recorte."
+      }
+    ],
+    "motion": "Transiciones cortas y de una sola propiedad: color 0,1-0,25s, opacity 0,3s, background 0,3s y transform 0,3s, siempre con cubic-bezier personalizados tipo ease-curve (salida suave). Se animan color de texto, opacidad y escala de imágenes en hover; no se animan tamaños, bordes ni sombras. Hay revelados por scroll sutiles (fade y desplazamiento corto) y vídeo en bucle en piezas destacadas; nada rebota ni gira.",
+    "layout": "Contenedor máximo de 1440px con padding lateral de 32px y bloques de texto restringidos a 670-840px para mantener la medida lectora. Rejillas asimétricas de 2 columnas (pieza grande + columna estrecha) para noticias e historias, con gaps de 16-24px y separaciones verticales entre secciones de 120px. El hero es una excepción centrada: titular display, campo de prompt de ~768px y una fila de píldoras bajo él, todo en eje vertical con enorme aire arriba y abajo. Alineación a la izquierda en todo el resto.",
+    "imagery": "Fotografía y render abstracto a pantalla completa dentro de recortes de radio 6px: campos estelares, nebulosas y texturas luminosas sobre negro que aportan el único color saturado de la página, más retratos y escenas de producto. Alta densidad de piezas (≈19 imágenes) y vídeo en bucle silencioso en destacados. Nada de ilustración plana ni iconografía decorativa; los iconos son lineales, mínimos y monocromos en blanco.",
+    "dos": [
+      "Usar #000000 como fondo por defecto y construir la jerarquía con velos blancos al 12%, 20% y 60%.",
+      "Poner el peso 500 de OpenAI Sans en casi todo y reservar el 400 solo para párrafos largos.",
+      "Apretar el tracking a medida que crece el cuerpo: -0,18px a 18px y -1,44px a 48px.",
+      "Dar radio completo (9999px o 40px) a todo lo clicable pequeño y radio 6px a las imágenes.",
+      "Respirar con 120px entre secciones y limitar el texto a 670-840px dentro del contenedor de 1440px.",
+      "Animar solo color, opacidad, background y transform, con duraciones de 0,1 a 0,3s.",
+      "Dejar que el color venga exclusivamente de las imágenes y los gráficos de datos."
+    ],
+    "donts": [
+      "No añadir box-shadow: este sistema no tiene ni una sombra.",
+      "No usar el azul #2c67c5 ni los demás primitivos de color en botones o enlaces del chrome.",
+      "No poner texto en peso 700 ni en versalitas o mayúsculas forzadas.",
+      "No mezclar otra familia tipográfica: OpenAI Sans es la única voz.",
+      "No usar grises opacos intermedios para texto secundario; usar #ffffff99 sobre negro.",
+      "No dar bordes de más de 1px ni bordes de color distinto a #ffffff33.",
+      "No comprimir el ritmo vertical: evitar separaciones de sección inferiores a 80px."
+    ],
+    "similar": [
+      {
+        "brand": "Anthropic",
+        "why": "Misma lógica de una sola grotesca propia, jerarquía por tamaño y tracking, y cero sombras."
+      },
+      {
+        "brand": "Vercel",
+        "why": "Interfaz oscura sobre negro puro con bordes de 1px translúcidos y botón primario blanco sobre negro."
+      },
+      {
+        "brand": "Linear",
+        "why": "Superficies apiladas por opacidad, radios grandes en controles y microtransiciones de 0,2-0,3s."
+      },
+      {
+        "brand": "Arc / The Browser Company",
+        "why": "Hero centrado minimalista con imágenes ricas como único aporte de color sobre fondo neutro."
+      }
+    ],
+    "agentPrompt": "Diseña en modo oscuro sobre #000000 con texto #ffffff y secundario #ffffff99. Usa una única grotesca geométrica (OpenAI Sans; fallback Inter) con peso 500 para casi todo y 400 solo en párrafos; escala 13/14/16/17/18/22/28/48px con tracking que pasa de normal a -1,44px en display. Nada de sombras: la profundidad viene de rellenos #ffffff1f, paneles #333333cc y filetes de 1px #ffffff33. Botón primario blanco con texto negro, radio 40px, altura 40px, padding lateral 20px; secundarios en píldora translúcida. Contenedor 1440px, padding 32px, texto a 670-840px, secciones separadas 120px. Imágenes con radio 6px aportan el único color. Transiciones de 0,1-0,3s en color, opacidad y transform."
+  },
+  "generatedAt": "2026-09-21T00:19:33.204Z",
+  "model": "claude-opus-5",
+  "screenshotUrl": "/design-md/505d63af7c2cbca0.jpg?v=1789949973208",
+  "coverUrl": "/design-md/505d63af7c2cbca0-cover.jpg?v=1789949973208",
+  "scrollUrl": "/design-md/505d63af7c2cbca0-scroll.jpg?v=1789949973208"
+}

@@ -1,0 +1,289 @@
+{
+  "url": "https://www.aconiastudio.com",
+  "markdown": "# aconia — DESIGN.md\n> estudio suizo en papel cálido\n\n**Tema:** claro  \n**Origen:** https://www.aconiastudio.com/ · 2026-09-20\n\nLas medidas de origen están normalizadas; los roles y las recomendaciones son interpretados.\n\nInterfaz de estudio suizo llevada a la web: casi todo es un blanco papel #fcfcfc sobre el que descansa una única familia, Suisse Intl, en su peso Regular 400 —el peso de batalla— con Light 300 reservado a los pasajes secundarios y Medium 500 apareciendo una sola vez en toda la página. La jerarquía no se construye con color ni con negritas, sino con tamaño y tracking negativo: el h1 de 44px lleva -0.88px y line-height 45.76px (1.04), casi sólido; los h2 de 30px bajan a -0.9px. El gris #737373 marca los precios y metadatos, el negro puro #000000 los títulos, y un gris grafito #262626 los enlaces de navegación. La barra superior se separa con un velo #ebebe9 de tono ligeramente cálido y el aviso promocional corona la página en arena clara. Sin sombras, sin bordes visibles: la profundidad son escalones de superficie y radios mínimos de 4-5px. Fotografía cálida a sangre completa (madera, hormigón, pantallas) aporta todo el color que la interfaz se niega a usar.\n\n## Colores\n\n| Nombre | Valor | Grupo | Rol |\n|--------|-------|-------|-----|\n| Obsidiana | `#040302` | neutro | Negro cálido de las superficies invertidas: botón Contact, pie y bloques a sangre que cortan el papel. |\n| Grafito | `#262626` | neutro | Color de los enlaces de navegación y microtítulos; negro suavizado para que la nav no pese más que el titular. |\n| Tinta Suave | `#3b3b3b` | neutro | Nombres de colección y textos de tarjeta a 30px, un escalón por debajo del negro puro. |\n| Gris Etiqueta | `#737373` | neutro | Metadatos, precios y contadores a 14px; el único gris atenuado del sistema. |\n| Velo Arena | `#ebebe9` | neutro | Franja superior de anuncio y barra de navegación, con una gota de calidez que la aleja del gris neutro. |\n| Niebla | `#f5f5f5` | neutro | Superficie de controles secundarios: botón circular de flecha, chips y fondos de campo. |\n| Blanco Papel | `#fcfcfc` | neutro | Fondo dominante de toda la página; nunca blanco puro, para no competir con las fotos. |\n| Filete Humo | `#0000000d` | neutro | Negro al 5% usado como separador y hover de superficie, en lugar de bordes sólidos. |\n| Blanco Contra | `#ffffff` | neutro | Texto sobre negro: botón Contact, Accept y cualquier bloque invertido. |\n| Gris Enlace | `#8f8f8f` | acento | Enlaces dentro de texto legal y notas al pie; subrayado implícito por tono, no por línea. |\n\n## Tipografía\n\n### Suisse Intl Regular — display\nEs la única familia real del sitio y cubre titulares, navegación, cuerpo y etiquetas. La decisión característica es que todo va en 400: la jerarquía se fabrica con tamaño y tracking negativo proporcional, nunca con negrita.\n- **Sustituto:** Helvetica Neue, Inter, Arial, sans-serif\n- **Pesos:** 400\n- **Tamaños:** 12-44px · 8 valores\n- **Interlineado:** 1.04 en display, 1.2 en cuerpo\n- **Tracking:** -0.88px a -0.42px según tamaño\n\n### Suisse Intl Light — cuerpo\nReservada a párrafos introductorios y textos de apoyo de 26px donde el Regular resultaría denso. Aparece unas ocho veces en toda la página, siempre en pasajes de lectura pausada.\n- **Sustituto:** Helvetica Neue Light, Inter Light, sans-serif\n- **Pesos:** 300\n- **Tamaños:** 14-26px · 3 valores\n- **Interlineado:** 1.2-1.25\n- **Tracking:** -0.56px a -0.42px\n\n### Suisse Intl Medium — interfaz\nUso casi testimonial: una sola aparición medida, probablemente una etiqueta de estado o un CTA. Sirve como recurso de énfasis excepcional, no como peso de interfaz.\n- **Sustituto:** Helvetica Neue Medium, Inter Medium, sans-serif\n- **Pesos:** 500\n- **Tamaños:** 14-16px · 1 valor dominante\n- **Interlineado:** 1.2\n- **Tracking:** -0.48px\n\n### Escala tipográfica\n\n| Rol | Familia | Peso | Tamaño | Interlineado | Tracking |\n|-----|---------|------|--------|--------------|----------|\n| leyenda | Suisse Intl Regular | 400 | 12px | 1.17 | normal |\n| cuerpo-sm | Suisse Intl Regular | 400 | 13px | 1.2 | normal |\n| cuerpo | Suisse Intl Regular | 400 | 14px | 1.2 | -0.42px |\n| subtítulo | Suisse Intl Regular | 400 | 16px | 1.2 | -0.48px |\n| título-sm | Suisse Intl Light | 300 | 26px | 1.25 | -0.78px |\n| título | Suisse Intl Regular | 400 | 30px | 1.04 | -0.9px |\n| display | Suisse Intl Regular | 400 | 44px | 1.04 | -0.88px |\n\n## Espaciado y layout\n\n**Densidad:** aireada\n\n- **Unidad base:** 5px\n- **Ancho máximo de página:** 1440px a sangre; texto contenido en ~1240px\n- **Separación entre secciones:** 100-163px entre bloques mayores\n- **Padding de tarjeta:** 25px 30px 20px 15px en tarjetas de colección; 20px en contenedores genéricos\n- **Separación entre elementos:** 10px como gap por defecto, 12px en listas, 5px en pares etiqueta-valor\n\n### Radios de borde\n\n- **Botones de barra y píldoras:** 5px\n- **Botones de diálogo (cookies):** 4px\n- **Botón circular de flecha:** 10px\n- **Tarjetas e imágenes:** 12px\n- **Microetiquetas:** 3px\n- **Bloques a sangre e imágenes de héroe:** 0px\n\n## Elevación\n\nSin sombras: el JSON no registra ni un box-shadow. La profundidad se construye por escalones de superficie —papel #fcfcfc, niebla #f5f5f5, velo arena #ebebe9, obsidiana #040302— y por un filete de negro al 5% (#0000000d) que hace de separador donde otros pondrían un borde de 1px. Las imágenes flotan por contraste de contenido, no por elevación.\n\n## Componentes\n\n### Barra de anuncio\n**Rol:** Aviso de disponibilidad del estudio en la cima de la página\n\nFondo velo arena #ebebe9, texto Suisse Intl Regular 12-13px en grafito #262626, centrado, altura ~30px con padding 8px 20px, botón de cierre ✕ alineado a la derecha; sin borde inferior, se separa por cambio de tono.\n\n### Navegación fija\n**Rol:** Logotipo a la izquierda, tres enlaces centrados, CTA a la derecha\n\nFondo #ebebe9 sobre el papel, altura ~50px, padding 0px 20px; enlaces Suisse Intl Regular 16px / -0.48px en #262626, separados ~100px; hover a negro #040302 sin subrayado.\n\n### Botón primario (Contact)\n**Rol:** Única llamada a la acción persistente\n\nFondo obsidiana #040302, texto blanco #ffffff en Suisse Intl Regular 14px, padding 7px 20px, radio 5px, sin borde ni sombra; hover: opacidad 0.85 y leve desplazamiento de 1px.\n\n### Tarjeta de colección\n**Rol:** Ítem del catálogo con imagen, nombre y precio\n\nImagen con radio 12px sobre fondo papel; debajo, nombre en Suisse Intl Regular 30px / -0.9px en tinta suave #3b3b3b y precio en 14px #737373; padding 25px 30px 20px 15px, gap 10px; hover: fondo negro 5% #0000000d bajo el bloque de texto.\n\n### Campo de suscripción\n**Rol:** Captura de email en el bloque 'Stay updated.'\n\nInput sin caja: fondo transparente, sin borde ni radio, texto y placeholder en Suisse Intl Regular 14px negro; la línea base la da un filete #0000000d; a la derecha, botón circular gris niebla #f5f5f5 de radio 10px con flecha → en negro.\n\n### Titular de héroe\n**Rol:** Declaración de posicionamiento en la portada\n\nSuisse Intl Regular 44px, line-height 45.76px, letter-spacing -0.88px, color #38382f (negro ligeramente terroso); la palabra 'aconia.' inicial va en gris claro dentro de la misma línea, a modo de firma integrada.\n\n### Diálogo de cookies\n**Rol:** Aviso legal flotante inferior derecha\n\nTarjeta blanca #fcfcfc con radio 12px, título 14px negro, cuerpo 13px en #444444, enlace 'Cookie Policy' en #8f8f8f; botones de 13px con padding 7px 20px y radio 4px: Reject en #e3e3e3 con texto #444444, Accept en negro #000000 con texto blanco.\n\n### Bloque de imagen a sangre\n**Rol:** Escena fotográfica que ocupa el ancho completo\n\nSin radio ni margen lateral, altura ~500-620px, sin overlay ni texto superpuesto; se apoya directamente sobre el papel y actúa como separador de secciones.\n\n## Movimiento\n\nAnimaciones ligadas al scroll (Framer): las secciones entran con fundido y desplazamiento vertical de 12-20px, con easing tipo cubic-bezier(0.22, 1, 0.36, 1) y duraciones de 400-600ms. Los hovers son de 150-200ms sobre color u opacidad. No se anima el tipo grande ni se usan paralajes agresivos: el movimiento se limita a la aparición y a los estados de enlace y botón.\n\n## Layout\n\nEstructura de portada editorial: franja de anuncio + nav fija, un vacío superior generoso (padding 200px 20px 20px) que empuja el titular al tercio inferior del primer viewport, y a continuación bloques a sangre de 1440px. El contenido de texto se alinea a la izquierda con un margen de 20px y no se centra nunca salvo en la nav. Las colecciones se disponen en rejillas de 2-3 columnas con gap de 10-20px, separadas del resto por 100-163px. Ritmo vertical en múltiplos de 5px.\n\n## Imagen\n\nFotografía de interior real: madera, hormigón encerado, luz lateral cálida; los mockups de producto (iMac, MacBook) aparecen integrados en la escena, nunca recortados sobre fondo plano. Densidad media-alta —14 imágenes en la página— con tratamiento sin filtros ni duotonos: el color de la marca sale de la madera y la arena de las fotos. Bordes rectos a sangre o radio 12px cuando la imagen vive dentro de una tarjeta.\n\n## Qué hacer y qué no\n\n### Sí\n- Componer toda la jerarquía con Suisse Intl 400 y variaciones de tamaño; usar 300 solo en párrafos de 26px.\n- Aplicar tracking negativo proporcional: -0.88px a 44px, -0.9px a 30px, -0.48px a 16px, -0.42px a 14px.\n- Usar el papel #fcfcfc como fondo por defecto y reservar #ebebe9 para las franjas de navegación y anuncio.\n- Separar con escalones de superficie o el filete #0000000d en lugar de bordes de 1px o sombras.\n- Dejar respirar la portada: al menos 200px de aire sobre el titular y 100px entre secciones.\n- Mantener una única acción negra (#040302) por pantalla; todo lo demás es texto o enlace.\n\n### No\n- No introducir color de marca cromático: el color proviene únicamente de la fotografía.\n- No poner negritas ni usar peso 700; el énfasis se hace con tamaño, no con grosor.\n- No añadir box-shadow a tarjetas ni botones; el sistema no registra ninguna sombra.\n- No centrar bloques de texto largos: el contenido se alinea a la izquierda.\n- No usar blanco puro #ffffff como fondo de página; rompería la calidez del papel.\n- No aumentar el line-height de los titulares por encima de 1.05; deben leerse como un bloque sólido.\n- No mezclar radios: 4-5px en controles, 12px en tarjetas, 0px a sangre; nada de píldoras completas.\n\n## Marcas afines\n\n- **Linear** — Misma disciplina de una sola grotesca suiza con tracking negativo y jerarquía sin negritas.\n- **Arc (The Browser Company)** — Fondos casi blancos ligeramente cálidos y fotografía de escritorio real en lugar de mockups recortados.\n- **Kvell / estudios Framer de producto** — Portada editorial con franja de anuncio, nav minúscula y bloques de imagen a sangre.\n- **Teenage Engineering** — Neutros cálidos, radios pequeños y ausencia total de sombras o efectos decorativos.\n\n## Prompt para agentes\n\nDiseña una portada de estudio suizo sobre papel cálido #fcfcfc, con franja de anuncio y nav fija en #ebebe9. Usa Suisse Intl (fallback Helvetica Neue/Inter) en peso 400 para todo: display 44px/45.76px con letter-spacing -0.88px, títulos 30px/-0.9px, nav 16px/-0.48px, metadatos 14px/-0.42px en gris #737373; reserva Light 300 para párrafos de 26px y nunca uses negrita. Un único botón negro #040302 con texto blanco, radio 5px, padding 7px 20px. Sin sombras ni bordes: separa con escalones de superficie y negro al 5% (#0000000d). Imágenes fotográficas a sangre, radio 12px en tarjetas, gaps de 10px y secciones separadas 100-163px, con entradas por scroll de 500ms.\n",
+  "spec": {
+    "brand": "aconia",
+    "tagline": "estudio suizo en papel cálido",
+    "theme": "light",
+    "description": "Interfaz de estudio suizo llevada a la web: casi todo es un blanco papel #fcfcfc sobre el que descansa una única familia, Suisse Intl, en su peso Regular 400 —el peso de batalla— con Light 300 reservado a los pasajes secundarios y Medium 500 apareciendo una sola vez en toda la página. La jerarquía no se construye con color ni con negritas, sino con tamaño y tracking negativo: el h1 de 44px lleva -0.88px y line-height 45.76px (1.04), casi sólido; los h2 de 30px bajan a -0.9px. El gris #737373 marca los precios y metadatos, el negro puro #000000 los títulos, y un gris grafito #262626 los enlaces de navegación. La barra superior se separa con un velo #ebebe9 de tono ligeramente cálido y el aviso promocional corona la página en arena clara. Sin sombras, sin bordes visibles: la profundidad son escalones de superficie y radios mínimos de 4-5px. Fotografía cálida a sangre completa (madera, hormigón, pantallas) aporta todo el color que la interfaz se niega a usar.",
+    "colors": [
+      {
+        "name": "Obsidiana",
+        "hex": "#040302",
+        "group": "neutral",
+        "role": "Negro cálido de las superficies invertidas: botón Contact, pie y bloques a sangre que cortan el papel."
+      },
+      {
+        "name": "Grafito",
+        "hex": "#262626",
+        "group": "neutral",
+        "role": "Color de los enlaces de navegación y microtítulos; negro suavizado para que la nav no pese más que el titular."
+      },
+      {
+        "name": "Tinta Suave",
+        "hex": "#3b3b3b",
+        "group": "neutral",
+        "role": "Nombres de colección y textos de tarjeta a 30px, un escalón por debajo del negro puro."
+      },
+      {
+        "name": "Gris Etiqueta",
+        "hex": "#737373",
+        "group": "neutral",
+        "role": "Metadatos, precios y contadores a 14px; el único gris atenuado del sistema."
+      },
+      {
+        "name": "Velo Arena",
+        "hex": "#ebebe9",
+        "group": "neutral",
+        "role": "Franja superior de anuncio y barra de navegación, con una gota de calidez que la aleja del gris neutro."
+      },
+      {
+        "name": "Niebla",
+        "hex": "#f5f5f5",
+        "group": "neutral",
+        "role": "Superficie de controles secundarios: botón circular de flecha, chips y fondos de campo."
+      },
+      {
+        "name": "Blanco Papel",
+        "hex": "#fcfcfc",
+        "group": "neutral",
+        "role": "Fondo dominante de toda la página; nunca blanco puro, para no competir con las fotos."
+      },
+      {
+        "name": "Filete Humo",
+        "hex": "#0000000d",
+        "group": "neutral",
+        "role": "Negro al 5% usado como separador y hover de superficie, en lugar de bordes sólidos."
+      },
+      {
+        "name": "Blanco Contra",
+        "hex": "#ffffff",
+        "group": "neutral",
+        "role": "Texto sobre negro: botón Contact, Accept y cualquier bloque invertido."
+      },
+      {
+        "name": "Gris Enlace",
+        "hex": "#8f8f8f",
+        "group": "accent",
+        "role": "Enlaces dentro de texto legal y notas al pie; subrayado implícito por tono, no por línea."
+      }
+    ],
+    "fonts": [
+      {
+        "family": "Suisse Intl Regular",
+        "role": "display",
+        "weights": [
+          400
+        ],
+        "sizes": "12-44px · 8 valores",
+        "lineHeight": "1.04 en display, 1.2 en cuerpo",
+        "letterSpacing": "-0.88px a -0.42px según tamaño",
+        "fallback": "Helvetica Neue, Inter, Arial, sans-serif",
+        "usage": "Es la única familia real del sitio y cubre titulares, navegación, cuerpo y etiquetas. La decisión característica es que todo va en 400: la jerarquía se fabrica con tamaño y tracking negativo proporcional, nunca con negrita."
+      },
+      {
+        "family": "Suisse Intl Light",
+        "role": "body",
+        "weights": [
+          300
+        ],
+        "sizes": "14-26px · 3 valores",
+        "lineHeight": "1.2-1.25",
+        "letterSpacing": "-0.56px a -0.42px",
+        "fallback": "Helvetica Neue Light, Inter Light, sans-serif",
+        "usage": "Reservada a párrafos introductorios y textos de apoyo de 26px donde el Regular resultaría denso. Aparece unas ocho veces en toda la página, siempre en pasajes de lectura pausada."
+      },
+      {
+        "family": "Suisse Intl Medium",
+        "role": "ui",
+        "weights": [
+          500
+        ],
+        "sizes": "14-16px · 1 valor dominante",
+        "lineHeight": "1.2",
+        "letterSpacing": "-0.48px",
+        "fallback": "Helvetica Neue Medium, Inter Medium, sans-serif",
+        "usage": "Uso casi testimonial: una sola aparición medida, probablemente una etiqueta de estado o un CTA. Sirve como recurso de énfasis excepcional, no como peso de interfaz."
+      }
+    ],
+    "typeScale": [
+      {
+        "role": "leyenda",
+        "size": 12,
+        "weight": 400,
+        "lineHeight": 1.17,
+        "letterSpacing": "normal",
+        "family": "Suisse Intl Regular"
+      },
+      {
+        "role": "cuerpo-sm",
+        "size": 13,
+        "weight": 400,
+        "lineHeight": 1.2,
+        "letterSpacing": "normal",
+        "family": "Suisse Intl Regular"
+      },
+      {
+        "role": "cuerpo",
+        "size": 14,
+        "weight": 400,
+        "lineHeight": 1.2,
+        "letterSpacing": "-0.42px",
+        "family": "Suisse Intl Regular"
+      },
+      {
+        "role": "subtítulo",
+        "size": 16,
+        "weight": 400,
+        "lineHeight": 1.2,
+        "letterSpacing": "-0.48px",
+        "family": "Suisse Intl Regular"
+      },
+      {
+        "role": "título-sm",
+        "size": 26,
+        "weight": 300,
+        "lineHeight": 1.25,
+        "letterSpacing": "-0.78px",
+        "family": "Suisse Intl Light"
+      },
+      {
+        "role": "título",
+        "size": 30,
+        "weight": 400,
+        "lineHeight": 1.04,
+        "letterSpacing": "-0.9px",
+        "family": "Suisse Intl Regular"
+      },
+      {
+        "role": "display",
+        "size": 44,
+        "weight": 400,
+        "lineHeight": 1.04,
+        "letterSpacing": "-0.88px",
+        "family": "Suisse Intl Regular"
+      }
+    ],
+    "spacing": {
+      "density": "airy",
+      "baseUnit": "5px",
+      "maxWidth": "1440px a sangre; texto contenido en ~1240px",
+      "sectionGap": "100-163px entre bloques mayores",
+      "cardPadding": "25px 30px 20px 15px en tarjetas de colección; 20px en contenedores genéricos",
+      "elementGap": "10px como gap por defecto, 12px en listas, 5px en pares etiqueta-valor"
+    },
+    "radii": [
+      {
+        "element": "Botones de barra y píldoras",
+        "value": "5px"
+      },
+      {
+        "element": "Botones de diálogo (cookies)",
+        "value": "4px"
+      },
+      {
+        "element": "Botón circular de flecha",
+        "value": "10px"
+      },
+      {
+        "element": "Tarjetas e imágenes",
+        "value": "12px"
+      },
+      {
+        "element": "Microetiquetas",
+        "value": "3px"
+      },
+      {
+        "element": "Bloques a sangre e imágenes de héroe",
+        "value": "0px"
+      }
+    ],
+    "elevation": "Sin sombras: el JSON no registra ni un box-shadow. La profundidad se construye por escalones de superficie —papel #fcfcfc, niebla #f5f5f5, velo arena #ebebe9, obsidiana #040302— y por un filete de negro al 5% (#0000000d) que hace de separador donde otros pondrían un borde de 1px. Las imágenes flotan por contraste de contenido, no por elevación.",
+    "components": [
+      {
+        "name": "Barra de anuncio",
+        "role": "Aviso de disponibilidad del estudio en la cima de la página",
+        "spec": "Fondo velo arena #ebebe9, texto Suisse Intl Regular 12-13px en grafito #262626, centrado, altura ~30px con padding 8px 20px, botón de cierre ✕ alineado a la derecha; sin borde inferior, se separa por cambio de tono."
+      },
+      {
+        "name": "Navegación fija",
+        "role": "Logotipo a la izquierda, tres enlaces centrados, CTA a la derecha",
+        "spec": "Fondo #ebebe9 sobre el papel, altura ~50px, padding 0px 20px; enlaces Suisse Intl Regular 16px / -0.48px en #262626, separados ~100px; hover a negro #040302 sin subrayado."
+      },
+      {
+        "name": "Botón primario (Contact)",
+        "role": "Única llamada a la acción persistente",
+        "spec": "Fondo obsidiana #040302, texto blanco #ffffff en Suisse Intl Regular 14px, padding 7px 20px, radio 5px, sin borde ni sombra; hover: opacidad 0.85 y leve desplazamiento de 1px."
+      },
+      {
+        "name": "Tarjeta de colección",
+        "role": "Ítem del catálogo con imagen, nombre y precio",
+        "spec": "Imagen con radio 12px sobre fondo papel; debajo, nombre en Suisse Intl Regular 30px / -0.9px en tinta suave #3b3b3b y precio en 14px #737373; padding 25px 30px 20px 15px, gap 10px; hover: fondo negro 5% #0000000d bajo el bloque de texto."
+      },
+      {
+        "name": "Campo de suscripción",
+        "role": "Captura de email en el bloque 'Stay updated.'",
+        "spec": "Input sin caja: fondo transparente, sin borde ni radio, texto y placeholder en Suisse Intl Regular 14px negro; la línea base la da un filete #0000000d; a la derecha, botón circular gris niebla #f5f5f5 de radio 10px con flecha → en negro."
+      },
+      {
+        "name": "Titular de héroe",
+        "role": "Declaración de posicionamiento en la portada",
+        "spec": "Suisse Intl Regular 44px, line-height 45.76px, letter-spacing -0.88px, color #38382f (negro ligeramente terroso); la palabra 'aconia.' inicial va en gris claro dentro de la misma línea, a modo de firma integrada."
+      },
+      {
+        "name": "Diálogo de cookies",
+        "role": "Aviso legal flotante inferior derecha",
+        "spec": "Tarjeta blanca #fcfcfc con radio 12px, título 14px negro, cuerpo 13px en #444444, enlace 'Cookie Policy' en #8f8f8f; botones de 13px con padding 7px 20px y radio 4px: Reject en #e3e3e3 con texto #444444, Accept en negro #000000 con texto blanco."
+      },
+      {
+        "name": "Bloque de imagen a sangre",
+        "role": "Escena fotográfica que ocupa el ancho completo",
+        "spec": "Sin radio ni margen lateral, altura ~500-620px, sin overlay ni texto superpuesto; se apoya directamente sobre el papel y actúa como separador de secciones."
+      }
+    ],
+    "motion": "Animaciones ligadas al scroll (Framer): las secciones entran con fundido y desplazamiento vertical de 12-20px, con easing tipo cubic-bezier(0.22, 1, 0.36, 1) y duraciones de 400-600ms. Los hovers son de 150-200ms sobre color u opacidad. No se anima el tipo grande ni se usan paralajes agresivos: el movimiento se limita a la aparición y a los estados de enlace y botón.",
+    "layout": "Estructura de portada editorial: franja de anuncio + nav fija, un vacío superior generoso (padding 200px 20px 20px) que empuja el titular al tercio inferior del primer viewport, y a continuación bloques a sangre de 1440px. El contenido de texto se alinea a la izquierda con un margen de 20px y no se centra nunca salvo en la nav. Las colecciones se disponen en rejillas de 2-3 columnas con gap de 10-20px, separadas del resto por 100-163px. Ritmo vertical en múltiplos de 5px.",
+    "imagery": "Fotografía de interior real: madera, hormigón encerado, luz lateral cálida; los mockups de producto (iMac, MacBook) aparecen integrados en la escena, nunca recortados sobre fondo plano. Densidad media-alta —14 imágenes en la página— con tratamiento sin filtros ni duotonos: el color de la marca sale de la madera y la arena de las fotos. Bordes rectos a sangre o radio 12px cuando la imagen vive dentro de una tarjeta.",
+    "dos": [
+      "Componer toda la jerarquía con Suisse Intl 400 y variaciones de tamaño; usar 300 solo en párrafos de 26px.",
+      "Aplicar tracking negativo proporcional: -0.88px a 44px, -0.9px a 30px, -0.48px a 16px, -0.42px a 14px.",
+      "Usar el papel #fcfcfc como fondo por defecto y reservar #ebebe9 para las franjas de navegación y anuncio.",
+      "Separar con escalones de superficie o el filete #0000000d en lugar de bordes de 1px o sombras.",
+      "Dejar respirar la portada: al menos 200px de aire sobre el titular y 100px entre secciones.",
+      "Mantener una única acción negra (#040302) por pantalla; todo lo demás es texto o enlace."
+    ],
+    "donts": [
+      "No introducir color de marca cromático: el color proviene únicamente de la fotografía.",
+      "No poner negritas ni usar peso 700; el énfasis se hace con tamaño, no con grosor.",
+      "No añadir box-shadow a tarjetas ni botones; el sistema no registra ninguna sombra.",
+      "No centrar bloques de texto largos: el contenido se alinea a la izquierda.",
+      "No usar blanco puro #ffffff como fondo de página; rompería la calidez del papel.",
+      "No aumentar el line-height de los titulares por encima de 1.05; deben leerse como un bloque sólido.",
+      "No mezclar radios: 4-5px en controles, 12px en tarjetas, 0px a sangre; nada de píldoras completas."
+    ],
+    "similar": [
+      {
+        "brand": "Linear",
+        "why": "Misma disciplina de una sola grotesca suiza con tracking negativo y jerarquía sin negritas."
+      },
+      {
+        "brand": "Arc (The Browser Company)",
+        "why": "Fondos casi blancos ligeramente cálidos y fotografía de escritorio real en lugar de mockups recortados."
+      },
+      {
+        "brand": "Kvell / estudios Framer de producto",
+        "why": "Portada editorial con franja de anuncio, nav minúscula y bloques de imagen a sangre."
+      },
+      {
+        "brand": "Teenage Engineering",
+        "why": "Neutros cálidos, radios pequeños y ausencia total de sombras o efectos decorativos."
+      }
+    ],
+    "agentPrompt": "Diseña una portada de estudio suizo sobre papel cálido #fcfcfc, con franja de anuncio y nav fija en #ebebe9. Usa Suisse Intl (fallback Helvetica Neue/Inter) en peso 400 para todo: display 44px/45.76px con letter-spacing -0.88px, títulos 30px/-0.9px, nav 16px/-0.48px, metadatos 14px/-0.42px en gris #737373; reserva Light 300 para párrafos de 26px y nunca uses negrita. Un único botón negro #040302 con texto blanco, radio 5px, padding 7px 20px. Sin sombras ni bordes: separa con escalones de superficie y negro al 5% (#0000000d). Imágenes fotográficas a sangre, radio 12px en tarjetas, gaps de 10px y secciones separadas 100-163px, con entradas por scroll de 500ms."
+  },
+  "generatedAt": "2026-09-20T21:48:11.747Z",
+  "model": "claude-opus-5",
+  "screenshotUrl": "/design-md/aded2668a47da393.jpg?v=1789940891750",
+  "coverUrl": "/design-md/aded2668a47da393-cover.jpg?v=1789940891750",
+  "scrollUrl": "/design-md/aded2668a47da393-scroll.jpg?v=1789940891750"
+}

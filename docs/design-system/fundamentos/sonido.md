@@ -34,6 +34,14 @@ Dos cosas distintas que no se encienden la una a la otra: la música es ambiente
 | `attention` | Algo espera a la persona | Algo nuevo del equipo en la campanita de la Isla, sutil (Eric: "música si entra algo") → [decisión](../decisiones/2026-10-08-avisos-del-equipo-campanita-y-resumen-diario.md) |
 | `count` | Una cifra que cambia | No suena |
 
+### El viento (propio, no es de cuelume)
+
+| Qué | Valor |
+| --- | --- |
+| Dónde | Al pasar del Tablón a Pulido, cuando las tarjetas empiezan a volar al tornado (`settleFromBoard` en `components/polish-tornado.ts`), no en el clic. Y de vuelta, de Pulido al Tablón, cuando las tarjetas vuelan a su sitio (efecto de `Grid.tsx`): el viento amaina, más grave (160 a 640 Hz frente a 220 a 920), al 80 % del volumen y de derecha a izquierda (`gust(ms, { back: true })`); el mismo viento al salir del Sistema hacia el Tablón o Pulido, en el clic. Al entrar al Sistema, desde cualquiera de las dos: un viento agudo, de 700 a 2800 Hz y al 70 % del volumen (`gust(ms, { bright: true })`), sin ping |
+| Cómo | `gust(ms)` de `lib/ui-sounds.ts`: ruido suave por un filtro de banda; el volumen y el tono siguen la velocidad de `EASE_WIND` muestreada en 48 pasos, así que sopla más cuando las tarjetas van más rápido y calla cuando se posan. Volumen máximo `WIND_VOLUME` 0,06, por debajo de los demás sonidos. Dura `MORPH_MS` más el escalón de la última tarjeta. A la ida cruza de izquierda a derecha. Mismo interruptor que los demás |
+| Por qué | Eric: "haz que suene viento al cambiar de tablon a pulido"; la primera versión, en el clic y con volumen 0,32: "suena demasiado, tiene que ser más suave y sincronizado con el movimiento"; la vuelta, a mi propuesta del viento al revés: "vale, dame"; el del Sistema: "más agudo como de gusto como de resultado, viento pero con piiiin"; probado el ping: "el pin quitamos, no tiene sentido pero me gusta ese viento más agudo" → [decisión](../decisiones/2026-10-12-el-paso-del-tablon-a-pulido-suena-a-viento.md) |
+
 Nada más suena: ni los botones, ni las teclas, ni abrir o cerrar, ni pasar el ratón.
 
 ## Música

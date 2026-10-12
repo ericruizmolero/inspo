@@ -1,0 +1,259 @@
+{
+  "url": "https://benorth.studio/es",
+  "markdown": "# BeNorth.Studio — DESIGN.md\n> collage de estudio sobre papel hueso\n\n**Tema:** claro  \n**Origen:** https://benorth.studio/es · 2026-09-21\n\nLas medidas de origen están normalizadas; los roles y las recomendaciones son interpretados.\n\nInterfaz de estudio creativo vasco que mezcla rigor suizo y desparpajo de collage: un fondo hueso #f4f3ef que actúa como mesa de trabajo, tinta casi negra #0d0d0b y un naranja señal #ff7002 que aparece en dosis mínimas (coordenadas, enlaces, botón de idioma, borde del CTA). Todo se compone en Aeonik, con el peso 300 como voz principal de titulares y párrafos grandes (22,5px/31,5px) y el 400 para navegación y micro-etiquetas; no hay negritas. El display de 70px con letter-spacing -1,54px recorta el aire y deja que el lettering objetual y las fotos recortadas floten por encima, en diagonal, como pegatinas. Aeonik Mono en 15px versalitas con +0,75px marca secciones y datos (43.447 N, 2.784 W). Las píldoras de 100px de radio con borde rgba(13,13,11,0.4) y fondo velo rgba(241,239,234,0.5) son el único chrome; las tarjetas usan 4px y sombra 0 18px 50px rgba(13,13,11,0.18). El footer invierte a Obsidiana con texto hueso al 55%.\n\n## Colores\n\n| Nombre | Valor | Grupo | Rol |\n|--------|-------|-------|-----|\n| Obsidiana | `#0d0d0b` | neutro | Tinta de titulares y cuerpo, y fondo del bloque de footer invertido. |\n| Gris Roca | `#6b6b67` | neutro | Texto atenuado: etiquetas de sección, '(SCROLL)' y metadatos secundarios. |\n| Lino | `#eae7df` | neutro | Superficie ligeramente más cálida para botones neutros y bloques apoyados sobre el fondo. |\n| Papel Hueso | `#f4f3ef` | neutro | Fondo global de la web y color de texto sobre el footer oscuro. |\n| Blanco Ficha | `#ffffff` | neutro | Superficie elevada de tarjetas y modales (cookies, fichas flotantes). |\n| Velo Hueso | `#f1efea80` | neutro | Relleno translúcido de las píldoras de navegación sobre el collage. |\n| Filete Tinta | `#0d0d0b66` | neutro | Borde de las píldoras interactivas; su versión al 12% dibuja los bordes suaves de tarjeta. |\n| Naranja Señal | `#ff7002` | marca | Acento único de marca: coordenadas, enlaces destacados, borde del CTA y switch de idioma. |\n| Hueso Tenue | `#f5f4f08c` | neutro | Texto secundario sobre el footer Obsidiana (55% de opacidad). |\n\n## Tipografía\n\n### Aeonik — display\nÚnica familia para todo: display, titulares, cuerpo y navegación. La decisión característica es que el peso 300 lleva la voz editorial (titulares de 64-70px y párrafos de 22,5px) y el 400 queda para etiquetas y píldoras; el 500 es anecdótico y nunca se usa negrita.\n- **Sustituto:** Inter, Helvetica Neue, Arial, sans-serif\n- **Pesos:** 300, 400, 500\n- **Tamaños:** 11-75px · 9 valores\n- **Interlineado:** 1,12 en display · 1,4 en cuerpo\n- **Tracking:** -1,54px en display · +0,88px en versalitas\n\n### Aeonik Mono — mono\nVoz de datos y señalética: coordenadas geográficas, 'EST. 2019 · ZARAUTZ', etiquetas de sección en mayúsculas y teléfono del footer. Siempre en caja alta o cifras, nunca en párrafos largos.\n- **Sustituto:** IBM Plex Mono, SFMono-Regular, monospace\n- **Pesos:** 400\n- **Tamaños:** 12-15px · 2 valores\n- **Interlineado:** 1,4-1,8\n- **Tracking:** +0,24px a +0,75px\n\n### Escala tipográfica\n\n| Rol | Familia | Peso | Tamaño | Interlineado | Tracking |\n|-----|---------|------|--------|--------------|----------|\n| leyenda | Aeonik | 400 | 11px | 1.2 | 0.88px |\n| cuerpo-sm | Aeonik | 400 | 12px | 1.8 | 0.24px |\n| cuerpo | Aeonik Mono | 400 | 15px | 1.45 | 0.75px |\n| subtítulo | Aeonik | 300 | 23px | 1.4 | normal |\n| título-sm | Aeonik | 300 | 27px | 1.3 | -0.3px |\n| título | Aeonik | 300 | 44px | 1.38 | -0.53px |\n| título-lg | Aeonik | 300 | 64px | 1.15 | -1.41px |\n| display | Aeonik | 400 | 70px | 1.12 | -1.54px |\n\n## Espaciado y layout\n\n**Densidad:** cómoda\n\n- **Unidad base:** 8px\n- **Ancho máximo de página:** 1240px (texto largo a 840px)\n- **Separación entre secciones:** 96-110px vertical\n- **Padding de tarjeta:** 24px 26px 22px\n- **Separación entre elementos:** 6px entre píldoras · 22-24px entre bloques\n\n### Radios de borde\n\n- **Píldoras de navegación y CTA:** 100px\n- **Chips y recortes de imagen:** 3px\n- **Tarjetas y botones de diálogo:** 4px\n- **Switch de idioma / avatar:** 50%\n\n## Elevación\n\nProfundidad casi plana: el collage se apoya en superposición y rotación, no en sombras. Solo las tarjetas flotantes usan 0 18px 50px rgba(13,13,11,0.18) sobre Blanco Ficha; el resto de separación se consigue con filetes de 1px (rgba(13,13,11,0.12) en tarjetas, rgba(13,13,11,0.4) en píldoras) y escalones de superficie hueso → lino → blanco.\n\n## Componentes\n\n### Botón primario\n**Rol:** CTA principal de contacto en el footer y cierres de sección.\n\nFondo transparente, borde 1px Naranja Señal, texto Naranja Señal en leyenda con mayúsculas y +0,96px; padding 13px 22px 13px 18px, radio 100px, con flecha ↗ opcional a la derecha. Hover: fondo Naranja Señal y texto Papel Hueso en 0,25s. Es magnético: sigue ligeramente al cursor con transform 0,25s.\n\n### Botón secundario\n**Rol:** Navegación superior y enlaces de sección en píldora.\n\nFondo Velo Hueso, borde 1px Filete Tinta, texto Obsidiana en leyenda mayúscula; padding 8px 14px, radio 100px. Hover: fondo Obsidiana y texto Papel Hueso, borde del mismo color; también magnético.\n\n### Tarjeta\n**Rol:** Contenedor elevado para diálogos y fichas informativas sobre el collage.\n\nFondo Blanco Ficha, borde 1px Filete Tinta al 12%, radio 4px, padding de tarjeta y sombra de elevación. Los botones internos van a radio 4px: el neutro sobre Lino, el alternativo sobre Blanco Ficha con filete.\n\n### Enlace\n**Rol:** Enlaces en línea dentro de texto, metadatos y footer.\n\nSin subrayado por defecto en Naranja Señal para llamadas, o en Gris Roca para metadatos; en el footer Obsidiana van en Hueso Tenue. Hover: subrayado de 1px y paso a color pleno, transición color 0,2s ease.\n\n### Cabecera\n**Rol:** Barra superior fija con navegación en píldoras, coordenadas y selector de idioma.\n\nAltura 56px, sin fondo propio (flota sobre el collage), padding lateral 80px, gap 6px entre píldoras; coordenadas centradas en mono Naranja Señal y switch de idioma circular naranja a la derecha.\n\n## Movimiento\n\nTodo se mueve con cubic-bezier(0.16,1,0.3,1) para entradas largas y cubic-bezier(0.33,1,0.68,1) para microinteracciones. Revelados al hacer scroll con clip-path 1,1s y transform 1,3s; parallax de los elementos del collage con transform 0,9s. Hover de botones y enlaces en background 0,25s ease y color 0,2s ease; los elementos .magnetic siguen al cursor con transform 0,25s. Opacidad de aparición 0,55s. No se animan tamaños de tipografía ni se usan rebotes.\n\n## Layout\n\nContenedor de 1240px con márgenes laterales de 80px y medida de lectura limitada a 840px. La home es un lienzo de collage: un titular display a sangre que cruza el viewport y objetos (fotos, lettering 3D, pegatinas) posicionados en absoluto con ligeras rotaciones sobre el fondo hueso. Las secciones interiores vuelven a un grid limpio de una y dos columnas, con etiqueta mono a la izquierda y contenido a la derecha, separadas por 96-110px. Pestaña vertical fija en el borde derecho para 'Honors'.\n\n## Imagen\n\nFotografía documental y de archivo (paisaje del Cantábrico, dólmenes, retratos familiares en color desvaído) recortada en rectángulos pequeños con radio 3px, mezclada con renders 3D de lettering inflado en Naranja Señal y pegatinas vectoriales. Densidad alta pero controlada: los objetos nunca tapan el titular por completo y siempre respiran sobre el hueso. Blanco y negro y color conviven sin filtro unificador; la coherencia la da el fondo y el naranja.\n\n## Qué hacer y qué no\n\n### Sí\n- Usar Aeonik 300 para todo titular grande y párrafo destacado; reservar el 400 para etiquetas y píldoras.\n- Aplicar letter-spacing negativo (-1,4 a -1,54px) por encima de 44px y positivo (+0,75 a +0,96px) en las versalitas de 11-15px.\n- Mantener el naranja #ff7002 por debajo del 5% de la superficie: coordenadas, un enlace, un borde de CTA.\n- Dar radio 100px a todo elemento interactivo en línea y 3-4px a imágenes y tarjetas.\n- Componer las imágenes como collage rotado sobre el fondo hueso, dejando siempre ver el papel entre piezas.\n- Invertir a Obsidiana solo en el footer, con texto hueso al 55% para lo secundario.\n- Animar entradas con cubic-bezier(0.16,1,0.3,1) y duraciones de 0,9-1,3s.\n\n### No\n- No usar pesos 600/700: el sistema no tiene negritas.\n- No introducir una segunda tipografía de display; Aeonik y Aeonik Mono bastan.\n- No rellenar botones de naranja por defecto: el naranja es borde y texto, y solo se rellena al hover.\n- No poner sombras en botones, píldoras ni imágenes; la sombra es exclusiva de tarjetas flotantes.\n- No usar blanco puro como fondo de página: el lienzo es #f4f3ef.\n- No alinear el collage a una rejilla ortogonal perfecta ni eliminar las rotaciones.\n- No pasar de 840px de medida en párrafos largos ni justificar el texto.\n\n## Marcas afines\n\n- **Pentagram** — Tipografía neutra grande, fondo claro y protagonismo total de la imagen recortada.\n- **Locomotive** — Estudio con collage animado, píldoras redondeadas y microinteracciones magnéticas con easing largo.\n- **Instrument** — Sistema monocromo con un único acento saturado y grotesca de peso ligero en display.\n- **Mother Design** — Mezcla de archivo fotográfico, objetos 3D y lettering sobre fondo papel.\n\n## Prompt para agentes\n\nDiseña una web de estudio creativo sobre fondo hueso #f4f3ef con tinta #0d0d0b y un único acento naranja #ff7002 usado con avaricia (coordenadas, un enlace, el borde del CTA). Usa Aeonik (fallback Inter) para todo: display 70px peso 300-400 con letter-spacing -1,54px, cuerpo 22,5px/31,5px en 300, etiquetas 11px mayúsculas +0,88px; Aeonik Mono 15px para datos y títulos de sección. Navegación en píldoras de radio 100px con borde rgba(13,13,11,0.4) y relleno translúcido. Contenedor 1240px, texto a 840px, secciones cada 96-110px. Collage de fotos recortadas (radio 3px) y lettering 3D rotado. Animaciones con cubic-bezier(0.16,1,0.3,1), sin sombras salvo en tarjetas, sin negritas.\n",
+  "spec": {
+    "brand": "BeNorth.Studio",
+    "tagline": "collage de estudio sobre papel hueso",
+    "theme": "light",
+    "description": "Interfaz de estudio creativo vasco que mezcla rigor suizo y desparpajo de collage: un fondo hueso #f4f3ef que actúa como mesa de trabajo, tinta casi negra #0d0d0b y un naranja señal #ff7002 que aparece en dosis mínimas (coordenadas, enlaces, botón de idioma, borde del CTA). Todo se compone en Aeonik, con el peso 300 como voz principal de titulares y párrafos grandes (22,5px/31,5px) y el 400 para navegación y micro-etiquetas; no hay negritas. El display de 70px con letter-spacing -1,54px recorta el aire y deja que el lettering objetual y las fotos recortadas floten por encima, en diagonal, como pegatinas. Aeonik Mono en 15px versalitas con +0,75px marca secciones y datos (43.447 N, 2.784 W). Las píldoras de 100px de radio con borde rgba(13,13,11,0.4) y fondo velo rgba(241,239,234,0.5) son el único chrome; las tarjetas usan 4px y sombra 0 18px 50px rgba(13,13,11,0.18). El footer invierte a Obsidiana con texto hueso al 55%.",
+    "colors": [
+      {
+        "name": "Obsidiana",
+        "hex": "#0d0d0b",
+        "group": "neutral",
+        "role": "Tinta de titulares y cuerpo, y fondo del bloque de footer invertido."
+      },
+      {
+        "name": "Gris Roca",
+        "hex": "#6b6b67",
+        "group": "neutral",
+        "role": "Texto atenuado: etiquetas de sección, '(SCROLL)' y metadatos secundarios."
+      },
+      {
+        "name": "Lino",
+        "hex": "#eae7df",
+        "group": "neutral",
+        "role": "Superficie ligeramente más cálida para botones neutros y bloques apoyados sobre el fondo."
+      },
+      {
+        "name": "Papel Hueso",
+        "hex": "#f4f3ef",
+        "group": "neutral",
+        "role": "Fondo global de la web y color de texto sobre el footer oscuro."
+      },
+      {
+        "name": "Blanco Ficha",
+        "hex": "#ffffff",
+        "group": "neutral",
+        "role": "Superficie elevada de tarjetas y modales (cookies, fichas flotantes)."
+      },
+      {
+        "name": "Velo Hueso",
+        "hex": "#f1efea80",
+        "group": "neutral",
+        "role": "Relleno translúcido de las píldoras de navegación sobre el collage."
+      },
+      {
+        "name": "Filete Tinta",
+        "hex": "#0d0d0b66",
+        "group": "neutral",
+        "role": "Borde de las píldoras interactivas; su versión al 12% dibuja los bordes suaves de tarjeta."
+      },
+      {
+        "name": "Naranja Señal",
+        "hex": "#ff7002",
+        "group": "brand",
+        "role": "Acento único de marca: coordenadas, enlaces destacados, borde del CTA y switch de idioma."
+      },
+      {
+        "name": "Hueso Tenue",
+        "hex": "#f5f4f08c",
+        "group": "neutral",
+        "role": "Texto secundario sobre el footer Obsidiana (55% de opacidad)."
+      }
+    ],
+    "fonts": [
+      {
+        "family": "Aeonik",
+        "role": "display",
+        "weights": [
+          300,
+          400,
+          500
+        ],
+        "sizes": "11-75px · 9 valores",
+        "lineHeight": "1,12 en display · 1,4 en cuerpo",
+        "letterSpacing": "-1,54px en display · +0,88px en versalitas",
+        "fallback": "Inter, Helvetica Neue, Arial, sans-serif",
+        "usage": "Única familia para todo: display, titulares, cuerpo y navegación. La decisión característica es que el peso 300 lleva la voz editorial (titulares de 64-70px y párrafos de 22,5px) y el 400 queda para etiquetas y píldoras; el 500 es anecdótico y nunca se usa negrita."
+      },
+      {
+        "family": "Aeonik Mono",
+        "role": "mono",
+        "weights": [
+          400
+        ],
+        "sizes": "12-15px · 2 valores",
+        "lineHeight": "1,4-1,8",
+        "letterSpacing": "+0,24px a +0,75px",
+        "fallback": "IBM Plex Mono, SFMono-Regular, monospace",
+        "usage": "Voz de datos y señalética: coordenadas geográficas, 'EST. 2019 · ZARAUTZ', etiquetas de sección en mayúsculas y teléfono del footer. Siempre en caja alta o cifras, nunca en párrafos largos."
+      }
+    ],
+    "typeScale": [
+      {
+        "role": "leyenda",
+        "size": 11,
+        "weight": 400,
+        "lineHeight": 1.2,
+        "letterSpacing": "0.88px",
+        "family": "Aeonik"
+      },
+      {
+        "role": "cuerpo-sm",
+        "size": 12,
+        "weight": 400,
+        "lineHeight": 1.8,
+        "letterSpacing": "0.24px",
+        "family": "Aeonik"
+      },
+      {
+        "role": "cuerpo",
+        "size": 15,
+        "weight": 400,
+        "lineHeight": 1.45,
+        "letterSpacing": "0.75px",
+        "family": "Aeonik Mono"
+      },
+      {
+        "role": "subtítulo",
+        "size": 23,
+        "weight": 300,
+        "lineHeight": 1.4,
+        "letterSpacing": "normal",
+        "family": "Aeonik"
+      },
+      {
+        "role": "título-sm",
+        "size": 27,
+        "weight": 300,
+        "lineHeight": 1.3,
+        "letterSpacing": "-0.3px",
+        "family": "Aeonik"
+      },
+      {
+        "role": "título",
+        "size": 44,
+        "weight": 300,
+        "lineHeight": 1.38,
+        "letterSpacing": "-0.53px",
+        "family": "Aeonik"
+      },
+      {
+        "role": "título-lg",
+        "size": 64,
+        "weight": 300,
+        "lineHeight": 1.15,
+        "letterSpacing": "-1.41px",
+        "family": "Aeonik"
+      },
+      {
+        "role": "display",
+        "size": 70,
+        "weight": 400,
+        "lineHeight": 1.12,
+        "letterSpacing": "-1.54px",
+        "family": "Aeonik"
+      }
+    ],
+    "spacing": {
+      "density": "comfortable",
+      "baseUnit": "8px",
+      "maxWidth": "1240px (texto largo a 840px)",
+      "sectionGap": "96-110px vertical",
+      "cardPadding": "24px 26px 22px",
+      "elementGap": "6px entre píldoras · 22-24px entre bloques"
+    },
+    "radii": [
+      {
+        "element": "Píldoras de navegación y CTA",
+        "value": "100px"
+      },
+      {
+        "element": "Chips y recortes de imagen",
+        "value": "3px"
+      },
+      {
+        "element": "Tarjetas y botones de diálogo",
+        "value": "4px"
+      },
+      {
+        "element": "Switch de idioma / avatar",
+        "value": "50%"
+      }
+    ],
+    "elevation": "Profundidad casi plana: el collage se apoya en superposición y rotación, no en sombras. Solo las tarjetas flotantes usan 0 18px 50px rgba(13,13,11,0.18) sobre Blanco Ficha; el resto de separación se consigue con filetes de 1px (rgba(13,13,11,0.12) en tarjetas, rgba(13,13,11,0.4) en píldoras) y escalones de superficie hueso → lino → blanco.",
+    "components": [
+      {
+        "name": "Botón primario",
+        "role": "CTA principal de contacto en el footer y cierres de sección.",
+        "spec": "Fondo transparente, borde 1px Naranja Señal, texto Naranja Señal en leyenda con mayúsculas y +0,96px; padding 13px 22px 13px 18px, radio 100px, con flecha ↗ opcional a la derecha. Hover: fondo Naranja Señal y texto Papel Hueso en 0,25s. Es magnético: sigue ligeramente al cursor con transform 0,25s."
+      },
+      {
+        "name": "Botón secundario",
+        "role": "Navegación superior y enlaces de sección en píldora.",
+        "spec": "Fondo Velo Hueso, borde 1px Filete Tinta, texto Obsidiana en leyenda mayúscula; padding 8px 14px, radio 100px. Hover: fondo Obsidiana y texto Papel Hueso, borde del mismo color; también magnético."
+      },
+      {
+        "name": "Tarjeta",
+        "role": "Contenedor elevado para diálogos y fichas informativas sobre el collage.",
+        "spec": "Fondo Blanco Ficha, borde 1px Filete Tinta al 12%, radio 4px, padding de tarjeta y sombra de elevación. Los botones internos van a radio 4px: el neutro sobre Lino, el alternativo sobre Blanco Ficha con filete."
+      },
+      {
+        "name": "Enlace",
+        "role": "Enlaces en línea dentro de texto, metadatos y footer.",
+        "spec": "Sin subrayado por defecto en Naranja Señal para llamadas, o en Gris Roca para metadatos; en el footer Obsidiana van en Hueso Tenue. Hover: subrayado de 1px y paso a color pleno, transición color 0,2s ease."
+      },
+      {
+        "name": "Cabecera",
+        "role": "Barra superior fija con navegación en píldoras, coordenadas y selector de idioma.",
+        "spec": "Altura 56px, sin fondo propio (flota sobre el collage), padding lateral 80px, gap 6px entre píldoras; coordenadas centradas en mono Naranja Señal y switch de idioma circular naranja a la derecha."
+      }
+    ],
+    "motion": "Todo se mueve con cubic-bezier(0.16,1,0.3,1) para entradas largas y cubic-bezier(0.33,1,0.68,1) para microinteracciones. Revelados al hacer scroll con clip-path 1,1s y transform 1,3s; parallax de los elementos del collage con transform 0,9s. Hover de botones y enlaces en background 0,25s ease y color 0,2s ease; los elementos .magnetic siguen al cursor con transform 0,25s. Opacidad de aparición 0,55s. No se animan tamaños de tipografía ni se usan rebotes.",
+    "layout": "Contenedor de 1240px con márgenes laterales de 80px y medida de lectura limitada a 840px. La home es un lienzo de collage: un titular display a sangre que cruza el viewport y objetos (fotos, lettering 3D, pegatinas) posicionados en absoluto con ligeras rotaciones sobre el fondo hueso. Las secciones interiores vuelven a un grid limpio de una y dos columnas, con etiqueta mono a la izquierda y contenido a la derecha, separadas por 96-110px. Pestaña vertical fija en el borde derecho para 'Honors'.",
+    "imagery": "Fotografía documental y de archivo (paisaje del Cantábrico, dólmenes, retratos familiares en color desvaído) recortada en rectángulos pequeños con radio 3px, mezclada con renders 3D de lettering inflado en Naranja Señal y pegatinas vectoriales. Densidad alta pero controlada: los objetos nunca tapan el titular por completo y siempre respiran sobre el hueso. Blanco y negro y color conviven sin filtro unificador; la coherencia la da el fondo y el naranja.",
+    "dos": [
+      "Usar Aeonik 300 para todo titular grande y párrafo destacado; reservar el 400 para etiquetas y píldoras.",
+      "Aplicar letter-spacing negativo (-1,4 a -1,54px) por encima de 44px y positivo (+0,75 a +0,96px) en las versalitas de 11-15px.",
+      "Mantener el naranja #ff7002 por debajo del 5% de la superficie: coordenadas, un enlace, un borde de CTA.",
+      "Dar radio 100px a todo elemento interactivo en línea y 3-4px a imágenes y tarjetas.",
+      "Componer las imágenes como collage rotado sobre el fondo hueso, dejando siempre ver el papel entre piezas.",
+      "Invertir a Obsidiana solo en el footer, con texto hueso al 55% para lo secundario.",
+      "Animar entradas con cubic-bezier(0.16,1,0.3,1) y duraciones de 0,9-1,3s."
+    ],
+    "donts": [
+      "No usar pesos 600/700: el sistema no tiene negritas.",
+      "No introducir una segunda tipografía de display; Aeonik y Aeonik Mono bastan.",
+      "No rellenar botones de naranja por defecto: el naranja es borde y texto, y solo se rellena al hover.",
+      "No poner sombras en botones, píldoras ni imágenes; la sombra es exclusiva de tarjetas flotantes.",
+      "No usar blanco puro como fondo de página: el lienzo es #f4f3ef.",
+      "No alinear el collage a una rejilla ortogonal perfecta ni eliminar las rotaciones.",
+      "No pasar de 840px de medida en párrafos largos ni justificar el texto."
+    ],
+    "similar": [
+      {
+        "brand": "Pentagram",
+        "why": "Tipografía neutra grande, fondo claro y protagonismo total de la imagen recortada."
+      },
+      {
+        "brand": "Locomotive",
+        "why": "Estudio con collage animado, píldoras redondeadas y microinteracciones magnéticas con easing largo."
+      },
+      {
+        "brand": "Instrument",
+        "why": "Sistema monocromo con un único acento saturado y grotesca de peso ligero en display."
+      },
+      {
+        "brand": "Mother Design",
+        "why": "Mezcla de archivo fotográfico, objetos 3D y lettering sobre fondo papel."
+      }
+    ],
+    "agentPrompt": "Diseña una web de estudio creativo sobre fondo hueso #f4f3ef con tinta #0d0d0b y un único acento naranja #ff7002 usado con avaricia (coordenadas, un enlace, el borde del CTA). Usa Aeonik (fallback Inter) para todo: display 70px peso 300-400 con letter-spacing -1,54px, cuerpo 22,5px/31,5px en 300, etiquetas 11px mayúsculas +0,88px; Aeonik Mono 15px para datos y títulos de sección. Navegación en píldoras de radio 100px con borde rgba(13,13,11,0.4) y relleno translúcido. Contenedor 1240px, texto a 840px, secciones cada 96-110px. Collage de fotos recortadas (radio 3px) y lettering 3D rotado. Animaciones con cubic-bezier(0.16,1,0.3,1), sin sombras salvo en tarjetas, sin negritas."
+  },
+  "generatedAt": "2026-09-21T13:59:41.752Z",
+  "model": "claude-opus-5",
+  "screenshotUrl": "/design-md/0c198999c882b170.jpg?v=1789999181757",
+  "coverUrl": "/design-md/0c198999c882b170-cover.jpg?v=1789999181757",
+  "scrollUrl": "/design-md/0c198999c882b170-scroll.jpg?v=1789999181757"
+}
