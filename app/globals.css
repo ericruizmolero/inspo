@@ -1105,6 +1105,34 @@ video.vp__media { object-fit: contain; }
 .cm-msg__del:hover { color: var(--danger); }
 /* One comment and its replies. Replies hang from the comment on a rule that starts under its avatar (26/2). */
 .cm-thread { display: flex; flex-direction: column; gap: 6px; margin: -6px -8px; padding: 6px 8px; border-radius: var(--radius-m); transition: background-color 150ms ease; }
+/* React: the same quiet xs IconButton, first of the three, shown with them */
+.cm-msg__react { opacity: 0; transition: opacity 0.15s, color 0.15s, background-color 0.15s; }
+.cm-msg:hover .cm-msg__react, .cm-msg__react:focus-visible, .cm-msg__react[data-popup-open] { opacity: 1; }
+/* Reactions under a comment (Slack, WhatsApp): one small pill per emoji with how many gave it. Flat, a --border line,
+   no ink border or bevel: they are part of the comment, not a control bar. Yours wears ember's line and a paper fill
+   one step up; pressing it takes yours away. The last pill, a face, opens the picker for one more */
+.cm-reacts { display: flex; flex-wrap: wrap; gap: 4px; }
+.cm-react {
+  display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 8px; border-radius: var(--radius-pill);
+  border: 1px solid var(--border); background: var(--surface); color: var(--text-2);
+  font: inherit; font-size: var(--fs-label); font-variant-numeric: tabular-nums; cursor: pointer;
+  transition: border-color 0.15s, background-color 0.15s, transform 0.1s;
+}
+.cm-react:hover { border-color: var(--border-strong); }
+.cm-react:active { transform: scale(0.94); }
+.cm-react:disabled { cursor: default; transform: none; }
+.cm-react.is-mine { border-color: var(--ember); background: var(--surface-2); color: var(--text); font-weight: var(--fw-semibold); }
+.cm-react__emoji { font-size: 14px; line-height: 1; }
+.cm-react--add { padding: 0 6px; color: var(--muted); opacity: 0; transition: opacity 0.15s, border-color 0.15s; }
+.cm-msg:hover .cm-react--add, .cm-react--add:focus-visible, .cm-react--add[data-popup-open] { opacity: 1; }
+/* The picker: the system's menu with a grid of emoji, six a row, the quick ones first */
+.cm-picker.cr-menu { min-width: 0; padding: 6px; }
+.cm-picker__grid { display: grid; grid-template-columns: repeat(6, 32px); gap: 2px; }
+.cm-picker__emoji {
+  display: grid; place-items: center; width: 32px; height: 32px; padding: 0; border: 0; border-radius: var(--radius-s);
+  background: transparent; font-size: 18px; line-height: 1; cursor: pointer; transition: background-color 0.12s, transform 0.12s;
+}
+.cm-picker__emoji:hover, .cm-picker__emoji:focus-visible { background: var(--surface-2); transform: scale(1.12); }
 .cm-replies { display: flex; flex-direction: column; gap: 10px; margin-left: 12px; padding: 2px 0 2px 14px; border-left: 1px solid var(--border-strong); }
 /* Reply: a quiet Button, size s */
 .cm-reply-btn { align-self: flex-start; margin-left: 26px; }
@@ -1125,7 +1153,7 @@ video.vp__media { object-fit: contain; }
 /* The help (keys, ⌘V pastes screenshots) is a line under the field, whole: in the bar it was cut and in the way (Eric, 07-10) */
 .cm-composer__keys { margin: 6px 2px 0; line-height: var(--lh-label); }
 .cm-composer__error { font-size: var(--fs-label); color: var(--danger); }
-@media (hover: none) { .cm-msg__del, .cm-msg__edit { opacity: 1; } }
+@media (hover: none) { .cm-msg__del, .cm-msg__edit, .cm-msg__react, .cm-react--add { opacity: 1; } }
 
 /* Screenshots in comments (paste, drag or attach, as in Figma) */
 .cm-msg__content { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
@@ -2372,7 +2400,7 @@ body:has(.fb-dock.has-notes) .theme-float { bottom: calc(72px + env(safe-area-in
 .pn-empty.cr-empty { justify-content: center; min-height: 320px; }
 .ip .pn-empty { flex: 1; }
 /* Touch has no hover: the delete buttons stay in sight */
-@media (hover: none) { .cm-msg__del, .cm-msg__edit { opacity: 1; } }
+@media (hover: none) { .cm-msg__del, .cm-msg__edit, .cm-msg__react, .cm-react--add { opacity: 1; } }
 /* ─── The project's system (components/SystemView.tsx and its own stylesheets) ─── */
 /* System fill: a ring per project in the sidebar (the top bar uses the system's SegmentedControl and StatusRing) */
 /* The team on the Polish tab: everyone's face, and in full only those who have voted the whole board */

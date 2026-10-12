@@ -1,0 +1,1 @@
+ALTER TABLE "inspo_comment" ADD COLUMN "reactions" jsonb DEFAULT '[]'::jsonb NOT NULL;

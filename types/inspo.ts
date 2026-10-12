@@ -139,7 +139,12 @@ export interface InspoComment {
   parentId?: string;
   /** ISO */
   createdAt: string;
+  /** Emoji reactions, by emoji in the order first given (lib/reactions.ts) */
+  reactions?: CommentReaction[];
 }
+
+/** One emoji on a comment and who gave it */
+export interface CommentReaction { emoji: string; people: { id: string; name: string }[] }
 
 export type CommentMap = Record<string, InspoComment[]>;
 

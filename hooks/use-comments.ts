@@ -1,15 +1,18 @@
 "use client";
 
 import type { Dispatch, SetStateAction } from "react";
-import { postComment as postCommentAction, removeComment, editNote as editNoteAction } from "@/app/actions/library";
+import { postComment as postCommentAction, removeComment, editNote as editNoteAction, reactToComment } from "@/app/actions/library";
+import { toggleIn } from "@/lib/reactions";
 import type { useConfirm } from "@/components/useConfirm";
 import type { Dict } from "@/lib/i18n/en";
-import type { CommentAttachment, CommentMap, InspoItem } from "@/types/inspo";
+import type { CommentAttachment, CommentMap, InspoComment, InspoItem } from "@/types/inspo";
 
 // ─── Comments ──────────────────────────────────────────────────────────────
 // Each page brings the threads of its references, and the pulse what others write or delete afterwards
-export function useComments({ t, commentMap, setCommentMap, setItems, setPanelItem, confirm }: {
+export function useComments({ t, me, commentMap, setCommentMap, setItems, setPanelItem, confirm }: {
   t: Dict;
+  /** Who reacts: their reaction shows at once, before the server answers */
+  me: { id: string; name: string };
   commentMap: CommentMap;
   setCommentMap: Dispatch<SetStateAction<CommentMap>>;
   setItems: Dispatch<SetStateAction<InspoItem[]>>;
@@ -36,5 +39,15 @@ export function useComments({ t, commentMap, setCommentMap, setItems, setPanelIt
     const r = await removeComment(id).catch(() => null);
     if (r?.ok) setCommentMap((prev) => ({ ...prev, [itemId]: (prev[itemId] ?? []).filter((c) => c.id !== id && c.parentId !== id) }));
   };
-  return { postComment, editNote, deleteComment };
+  // A reaction shows at once; the server's answer replaces it, and a refusal puts the comment back as it was
+  const reactComment = async (itemId: string, id: string, emoji: string) => {
+    const swap = (next: (c: InspoComment) => InspoComment) =>
+      setCommentMap((prev) => ({ ...prev, [itemId]: (prev[itemId] ?? []).map((c) => (c.id === id ? next(c) : c)) }));
+    const before = (commentMap[itemId] ?? []).find((c) => c.id === id);
+    swap((c) => ({ ...c, reactions: toggleIn(c.reactions ?? [], emoji, me) }));
+    const r = await reactToComment(id, emoji).catch(() => null);
+    if (r?.ok) swap(() => r.data);
+    else if (before) swap(() => before);
+  };
+  return { postComment, editNote, deleteComment, reactComment };
 }

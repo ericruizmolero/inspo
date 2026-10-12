@@ -124,8 +124,8 @@ async function main() {
       const [had] = await q<{ id: string }>(`select n.id from inspo_comment n join inspo_comment o on o.id=$1 where n.organization_id=$2 and n.item_id=$3 and n.body=o.body and n.created_at=o.created_at and n.author_name=o.author_name`, [c.id, to, itemMap.get(c.item_id)]);
       if (had) { commentMap.set(c.id, had.id); continue; }
       const id = newId(); commentMap.set(c.id, id);
-      await db.query(`insert into inspo_comment (id, organization_id, item_id, author_id, author_name, body, attachments, created_at, edited_at, parent_id)
-        select $1, $2, $3, author_id, author_name, body, replace(attachments::text, $5, $6)::jsonb, created_at, edited_at, $7 from inspo_comment where id=$4`,
+      await db.query(`insert into inspo_comment (id, organization_id, item_id, author_id, author_name, body, attachments, reactions, created_at, edited_at, parent_id)
+        select $1, $2, $3, author_id, author_name, body, replace(attachments::text, $5, $6)::jsonb, reactions, created_at, edited_at, $7 from inspo_comment where id=$4`,
         [id, to, itemMap.get(c.item_id), c.id, FROM, TO, c.parent_id ? commentMap.get(c.parent_id) ?? null : null]);
     }
     for (const w of whys) {

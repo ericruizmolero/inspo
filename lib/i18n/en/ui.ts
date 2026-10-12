@@ -1156,6 +1156,8 @@ export const ui = {
     noComments: "No comments",
     addComment: "Add a comment, or paste a screenshot\u2026",
     replyTo: "Reply",
+    react: "Add reaction",
+    reactions: "Reactions",
     replyKeys: "\u21b5 sends, Esc cancels",
     postIt: "Post-it",
     earlier: (n: number): string => (n === 1 ? "1 earlier reply" : `${n} earlier replies`),

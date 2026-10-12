@@ -305,7 +305,7 @@ export default function InspoClient({
 
   // The panel: one reference open on the right, the board still live on the left
   const [panelItem, setPanelItem] = useState<InspoItem | null>(null);
-  const { postComment, editNote, deleteComment } = useComments({ t, commentMap, setCommentMap, setItems, setPanelItem, confirm });
+  const { postComment, editNote, deleteComment, reactComment } = useComments({ t, me: { id: user.id, name: user.name || user.email.split("@")[0] }, commentMap, setCommentMap, setItems, setPanelItem, confirm });
 
   useEffect(() => {
     // The templates too: Discover opens with its cards already read, not waiting for the server
@@ -533,6 +533,7 @@ export default function InspoClient({
               onPostThumb={(thumb) => setThumbMap((prev) => (prev[panelItem.web] ? prev : { ...prev, [panelItem.web]: thumb }))}
               onEditNote={(field, text) => editNote(panelItem.id!, field, text)}
               onReply={(parentId, body) => postComment(panelItem.id!, body, [], parentId)}
+              onReact={(id, emoji) => reactComment(panelItem.id!, id, emoji)}
               notice={panelForgotten.length > 0 && panelForgotten.map(({ project, names }) => (
                 <p key={project.id} className="cm-notice">
                   <span>{t.polish.forgottenIn(project.name, names)}</span>

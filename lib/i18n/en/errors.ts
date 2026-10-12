@@ -17,6 +17,8 @@ export const errors = {
   cardGone: "That card no longer exists",
   emptyComment: "The comment is empty",
   replyGone: "The comment you replied to is gone",
+  reactionGone: "That comment is gone",
+  tooManyReactions: "That comment has no room for more reactions",
   encodeFailed: "The image could not be encoded",
   fixedAccess: "That access is fixed and cannot be removed from here",
   generationStopped: "Generation stopped",

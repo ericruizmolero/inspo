@@ -1148,6 +1148,8 @@ export const ui: typeof EnUi = {
     noComments: "Sin comentarios",
     addComment: "Añade un comentario, o pega una captura\u2026",
     replyTo: "Responder",
+    react: "Reaccionar",
+    reactions: "Reacciones",
     replyKeys: "\u21b5 envía, Esc cancela",
     postIt: "Pósit",
     earlier: (n: number): string => (n === 1 ? "1 respuesta anterior" : `${n} respuestas anteriores`),

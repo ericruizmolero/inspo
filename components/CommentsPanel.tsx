@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { InspoItem, InspoComment, CommentAttachment } from "@/types/inspo";
+import type { InspoItem, InspoComment, CommentAttachment, CommentReaction } from "@/types/inspo";
 import type { SessionUser } from "@/lib/workspace-core";
 import { prepareScreenshot } from "@/lib/image-client";
 import { fmtDate, fmtDateTime } from "@/lib/i18n/format";
@@ -13,6 +13,8 @@ import VideoPlayer from "./VideoPlayer";
 import PostView from "./PostView";
 import { Busy, Button, Chip, EmptyState, Icon, IconButton, TextArea } from "@/components/criterio";
 import PersonAvatar from "@/components/PersonAvatar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { REACTIONS } from "@/lib/reactions";
 
 // Side panel for an inspo's comments. The original note from whoever saved it opens the list; then each
 // comment as a thread, oldest first: pinned ones (post-its on the page) carry their number and a way to the
@@ -47,6 +49,8 @@ interface CommentsPanelProps {
   onPostThumb?: (thumb: string) => void;
   /** Answers a comment. Without it, threads are read-only */
   onReply?: (parentId: string, body: string) => Promise<void>;
+  /** Gives or takes away the person's emoji on a comment. Without it, reactions are only shown */
+  onReact?: (id: string, emoji: string) => Promise<void>;
 }
 
 const IcTrash = <Icon name="trash" size={14} />;
@@ -92,6 +96,26 @@ interface Msg {
   deletable?: boolean;
   /** Original note or sub-note this person may rewrite */
   editable?: boolean;
+  /** Emoji reactions; only real comments take them (the original note is part of the reference) */
+  reactions?: CommentReaction[];
+  reactable?: boolean;
+}
+
+/** The emoji to choose from, the quick row first, as a menu over the comment (Slack, WhatsApp) */
+function ReactionPicker({ className, label, title, children, onPick }: { className: string; label: string; title: string; children: React.ReactNode; onPick: (emoji: string) => void }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger className={className} aria-label={label} data-tip={open ? undefined : label}>{children}</PopoverTrigger>
+      <PopoverContent align="end" side="top" className="cr-menu cm-picker" aria-label={title}>
+        <div className="cm-picker__grid">
+          {REACTIONS.map((e) => (
+            <button key={e} type="button" className="cm-picker__emoji" aria-label={e} onClick={() => { setOpen(false); onPick(e); }}>{e}</button>
+          ))}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
 }
 
 /** A comment and the replies under it */
@@ -156,7 +180,7 @@ function filesFrom(dt: DataTransfer | null): File[] {
   return out;
 }
 
-export default function CommentsPanel({ item, comments, user, canManage, memberImages, memberNames = [], image, notice, onPost, onDelete, onEditNote, onClose, showMedia = true, onPostThumb, onReply }: CommentsPanelProps) {
+export default function CommentsPanel({ item, comments, user, canManage, memberImages, memberNames = [], image, notice, onPost, onDelete, onEditNote, onClose, showMedia = true, onPostThumb, onReply, onReact }: CommentsPanelProps) {
   const { locale, t } = useT();
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
@@ -255,7 +279,7 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
     }
     const toMsg = (c: InspoComment): Msg => {
       const own = c.authorId === user.id;
-      return { id: c.id, name: c.authorName, image: c.authorImage, body: c.body, attachments: c.attachments ?? [], at: c.createdAt, mine: own, deletable: own || canManage };
+      return { id: c.id, name: c.authorName, image: c.authorImage, body: c.body, attachments: c.attachments ?? [], at: c.createdAt, mine: own, deletable: own || canManage, reactions: c.reactions ?? [], reactable: true };
     };
     const ids = new Set(comments.map((c) => c.id));
     const threads: Thread[] = [];
@@ -270,6 +294,14 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
     return { originals, threads };
   // eslint-disable-next-line react-hooks/exhaustive-deps -- the strings are read from the dictionary it was built with, and listing t would rebuild it when the language changes
   }, [item, comments, user, canManage, memberImages, onEditNote]);
+
+  // Who gave an emoji, you last and as "you": the tooltip and the label of its chip
+  const whoReacted = (r: CommentReaction) => {
+    const names = r.people.filter((p) => p.id !== user.id).map((p) => p.name);
+    if (r.people.some((p) => p.id === user.id)) names.push(t.comments.you);
+    return listNames(names, t.comments.and);
+  };
+  const react = (id: string, emoji: string) => { void onReact?.(id, emoji); };
   const total = originals.length + threads.reduce((n, th) => n + 1 + th.replies.length, 0);
 
   // On open or when a new message arrives, scroll to the end of the list
@@ -400,7 +432,34 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
               ))}
             </div>
           )}
+          {/* Reactions under the words, as in Slack: each emoji once, with how many and who; yours is marked and
+              pressing it takes it away. A last chip opens the picker for one more */}
+          {!!m.reactions?.length && (
+            <div className="cm-reacts">
+              {m.reactions.map((r) => {
+                const mine = r.people.some((p) => p.id === user.id);
+                const who = whoReacted(r);
+                return (
+                  <button key={r.emoji} type="button" className={`cm-react${mine ? " is-mine" : ""}`} aria-pressed={mine} disabled={!onReact}
+                    aria-label={`${r.emoji} ${r.people.length}, ${who}`} data-tip={who} onClick={() => react(m.id, r.emoji)}>
+                    <span className="cm-react__emoji" aria-hidden>{r.emoji}</span>
+                    <span className="cm-react__count" aria-hidden>{r.people.length}</span>
+                  </button>
+                );
+              })}
+              {onReact && (
+                <ReactionPicker className="cm-react cm-react--add" label={t.comments.react} title={t.comments.reactions} onPick={(e) => react(m.id, e)}>
+                  <Icon name="smile" size={14} />
+                </ReactionPicker>
+              )}
+            </div>
+          )}
         </div>
+        {m.reactable && onReact && (
+          <ReactionPicker className="cr-iconbtn cr-iconbtn-quiet cr-iconbtn-xs cm-msg__react" label={t.comments.react} title={t.comments.reactions} onPick={(e) => react(m.id, e)}>
+            <Icon name="smile" size={14} />
+          </ReactionPicker>
+        )}
         {m.editable && editing?.id !== m.id && (
           <IconButton icon={IcEdit} variant="quiet" size="xs" className="cm-msg__edit" label={t.comments.editNote} onClick={() => { setEditError(null); setEditing({ id: m.id, text: m.body }); }} />
         )}

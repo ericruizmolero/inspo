@@ -17,6 +17,8 @@ export const errors: typeof EnErrors = {
   cardGone: "Esa tarjeta ya no existe",
   emptyComment: "El comentario está vacío",
   replyGone: "El comentario al que respondías ya no está",
+  reactionGone: "Ese comentario ya no está",
+  tooManyReactions: "Ese comentario no admite más reacciones",
   encodeFailed: "No se pudo codificar la imagen",
   fixedAccess: "Ese acceso es fijo y no se puede quitar desde aquí",
   generationStopped: "Generación parada",
