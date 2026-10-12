@@ -56,6 +56,8 @@ const nextConfig: NextConfig = {
   },
   outputFileTracingIncludes: {
     "/api/shot": CHROMIUM_BIN,
+    // On Vercel the site captures run in the queue's job (lib/jobs.ts), not in /api/shot
+    "/api/queue/jobs": CHROMIUM_BIN,
     "/api/design-md": CHROMIUM_BIN,
     // A template's result page is captured the first time anyone asks for it
     "/api/templates/*/page": CHROMIUM_BIN,
