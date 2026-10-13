@@ -40,8 +40,11 @@ test("a signed link reads its own file with no session, and nothing else does", 
   expect(await ok.text()).toBe("png bytes");
 
   expect((await get(`/api/files/${KEY}`)).status, "no signature still needs a session").toBe(401);
-  const token = signed.split("?t=")[1];
-  expect((await get(`/api/files/${OTHER}?t=${token}`)).status, "a signature does not open another key").toBe(401);
+  expect(signed, "the signature leads the path: a fetcher that drops the query keeps it").toMatch(/^\/api\/files\/~\d+\.[0-9a-f]{32}\/inspo\//);
+  const token = signed.split("/")[3].slice(1);
+  expect((await get(`/api/files/${KEY}?t=${token}`)).status, "a link made before, with the signature as ?t=, still opens").toBe(200);
+  expect((await get(`/api/files/~${token}/${OTHER}`)).status, "a signature does not open another key").toBe(401);
+  expect((await get(`/api/files/${OTHER}?t=${token}`)).status, "nor as ?t=").toBe(401);
   const [until, sig] = token.split(".");
   expect((await get(`/api/files/${KEY}?t=${Number(until) + 365}.${sig}`)).status, "a moved last day breaks the signature").toBe(401);
   expect((await get(signedFilePath(KEY, Date.now() - 31 * DAY))).status, "a link past its last day is refused").toBe(401);
@@ -62,7 +65,7 @@ test("criterio.md, read over MCP or copied in the app, links its uploaded image 
   actAs({ id: team.user.id, name: team.user.name, email: team.user.email, workspaceId: team.ws.id });
   const res = await measured(new NextRequest(`http://localhost/api/system/measured?projectId=${projectId}`));
   const copied = ((await res.json()) as { links: Record<string, string> }).links[web];
-  expect(copied, "the app's copy gets a public link for the upload").toMatch(/^\/api\/files\/.+\?t=\d+\.[0-9a-f]{32}$/);
+  expect(copied, "the app's copy gets a public link for the upload").toMatch(/^\/api\/files\/~\d+\.[0-9a-f]{32}\/inspo\/.+\.png$/);
   actAs(null);
   expect((await get(copied)).status, "that link loads with no session").toBe(200);
 
@@ -101,14 +104,17 @@ test("the proxy lets a signed link through to the route with no session cookie, 
   const passes = (path: string) => proxy(new NextRequest(`http://localhost${path}`)).status !== 401;
   expect(passes(signedFilePath(KEY)), "a signed link reaches the route, which checks it").toBe(true);
   expect(passes(`/api/files/${KEY}`), "an unsigned one is stopped at the door").toBe(false);
+  expect(passes(`/api/files/${KEY}?t=1.0`), "the older ?t= form reaches the route too").toBe(true);
   expect(passes(`/api/library?t=1`), "a t elsewhere opens nothing").toBe(false);
+  expect(passes(`/api/library/~1.0/x`), "nor a ~ elsewhere").toBe(false);
 });
 
 test("Anthropic's fetcher, which reads no image, gets a signed picture as a PDF; anyone else gets the picture", async () => {
   actAs(null);
   const png = await sharp({ create: { width: 300, height: 200, channels: 4, background: "#2c3325" } }).png().toBuffer();
   files.set(KEY, { body: png, contentType: "image/png" });
-  const as = (ua: string) => GET(new NextRequest(`http://localhost${signedFilePath(KEY)}`, { headers: { "user-agent": ua } }), { params: Promise.resolve({ key: KEY.split("/") }) });
+  const path = signedFilePath(KEY);
+  const as = (ua: string) => GET(new NextRequest(`http://localhost${path}`, { headers: { "user-agent": ua } }), { params: Promise.resolve({ key: path.slice("/api/files/".length).split("/") }) });
 
   const claude = await as("Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; Claude-User/1.0; +Claude-User@anthropic.com)");
   expect(claude.headers.get("content-type")).toBe("application/pdf");

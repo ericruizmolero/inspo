@@ -11,7 +11,7 @@ import { PAGES_PREFIX } from "@/lib/page-shots";
 import { SCREEN_STUDIO_PREFIX } from "@/lib/screen-studio";
 import { openFile, getFile, fileUrl, signedFileUrl, isSafeKey, ensureCardCopy } from "@/lib/storage";
 import { originalOfCard } from "@/lib/board";
-import { fileTokenValid } from "@/lib/file-links";
+import { fileTokenValid, SIGNED_MARK } from "@/lib/file-links";
 import { imagePdf, wantsPdf } from "@/lib/image-pdf";
 import { brandPrefix } from "@/lib/brand-files";
 import { log } from "@/lib/log";
@@ -28,15 +28,18 @@ import { log } from "@/lib/log";
 const OUTSIDE_HEADERS = { "Cache-Control": "public, max-age=86400", Vary: "User-Agent", "X-Robots-Tag": "noindex, nofollow" };
 
 export async function GET(req: NextRequest, ctx: RouteContext<"/api/files/[...key]">) {
-  const { key: parts } = await ctx.params;
+  const { key: all } = await ctx.params;
+  // A link signed for one key (lib/file-links.ts) leads with ~<signature>; older ones carry it as ?t=
+  const token = all[0]?.startsWith(SIGNED_MARK) ? all[0].slice(SIGNED_MARK.length) : req.nextUrl.searchParams.get("t");
+  const parts = all[0]?.startsWith(SIGNED_MARK) ? all.slice(1) : all;
   // Checked after the join: a segment can hold an encoded slash ("..%2F..")
   let key = parts.join("/");
   if (!isSafeKey(key)) return new Response("bad path", { status: 400 });
   // A card copy (lib/board.ts) is seen by whoever may see its original
   const original = originalOfCard(key);
 
-  // A link signed for this key (lib/file-links.ts) was handed to someone outside the app: it needs no session
-  const outside = fileTokenValid(key, req.nextUrl.searchParams.get("t"));
+  // A signed link was handed to someone outside the app: it needs no session
+  const outside = fileTokenValid(key, token);
   if (!outside) {
     const session = await requireCtx();
     if (isResponse(session)) return session;
