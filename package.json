@@ -26,6 +26,7 @@
     "admin": "tsx --conditions=react-server scripts/set-admin.ts",
     "access": "tsx --conditions=react-server scripts/access.ts",
     "check:seats": "tsx --conditions=react-server scripts/check-seats.ts",
+    "check:project-move": "tsx --conditions=react-server scripts/check-project-move.ts",
     "check:access": "tsx --conditions=react-server scripts/check-access.ts",
     "check:invites": "tsx --conditions=react-server scripts/check-invite-flow.ts",
     "check:locale": "tsx --conditions=react-server scripts/check-locale.ts",

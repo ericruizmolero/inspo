@@ -70,6 +70,7 @@ export const errors: typeof EnErrors = {
   personalSpaceStays: "Tu espacio personal no se puede eliminar",
   cardsNotYours: "Solo puedes borrar lo que has guardado tú. Lo demás lo borra un admin del equipo.",
   projectNotYours: "Este proyecto lo puede borrar quien lo creó o un admin del equipo.",
+  projectNotYoursToMove: "Este proyecto lo puede mover quien lo creó o un admin del equipo.",
   workspaceAdminsOnly: "Solo administradores del workspace",
   workspaceNotYours: "Ese workspace no es tuyo",
   shareGone: "Este enlace se desactivó, o nunca existió",

@@ -11,6 +11,7 @@ import { addReference } from "@/lib/add";
 import { enqueueEmbed } from "@/lib/jobs";
 import { staleEmbedding } from "@/lib/embed";
 import { createProject, projectForBoard, renameProject, deleteProject, startedProject, fileItems, unfileItems, startProject } from "@/lib/projects";
+import { duplicateProject, moveProject } from "@/lib/project-move";
 import { castVotes, closePolish, restoreForgotten } from "@/lib/polish-votes";
 import { ownsMediaFile, deleteMediaFile } from "@/lib/media";
 import { deleteTextFile } from "@/lib/text-refs";
@@ -25,7 +26,7 @@ import { readBoard, BoardError, type BoardFailure } from "@/lib/boards/read";
 import { allow } from "@/lib/rate-limit";
 import { normalizeWebUrl, nameFromFile } from "@/lib/url";
 import { db, schema } from "@/lib/db";
-import { getErrors } from "@/lib/i18n";
+import { getErrors, getT } from "@/lib/i18n";
 import { log } from "@/lib/log";
 import { LANG_COOKIE, LANG_COOKIE_MAX_AGE, isLocale } from "@/lib/i18n/locale";
 import type { CommentAttachment, InspoItem, PolishChoice } from "@/types/inspo";
@@ -120,6 +121,29 @@ export async function removeProject(id: string) {
       throw new HttpError(403, (await getErrors()).projectNotYours);
     }
     await deleteProject(ctx.workspace.id, String(id));
+  });
+}
+
+/** A copy of the project in the same workspace, with the same references on its board: any member, like a new project */
+export async function copyProject(id: string) {
+  return withCtx(async (ctx) => {
+    const { t } = await getT();
+    const [p] = await db.select({ name: schema.project.name }).from(schema.project)
+      .where(and(eq(schema.project.organizationId, ctx.workspace.id), eq(schema.project.id, String(id)))).limit(1);
+    if (!p) throw new HttpError(404, (await getErrors()).projectNotFound);
+    return duplicateProject(ctx.workspace.id, String(id), t.projects.copyOf(p.name), ctx.user.id);
+  });
+}
+
+/** The project goes to another of this person's workspaces (lib/project-move.ts): whoever could delete it here */
+export async function relocateProject(id: string, workspaceId: string) {
+  return withCtx(async (ctx) => {
+    if (!canManage(ctx.workspace.role) && !(await startedProject(ctx.workspace.id, String(id), ctx.user.id))) {
+      throw new HttpError(403, (await getErrors()).projectNotYoursToMove);
+    }
+    const to = ctx.workspaces.find((w) => w.id === String(workspaceId));
+    if (!to) throw new HttpError(404, (await getErrors()).notAMember);
+    return moveProject(ctx.workspace.id, String(id), to.id, ctx.user, canManage(ctx.workspace.role));
   });
 }
 

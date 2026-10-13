@@ -70,6 +70,7 @@ export const errors = {
   personalSpaceStays: "Your personal space cannot be deleted",
   cardsNotYours: "You can only delete what you saved. A team admin deletes the rest.",
   projectNotYours: "Only whoever started this project or a team admin can delete it.",
+  projectNotYoursToMove: "Only whoever started this project or a team admin can move it.",
   workspaceAdminsOnly: "Workspace admins only",
   workspaceNotYours: "That workspace is not yours",
   shareGone: "This link was turned off, or it never existed",

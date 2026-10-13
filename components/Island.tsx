@@ -13,7 +13,7 @@ import type { Workspace, SessionUser } from "@/lib/workspace-core";
 import type { InspoItem, Project, ProjectLinks } from "@/types/inspo";
 import { SYSTEM_AREAS, filledOf as filledIn, unreadOf, type SystemSummary } from "@/types/system";
 import { parseDate } from "@/lib/search-query";
-import WorkspaceMenu, { UserAvatar, WorkspaceFace } from "./WorkspaceMenu";
+import WorkspaceMenu, { UserAvatar, WorkspaceAvatar, WorkspaceFace } from "./WorkspaceMenu";
 import { PlanMeter, useSpaceCounts, type QuotaView } from "./Sidebar";
 import { Busy, Button, Icon, IconButton, MenuItem, MenuLabel, Separator, StatusRing } from "@/components/criterio";
 import { enterFeedbackMode } from "./feedback-mode";
@@ -96,7 +96,7 @@ function NewProject({ onCreate, onDone }: { onCreate: (name: string, about: stri
 }
 
 export default function Island({ user, workspace, workspaces, isAdmin, items, links, projects, systems = {}, members = [], space, onSpace, bellNews = "",
-  onCreateProject, onRenameProject, onDeleteProject, onPerson, quota, onMenuOpen, steps }: {
+  onCreateProject, onRenameProject, onDeleteProject, onDuplicateProject, onMoveProject, onPerson, quota, onMenuOpen, steps }: {
   user: SessionUser; workspace: Workspace; workspaces: Workspace[]; isAdmin: boolean;
   items: InspoItem[]; links: ProjectLinks; projects: Project[];
   /** Each project's system: a ring on its tab says how much of it is decided */
@@ -114,6 +114,9 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
   onCreateProject: (name: string) => Promise<Project | null>;
   onRenameProject: (id: string, name: string) => void;
   onDeleteProject: (project: Project) => void;
+  onDuplicateProject: (project: Project) => void;
+  /** To another of the person's workspaces (lib/project-move.ts) */
+  onMoveProject: (project: Project, to: Workspace) => void;
   quota: QuotaView | null;
   /** The first steps (components/FirstSteps.tsx), over the plan meter while there are steps to show */
   steps?: React.ReactNode;
@@ -352,6 +355,16 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
               <PopoverTrigger className="cr-iconbtn cr-iconbtn-quiet cr-iconbtn-xs island__tab-more" aria-label={t.projects.options(p.name)} data-tip={optionsOpen ? undefined : t.projects.options(p.name)}><Icon name="chevron-down" size={14} /></PopoverTrigger>
               <PopoverContent align="start" className="cr-menu">
                 <MenuItem onClick={() => { setOptionsOpen(false); setNaming(p.id); }}>{t.projects.rename}</MenuItem>
+                <MenuItem onClick={() => { setOptionsOpen(false); onDuplicateProject(p); }}>{t.projects.duplicate}</MenuItem>
+                {/* Another of the person's spaces: a sketch made in private goes to the team */}
+                {workspaces.length > 1 && <>
+                  <Separator />
+                  <MenuLabel>{t.projects.moveTo}</MenuLabel>
+                  {workspaces.filter((w) => w.id !== workspace.id).map((w) => (
+                    <MenuItem key={w.id} icon={w.kind === "personal" ? <WorkspaceFace workspace={w} user={user} small /> : <WorkspaceAvatar workspace={w} small />}
+                      onClick={() => { setOptionsOpen(false); onMoveProject(p, w); }}>{w.name}</MenuItem>
+                  ))}
+                </>}
                 <Separator />
                 <MenuItem danger onClick={() => { setOptionsOpen(false); onDeleteProject(p); }}>{t.projects.remove}</MenuItem>
               </PopoverContent>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, type Dispatch, type RefObject, type SetStateAction } from "react";
-import { newProject, editProject, removeProject, markProjectStarted, setFiled, readBoardAction, importBatch, boardProject } from "@/app/actions/library";
+import { newProject, editProject, removeProject, copyProject, relocateProject, markProjectStarted, setFiled, readBoardAction, importBatch, boardProject } from "@/app/actions/library";
 import { setProjectClient, saveProjectBrief } from "@/app/actions/brief";
 import { boardOf, PLATFORM_NAME } from "@/lib/boards/match";
 import { batchesOf } from "@/lib/boards/entries";
@@ -11,6 +11,7 @@ import type { ToastNote } from "@/components/Toast";
 import type { useConfirm } from "@/components/useConfirm";
 import type { Dict } from "@/lib/i18n/en";
 import type { InspoItem, PolishVote, Project, ProjectLinks } from "@/types/inspo";
+import type { Workspace } from "@/lib/workspace-core";
 import type { VoteWrite } from "./use-polish-votes";
 
 /** Projects change on screen first; if the server says no, they go back with a notice */
@@ -111,6 +112,31 @@ export function useProjectActions({ t, projects, setProjects, links, setLinks, s
     if (!r.ok) { setProjects(prevProjects); setLinks(prevLinks); projectFailed(new Error(r.error)); }
   // eslint-disable-next-line react-hooks/exhaustive-deps -- projectFailed is a new function on every render, so listing it would rebuild this callback on every render; the strings are read from the dictionary it was built with, and listing t would rebuild it when the language changes
   }, [projects, links, space, confirm, setParams]);
+  /** A copy next to it, with the same board: it opens once made */
+  const duplicateProject = useCallback(async (project: Project) => {
+    const r = await copyProject(project.id).catch((e) => ({ ok: false as const, error: String(e) }));
+    if (!r.ok) { projectFailed(new Error(r.error)); return; }
+    const { boardIds, ...made } = r.data;
+    setProjects((prev) => [...prev, made]);
+    setLinks((prev) => { const next = { ...prev }; for (const id of boardIds) next[id] = [...new Set([...(next[id] ?? []), made.id])]; return next; });
+    setSpace(made.id);
+    setToast({ ok: true, title: t.projects.duplicated(made.name), detail: "" });
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- projectFailed is a new function on every render, so listing it would rebuild this callback on every render; the strings are read from the dictionary it was built with
+  }, [setSpace]);
+  /** To another of the person's workspaces: it leaves this one, and what was only on it leaves the library here */
+  const moveProject = useCallback(async (project: Project, to: Workspace) => {
+    if (!(await confirm({ title: t.projects.confirmMove(project.name, to.name), description: t.projects.confirmMoveHint, action: t.projects.move }))) return;
+    const r = await relocateProject(project.id, to.id).catch((e) => ({ ok: false as const, error: String(e) }));
+    if (!r.ok) { projectFailed(new Error(r.error)); return; }
+    if (space === project.id) setParams({ in: "" }, true);
+    setProjects((prev) => prev.filter((p) => p.id !== project.id));
+    // The references that left are no longer in this library; the rest stay wherever else they are filed
+    const gone = new Set(r.data.gone);
+    setLinks((prev) => Object.fromEntries(Object.entries(prev).filter(([k]) => !gone.has(k)).map(([k, v]) => [k, v.filter((x) => x !== project.id)])));
+    setItems((prev) => prev.filter((i) => !i.id || !gone.has(i.id)));
+    setToast({ ok: true, title: t.projects.moved(project.name, to.name), detail: "" });
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- projectFailed is a new function on every render, so listing it would rebuild this callback on every render; the strings are read from the dictionary it was built with
+  }, [space, confirm, setParams]);
   const toggleFiled = useCallback(async (item: InspoItem, projectId: string, on: boolean) => {
     const id = item.id;
     if (!id) return;
@@ -175,5 +201,5 @@ export function useProjectActions({ t, projects, setProjects, links, setLinks, s
     const saved = r.data.brief?.about ?? "";
     setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, intent: saved || null } : p)));
   };
-  return { createProject, importBoard, renameProject, deleteProject, toggleFiled, startSystem, fileMany, createAndFile, setClient, saveBrief, describe };
+  return { createProject, importBoard, renameProject, deleteProject, duplicateProject, moveProject, toggleFiled, startSystem, fileMany, createAndFile, setClient, saveBrief, describe };
 }

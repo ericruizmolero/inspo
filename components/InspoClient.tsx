@@ -271,7 +271,7 @@ export default function InspoClient({
     const t = setTimeout(() => setToast(null), 6000);
     return () => clearTimeout(t);
   }, [toast]);
-  const { createProject, importBoard, renameProject, deleteProject, toggleFiled, startSystem, fileMany, createAndFile, setClient, saveBrief, describe } = useProjectActions({ t, projects, setProjects, links, setLinks, space, currentProject, confirm, setParams, setSpace, setItems, setToast, watch, refreshSystem, voteWrites, setVotes, projectFailed });
+  const { createProject, importBoard, renameProject, deleteProject, duplicateProject, moveProject, toggleFiled, startSystem, fileMany, createAndFile, setClient, saveBrief, describe } = useProjectActions({ t, projects, setProjects, links, setLinks, space, currentProject, confirm, setParams, setSpace, setItems, setToast, watch, refreshSystem, voteWrites, setVotes, projectFailed });
   const { handleThumbnailUpload, cardCopy, handleThumbnailRemove } = thumbnailActions(setThumbMap);
   const router = useRouter();
   const { isDuplicate, addByUrl, addByUpload, addByText, arrivingBoard } = useAddReferences({ user, workspace, t, items, setItems, setLinks, setThumbMap, saveTargetRef, refreshSystem, setSystem, watch, cardCopy, projectFailed, importBoard, router, setToast });
@@ -686,6 +686,7 @@ export default function InspoClient({
           <Island user={user} workspace={workspace} workspaces={workspaces} isAdmin={isAdmin}
             items={items} links={links} projects={projects} systems={systems} space={space} onSpace={setSpace} bellNews={bellNews}
             onCreateProject={createProject} onRenameProject={renameProject} onDeleteProject={deleteProject}
+            onDuplicateProject={duplicateProject} onMoveProject={moveProject}
             members={members} onPerson={(name) => {
               // What someone saved is looked at inside a project: the open one, or the one being worked in
               if (!currentProject) { const to = saveTarget(); if (to) setParams({ in: to, view: "board" }); }

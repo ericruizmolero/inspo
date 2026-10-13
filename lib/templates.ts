@@ -25,7 +25,7 @@ const NAME_MAX = 60;
 const cleanName = async (name: unknown) => { const n = String(name ?? "").trim().replace(/\s+/g, " ").slice(0, NAME_MAX); if (!n) throw new HttpError(400, (await getErrors()).badBody); return n; };
 
 /** A clone never takes the name of a project the workspace already has: it gets the first free "Name (1)", "Name (2)"… */
-async function freeName(organizationId: string, name: string): Promise<string> {
+export async function freeName(organizationId: string, name: string): Promise<string> {
   const rows = await db.select({ name: P.name }).from(P).where(and(eq(P.organizationId, organizationId), isNull(P.template)));
   const taken = new Set(rows.map((r) => r.name.toLowerCase()));
   if (!taken.has(name.toLowerCase())) return name;
