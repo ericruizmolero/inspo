@@ -13,6 +13,10 @@
 //   desktop.png        1440px-wide viewport screenshot (first screen)
 //   desktop-full.png   1440px-wide full-page screenshot
 //   mobile.png         390px-wide full-page screenshot
+//   logo-light.png     the header's home link (the logo lockup) at 2x on a transparent ground
+//   logo-dark.png      the same under the site's dark theme, only when the page has one
+// tokens.json also lists the page's pictures (`images`: every <img> and CSS background at least 320px wide,
+// largest first) and where the logo captures are (`logo`).
 // Prints a readable summary to stdout; the last stdout line is the tokens.json path.
 
 import { chromium } from 'playwright-core';
@@ -240,6 +244,107 @@ function collect() {
   };
 }
 
+// Runs in the page. Every picture the page shows at a size worth keeping: <img> by its natural size, a CSS
+// background by loading it once. Largest first, so the hero comes before the icons.
+async function collectImages() {
+  const firstScreen = 900;
+  const areaOf = (el, rect) => (el.closest('footer') ? 'footer' : rect.top + window.scrollY < firstScreen ? 'hero' : 'section');
+  const absolute = (src) => { try { return new URL(src, location.href).href; } catch { return null; } };
+  const keep = (src) => src && !/^(data|blob):/i.test(src);
+  const found = new Map();
+  const add = (src, alt, w, h, el) => {
+    const rect = el.getBoundingClientRect();
+    if (!keep(src) || w < 320 || found.has(src)) return;
+    found.set(src, { src, alt: (alt || '').trim().slice(0, 120), w, h, area: areaOf(el, rect) });
+  };
+  for (const img of document.images) add(absolute(img.currentSrc || img.src), img.alt, img.naturalWidth, img.naturalHeight, img);
+  const sizeOf = (src) => new Promise((resolve) => {
+    const probe = new Image();
+    const done = () => resolve([probe.naturalWidth, probe.naturalHeight]);
+    probe.onload = done; probe.onerror = () => resolve([0, 0]);
+    setTimeout(() => resolve([probe.naturalWidth, probe.naturalHeight]), 4000);
+    probe.src = src;
+  });
+  const backgrounds = [];
+  for (const el of [...document.body.querySelectorAll('*')].slice(0, 6000)) {
+    const bg = getComputedStyle(el).backgroundImage;
+    if (!bg || bg === 'none') continue;
+    for (const m of bg.matchAll(/url\((['"]?)(.*?)\1\)/g)) { const src = absolute(m[2]); if (keep(src) && !found.has(src)) backgrounds.push([src, el]); }
+  }
+  for (const [src, el] of backgrounds.slice(0, 60)) { const [w, h] = await sizeOf(src); add(src, el.getAttribute('aria-label'), w, h, el); }
+  return [...found.values()].sort((a, b) => b.w * b.h - a.w * a.h).slice(0, 40);
+}
+
+// Runs in the page. Marks the header's home link, the logo lockup as the site shows it, and says how big it is.
+function markLogo() {
+  for (const el of document.querySelectorAll('[data-design-extract-logo]')) el.removeAttribute('data-design-extract-logo');
+  const visible = (el) => { const r = el.getBoundingClientRect(); return r.width >= 8 && r.height >= 8; };
+  const link = [...document.querySelectorAll('header a[href="/"], nav a[href="/"], a[aria-label*="home" i]')].find(visible)
+    || [...document.querySelectorAll('header a, nav a')].find((a) => visible(a) && a.querySelector('img, svg'));
+  if (!link) return null;
+  link.setAttribute('data-design-extract-logo', '');
+  const r = link.getBoundingClientRect();
+  return { w: Math.round(r.width), h: Math.round(r.height), text: (link.innerText || link.getAttribute('aria-label') || '').trim().slice(0, 40) };
+}
+
+// Runs in the page. The ground behind the logo goes transparent for the capture (the header's own background
+// included), and comes back after it. Returns what to restore.
+function clearGround(on) {
+  const link = document.querySelector('[data-design-extract-logo]');
+  if (!link) return;
+  const chain = [document.documentElement, document.body];
+  for (let el = link; el; el = el.parentElement) chain.push(el);
+  for (const el of chain) {
+    if (on) {
+      el.dataset.designExtractStyle = el.getAttribute('style') || '';
+      el.style.setProperty('background', 'transparent', 'important');
+      el.style.setProperty('backdrop-filter', 'none', 'important');
+      el.style.setProperty('box-shadow', 'none', 'important');
+    } else {
+      el.setAttribute('style', el.dataset.designExtractStyle || '');
+      if (!el.getAttribute('style')) el.removeAttribute('style');
+      delete el.dataset.designExtractStyle;
+    }
+  }
+}
+
+// The ground the page paints behind everything: the body's background, or the root's when the body has none.
+const groundOf = () => {
+  const of = (el) => getComputedStyle(el).backgroundColor;
+  const body = of(document.body);
+  return body && body !== 'rgba(0, 0, 0, 0)' && body !== 'transparent' ? body : of(document.documentElement);
+};
+
+// The logo lockup on a transparent ground at 2x, on the light theme and, when the site has one, on the dark.
+async function captureLogo(browser, url, wait, outDir) {
+  const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 2, colorScheme: 'light' });
+  try {
+    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 45000 });
+    await settle(page, wait);
+    const found = await page.evaluate(markLogo);
+    if (!found) return { light: null, dark: null, note: 'No home link with a logo was found in the header or nav.' };
+    const shoot = async (file) => {
+      await page.evaluate(clearGround, true);
+      await page.locator('[data-design-extract-logo]').first().screenshot({ path: file, omitBackground: true, animations: 'disabled' });
+      await page.evaluate(clearGround, false);
+      return file;
+    };
+    const lightGround = await page.evaluate(groundOf);
+    const light = await shoot(path.join(outDir, 'logo-light.png'));
+    await page.emulateMedia({ colorScheme: 'dark' });
+    await page.evaluate(() => { document.documentElement.dataset.theme = 'dark'; document.documentElement.classList.add('dark'); });
+    await page.waitForTimeout(Math.max(400, wait));
+    const darkGround = await page.evaluate(groundOf);
+    const out = { light, dark: null, w: found.w, h: found.h, text: found.text, lightGround, darkGround, note: '' };
+    if (darkGround === lightGround) { out.note = 'The page keeps the same ground under prefers-color-scheme: dark, data-theme="dark" and .dark: the site has no dark theme.'; return out; }
+    const again = await page.evaluate(markLogo);
+    if (again) { out.w = Math.max(out.w, again.w); out.h = Math.max(out.h, again.h); out.dark = await shoot(path.join(outDir, 'logo-dark.png')); }
+    return out;
+  } finally {
+    await page.close();
+  }
+}
+
 function summarize(t) {
   const line = (arr, fmt) => arr.map(fmt).join(', ') || '—';
   const out = [];
@@ -260,6 +365,9 @@ function summarize(t) {
   for (const b of t.buttons) out.push(`  bg ${b.background} text ${b.color} r ${b.radius} h ${b.height} w${b.fontWeight} border ${b.border} ×${b.count} ("${b.labels.join('", "')}")`);
   out.push(`Sections: ${t.sections.map((s) => `${s.tag}${s.heading ? ` "${s.heading}"` : ''} bg ${s.background || 'none'} pad ${s.paddingY}`).join(' · ') || '—'}`);
   out.push(`:root custom properties: ${Object.keys(t.customProperties).length}`);
+  out.push(`Images (${t.images.length}, largest first): ${line(t.images.slice(0, 5), (i) => `${i.src} ${i.w}×${i.h} ${i.area}${i.alt ? ` "${i.alt}"` : ''}`)}`);
+  const l = t.logo;
+  out.push(`Logo: ${l.light ? `${l.light} (${l.w}×${l.h} css px, 2x)${l.dark ? `, dark ${l.dark}` : `, no dark capture: ${l.note}`}` : l.note}`);
   return out.join('\n');
 }
 
@@ -278,8 +386,10 @@ try {
   await desktop.goto(args.url, { waitUntil: 'domcontentloaded', timeout: 45000 });
   await settle(desktop, wait);
   const tokens = { url: args.url, ...(await desktop.evaluate(collect)) };
+  tokens.images = await desktop.evaluate(collectImages);
   await desktop.screenshot({ path: path.join(outDir, 'desktop.png') });
   await desktop.screenshot({ path: path.join(outDir, 'desktop-full.png'), fullPage: true });
+  tokens.logo = await captureLogo(browser, args.url, wait, outDir);
 
   const mobile = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, deviceScaleFactor: 2 });
   await mobile.goto(args.url, { waitUntil: 'domcontentloaded', timeout: 45000 });
@@ -289,7 +399,7 @@ try {
   const file = path.join(outDir, 'tokens.json');
   fs.writeFileSync(file, JSON.stringify(tokens, null, 2));
   console.log(summarize(tokens));
-  console.log(`Screenshots: ${path.join(outDir, 'desktop.png')}, desktop-full.png, mobile.png`);
+  console.log(`Screenshots: ${path.join(outDir, 'desktop.png')}, desktop-full.png, mobile.png${tokens.logo.light ? ', logo-light.png' : ''}${tokens.logo.dark ? ', logo-dark.png' : ''}`);
   console.log(file);
 } finally {
   await browser.close();

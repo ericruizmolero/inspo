@@ -66,6 +66,11 @@ First run only: `cd <skill-dir>/scripts && npm install` (playwright-core, drivin
 
 It writes `.design-extract/tokens.json` and three screenshots, and prints colours ranked by use, font families and the fonts that loaded, the type scale of h1 to h6, body and small, spacing, radii, shadows, button variants, sections and the site's `:root` custom properties. Open the screenshots: the numbers do not say which colour is the accent; the CTA does.
 
+Two more outputs feed the logo and the imagery:
+
+- `logo-light.png`: the header's home link, the lockup as the site shows it (the mark beside the name), at 2x on a transparent ground. `logo-dark.png` too when the page has a dark theme; when it has none, the summary says so. `tokens.json` records both paths and the box size under `logo`.
+- `images` in `tokens.json`: every picture the page shows at 320px wide or more, `<img>` and CSS backgrounds, with its absolute `src`, `alt`, natural size and where it sits (`hero`, `section`, `footer`), largest first. The summary names the top five. Open them before choosing: a background texture is not imagery.
+
 A page behind a login: ask for a public page or a screenshot and mark what you read from it *(inferred)*.
 
 ### 3. Scan the codebase
@@ -79,7 +84,7 @@ Then read, in this order:
 1. The theme source (`@theme`, `:root`, `tailwind.config.*`, the tokens file). Record names and values as written.
 2. `Button`, `Card`, `Input`: variants, sizes, states.
 3. The logo's SVG source: `public/`, `components/Logo*`, the favicon. Keep the markup whole; you pass it as is.
-4. How fonts load: `next/font`, `@font-face`, a Google Fonts or Fontshare link. That names the face's source.
+4. How fonts load: `next/font`, `@font-face`, a Google Fonts or Fontshare link. That names the face's source. A face loaded for one use (a margin note, a pull quote, a handwritten label) is part of the brand too: keep it, with role `accent`, and say in its note what it is for.
 5. CSS transitions and keyframes: the `cubic-bezier` values and durations in use.
 
 ### 4. Name the tokens by role
@@ -106,8 +111,10 @@ Copy `<skill-dir>/assets/DESIGN.template.md` to `DESIGN.md` at the project root 
 | --- | --- | --- |
 | Brand in one line | `intro` | `headline`, up to 3 `paragraphs` |
 | Color table | `color` | `items[]` with your own `id`, `name`, six-digit `hex`, `role`, `group` (brand, accent, neutral, semantic) and `weight` 1 to 4 (the page ground 4, text 3, accent 2, rare 1); `accentId` names the accent by id |
-| Typography table and font loading | `typography` | `faces[]` with `id`, `family`, `role` (display, text, mono), `source` (google, fontshare with `slug`, site with `siteWeb`, system), `weights`; `scale[]` with `label`, `px`, `faceId`, `weight`, unitless `lineHeight`, `tracking` in em; `sample`, `trackingRule` |
-| The logo's SVG, light and dark | `logo` | `primary` and `mark`, each `{ light, dark }`; a slot is `{ svg }` from the repo's own file or `{ url }` to a public SVG, PNG or WebP, or null; `clearSpace` in x, `minPx` or null, `lede` |
+| Typography table and font loading | `typography` | `faces[]` with `id`, `family`, `role` (display, text, accent, mono), `source` (google, fontshare with `slug`, site with `siteWeb`, system), `weights`; `scale[]` with `label`, `px`, `faceId`, `weight`, unitless `lineHeight`, `tracking` in em; `sample`, `trackingRule`. `accent` is the face used sparingly: a handwritten note, a quote, a label |
+| The logo's SVG, light and dark | `logo` | `primary` and `mark`, each `{ light, dark }`; a slot is `{ svg }` from the repo's own file, `{ url }` to a public SVG, PNG or WebP, `{ data }` with the file's bytes as base64, or null; `clearSpace` in x, `minPx` or null, `lede` |
+| The header's lockup, when the site has no file for it | `logo.primary` | The captured lockup as `data` (`logo-light.png` and `logo-dark.png` from step 2); the mark from the repo or `public/` as `svg` or `url` |
+| The site's own pictures | `imagery.images` | Up to 9 from `images` in `tokens.json`: hero captures, illustrations, photographs. `{ url }` when the address is public, `{ data }` as base64 when it is only on disk. They become the section's examples next to `itemIds` |
 | Transitions and keyframes | `motion` | `curves[]` with `bezier` as four numbers, `durations[]` in ms, `staggerMs`, `rule` in prose |
 | Voice, from the site's copy | `voice` | `principles[]` (`title`, `body`, `sample`) and `pairs[]` (`context`, `do`, `dont`) |
 | Imagery | `imagery` | `traits[]` (`label`, `value`), `avoid[]`, `itemIds[]` from `list_references` |
@@ -137,4 +144,5 @@ The sections written, the sections the team kept, the references added, the prop
 - Dozens of greys: collapse near-duplicates into 3 to 5 neutrals; the strays go in the don'ts.
 - Fonts show as a fallback (Arial, Times): the webfont did not load; read `loadedFonts` in `tokens.json` and the code's font imports.
 - `bring_brand` refuses an SVG: it has a script, an event handler or a link out. Pass the plain drawing, or the logo's public address as PNG.
+- A capture has to go in as `data`: `base64 -i .design-extract/logo-light.png | tr -d '\n'` gives the string, with no `data:` prefix. The type comes from the bytes, so a PNG stays a PNG whatever the name says. Keep captures small: a slot takes about 1 MB, and the whole call about 4 MB. When the pictures are heavy, send `logo` and `imagery` in two calls; a section not passed is left as it is.
 - `bring_brand` answers `kept_by_team`: those sections were set by hand in the app. Say so; the team can hand them back there.

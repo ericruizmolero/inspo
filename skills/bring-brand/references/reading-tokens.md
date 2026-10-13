@@ -2,6 +2,11 @@
 
 `extract-url.mjs` ranks what the page renders; `scan-codebase.sh` finds what the code declares. Neither names the roles. These heuristics do.
 
+## Logo and images
+
+- `logo` in `tokens.json` points at `logo-light.png` (and `logo-dark.png` when the site has a dark theme) and gives the lockup's box in CSS px; the files are 2x. The capture is the header's home link, so it is the lockup the site actually shows, not the file the repo keeps. Use it for `primary` only when no file exists; a repo's own SVG beats a capture.
+- `images` lists the page's pictures at 320px wide or more, largest first, with `area` saying whether each sits in the hero, a section or the footer. A hero capture or a product shot is imagery; a background texture, a decorative SVG or a partner logo is not. Open the top five before choosing.
+
 ## Color
 
 - **Page background:** the background with the most area that sits on `body`, `main` or full-width sections (`bodyBackground` in `tokens.json`). If two light colors are close in area (e.g. `#ffffff` and `#f5f5f4`), the one behind most sections is `background` and the other is `surface` (cards, inputs, alternating bands). Confirm on `desktop-full.png`.
