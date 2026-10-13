@@ -37,7 +37,7 @@ export const TOOLS: Tool[] = [
   tool({
     name: "read_criterio", title: "Read criterio.md",
     description: [
-      "A project's criterio.md: the design criteria its team decided, as Markdown. Eight areas (typography, color, layout, motion, iconography, logo, imagery, voice), each with its decision, why, what it must never do, and the references (R1, R2…) behind it; then the project's texts and every reference.",
+      "A project's criterio.md: the design criteria its team decided, as Markdown. Eight areas (typography, color, layout, motion, iconography, logo, imagery, voice), each with its decision, why, what it must never do, and the references (R1, R2…) behind it; then the project's texts and every reference. Its file links may not open where you run: to see a reference's picture, call read_reference.",
       "Read it before designing, writing or reviewing anything for the project, and follow it: a decided area is a rule. Where an area is open, ask the person instead of inventing.",
       "The file opens with \"How to use this file\": what is required (the brand's values and every Never line), what is direction (each area's decision) and what is only guidance (the references, which are never copied). Follow it.",
       'section: "all" (default) is the whole file and can be long; "decisions" is the same without the long lists at the end (enough to design with); an area\'s name gives that area under the file\'s head and its "How to use this file" rules, the cheapest read when a task touches few areas.',
@@ -124,5 +124,6 @@ export const INSTRUCTIONS = [
   "criterio holds the design criteria of each of the person's projects as one file, criterio.md: what the team decided about typography, color, layout, motion, iconography, logo, imagery and voice, with the references behind each decision.",
   "Before designing, writing or reviewing anything for a project, call read_criterio and follow it. A decided area is a rule. Where an area is open, ask the person; do not invent.",
   "You never rewrite criterio.md. You add pieces: references (add_reference), proposals for what an area should say (propose_decision), which wait for the team's yes or no in the app, and a brand's values (bring_brand), which the team edits or hands back in the app.",
+  "To see a reference's picture, call read_reference with its id (list_references maps R1, R2… to ids): the picture comes inside the answer. Do not fetch the file links in criterio.md to look at a picture; they may be blocked where you run.",
   "Write only what the person asked for or agreed to.",
 ].join("\n");
