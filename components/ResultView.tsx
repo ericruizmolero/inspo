@@ -23,10 +23,10 @@ export default function ResultView({ projectId, projectName, filled }: { project
   const [failed, setFailed] = useState(false);
   const started = useRef(false);
 
-  const build = async (which: string) => {
+  const build = async (which: string, auto = false) => {
     setBuilding(true); setFailed(false);
     try {
-      const res = await fetch("/api/system/result", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ projectId, page: which }) });
+      const res = await fetch("/api/system/result", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ projectId, page: which, auto }) });
       if (!res.ok) throw new Error(String(res.status));
       const row = (await res.json()) as CriterioResultRow;
       setResults((rs) => [row, ...(rs ?? [])]);
@@ -41,7 +41,7 @@ export default function ResultView({ projectId, projectName, filled }: { project
         setResults(d.results);
         setPage(d.results.find((x) => x.status === "done")?.page ?? d.suggested);
         // The first proof comes on its own, once, when there is something decided to follow
-        if (!d.results.length && filled && !started.current) { started.current = true; void build(d.suggested); }
+        if (!d.results.length && filled && !started.current) { started.current = true; void build(d.suggested, true); }
       });
     return () => { live = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- once per project

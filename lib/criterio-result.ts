@@ -3,7 +3,8 @@
 // it out, which is kept as a version (via "result"), so every result says which version of the file it shows.
 //
 // What it costs: one call to a frontier model (~$0.10 a page), one of the plan's AI actions; the account's first one is
-// free, like its first system pass. The page is one self-contained HTML file, shown in a sandboxed frame with no scripts.
+// free, like its first system pass. The one the view builds on its own, a project's very first, never counts: nobody
+// asked for it (AUTO_REF), and only a project with no result yet can have it. The page is one self-contained HTML file, shown in a sandboxed frame with no scripts.
 import "server-only";
 import { and, desc, eq, isNull, notLike, or, sql } from "drizzle-orm";
 import { db, schema } from "./db";
@@ -79,6 +80,12 @@ export async function suggestedPage(organizationId: string, projectId: string): 
   return [...by].sort((a, b) => b[1] - a[1])[0]?.[0] ?? "home";
 }
 
+/** Whether the project has had any result, finished or not: the automatic one is only for a project with none */
+export async function hasResult(organizationId: string, projectId: string): Promise<boolean> {
+  const [r] = await db.select({ id: R.id }).from(R).where(and(eq(R.organizationId, organizationId), eq(R.projectId, projectId))).limit(1);
+  return !!r;
+}
+
 /** The project's results, newest first, at most `limit` */
 export async function listResults(organizationId: string, projectId: string, limit = 12): Promise<CriterioResultRow[]> {
   const rows = await db.select().from(R).where(and(eq(R.organizationId, organizationId), eq(R.projectId, projectId))).orderBy(desc(R.createdAt)).limit(limit);
@@ -96,6 +103,8 @@ export async function listResults(organizationId: string, projectId: string, lim
 export async function buildResult(input: {
   organizationId: string; projectId: string; page: string; usage: UsageCtx; byName: string;
   locale: Locale; language: OutputLanguage; origin: string;
+  /** Built by the view on its own: the caller checked the project had no result (hasResult) */
+  auto?: boolean;
 }): Promise<CriterioResultRow> {
   const page = RESULT_PAGES.includes(input.page) ? input.page : "home";
   const id = newId();
@@ -106,13 +115,13 @@ export async function buildResult(input: {
     if (!view) throw new Error("project not found");
     const versionN = await recordVersion({ organizationId: input.organizationId, projectId: input.projectId, via: "result", byName: input.byName, locale: input.locale, origin: input.origin, view });
     const kind = PAGE_KINDS.find((p) => p.key === page)!;
-    const free = !(await hadResult(input.organizationId));
+    const free = !input.auto && !(await hadResult(input.organizationId));
     const res = await llm(prompt("result", {
       system: RESULT_SYSTEM,
       text: `Build the ${page} page (${kind.description.toLowerCase()}) of this project, following its criterio.md.\n\n${view.markdown}`,
       language: input.language,
     }));
-    await recordUsage(input.usage, { action: "result", ...billOf(res), ref: `${free ? FIRST_REF : ""}project:${input.projectId}` });
+    await recordUsage(input.usage, { action: "result", ...billOf(res), ref: `${input.auto ? AUTO_REF : free ? FIRST_REF : ""}project:${input.projectId}` });
     const html = htmlOf(res.text);
     if (!/<html|<body|<main|<section/i.test(html)) throw new Error("the answer is not a page");
     await db.update(R).set({ status: "done", html, model: res.model, versionN }).where(eq(R.id, id));
