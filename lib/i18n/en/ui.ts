@@ -711,6 +711,21 @@ export const ui = {
       openInPrompt: (name: string): string => `This is the criterio.md of my project \u201c${name}\u201d: its design system as decided. Read all of it and use it as the source of truth for what I ask next. Where an area is open, ask before inventing.`,
       openArea: "Open the area",
       editHint: "\u2318\u21b5 saves, Esc cancels",
+      versions: {
+        menu: "Versions",
+        title: "Versions of criterio.md",
+        lead: "One each time the file left with changes: copied, downloaded or read by an AI.",
+        empty: "No versions yet. Copy the file and the first one is kept.",
+        via: { copy: "copied", download: "downloaded", mcp: (name: string): string => `read by ${name}` },
+        by: (who: string, how: string): string => `${who}, ${how}`,
+        changed: (areas: string): string => `Changed: ${areas}`,
+        first: "First version",
+        same: "Only outside the areas",
+        latest: "latest",
+        copy: "Copy this version",
+        copied: "Copied",
+        download: "Download",
+      },
     },
     sample: {
       web: {

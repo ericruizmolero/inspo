@@ -697,6 +697,28 @@ export const extKey = pgTable("ext_key", {
 
 export const SYSTEM_AREA_KEYS = ["typography", "color", "layout", "motion", "iconography", "logo", "imagery", "voice"] as const;
 
+/** criterio.md as it left the app (copied, downloaded, read whole over MCP), one row each time it had changed since
+ *  the last: the file's history as the agents got it (lib/criterio-versions.ts) */
+export const criterioVersion = pgTable("criterio_version", {
+  id: text("id").primaryKey(),
+  organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
+  projectId: text("project_id").notNull().references(() => project.id, { onDelete: "cascade" }),
+  /** 1, 2, 3… within the project */
+  n: integer("n").notNull(),
+  markdown: text("markdown").notNull(),
+  /** sha1 of the markdown, to tell a file that did not change */
+  hash: text("hash").notNull(),
+  /** The areas whose section changed since the version before, by key (types/system.ts SystemArea); empty on the first */
+  changed: jsonb("changed").$type<string[]>().notNull().default([]),
+  /** Who took it out, and how: "copy", "download", or "mcp" with the AI client's name */
+  byName: text("by_name"),
+  via: text("via").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
+}, (t) => [
+  uniqueIndex("criterio_version_project_n_idx").on(t.projectId, t.n),
+  index("criterio_version_org_idx").on(t.organizationId),
+]);
+
 export const projectSystem = pgTable("project_system", {
   projectId: text("project_id").primaryKey().references(() => project.id, { onDelete: "cascade" }),
   organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),

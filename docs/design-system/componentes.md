@@ -485,7 +485,11 @@ Interruptores (`role=switch`); cada skill añade una sección al criterio.md.
 
 ### Menú del fichero
 `FileMenu` · `components/FileMenu.tsx`
-La flecha junto a Copiar: "Descargar .md" y "Abrir en un chat" (Claude, ChatGPT, Gemini). Abrir va en dos pasos: el primer clic copia el mensaje con el fichero, el segundo abre el chat.
+La flecha junto a Copiar: "Descargar .md", "Versiones" (solo en un proyecto propio, no en un ejemplo) y "Abrir en un chat" (Claude, ChatGPT, Gemini). Abrir va en dos pasos: el primer clic copia el mensaje con el fichero, el segundo abre el chat.
+
+### Versiones de criterio.md
+`VersionsModal` · `components/VersionsModal.tsx` · `.ver`
+El modal plano, como Mejorar con IA: a la izquierda las versiones, la más nueva arriba ("v2 la última", hace cuánto, quién y por dónde salió: copiado, descargado o leído por Claude, y qué áreas cambiaron); a la derecha el fichero de la elegida tal cual salió, en mono (el único sitio donde va: es el texto crudo), con "Descargar" (quiet) y "Copiar esta versión" (secondary), ambos s. Filas sin borde, la elegida con `--surface-2`. Bajo 720 px, la lista encima del fichero.
 
 ### Mejorar con IA
 `ImproveModal` · `components/ImproveModal.tsx` · `.imp`

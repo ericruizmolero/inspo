@@ -7,6 +7,7 @@ import { boardStamp, boardVisuals } from "@/lib/system/board";
 import { setVerdict } from "@/lib/system/curate";
 import { brandStale } from "@/lib/brand";
 import type { SystemEvidence } from "@/types/system";
+import { listVersions, versionMarkdown } from "@/lib/criterio-versions";
 
 export async function loadSystem(projectId: string) {
   return withCtx(async (ctx) => {
@@ -68,4 +69,14 @@ export async function saveSystemSummary(projectId: string, summary: string) {
 /** A part of criterio.md rewritten by hand ("head", "refs", "meta:<area>"); null goes back to what the app writes. */
 export async function saveDocPart(projectId: string, part: string, text: string | null) {
   return withCtx(async (ctx) => setDocPart(ctx.workspace.id, String(projectId), String(part), text === null ? null : String(text)));
+}
+
+/** criterio.md's versions, newest first (lib/criterio-versions.ts) */
+export async function criterioVersions(projectId: string) {
+  return withCtx(async (ctx) => listVersions(ctx.workspace.id, String(projectId)));
+}
+
+/** One version's file */
+export async function criterioVersionFile(projectId: string, n: number) {
+  return withCtx(async (ctx) => versionMarkdown(ctx.workspace.id, String(projectId), Number(n)));
 }

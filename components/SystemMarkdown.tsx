@@ -513,7 +513,7 @@ export default function SystemMarkdown({ fileTools, blocks, busy, onSave, onCopy
           {fileTools}
           <span className="mdv-split">
             <button type="button" className="cr-btn cr-btn-quiet cr-btn-s mdv-btn" onClick={onCopy}><Icon name={copied ? "check" : "copy"} size={16} /> {copied ? t.system.copied : s.copy}</button>
-            <FileMenu markdown={markdown} projectName={projectName} onDownload={onDownload} />
+            <FileMenu markdown={markdown} projectName={projectName} projectId={readOnly ? undefined : projectId} onDownload={onDownload} />
           </span>
         </span>
       </header>

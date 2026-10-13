@@ -259,7 +259,7 @@ export default function SystemView({ project, system, onSystem, board, library, 
 
   const copy = async () => { try { await navigator.clipboard.writeText(markdown); setCopied(true); setTimeout(() => setCopied(false), 1500); void criterioExported(project.id); } catch { /* the download still works */ } };
   const download = () => {
-    void criterioExported(project.id);
+    void criterioExported(project.id, "download");
     const blob = new Blob([markdown], { type: "text/markdown" });
     const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
     a.download = `${project.name.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-criterio.md`; a.click(); URL.revokeObjectURL(a.href);

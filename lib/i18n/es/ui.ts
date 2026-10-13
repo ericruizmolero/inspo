@@ -703,6 +703,21 @@ export const ui: typeof EnUi = {
       openInPrompt: (name: string): string => `Este es el criterio.md de mi proyecto \u00ab${name}\u00bb: su sistema de dise\u00f1o tal y como est\u00e1 decidido. L\u00e9elo entero y \u00fasalo como fuente de verdad para lo que te pida despu\u00e9s. Donde un \u00e1rea est\u00e9 abierta, pregunta antes de inventar.`,
       openArea: "Abrir el \u00e1rea",
       editHint: "\u2318\u21b5 guarda, Esc cancela",
+      versions: {
+        menu: "Versiones",
+        title: "Versiones de criterio.md",
+        lead: "Una cada vez que el archivo sali\u00f3 con cambios: copiado, descargado o le\u00eddo por una IA.",
+        empty: "A\u00fan no hay versiones. Copia el archivo y se guarda la primera.",
+        via: { copy: "copiado", download: "descargado", mcp: (name: string): string => `le\u00eddo por ${name}` },
+        by: (who: string, how: string): string => `${who}, ${how}`,
+        changed: (areas: string): string => `Cambi\u00f3: ${areas}`,
+        first: "Primera versi\u00f3n",
+        same: "Solo fuera de las \u00e1reas",
+        latest: "la \u00faltima",
+        copy: "Copiar esta versi\u00f3n",
+        copied: "Copiado",
+        download: "Descargar",
+      },
     },
     sample: {
       web: {

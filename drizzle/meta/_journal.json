@@ -330,6 +330,13 @@
       "when": 1791836301873,
       "tag": "0047_note_reactions",
       "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1791905745272,
+      "tag": "0048_criterio_versions",
+      "breakpoints": true
     }
   ]
 }

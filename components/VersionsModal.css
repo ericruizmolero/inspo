@@ -1,0 +1,26 @@
+/* criterio.md's versions (components/VersionsModal.tsx): the flat modal, the list of versions beside the file as it
+ * was. Hierarchy by weight and colour, no boxes around the rows (gusto: fewer borders) */
+.modal.ver { max-width: 860px; }
+.ver__body { gap: 16px; }
+.ver__lead { margin: 0; font-size: var(--fs-ui); line-height: var(--lh-body); color: var(--text-2); }
+.ver__empty { margin: 0; font-size: var(--fs-ui); color: var(--muted); }
+.ver__split { display: grid; grid-template-columns: 240px 1fr; gap: 16px; min-height: 0; }
+.ver__list { margin: 0 0 0 -10px; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 2px; max-height: 60vh; overflow: auto; }
+.ver-row { display: flex; flex-direction: column; gap: 2px; width: 100%; padding: 8px 10px; border: 0; border-radius: var(--radius-md); background: none; color: var(--text); text-align: left; cursor: pointer; font: inherit; }
+.ver-row:hover { background: var(--surface-2); }
+.ver-row.is-on { background: var(--surface-2); }
+.ver-row:focus-visible { outline: 2px solid var(--text); outline-offset: -2px; }
+.ver-row__head { display: flex; align-items: baseline; gap: 8px; font-size: var(--fs-ui); }
+.ver-row__head b { font-weight: var(--fw-medium); }
+.ver-row__latest { font-size: var(--fs-small); color: var(--text-2); }
+.ver-row__when { margin-left: auto; font-size: var(--fs-small); color: var(--muted); }
+.ver-row__what { font-size: var(--fs-small); line-height: var(--lh-small); color: var(--text-2); }
+.ver__file { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+/* The file itself, as a raw text: the one place mono belongs */
+.ver__md { margin: 0; max-height: calc(60vh - 44px); overflow: auto; padding: 12px 14px; border-radius: var(--radius-md); background: var(--surface-2); color: var(--text); font-family: var(--font-mono); font-size: 12px; line-height: 1.55; white-space: pre-wrap; word-break: break-word; }
+.ver__actions { display: flex; justify-content: flex-end; gap: 8px; }
+@media (max-width: 720px) {
+  .ver__split { grid-template-columns: 1fr; }
+  .ver__list { max-height: 30vh; }
+  .ver__md { max-height: 40vh; }
+}

@@ -11,6 +11,8 @@ import { HttpError, type Workspace } from "../workspace-core";
 import { loadProjects, createProject } from "../projects";
 import { loadSystems, getSystem } from "../system/areas";
 import { loadShareView } from "../share-view";
+import { recordVersion } from "../criterio-versions";
+import { inBackground } from "../notify";
 import { blocksToMd } from "../criterio-md";
 import { rowToItem, tagsOfRow, ITEM_COLUMNS } from "../items";
 import { addReference, cleanAreas, titleOf, type Piece } from "../add";
@@ -110,6 +112,8 @@ export async function readCriterio(ctx: McpCtx, origin: string, ref: string, sec
   const project = await resolveProject(ctx, ref);
   const view = await loadShareView(project.workspace.id, project.id, "full", ctx.user.language, null, origin);
   if (!view) throw new HttpError(404, "That project is gone.");
+  // What an agent read is a version of the file: kept when it changed since the last one left the app
+  inBackground(async () => { await recordVersion({ organizationId: project.workspace.id, projectId: project.id, via: "mcp", viaName: ctx.via, byName: ctx.user.name, locale: ctx.user.language, origin, view }); });
   if (section === "all") return view.markdown;
   const blocks = view.blocks.filter((b) => section === "decisions"
     ? b.kind !== "section" || !["refs", "content"].includes(b.id)
