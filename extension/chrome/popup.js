@@ -6,6 +6,10 @@
 // (see app/api/ext/v1/items/route.ts and media/route.ts).
 
 const DEFAULT_BASE = "https://app.criterio.design";
+// Where the app used to live: an extension connected before the move (11 Oct 2026) still has it stored,
+// and there criterio.design is the marketing site, which answers every call with an error
+const MOVED = { "https://criterio.design": DEFAULT_BASE, "https://www.criterio.design": DEFAULT_BASE };
+const baseOf = (stored) => MOVED[stored] || stored || DEFAULT_BASE;
 const API = "/api/ext/v1";
 
 // Texts come from _locales/<lang>/messages.json (browser language; English if there is no translation)
@@ -49,7 +53,8 @@ async function load() {
   const { pending } = await chrome.storage.session.get("pending").catch(() => ({}));
   if (pending) { await chrome.storage.session.remove("pending"); if (Date.now() - pending.at < 120_000) media = pending; }
   const s = await chrome.storage.local.get(["key", "base", "workspace", "workspaces", "user"]);
-  state = { key: s.key || null, base: s.base || DEFAULT_BASE, workspace: s.workspace || null, workspaces: s.workspaces || [], user: s.user || null };
+  if (MOVED[s.base]) await chrome.storage.local.set({ base: MOVED[s.base] });
+  state = { key: s.key || null, base: baseOf(s.base), workspace: s.workspace || null, workspaces: s.workspaces || [], user: s.user || null };
   if (!state.key) { setView("connect"); showSignupMode(); return; }
   setChip();
   showFoot();

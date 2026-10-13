@@ -10,6 +10,10 @@
 // project: it lands in the project named after it, in the picked workspace.
 
 const DEFAULT_BASE = "https://app.criterio.design";
+// Where the app used to live: an extension connected before the move (11 Oct 2026) still has it stored,
+// and there criterio.design is the marketing site, which answers every call with an error
+const MOVED = { "https://criterio.design": DEFAULT_BASE, "https://www.criterio.design": DEFAULT_BASE };
+const baseOf = (stored) => MOVED[stored] || stored || DEFAULT_BASE;
 const API = "/api/ext/v1";
 const BATCH = 25; // what the server accepts per request
 const BATCH_IMAGES = 10; // a batch with images: the server copies each one before it answers
@@ -66,7 +70,8 @@ async function load() {
   for (const el of document.querySelectorAll("[data-i18n-label]")) el.setAttribute("aria-label", t(el.dataset.i18nLabel));
   fillLimits();
   const s = await chrome.storage.local.get(["key", "base", "workspace", "workspaces", "user"]);
-  state = { key: s.key || null, base: s.base || DEFAULT_BASE, workspace: s.workspace || null, workspaces: s.workspaces || [], user: s.user || null };
+  if (MOVED[s.base]) await chrome.storage.local.set({ base: MOVED[s.base] });
+  state = { key: s.key || null, base: baseOf(s.base), workspace: s.workspace || null, workspaces: s.workspaces || [], user: s.user || null };
   if (!state.key) { setView("connect"); return; }
   setWorkspaces(); showFoot();
   setView("import");
