@@ -64,7 +64,6 @@
 .bi-head { font-family: var(--display); font-size: clamp(36px, 4.6vw, 64px); font-weight: 500; line-height: 1.02; letter-spacing: -0.03em; text-wrap: balance; }
 .bi-body { display: flex; flex-direction: column; gap: 16px; padding-top: 6px; }
 .bi-body p { font-size: 15px; line-height: 1.6; color: var(--text-2); text-wrap: pretty; }
-.bi-p { position: relative; }
 .bi-ghost { opacity: 0.5; }
 
 /* ─── Logo: real light and dark grounds, whatever the app's theme ─── */
@@ -135,6 +134,10 @@
 .bt-scale__small { display: flex; flex-direction: column; gap: 22px; padding-bottom: 6px; }
 .bt-step { position: relative; display: grid; grid-template-columns: 150px minmax(0, 1fr); align-items: baseline; gap: 4px 0; padding: 14px 0; border-top: 1px solid var(--border); }
 .bt-step.is-small { grid-template-columns: minmax(0, 1fr); padding: 0; border: 0; }
+/* Editing the scale: one column, largest first, each step a row with its label and controls on the left and the sample at its size beside them */
+.brand.is-edit .bt-scale__grid { grid-template-columns: minmax(0, 1fr); gap: 0; }
+.brand.is-edit .bt-scale__small { gap: 0; padding-bottom: 0; }
+.brand.is-edit .bt-step { grid-template-columns: 300px minmax(0, 1fr); gap: 4px 24px; padding: 14px 0; border-top: 1px solid var(--border); }
 .bt-step__label { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-size: var(--fs-small); color: var(--muted); font-variant-numeric: tabular-nums; }
 .bt-step__label .be-text, .bt-step__label > span:first-child { color: var(--text-2); }
 .bt-step__sample { font-size: min(calc(var(--px) * 1px), calc(var(--px) * 0.12cqi)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-bottom: 0.08em; color: var(--text); }
@@ -177,8 +180,8 @@
 .bm-reveal span:nth-child(2) b { background: var(--accent); }
 .bm-demos.is-still * { transition: none !important; }
 .bm-curves { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 40px 56px; }
-.bm-curves__list { display: flex; flex-wrap: wrap; gap: 20px; }
-.bm-curve { position: relative; width: 196px; padding: 14px; border-radius: var(--radius-l); background: var(--surface); }
+.bm-curves__list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.bm-curve { padding: 14px; border-radius: var(--radius-l); background: var(--surface); }
 .bm-curve__name { margin-top: 10px !important; font-size: var(--fs-small); font-weight: 500; }
 .bm-curve__use { font-size: var(--fs-small); line-height: var(--lh-small); color: var(--text-2); }
 .bm-graph svg { display: block; width: 100%; height: auto; touch-action: none; overflow: visible; }
@@ -202,13 +205,12 @@
 
 /* ─── Voice and tone: the brand's lines in its own display face ─── */
 .bv-principles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px 12px; }
-.bv-card { position: relative; }
 .bv-card__face { min-height: 220px; padding: 28px; border-radius: var(--radius-l); background: var(--surface); }
 .bv-quote { font-size: clamp(24px, 2.5vw, 36px); font-weight: 500; line-height: 1.1; letter-spacing: -0.025em; text-wrap: balance; color: var(--text); }
 .bv-title { margin: 12px 0 4px; font-size: var(--fs-ui); font-weight: 500; }
 .bv-body { max-width: 30em; font-size: var(--fs-small); line-height: var(--lh-small); color: var(--text-2); }
 .bv-pairs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 40px 48px; margin-top: 64px; }
-.bv-pair { position: relative; display: flex; flex-direction: column; gap: 10px; }
+.bv-pair { display: flex; flex-direction: column; gap: 10px; }
 .bv-context { font-size: var(--fs-small); color: var(--muted); }
 .bv-do, .bv-dont { display: flex; flex-direction: column; gap: 4px; padding: 0 0 2px 14px; border-left: 2px solid var(--accent); }
 .bv-dont { border-left-color: var(--border-strong); }
@@ -220,10 +222,9 @@
 /* ─── Imagery: the traits, a few examples, what a picture never does ─── */
 .bim { display: flex; flex-direction: column; gap: 48px; }
 .bim-traits { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
-.bim-trait { position: relative; display: flex; flex-direction: column; gap: 6px; padding: 18px 20px; border-radius: var(--radius-l); background: var(--surface); }
+.bim-trait { display: flex; flex-direction: column; gap: 6px; padding: 18px 20px; border-radius: var(--radius-l); background: var(--surface); }
 .bim-trait__k { font-size: var(--fs-small); color: var(--muted); }
 .bim-trait__v { font-size: 15px; line-height: 1.5; color: var(--text); }
-.bim-trait > .be-tools { position: absolute; top: 10px; right: 10px; }
 .bim-add { align-self: center; margin-top: 0; }
 .bim-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
 .bim-head .brand-k { margin: 0; }
@@ -363,8 +364,11 @@
 
 .brand.is-edit .be-tools { opacity: 0.55; }
 :hover > .be-tools, .be-tools:focus-within, .be-tools:hover, .bt-face:hover .be-tools, .bim-trait:hover .be-tools, .bim-avoid li:hover .be-tools { opacity: 1; }
-.bi-p > .be-tools, .bv-card > .be-tools, .bv-pair > .be-tools, .bm-curve > .be-tools { position: absolute; top: 8px; right: 8px; }
-.bv-pair > .be-tools { top: -4px; right: 0; }
+/* The tools never sit on the brand's words or on a curve's handle: beside a text item in a gutter, under a card's content in a row */
+.brand.is-edit :is(.bi-p, .bv-pair) { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px 12px; align-items: start; }
+.brand.is-edit :is(.bi-p, .bv-pair) > :not(.be-tools) { grid-column: 1; }
+.brand.is-edit :is(.bi-p, .bv-pair) > .be-tools { grid-column: 2; grid-row: 1; }
+.brand.is-edit :is(.bv-card, .bm-curve, .bim-trait) > .be-tools { display: flex; margin-top: 10px; }
 .bm-durations li > .be-tools, .bt-step__more .be-tools { opacity: 0.55; }
 .bm-durations li:hover > .be-tools, .bt-step:hover .be-tools { opacity: 1; }
 /* "+ Add …": a quiet Button with the plus; the app's other edit actions are secondary Buttons */
@@ -430,11 +434,14 @@
   .bc-tile { flex-basis: calc(var(--w, 1) * 20% + 60px); }
   .bt-face { padding: 20px; }
   .bt-weights { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .bt-scale__grid, .bt-step { grid-template-columns: minmax(0, 1fr); }
+  .bt-scale__grid, .bt-step, .brand.is-edit .bt-step { grid-template-columns: minmax(0, 1fr); }
   .bm-demos, .ba-grid, .bv-principles, .bv-pairs, .bm-curves, .ba-blocks__grid, .bas-cols, .ba-fields { grid-template-columns: minmax(0, 1fr); }
   .bm-durations li { grid-template-columns: 1fr auto; }
   .bm-d__use { grid-column: 1 / -1; }
   .bim-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 720px) {
+  .bm-curves__list { grid-template-columns: minmax(0, 1fr); }
 }
 @media (prefers-reduced-motion: reduce) {
   .brand *, .brand *::before, .brand *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
