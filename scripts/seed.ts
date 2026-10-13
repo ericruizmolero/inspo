@@ -43,7 +43,7 @@ async function tables() {
     schema.member, schema.invitation, schema.inspoItem, schema.project, schema.projectItem, schema.designDoc, schema.designRevision, schema.designWhy,
     schema.pageShot, schema.captureClaim, schema.libraryTombstone, schema.storedFile,
     schema.inspoComment, schema.aiUsage, schema.activitySegment, schema.appAdmin, schema.feedbackNote, schema.extKey,
-    schema.projectSystem, schema.systemArea, schema.systemAreaRevision, schema.systemAreaComment,
+    schema.projectSystem, schema.criterioVersion, schema.criterioResult, schema.systemArea, schema.systemAreaRevision, schema.systemAreaComment,
     schema.systemShare, schema.rateLimit, schema.mcpClient, schema.mcpGrant,
     schema.polishVote, schema.failure, schema.appSetting,
   ];
