@@ -60,6 +60,8 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/api/files/[...ke
     // Outside the app the bytes come from here: a fetcher does not follow a redirect to another host, and an
     // allowlist then needs only this one. Anthropic's fetcher reads no image, so it gets the picture as a PDF
     // (lib/image-pdf.ts). Neither is cached by Vercel: the same address answers two ways, by who asks.
+    // Who reads the links taken out of the app, and what they got: a fetcher that still fails shows up here
+    if (outside) log.info("files.outside", { ref: key, ua: req.headers.get("user-agent")?.slice(0, 200), pdf: wantsPdf(req.headers.get("user-agent")) });
     if (outside && wantsPdf(req.headers.get("user-agent"))) {
       const f = await getFile(key);
       if (!f) return new Response("not found", { status: 404 });
