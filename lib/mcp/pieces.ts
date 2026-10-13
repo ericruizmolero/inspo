@@ -20,7 +20,10 @@ import { dictOf } from "../i18n";
 import { normalizeWebUrl, mediaKindOf, nameFromFile } from "../url";
 import { fetchFile } from "../remote-file";
 import { MEDIA_TYPES, MAX_MEDIA_BYTES, newMediaKey } from "../media";
-import { putFile } from "../storage";
+import { putFile, getFile, keyOf, ensureCardCopy } from "../storage";
+import { cardCopyOf } from "../board";
+import { pageShotsFor } from "../page-shots";
+import { log } from "../log";
 import { assertRoom } from "../quota";
 import { cleanText, readText, TEXT_TITLE_MAX } from "../text-refs";
 import { addAreaComment, systemActivity } from "../area-comments";
@@ -143,19 +146,41 @@ export async function listReferences(ctx: McpCtx, ref: string) {
   };
 }
 
-/** One reference, whole: what it is, what the AI read in it, what the team said on it, and a text's words */
-export async function readReference(ctx: McpCtx, id: string) {
+/** A picture handed to the client inside the tool's answer: a link to our files is one it often cannot open */
+export interface Picture { data: string; mimeType: string }
+/** A tool's answer with pictures beside it (lib/mcp/server.ts sends each as an image block) */
+export interface WithPictures { result: unknown; pictures: Picture[] }
+export const hasPictures = (out: unknown): out is WithPictures => !!out && typeof out === "object" && "pictures" in out && "result" in out;
+
+const PICTURE_TYPES = new Set(["image/png", "image/jpeg", "image/webp", "image/gif"]);
+const PICTURE_MAX = 4 * 1024 * 1024;
+
+/** The stored picture at a path, as the board's 720 px copy when there is one; null when it is not ours or not a picture */
+async function pictureAt(path: string | null | undefined): Promise<Picture | null> {
+  const card = cardCopyOf(path);
+  const cardKey = card ? keyOf(card) : null;
+  const key = cardKey && (await ensureCardCopy(cardKey).catch((err) => { log.warn("mcp.card_copy_failed", { ref: cardKey, err }); return false; })) ? cardKey : keyOf(path ?? "");
+  const f = key ? await getFile(key) : null;
+  return f && PICTURE_TYPES.has(f.contentType) && f.size <= PICTURE_MAX ? { data: f.body.toString("base64"), mimeType: f.contentType } : null;
+}
+
+/** One reference, whole: what it is, what the AI read in it, what the team said on it, a text's words, and its picture */
+export async function readReference(ctx: McpCtx, id: string): Promise<WithPictures> {
   const [row] = await db.select(ITEM_COLUMNS).from(T).where(and(eq(T.id, String(id ?? "").trim()), inArray(T.organizationId, ctx.workspaces.map((w) => w.id)))).limit(1);
   if (!row) throw new HttpError(404, `No reference with id "${id}". list_references gives the ids of a project's references.`);
   const item = rowToItem(row);
   const kind = mediaKindOf(row.web);
-  const [comments, filed, text] = await Promise.all([
+  const [comments, filed, text, shots] = await Promise.all([
     listItemComments(row.organizationId, row.id),
     db.select({ id: P.id, name: P.name }).from(PI).innerJoin(P, eq(P.id, PI.projectId)).where(and(eq(PI.organizationId, row.organizationId), eq(PI.itemId, row.id))),
     kind === "text" ? readText(row.web) : Promise.resolve(null),
+    kind === "web" && !row.thumbnailUrl ? pageShotsFor([row.web]) : Promise.resolve(null),
   ]);
+  // The picture the board shows for it: the one the team chose, the image itself, or the top of the page captured
+  const picture = await pictureAt(row.thumbnailUrl ?? (kind === "image" ? row.web : shots?.[row.web]?.topUrl))
+    .catch((err) => { log.warn("mcp.picture_failed", { ref: row.id, err }); return null; });
   const info = refInfoOf(item, tagsOfRow(row) ?? undefined, comments, dictOf(ctx.user.language));
-  return {
+  const result = {
     id: row.id, name: row.name, kind,
     ...(kind === "image" || kind === "text" ? {} : { url: row.web }),
     ...(row.source ? { source: row.source } : {}),
@@ -166,6 +191,7 @@ export async function readReference(ctx: McpCtx, id: string) {
     ...(info.said?.length ? { said: info.said.map((s) => ({ who: s.who, text: s.text })) } : {}),
     ...(text ? { text } : {}),
   };
+  return { result, pictures: picture ? [picture] : [] };
 }
 
 // ─── Writing ─────────────────────────────────────────────────────────────────

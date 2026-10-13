@@ -10,7 +10,7 @@ import { allow } from "../rate-limit";
 import type { McpCtx } from "./auth";
 import { INSTRUCTIONS, TOOLS, toolList } from "./tools";
 import { promptGet, promptList } from "./prompts";
-import { listProjects, readCriterio } from "./pieces";
+import { listProjects, readCriterio, hasPictures } from "./pieces";
 
 /** The protocol versions this server speaks, newest first. A client asking for another one is offered the newest. */
 const VERSIONS = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
@@ -48,6 +48,10 @@ async function callTool(params: Record<string, unknown> | undefined, ctx: McpCtx
   if (!input.success) return text(`The arguments are not right:\n${z.prettifyError(input.error)}`, true);
   try {
     const out = await tool.run(input.data, ctx, origin);
+    if (hasPictures(out)) {
+      const answer = text(JSON.stringify(out.result, null, 2));
+      return { content: [...answer.content, ...out.pictures.map((p) => ({ type: "image", data: p.data, mimeType: p.mimeType }))] };
+    }
     return text(typeof out === "string" ? out : JSON.stringify(out, null, 2));
   } catch (e) {
     // What the libraries refuse on purpose (not found, already there, not allowed) is for the model to read and

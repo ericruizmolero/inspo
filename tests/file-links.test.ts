@@ -3,6 +3,8 @@ import { NextRequest } from "next/server";
 import { db, pool, schema } from "@/lib/db";
 import { signedFilePath } from "@/lib/file-links";
 import { readCriterio } from "@/lib/mcp/pieces";
+import { handleRpc } from "@/lib/mcp/server";
+import sharp from "sharp";
 import { webKeyOf } from "@/lib/url";
 import { GET } from "@/app/api/files/[...key]/route";
 import { actAs, files } from "./harness";
@@ -60,4 +62,24 @@ test("criterio.md read over MCP links its uploaded image where a client with no 
     expect(res.status, `${path} loads with no session`).toBe(200);
     expect(await res.text()).toBe("upload bytes");
   }
+});
+
+test("read_reference over MCP hands the client its picture inside the answer", async () => {
+  const key = `inspo/${team.ws.id}/media/1760000000000-big.png`;
+  const png = await sharp({ create: { width: 1600, height: 900, channels: 3, background: "#c33" } }).png().toBuffer();
+  files.set(key, { body: png, contentType: "image/png" });
+  const now = new Date(), web = `/api/files/${key}`, id = `${team.tag}-big`;
+  await db.insert(schema.inspoItem).values({
+    id, organizationId: team.ws.id, name: "big", web, webKey: webKeyOf(web), date: now.toISOString().slice(0, 10),
+    author: team.user.name, createdBy: team.user.id, note: "", tagStatus: "done", createdAt: now, updatedAt: now,
+  });
+
+  const res = await handleRpc({ jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "read_reference", arguments: { id } } },
+    { user: team.user, workspaces: [team.ws], via: "Claude" }, "https://app.test");
+  const content = (res as { result: { content: { type: string; text?: string; data?: string; mimeType?: string }[] } }).result.content;
+  expect(JSON.parse(content[0].text!).id, "the reference's facts come first").toBe(id);
+  const image = content.find((c) => c.type === "image");
+  expect(image, "the picture is attached").toBeDefined();
+  const meta = await sharp(Buffer.from(image!.data!, "base64")).metadata();
+  expect(`image/${meta.format}`, "its type is the one it says").toBe(image!.mimeType);
 });

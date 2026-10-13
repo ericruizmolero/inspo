@@ -55,7 +55,7 @@ export const TOOLS: Tool[] = [
   }),
   tool({
     name: "read_reference", title: "Read a reference",
-    description: "One reference, whole: what it is, its tags, what the team said about it, the projects it is in and, for a text, its words. Takes the reference's id (from list_references).",
+    description: "One reference, whole: what it is, its tags, what the team said about it, the projects it is in, for a text its words, and its picture attached as an image (the picture itself, the one the team chose, or the top of the page). Use it to see a reference: the file links in criterio.md may not open from where you run. Takes the reference's id (from list_references).",
     input: z.object({ id: z.string().min(1).max(60).describe("The reference's id, from list_references.") }),
     annotations: { readOnlyHint: true },
     run: (i, ctx) => readReference(ctx, i.id),
