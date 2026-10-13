@@ -23,7 +23,8 @@ async function main() {
   const now = new Date();
   const orgId = newId(), userId = newId();
   await db.insert(schema.user).values({ id: userId, name: "check", email: `check-${userId}@example.invalid`, createdAt: now, updatedAt: now });
-  await db.insert(schema.billingAccount).values({ id: orgId, name: "check", ownerUserId: userId });
+  // A paid plan: the checks open two projects, and the free plan holds one (scripts/check-plan-limits.ts checks that)
+  await db.insert(schema.billingAccount).values({ id: orgId, name: "check", ownerUserId: userId, plan: "studio" });
   await db.insert(schema.organization).values({ id: orgId, name: "check", slug: `check-${orgId}`, createdAt: now, kind: "team", billingAccountId: orgId });
   try {
     // 1. setThumbnail reports success from rowCount
