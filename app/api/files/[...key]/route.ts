@@ -11,6 +11,7 @@ import { PAGES_PREFIX } from "@/lib/page-shots";
 import { SCREEN_STUDIO_PREFIX } from "@/lib/screen-studio";
 import { openFile, fileUrl, signedFileUrl, isSafeKey, ensureCardCopy } from "@/lib/storage";
 import { originalOfCard } from "@/lib/board";
+import { fileTokenValid } from "@/lib/file-links";
 import { brandPrefix } from "@/lib/brand-files";
 import { log } from "@/lib/log";
 
@@ -19,11 +20,10 @@ import { log } from "@/lib/log";
 // its members, whichever workspace the session has active: a switch (components/LibraryHost.tsx) shows the new
 // library before the server has heard of it, and its images were asked for in that gap and refused.
 // DESIGN.md images, saved posts from X and Screen Studio videos are public content, shared by everyone signed in.
+// A link signed for one key (lib/file-links.ts) reads that key with no session: criterio.md read from outside the app.
 // With R2 the answer is a redirect to a signed R2 URL: the bytes, ranges included, come from R2,
 // so a 60 MB video never runs through a function. On disk (development) the file is streamed here.
 export async function GET(req: NextRequest, ctx: RouteContext<"/api/files/[...key]">) {
-  const session = await requireCtx();
-  if (isResponse(session)) return session;
   const { key: parts } = await ctx.params;
   // Checked after the join: a segment can hold an encoded slash ("..%2F..")
   let key = parts.join("/");
@@ -31,14 +31,19 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/api/files/[...ke
   // A card copy (lib/board.ts) is seen by whoever may see its original
   const original = originalOfCard(key);
 
-  // The active workspace first: it answers nearly every request without looking further
-  const mine = [session.workspace, ...session.workspaces.filter((w) => w.id !== session.workspace.id)].map((w) => w.id);
-  const ownPrefixes = (ws: string) => [blobPrefix(ws), mediaPrefix(ws), brandPrefix(ws), videoPrefix(ws), textPrefix(ws), commentPrefix(ws), whyShotPrefix(ws)];
-  const allowed = [DESIGN_MD_PREFIX, POSTS_PREFIX, PAGES_PREFIX, SCREEN_STUDIO_PREFIX].some((p) => key.startsWith(p))
-    || mine.some((ws) => ownPrefixes(ws).some((p) => (original ?? key).startsWith(p)))
-    // A thumbnail stored under another prefix but set on an item of one of their workspaces
-    || (await ownsAnyThumbnail(mine, fileUrl(original ?? key)));
-  if (!allowed) return new Response("forbidden", { status: 403 });
+  // A link signed for this key (lib/file-links.ts) was handed to someone outside the app: it needs no session
+  if (!fileTokenValid(key, req.nextUrl.searchParams.get("t"))) {
+    const session = await requireCtx();
+    if (isResponse(session)) return session;
+    // The active workspace first: it answers nearly every request without looking further
+    const mine = [session.workspace, ...session.workspaces.filter((w) => w.id !== session.workspace.id)].map((w) => w.id);
+    const ownPrefixes = (ws: string) => [blobPrefix(ws), mediaPrefix(ws), brandPrefix(ws), videoPrefix(ws), textPrefix(ws), commentPrefix(ws), whyShotPrefix(ws)];
+    const allowed = [DESIGN_MD_PREFIX, POSTS_PREFIX, PAGES_PREFIX, SCREEN_STUDIO_PREFIX].some((p) => key.startsWith(p))
+      || mine.some((ws) => ownPrefixes(ws).some((p) => (original ?? key).startsWith(p)))
+      // A thumbnail stored under another prefix but set on an item of one of their workspaces
+      || (await ownsAnyThumbnail(mine, fileUrl(original ?? key)));
+    if (!allowed) return new Response("forbidden", { status: 403 });
+  }
 
   // Made the first time it is asked for. A picture that can't be resized is served as it is
   if (original && !(await ensureCardCopy(key).catch((err) => { log.warn("files.card_copy_failed", { ref: key, err }); return false; }))) key = original;

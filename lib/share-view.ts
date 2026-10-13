@@ -15,6 +15,7 @@ import { pageShotsFor, PAGES_PREFIX } from "./page-shots";
 import { readText } from "./text-refs";
 import { systemActivity } from "./area-comments";
 import { keyOf } from "./storage";
+import { signedFilePath } from "./file-links";
 import { dictOf, type Locale } from "./i18n";
 import { refInfoOf } from "./ref-info";
 import { blocksToMd, criterioBlocks, type CriterioBlock, type RefInfo } from "./criterio-md";
@@ -46,6 +47,8 @@ export interface ShareView {
  */
 export async function loadShareView(organizationId: string, projectId: string, mode: ShareMode, locale: Locale, base: string | null, origin: string): Promise<ShareView | null> {
   const at = (key: string) => (base === null ? `/api/files/${key}` : `${base}/f/${key}`);
+  // The file's links are read outside the app: the team's copy (MCP, the zip) carries no session, so its links are signed
+  const out = (key: string) => (base === null ? signedFilePath(key) : at(key));
   const [project] = await db.select({ name: P.name, brief: P.brief }).from(P).where(and(eq(P.organizationId, organizationId), eq(P.id, projectId))).limit(1);
   if (!project) return null;
   const rows = await db.select({ itemId: PI.itemId }).from(PI).where(and(eq(PI.organizationId, organizationId), eq(PI.projectId, projectId))).orderBy(asc(PI.createdAt));
@@ -92,9 +95,10 @@ export async function loadShareView(organizationId: string, projectId: string, m
   const texts = Object.fromEntries(await Promise.all(items.filter((i) => mediaKindOf(i.web) === "text").map(async (i) => [i.id!, await readText(i.web)] as const)));
   const infos: Record<string, RefInfo> = Object.fromEntries(items.map((i) => {
     const info = refInfoOf(i, data.tagMap[i.web], comments[i.id!], t);
-    if (mode === "full") for (const w of info.said ?? []) w.images = w.images?.map((u) => through(u) ?? u);
+    if (mode === "full") for (const w of info.said ?? []) w.images = w.images?.map((u) => { const key = keyOf(u); return key ? (keys.add(key), out(key)) : u; });
     // An image with no page to cite is cited by its file; one that has a page never needs the file
-    const web = mediaKindOf(i.web) === "image" && !i.source ? `${origin}${through(i.web)}` : i.web;
+    const own = mediaKindOf(i.web) === "image" && !i.source ? keyOf(i.web) : null;
+    const web = own ? (keys.add(own), `${origin}${out(own)}`) : i.web;
     return [i.id!, { ...info, web, ...(texts[i.id!] ? { text: texts[i.id!]! } : {}) }];
   }));
   const client = project.brief?.clientItemId ? items.find((i) => i.id === project.brief!.clientItemId) : null;
@@ -104,7 +108,7 @@ export async function loadShareView(organizationId: string, projectId: string, m
     project: project.name, system, items: infos, labels: t.system.areas as Record<SystemArea, string>, strings: t.system.md,
     client: client ? { name: client.name, web: client.web } : null, about: project.brief?.about || null, brief: project.brief,
     board: boardIds, talk: activity?.notes ?? {}, origin, skills: (system.doc?.skills ?? "").split(",").filter(Boolean), locale,
-    brand, mode, fileHref: (key) => { keys.add(key); return `${origin}${at(key)}`; }, clientCopy,
+    brand, mode, fileHref: (key) => { keys.add(key); return `${origin}${out(key)}`; }, clientCopy,
   });
   return { name: project.name, system, refs, markdown: blocksToMd(blocks), blocks, keys };
 }
