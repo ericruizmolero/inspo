@@ -10,13 +10,13 @@ No server to look after. Each part is a managed service:
 | Part | Where | Notes |
 |---|---|---|
 | App, API, Chromium | **Vercel**, functions in Frankfurt (`fra1`) | `vercel.json`. Chromium runs inside the functions (`@sparticuz/chromium`) |
-| Marketing site | **Cloudflare**, static Astro in `marketing-site/` | Root directory `marketing-site`, build `npm run build`, deploy `npx wrangler deploy` |
+| Marketing site | **Cloudflare**, static Astro in `marketing-site/` | Published by hand: `npm run deploy -w @criterio/marketing-site` (build, then `wrangler deploy` with your Cloudflare login). No git trigger |
 | Database | **Neon** Postgres, AWS Frankfurt | Connected through the Vercel integration. Point-in-time restore |
 | Files | **Cloudflare R2**, private bucket `criterio-files` | Served and uploaded through signed URLs (see [Files](#files)) |
 | Email | **Resend** | Magic links and invitations |
 | AI | **OpenRouter** (every model call, tags included), **Typesafe** (Jev: search and polish) | |
 
-- A push to `main` deploys production, part by part. The app builds only when something it serves changed (`scripts/vercel-ignore.sh`, the `ignoreCommand` in `vercel.json`): a push that touches only `marketing-site/`, `extension/` or `skills/` leaves it alone, except the Discover lists the app imports (`marketing-site/src/skills.ts`, `resources.ts`). The marketing site builds only on `marketing-site/*` (Cloudflare's build watch paths, set in the dashboard). The extension ships by hand.
+- A push to `main` deploys production, part by part. The app builds only when something it serves changed (`scripts/vercel-ignore.sh`, the `ignoreCommand` in `vercel.json`): a push that touches only `marketing-site/`, `extension/` or `skills/` leaves it alone, except the Discover lists the app imports (`marketing-site/src/skills.ts`, `resources.ts`). The marketing site and the extension ship by hand (see the table above).
 - Every pull request gets a preview URL with its own copy of the database (a Neon branch).
 - The daily cron (`/api/cron/usage-check`) is in `vercel.json`.
 
