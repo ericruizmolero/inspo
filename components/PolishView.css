@@ -70,6 +70,10 @@ html[data-distill="polish"] .polish:not([data-ghost]) .polish__sky { animation: 
 .polish .pv__text { font-size: 0.9em; }
 .polish .pv__video, .polish .pv__photos img { max-height: none; }
 .polish .pv__video, .polish .pv__photos { border-radius: 0.7em; }
+/* A post's photo or video alone on its card (PolishFace PostCard): at its own shape, edge to edge, the card's corners
+   round it; the card is what takes the pointer */
+.polish__solo .pv__video { border-radius: 0; background: #000; }
+.polish__solo img, .polish__solo iframe, .polish__solo video { pointer-events: none; }
 /* The card is what is pressed (it opens the sheet) and dragged: nothing in the post takes the pointer */
 .polish .pv a, .polish .pv iframe, .polish .pv video { pointer-events: none; }
 .polish .pv__photos img { pointer-events: none; }

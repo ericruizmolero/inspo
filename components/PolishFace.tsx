@@ -4,7 +4,7 @@ import type { InspoItem } from "@/types/inspo";
 import { mediaKindOf, postOf, postThumbKind, videoEmbedOf } from "@/lib/url";
 import type { Post } from "@/lib/posts";
 import { cachedCardImage } from "./InspoCard";
-import { PostBox } from "./PostView";
+import { Moving, PostBox, Still } from "./PostView";
 import LoopVideo from "./LoopVideo";
 import { usePost } from "./post-cache";
 import { useT } from "./I18nProvider";
@@ -31,7 +31,7 @@ export const postHasMedia = (image: string | null): image is string => !!image &
 
 /** Until the post is read, what its name already says ("Wilson · Ferndesk has been live…", lib/posts.ts postName),
  *  as a post with no picture and no date */
-function postFromName(item: InspoItem): Post {
+export function postFromName(item: InspoItem): Post {
   const at = item.name.indexOf(" · ");
   const author = at > 0 ? item.name.slice(0, at) : item.name, text = at > 0 ? item.name.slice(at + 3) : "";
   return { id: item.web, url: item.web, author, handle: postOf(item.web)?.user ?? "", avatar: null, text, createdAt: null, media: [], savedAt: "" };
@@ -39,8 +39,14 @@ function postFromName(item: InspoItem): Post {
 
 /** A post on its card: the same box its sheet shows (PostView's PostBox), read once per session (post-cache.ts).
  *  Only a card near the front asks for it; the rest show what the name says until they come round */
-function PostCard({ item, near }: { item: InspoItem; near: boolean }) {
+function PostCard({ item, near, front }: { item: InspoItem; near: boolean; front: boolean }) {
   const read = usePost(near ? item.web : null);
+  // A post with a photo, video or gif whose card picture isn't its copy yet: once read, it is that alone, as a post
+  // with media is (Face) — a video plays on the card in front, the rest show its frame (Eric, 13-10: "que solo
+  // aparezca el vídeo o la foto")
+  const media = read?.post?.media ?? [];
+  const moving = media.find((m) => m.kind !== "photo");
+  const photo = moving ? null : media[0];
   // Longer than the card's cap (CSS): it fades out at the foot, as its card on the board does
   const ref = useRef<HTMLDivElement>(null);
   const [cut, setCut] = useState(false);
@@ -53,6 +59,8 @@ function PostCard({ item, near }: { item: InspoItem; near: boolean }) {
     ro.observe(el);
     return () => ro.disconnect();
   });
+  if (moving) return <div className="polish__solo">{front ? <Moving m={moving} /> : <Still m={moving} />}</div>;
+  if (photo) return <div className="polish__solo"><img src={photo.src} alt="" draggable={false} decoding="async" referrerPolicy="no-referrer" style={{ aspectRatio: photo.w && photo.h ? `${photo.w} / ${photo.h}` : undefined }} /></div>;
   return <div ref={ref} className={`polish__post${cut ? " is-cut" : ""}`}><PostBox post={read?.post ?? postFromName(item)} playing={false} /></div>;
 }
 
@@ -63,7 +71,7 @@ export function Face({ item, image, large, text, near = true, front = false }: {
   const { t } = useT();
   const kind = mediaKindOf(item.web);
   if (kind === "text") return <div className="polish__text"><span className="polish__text-kind">{t.card.text}</span><b className="t-title-s">{item.name}</b><p className="t-small">{text}</p></div>;
-  if (kind === "post" && !postHasMedia(image)) return <PostCard item={item} near={near} />;
+  if (kind === "post" && !postHasMedia(image)) return <PostCard item={item} near={near} front={front} />;
   // A post's copy of its video or gif sits next to its frame (lib/posts.ts): poster-video.jpg → video.mp4
   const loop = kind === "post" && front && image && postThumbKind(image) ? image.replace(/poster-(video|gif)\.\w+(\?.*)?$/, "$1.mp4") : null;
   return (

@@ -51,7 +51,7 @@ export function PostBox({ post, playing = true }: { post: Post; playing?: boolea
 }
 
 /** A video or gif not playing: its frame, at its shape */
-function Still({ m }: { m: PostMedia }) {
+export function Still({ m }: { m: PostMedia }) {
   const ratio = m.w && m.h ? `${m.w} / ${m.h}` : "16 / 9";
   if (!m.poster) return <span className="pv__video" style={{ aspectRatio: ratio }} aria-hidden />;
   return <img className="pv__video" style={{ aspectRatio: ratio }} src={m.poster} alt="" referrerPolicy="no-referrer" />;
@@ -61,7 +61,7 @@ function Still({ m }: { m: PostMedia }) {
  *  silent and without controls, like a gif (Eric, 08-10: no player in the sheet either, as in Polish).
  *  X refuses its files to requests carrying another site's Referer, and <video> can't drop it on its own:
  *  X's file plays inside a tiny frame whose document sends no Referer. Our own copy plays directly. */
-function Moving({ m }: { m: PostMedia }) {
+export function Moving({ m }: { m: PostMedia }) {
   const ratio = m.w && m.h ? `${m.w} / ${m.h}` : "16 / 9";
   const poster = m.poster ? m.poster : "";
   const backup = m.backup ? m.backup : "";

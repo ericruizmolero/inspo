@@ -29,7 +29,8 @@ import { mediaKindOf } from "@/lib/url";
 import { Busy, Button, EmptyState, IconButton, Key } from "@/components/criterio";
 import type { NoteCaption } from "./InspoCard";
 import { AUTO_SPEED, ANGLE, CARD_H, EASE_OUT, EDGE_OFFSET, EDGE_SCALE, ORBIT, SCROLL_EASE, Y_SPACING, clamp, mod, nearest, paint, settleFromBoard, stillMotion, type Engine } from "./polish-tornado";
-import { Face, Picture, postHasMedia } from "./PolishFace";
+import { Face, Picture, postFromName, postHasMedia } from "./PolishFace";
+import { usePost } from "./post-cache";
 import Flyer, { FLY_MS, LAND, LANDING, bump, type Flight } from "./PolishFlyer";
 import PersonAvatar from "./PersonAvatar";
 import { useT } from "./I18nProvider";
@@ -180,6 +181,12 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
   const kind = current ? mediaKindOf(current.web) : null;
   // What the team said about it. A text reference's note is the text itself, already on the card
   const note = current && !done && mediaKindOf(current.web) !== "text" ? noteOf(current) : null;
+  // A post shown as its photo or video alone (Face): who wrote it and how it starts go under it, as a note does
+  // (Eric, 13-10: "que esté el inicio de lo que es el tuit escrito como cuando es un comentario de alguien").
+  // The card in front has read it already (post-cache.ts); until then its name says the same
+  const read = usePost(kind === "post" && current && !done ? current.web : null);
+  const shown = kind === "post" && current && !done && (postHasMedia(imageOf(current)) || !!read?.post?.media.length) ? read?.post ?? postFromName(current) : null;
+  const tweet = shown?.text.trim() ? shown : null;
   // What the team voted on the card in front. Only on a doubt gone through: there this person has already voted
   const said = reviewing && current?.id ? openVotes(votes.get(current.id)) : [];
   const voters = (choice: PolishChoice) => said.filter((v) => v.vote === choice).map((v) => members.find((m) => m.id === v.userId)).filter((m): m is NonNullable<typeof m> => !!m);
@@ -630,9 +637,15 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
       {current && !done && (
         <div className="polish__bar" style={arriving.current ? BAR_WAITS : undefined}>
           {/* A post or a text says who and what on its own card: only the rest get their name here */}
-          {(kind !== "post" && kind !== "text") || note || said.length > 0 ? (
-          <div className={`t-small polish__now${note || said.length ? " has-words" : ""}`} role="status" aria-live="polite">
+          {(kind !== "post" && kind !== "text") || tweet || note || said.length > 0 ? (
+          <div className={`t-small polish__now${tweet || note || said.length ? " has-words" : ""}`} role="status" aria-live="polite">
             {kind !== "post" && kind !== "text" && <b className="polish__name">{current.name}</b>}
+            {tweet && (
+              <p className="polish__say polish__say--note">
+                <PersonAvatar name={tweet.author} image={tweet.avatar} size={18} />
+                <span><b>{tweet.author}</b> {tweet.text.length > NOTE_MAX ? `${tweet.text.slice(0, NOTE_MAX).trimEnd()}…` : tweet.text}</span>
+              </p>
+            )}
             {note && (
               <p className="polish__say polish__say--note">
                 {note.people.length > 1
