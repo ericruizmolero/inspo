@@ -154,6 +154,8 @@ interface InspoCardProps {
   selecting?: boolean;
   /** Pick or unpick it; range: ⇧ was held, so everything from the last pick to here */
   onSelect?: (range: boolean) => void;
+  /** On a team's board: this person voted to forget it in a polish not closed yet, so it stays, faded */
+  forgotten?: boolean;
   /** On the board: the page's top as the cover, sized before it loads */
   board?: {
     /** Height/width of the media, when known (the layout already reserved it) */
@@ -194,7 +196,7 @@ export function captionFor(item: InspoItem, comments: InspoComment[] | undefined
   return { ...root, people, more: comments?.length ?? 0 };
 }
 
-export default function InspoCard({ item, tags, tagJob, score, reason, manualThumbnail: uploadedThumb, signedThumbnail, onUpload, onRemoveThumbnail, onOpen, designCover: coverSrc, designCoverFallback, designScroll: scrollSrc, designScrollFallback, commentCount = 0, caption, onComments, onDelete, onTakeOut, spaceName, projects, projectIds = [], onToggleProject, onCreateProject, backs = [], onToggleArea, areasIn, board, selected = false, selecting = false, onSelect }: InspoCardProps) {
+export default function InspoCard({ item, tags, tagJob, score, reason, manualThumbnail: uploadedThumb, signedThumbnail, onUpload, onRemoveThumbnail, onOpen, designCover: coverSrc, designCoverFallback, designScroll: scrollSrc, designScrollFallback, commentCount = 0, caption, onComments, onDelete, onTakeOut, spaceName, projects, projectIds = [], onToggleProject, onCreateProject, backs = [], onToggleArea, areasIn, board, selected = false, selecting = false, onSelect, forgotten = false }: InspoCardProps) {
   const { t } = useT();
   // An uploaded image is its own thumbnail; a video shows its frame when the provider gives one away
   const kind = mediaKindOf(item.web);
@@ -485,7 +487,7 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
   );
 
   return (
-    <div>
+    <div className={forgotten ? "tile-wrap is-forgotten" : undefined} data-tip={forgotten ? t.polish.forgotOnBoard : undefined}>
       <article
         className={`tile${board ? " tile--board" : ""}${selecting ? " is-selecting" : ""}${selected ? " is-selected" : ""}`}
         data-id={item.id}

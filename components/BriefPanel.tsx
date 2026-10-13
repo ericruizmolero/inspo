@@ -169,6 +169,7 @@ export default function BriefPanel({ brief: stored, client, onSave, onClose }: {
     const draft = brief.drafted.includes(f.key as DraftField);
     return (
       <Row key={`${f.key}:${rev[f.key as DraftField] ?? 0}`} label={s.questions[f.key]} single={SINGLE.has(f.kind)} draft={draft ? s.draft : null}
+        info={f.kind === "level" ? s.a11yInfo : undefined}
         confirm={draft ? { label: s.confirm(s.questions[f.key]), onClick: () => confirm([f.key as DraftField]) } : undefined}>
         {field(f)}
       </Row>
@@ -204,9 +205,15 @@ export default function BriefPanel({ brief: stored, client, onSave, onClose }: {
 
 /** A question and its control. One box is a label; chips are a group, where a label would press the first chip. A
  *  drafted one carries its confirm beside the question, outside the label: a button inside it would be a second control */
-function Row({ label, single, draft, confirm, children }: { label: string; single: boolean; draft: string | null; confirm?: { label: string; onClick: () => void }; children: React.ReactNode }) {
+function Row({ label, single, draft, confirm, info, children }: { label: string; single: boolean; draft: string | null; confirm?: { label: string; onClick: () => void }; info?: string; children: React.ReactNode }) {
   const id = useId();
-  const head = <span id={id} className="t-label brf__label">{label}{draft && <small className="brf__draft">{draft}</small>}</span>;
+  // The "i" says what the choices mean in the system's tooltip; never inside a label, where it would be a second control
+  const head = (
+    <span className="brf__head">
+      <span id={id} className="t-label brf__label">{label}{draft && <small className="brf__draft">{draft}</small>}</span>
+      {info && <IconButton className="brf__info" icon="info" variant="quiet" size="xs" label={info} data-tip-click="" />}
+    </span>
+  );
   const body = single
     ? <label className="brf__row">{head}{children}</label>
     : <div className="brf__row" role="group" aria-labelledby={id}>{head}{children}</div>;

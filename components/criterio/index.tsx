@@ -608,7 +608,10 @@ export function TipLayer() {
     const out = (e: PointerEvent) => { const el = target(e); if (el && !el.contains(e.relatedTarget as Node)) hide(); };
     const focus = (e: FocusEvent) => { const el = target(e); if (el && el.matches(":focus-visible")) place(el); };
     const key = (e: KeyboardEvent) => { if (e.key === "Escape") hide(); };
+    // An info "i" ([data-tip-click]) is clicked, or tapped on a phone: the click shows its tip at once (the press hid it)
+    const click = (e: MouseEvent) => { const el = target(e); if (el?.hasAttribute("data-tip-click")) { clear(); place(el); } };
     document.addEventListener("pointerover", over);
+    document.addEventListener("click", click);
     document.addEventListener("pointerout", out);
     document.addEventListener("focusin", focus);
     document.addEventListener("focusout", hide);
@@ -618,6 +621,7 @@ export function TipLayer() {
     return () => {
       clear();
       document.removeEventListener("pointerover", over);
+      document.removeEventListener("click", click);
       document.removeEventListener("pointerout", out);
       document.removeEventListener("focusin", focus);
       document.removeEventListener("focusout", hide);

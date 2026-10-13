@@ -20,7 +20,7 @@ export interface GridActions {
 }
 
 /** One card with its handlers bound. Memoised on its own data: moving the camera or another card leaves it alone. */
-const BoardCard = memo(function BoardCard({ item, level, ratio, tags, tagJob, score, reason, comments, authorImage, manualThumbnail, signedThumbnail, signedCard, designMd, signedCover, signedScroll, shot, projects, projectIds, backs, areasIn, selected, selecting, deletable, spaceName, takeOutOf, actions }: {
+const BoardCard = memo(function BoardCard({ item, level, ratio, tags, tagJob, score, reason, comments, authorImage, manualThumbnail, signedThumbnail, signedCard, designMd, signedCover, signedScroll, shot, projects, projectIds, backs, areasIn, selected, selecting, forgotten, deletable, spaceName, takeOutOf, actions }: {
   item: InspoItem; level: ShotLevel; ratio: number; tags: InspoTags | undefined; tagJob: TagStatus | undefined; score: number | undefined; reason: string | undefined;
   /** Inside a project: the areas of its system this reference backs */
   backs?: SystemArea[];
@@ -34,6 +34,8 @@ const BoardCard = memo(function BoardCard({ item, level, ratio, tags, tagJob, sc
   signedCard: string | undefined;
   projects: Project[]; projectIds: string[] | undefined;
   selected: boolean; selecting: boolean;
+  /** This person voted to forget it in the project's open polish: it waits on the board, faded, until it closes */
+  forgotten?: boolean;
   /** Whether this person may delete the card: theirs, or they manage the workspace */
   deletable: boolean;
   spaceName: string;
@@ -89,6 +91,7 @@ const BoardCard = memo(function BoardCard({ item, level, ratio, tags, tagJob, sc
       areasIn={areasIn}
       selected={selected}
       selecting={selecting}
+      forgotten={forgotten}
       onSelect={item.id ? (range) => act().select(item, range) : undefined}
       board={{ ratio, color: showsPage ? shot!.color : undefined, alternates: showsPage ? alternates : pictureAlternates, thumb: card ?? undefined, onMeasure: showsPage ? undefined : onMeasure }}
     />

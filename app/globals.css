@@ -2621,6 +2621,11 @@ body:has(.fb-dock.has-notes) .theme-float { bottom: calc(72px + env(safe-area-in
 /* A picked card: the ring fades in (colour only, nothing moves); a click while picking presses the card */
 .tile { outline: 3px solid transparent; outline-offset: 3px; }
 .tile.is-selected { outline-color: var(--text); }
+/* What this person voted to forget in a team's open polish: it stays on the board until it is closed, sunk back so
+   the board reads as what is left. Hovering brings it up enough to look at it again
+   (the card and its caption under it) */
+.tile-wrap.is-forgotten { opacity: 0.32; transition: opacity 200ms var(--ease-out); }
+.tile-wrap.is-forgotten:hover, .tile-wrap.is-forgotten:focus-within, .tile-wrap.is-forgotten:has(.tile.is-selected) { opacity: 0.8; }
 .tile.is-selecting { transition: transform 160ms var(--ease-out), outline-color 150ms ease; }
 .tile.is-selecting:active { transform: scale(0.985); }
 .tile__select svg { opacity: 0; transform: scale(0.6); }

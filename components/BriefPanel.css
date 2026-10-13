@@ -12,6 +12,8 @@
 .brf__body .cr-input[aria-invalid] { border-color: var(--danger); }
 .brf__lead { margin: 0; font-size: var(--fs-ui); line-height: var(--lh-body); color: var(--text-2); }
 .brf__row { display: flex; flex-direction: column; gap: 8px; margin: 0; }
+.brf__head { display: flex; align-items: center; gap: 4px; }
+.brf__info { margin: -4px 0; color: var(--brf-quiet); }
 .brf__label { display: flex; align-items: baseline; gap: 8px; margin: 0; color: var(--text); }
 /* The model wrote it and nobody touched it: said quietly, like "optional" in Improve with AI */
 .brf__draft { font-size: inherit; font-weight: var(--fw-regular); color: var(--brf-quiet); }

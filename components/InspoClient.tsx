@@ -508,6 +508,8 @@ export default function InspoClient({
       areasIn={item.id ? areasByItem.get(item.id) : undefined}
       selected={!!item.id && selected.has(item.id)}
       selecting={selected.size > 0}
+      // In a team's polish nothing leaves on a vote: what this person forgot waits faded until whoever manages closes it
+      forgotten={!!currentProject && !!item.id && !!polishVotes.get(item.id)?.some((v) => v.userId === user.id && !v.closedAt && v.vote === "forget")}
       // A member deletes what they saved; the server (removeInspo) has the last word
       deletable={canManage || item.addedBy === (user.name || user.email)}
       // On a project's board the bin takes the card out of the project (back to the Inbox); off it, it deletes
@@ -515,7 +517,7 @@ export default function InspoClient({
       takeOutOf={currentProject?.id}
       actions={gridActions}
     />
-  ), [workspace.name, ratioOf, tagMap, tagJobs, jevScores, reasons, commentMap, authorImages, thumbMap, signed, designMdIndex, pageShots, projects, links, currentProject, backsOf, areasByItem, selected, canManage, user]);
+  ), [workspace.name, ratioOf, tagMap, tagJobs, jevScores, reasons, commentMap, authorImages, thumbMap, signed, designMdIndex, pageShots, projects, links, currentProject, backsOf, areasByItem, selected, canManage, user, polishVotes]);
 
   // The board stays mounted under Polish and under the system, inert and hidden: coming back is instant, and the
   // cards fly from the tornado onto a board already laid out (components/view-morph.ts). The same element first in
