@@ -15,7 +15,7 @@ export interface Plan {
   key: PlanKey;
   /** Same figures in EUR and USD, without VAT. Annual = 2 months free */
   price: { month: number; year: number };
-  /** People in each workspace. null = unlimited. Personal is 1, so it can't invite */
+  /** People in each workspace. null = unlimited. Every plan is collaborative: the smallest ones are 2 */
   members: number | null;
   /** Workspaces one billing account can hold. null = unlimited */
   workspaces: number | null;
@@ -24,22 +24,24 @@ export interface Plan {
   searches: SearchAllowance;
   /** References the library holds, the sample project's left out (lib/sample-items.ts) */
   itemsMax: number | null;
+  /** Projects in each workspace, templates left out. null = unlimited */
+  projectsMax: number | null;
   /** Bytes of the workspace's own files (stored_file) */
   storageMaxBytes: number | null;
 }
 
-/** A paid plan: no cap on references or storage, and searches are fair use up to 10 times its AI actions */
+/** A paid plan: no cap on references, projects or storage, and searches are fair use up to 10 times its AI actions */
 const paid = (key: PlanKey, month: number, members: number, workspaces: number, aiActionsPerMonth: number): Plan => ({
   key, price: { month, year: month * 10 }, members, workspaces, aiActionsPerMonth,
-  searches: { kind: "fairUse", ceiling: 10 * aiActionsPerMonth }, itemsMax: null, storageMaxBytes: null,
+  searches: { kind: "fairUse", ceiling: 10 * aiActionsPerMonth }, itemsMax: null, projectsMax: null, storageMaxBytes: null,
 });
 
 export const PLANS: Plan[] = [
   {
-    key: "free", price: { month: 0, year: 0 }, members: 1, workspaces: 1, aiActionsPerMonth: 30,
-    searches: { kind: "capped", perMonth: 30 }, itemsMax: 200, storageMaxBytes: 1024 ** 3,
+    key: "free", price: { month: 0, year: 0 }, members: 2, workspaces: 1, aiActionsPerMonth: 30,
+    searches: { kind: "capped", perMonth: 30 }, itemsMax: 12, projectsMax: 1, storageMaxBytes: 1024 ** 3,
   },
-  paid("personal", 15, 1, 1, 300),
+  paid("personal", 15, 2, 1, 300),
   paid("studio", 49, 5, 1, 500),
   paid("agency", 149, 15, 10, 2000),
 ];

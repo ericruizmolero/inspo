@@ -125,6 +125,7 @@ export default async function PlanPage() {
             <Line label={t.plans.searchesThisMonth} used={q.searches.used} limit={q.searches.limit} t={t} fairUse={q.searches.fairUse} />
             <Line label={t.plans.people} used={q.members.used} limit={q.members.limit} t={t} seats />
             <Line label={t.plans.references} used={q.items.used} limit={q.items.limit} t={t} />
+            <Line label={t.plans.projects} used={q.projects.used} limit={q.projects.limit} t={t} seats />
             <Line label={t.plans.storage} used={q.storage.used} limit={q.storage.limit} t={t}
               nums={q.storage.limit === null ? t.plans.storageNoLimit(fmtGb(q.storage.used, locale)) : t.plans.storageOf(fmtGb(q.storage.used, locale), fmtGb(q.storage.limit, locale))} />
           </div>

@@ -1,4 +1,4 @@
-// Check of the free plan's room against the local database (#124): 200 references with the sample project's left
+// Check of the free plan's room against the local database (#124): 12 references with the sample project's left
 // out, 1 GB of files, an import that stops at the cap, one free workspace each, counted by the billing accounts a
 // person pays for, and searches: capped on the free plan, fair use on a paid one (#89). Creates a test workspace and two
 // people, checks with assert and deletes them when done. Files go to the local .data/files: with R2_* set it stops.
@@ -19,11 +19,13 @@ async function main() {
   const { PLANS, isPaid } = await import("../lib/plans");
   const { addItem } = await import("../lib/items");
   const { addMany } = await import("../lib/add-many");
+  const { createProject } = await import("../lib/projects");
   const { countItems, storageUsed, newTeamRefusal, assertRoom, assertQuota } = await import("../lib/quota");
   const { TEMPLATE_AUTHOR } = await import("../lib/sample-items");
   const { auth } = await import("../lib/auth");
   const { HttpError, createBillingAccount, accountOf, dropEmptyAccount } = await import("../lib/workspace-core");
   const free = PLANS.find((p) => !isPaid(p))!, paid = PLANS.find(isPaid)!;
+  const cap = free.itemsMax!;
 
   const orgs: string[] = [], users: string[] = [];
   const now = new Date();
@@ -59,37 +61,44 @@ async function main() {
     const who = { workspaceId: ws, user: { id: owner, name: "Owner", email: `${TAG}-owner@example.test` } };
 
     // 1. The sample project's references don't count, a person who signs as Criterio does
-    await db.insert(schema.inspoItem).values(items(ws, 198, 0));
-    await db.insert(schema.inspoItem).values(items(ws, 1, 198, TEMPLATE_AUTHOR));
+    await db.insert(schema.inspoItem).values(items(ws, cap - 2, 0));
+    await db.insert(schema.inspoItem).values(items(ws, 1, cap - 2, TEMPLATE_AUTHOR));
     const samples = items(ws, 5, 500, TEMPLATE_AUTHOR);
     await db.insert(schema.inspoItem).values(samples);
     const tpl = id();
     await db.insert(schema.project).values({ id: tpl, organizationId: ws, name: `${TAG} template`, template: { about: "" }, createdAt: now, updatedAt: now });
     await db.insert(schema.projectItem).values(samples.map((s) => ({ projectId: tpl, itemId: s.id, organizationId: ws, createdAt: now })));
-    assert.equal(await countItems(ws), 199, "204 rows, 5 of them the template's: 199 count");
-    console.log("✓ 199 counted: the 5 a template brought are left out, the one signed Criterio by hand is not");
+    assert.equal(await countItems(ws), cap - 1, `${cap + 4} rows, 5 of them the template's: ${cap - 1} count`);
+    console.log(`✓ ${cap - 1} counted: the 5 a template brought are left out, the one signed Criterio by hand is not`);
 
-    // 2. The 200th reference saves, the 201st is refused with the plan's message
-    const ok = await addItem(ws, { name: "200th", web: `https://${TAG}-200.invalid`, author: "Owner", createdBy: owner });
-    assert.ok(ok.id, "the 200th reference is saved");
-    const refused = await as402(addItem(ws, { name: "201st", web: `https://${TAG}-201.invalid`, author: "Owner", createdBy: owner }));
-    assert.ok(refused, "the 201st reference is refused with a 402");
-    assert.match(refused!, /200 references.*Viewing, searching and exporting still work/);
-    assert.equal(await countItems(ws), 200);
-    console.log(`✓ the 200th saves, the 201st answers 402: "${refused}"`);
+    // 2. The last reference that fits saves, the next one is refused with the plan's message
+    const ok = await addItem(ws, { name: "last", web: `https://${TAG}-last.invalid`, author: "Owner", createdBy: owner });
+    assert.ok(ok.id, `reference ${cap} is saved`);
+    const refused = await as402(addItem(ws, { name: "over", web: `https://${TAG}-over.invalid`, author: "Owner", createdBy: owner }));
+    assert.ok(refused, `reference ${cap + 1} is refused with a 402`);
+    assert.match(refused!, new RegExp(`${cap} references.*Viewing, searching and exporting still work`));
+    assert.equal(await countItems(ws), cap);
+    console.log(`✓ reference ${cap} saves, ${cap + 1} answers 402: "${refused}"`);
 
-    // 3. An import of 25 at 190 brings in 10 and says 15 stayed out
+    // 3. An import of 25 with room for 10 brings in 10 and says 15 stayed out
     await db.delete(schema.inspoItem).where(inArray(schema.inspoItem.id, [ok.id!]));
-    await db.delete(schema.inspoItem).where(inArray(schema.inspoItem.webKey, items(ws, 9, 189).map((r) => r.webKey)));
-    assert.equal(await countItems(ws), 190);
+    await db.delete(schema.inspoItem).where(inArray(schema.inspoItem.webKey, items(ws, 9, cap - 11).map((r) => r.webKey)));
+    assert.equal(await countItems(ws), cap - 10);
     const refs = Array.from({ length: 25 }, (_, i) => ({ url: `https://${TAG}-import-${i}.invalid`, title: `Imported ${i}` }));
     const run = await addMany(who, refs, { source: "check" });
     const by = (s: string) => run.results.filter((r) => r.status === s).length;
     assert.equal(by("added"), 10, "10 fit");
     assert.equal(by("full"), 15, "15 stay out");
-    assert.ok(run.full && /200 references/.test(run.full), "the import says why");
-    assert.equal(await countItems(ws), 200, "the library stops at the cap");
-    console.log(`✓ an import of 25 at 190: ${by("added")} added, ${by("full")} left out, ${await countItems(ws)} in the library`);
+    assert.ok(run.full && run.full.includes(`${cap} references`), "the import says why");
+    assert.equal(await countItems(ws), cap, "the library stops at the cap");
+    console.log(`✓ an import of 25 at ${cap - 10}: ${by("added")} added, ${by("full")} left out, ${await countItems(ws)} in the library`);
+
+    // 3b. One project: the template doesn't count, the first project opens, a second answers 402
+    const first = await createProject(ws, `${TAG} one`, owner);
+    assert.ok(first.id, "the first project opens");
+    const another = await as402(createProject(ws, `${TAG} two`, owner));
+    assert.ok(another && /one project/.test(another), "a second project is refused with a 402");
+    console.log(`✓ one project, the template left out; a second answers 402: "${another}"`);
 
     // 4. Storage: a file that would pass 1 GB is refused before it is written, one that fits is recorded, a delete frees it
     await db.insert(schema.storedFile).values({ key: `inspo/${ws}/media/${TAG}-big.bin`, organizationId: ws, bytes: free.storageMaxBytes! - 10 });

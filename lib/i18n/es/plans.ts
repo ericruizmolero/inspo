@@ -5,7 +5,8 @@ export const plans: typeof EnPlans = {
     name: "Gratis",
     tagline: "Para probarlo.",
     features: [
-      "Hasta 200 referencias y 1 GB",
+      "Tú y una persona más",
+      "1 proyecto con hasta 12 referencias",
       "Etiquetas automáticas",
       "30 acciones de IA al mes",
       "Tu primer criterio.md no gasta acciones de IA",
@@ -14,10 +15,10 @@ export const plans: typeof EnPlans = {
   },
   personal: {
     name: "Personal",
-    tagline: "Para quien diseña solo.",
+    tagline: "Para quien diseña por su cuenta.",
     features: [
-      "Solo tú, sin invitaciones",
-      "Referencias sin límite",
+      "Tú y una persona más",
+      "Proyectos y referencias sin límite",
       "300 acciones de IA al mes",
       "Búsquedas IA con uso justo",
     ],
@@ -27,7 +28,7 @@ export const plans: typeof EnPlans = {
     tagline: "Para un equipo de diseño o de producto.",
     features: [
       "Hasta 5 personas",
-      "Referencias sin límite",
+      "Proyectos y referencias sin límite",
       "500 acciones de IA al mes",
       "Búsquedas IA con uso justo",
     ],

@@ -28,7 +28,7 @@ export const ui = {
       members: (name: string): string => `Who shares the ${name} library.`,
       plan: "What this workspace can use each month, and what it has used.",
       extension: "Save the site you are looking at without opening the app.",
-      personal: "Your own space. Nobody else sees it.",
+      personal: "Your own space. Only the people you invite come in.",
     },
     profile: "Profile",
     profileHint: "Your name and photo go on everything you save and comment.",
@@ -58,7 +58,7 @@ export const ui = {
     outputLanguageAdmins: "Only the team's owner and admins can change it.",
     outputLanguagePersonalHint: "What the model writes in your personal space comes out in this language. Each team picks its own.",
     personalSpace: "Personal space",
-    personalSpaceHint: "This space is only yours. It takes your name and photo from Account.",
+    personalSpaceHint: "This space is yours, and only the people you invite come in. It takes your name and photo from Account.",
     goToAccount: "Open Account",
     leaveHint: "You stop seeing its library. An admin can invite you again.",
     spaces: "Your spaces",
@@ -1257,6 +1257,7 @@ export const ui = {
     searchesThisMonth: "AI searches this month",
     people: "People",
     references: "References",
+    projects: "Projects",
     storage: "Storage",
     storageOf: (used: string, limit: string): string => `${used} of ${limit} GB`,
     storageNoLimit: (used: string): string => `${used} GB, no limit`,
@@ -1271,7 +1272,7 @@ export const ui = {
     current: "This is your current plan",
     moveUp: "Move up",
     moveDown: "Move down",
-    foot: "There is no payment on the site yet: ask for a plan and we write back and switch it on the same day. Prices without VAT.",
+    foot: "Launch prices: during the beta, the annual plan is half price. There is no payment on the site yet: ask for a plan and we write back and switch it on the same day. Prices without VAT.",
     mailSubject: (plan: string, workspace: string): string => `criterio.design: ${plan} plan for ${workspace}`,
     aiShared: (n: number): string => `The ${n} workspaces on this plan share these AI actions and searches. People count in each one.`,
     account: {
@@ -1774,6 +1775,8 @@ export const ui = {
     movePlan: (allows: string): string => `${allows} Move up a plan in /planes to invite more.`,
     itemsFull: (limit: number, plan: string): string =>
       `The library is full: the ${plan} plan keeps ${limit} references. Viewing, searching and exporting still work. Move up a plan in /planes to save more.`,
+    projectsFull: (limit: number, plan: string): string =>
+      `The ${plan} plan has ${limit === 1 ? "one project" : `${limit} projects`} and this workspace already has ${limit === 1 ? "it" : "them"}. Move up a plan in /planes to open more.`,
     storageFull: (limit: string, plan: string): string =>
       `Storage is full: the ${plan} plan keeps ${limit} GB of files. Viewing, searching and exporting still work. Move up a plan in /planes to save more.`,
     secondTeam: "Your personal space is your free workspace, and a new team would start free too. To create one, move a workspace you own up to a paid plan in /planes.",

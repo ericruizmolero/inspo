@@ -26,7 +26,7 @@ export const ui: typeof EnUi = {
       members: (name: string): string => `Quién comparte la librería de ${name}.`,
       plan: "Lo que este espacio puede usar cada mes, y lo que ya ha usado.",
       extension: "Guarda la web que estás viendo sin abrir la app.",
-      personal: "Tu propio espacio. Nadie más lo ve.",
+      personal: "Tu propio espacio. Solo entra quien invites.",
     },
     profile: "Perfil",
     profileHint: "Tu nombre y tu foto van en todo lo que guardas y comentas.",
@@ -56,7 +56,7 @@ export const ui: typeof EnUi = {
     outputLanguageAdmins: "Solo lo cambian el propietario y los admins del equipo.",
     outputLanguagePersonalHint: "Lo que escribe el modelo en tu espacio personal sale en este idioma. Cada equipo elige el suyo.",
     personalSpace: "Espacio personal",
-    personalSpaceHint: "Este espacio es solo tuyo. Toma tu nombre y tu foto de Cuenta.",
+    personalSpaceHint: "Este espacio es tuyo y solo entra quien invites. Toma tu nombre y tu foto de Cuenta.",
     goToAccount: "Abrir Cuenta",
     leaveHint: "Dejas de ver su librería. Alguien con permisos puede volver a invitarte.",
     spaces: "Tus espacios",
@@ -1248,6 +1248,7 @@ export const ui: typeof EnUi = {
     searchesThisMonth: "Búsquedas IA este mes",
     people: "Personas",
     references: "Referencias",
+    projects: "Proyectos",
     storage: "Almacenamiento",
     storageOf: (used: string, limit: string): string => `${used} de ${limit} GB`,
     storageNoLimit: (used: string): string => `${used} GB, sin límite`,
@@ -1262,7 +1263,7 @@ export const ui: typeof EnUi = {
     current: "Es tu plan actual",
     moveUp: "Subir",
     moveDown: "Bajar",
-    foot: "Todavía no hay pago en la web: al pedir un plan te escribimos y lo activamos en el día. Precios sin IVA.",
+    foot: "Precios de lanzamiento: en la beta, el anual va a mitad de precio. Todavía no hay pago en la web: al pedir un plan te escribimos y lo activamos en el día. Precios sin IVA.",
     mailSubject: (plan: string, workspace: string): string => `criterio.design: plan ${plan} para ${workspace}`,
     aiShared: (n: number): string => `Los ${n} espacios de este plan comparten estas acciones y búsquedas de IA. Las personas cuentan en cada uno.`,
     account: {
@@ -1764,6 +1765,8 @@ export const ui: typeof EnUi = {
     movePlan: (allows: string): string => `${allows} Amplía el plan en /planes para invitar a más.`,
     itemsFull: (limit: number, plan: string): string =>
       `La biblioteca está llena: el plan ${plan} guarda ${limit} referencias. Puedes seguir viendo, buscando y exportando. Amplía el plan en /planes para guardar más.`,
+    projectsFull: (limit: number, plan: string): string =>
+      `El plan ${plan} tiene ${limit === 1 ? "un proyecto" : `${limit} proyectos`} y este espacio ya ${limit === 1 ? "lo tiene" : "los tiene"}. Amplía el plan en /planes para abrir más.`,
     storageFull: (limit: string, plan: string): string =>
       `El almacenamiento está lleno: el plan ${plan} guarda ${limit} GB de archivos. Puedes seguir viendo, buscando y exportando. Amplía el plan en /planes para guardar más.`,
     secondTeam: "Tu espacio personal es tu workspace gratis, y un equipo nuevo también empezaría gratis. Para crearlo, pasa a un plan de pago un workspace que sea tuyo en /planes.",

@@ -70,9 +70,9 @@ async function main() {
   assert.equal(await overCapacity(orgId, "studio"), null, "5 people fit in Studio");
   await setAccountPlan(orgId, "free");
   const over = await overCapacity(orgId, "free");
-  assert.deepEqual(over, { members: 5, limit: 1, plan: "free" }, "5 people don't fit in Free");
+  assert.deepEqual(over, { members: 5, limit: 2, plan: "free" }, "5 people don't fit in Free");
   await assertQuota({ id: orgId, plan: "free", billingAccountId: orgId }, "ai");
-  assert.match((await memberLimitMessage(orgId, "free", { includePending: true }))!, /allows 1 person/, "a new invitation is refused");
+  assert.match((await memberLimitMessage(orgId, "free", { includePending: true }))!, /allows 2 people/, "a new invitation is refused");
 
   // 5. When two accept the last seat at once, the one left over is always the later one, never both
   const ordered = await db.select({ id: schema.member.id, createdAt: schema.member.createdAt })

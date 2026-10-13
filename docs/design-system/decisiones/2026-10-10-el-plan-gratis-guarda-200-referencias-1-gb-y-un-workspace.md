@@ -17,3 +17,5 @@ kind: producto
 **Por qué.** Es lo que pide #124 para que el precio no se escape por workspaces. Se cuentan "referencias" y no "elementos" porque así las llama la app en los dos idiomas.
 
 **Cómo aplicarlo.** Un camino nuevo que crea referencias pasa por `addItem`, que ya comprueba el sitio; si antes hace trabajo caro (leer una web, copiar un archivo), llama antes a `assertRoom(ws, { items: 1 })`. Un archivo nuevo de un workspace se guarda con `putFile(key, body, type, organizationId)`; una caché compartida, sin dueño. Una subida firmada se apunta con `recordFile` al dar la dirección. Las cifras tocan el precio: cambiarlas es cosa de los socios.
+
+Desde el 13-10 las cifras son 1 proyecto y 12 referencias: [todos los planes invitan](2026-10-13-todos-los-planes-invitan-y-el-gratis-es-un-proyecto-de-12-referencias.md).

@@ -35,39 +35,40 @@ assert.equal(systemPassRef("p1", { auto: false, countedBefore: false }), `${FIRS
 assert.equal(systemPassRef("p1", { auto: false, countedBefore: true }), "project:p1", "the second pass counts");
 assert.equal(systemPassRef("p1", { auto: true, countedBefore: false }), `${AUTO_REF}project:p1`, "a re-read is automatic, not the first");
 assert.ok(!FIRST_REF.startsWith(AUTO_REF) && !AUTO_REF.startsWith(FIRST_REF), "the two markers never read as each other");
-// The free plan is the one nobody pays for, whatever its key: 200 references and 1 GB. The paid ones have no cap
+// The free plan is the one nobody pays for, whatever its key: 1 project, 12 references and 1 GB. The paid ones have no cap
 const free = PLANS.find((p) => !isPaid(p))!;
-assert.equal(free.itemsMax, 200);
+assert.equal(free.itemsMax, 12);
+assert.equal(free.projectsMax, 1);
 assert.equal(free.storageMaxBytes, GB);
-assert.ok(PLANS.filter(isPaid).every((p) => p.itemsMax === null && p.storageMaxBytes === null), "paid plans keep no cap");
+assert.ok(PLANS.filter(isPaid).every((p) => p.itemsMax === null && p.projectsMax === null && p.storageMaxBytes === null), "paid plans keep no cap");
 
 // Room: what is left, and what runs out first
-const at199 = roomLeft(free, { items: 199, bytes: 0 });
-assert.deepEqual(at199, { items: 1, bytes: GB });
-assert.equal(whatIsFull(at199, { items: 1 }), null, "the 200th reference fits");
-const at200 = roomLeft(free, { items: 200, bytes: 0 });
-assert.equal(whatIsFull(at200, { items: 1 }), "items", "the 201st does not");
+const at11 = roomLeft(free, { items: 11, bytes: 0 });
+assert.deepEqual(at11, { items: 1, bytes: GB });
+assert.equal(whatIsFull(at11, { items: 1 }), null, "the 12th reference fits");
+const at12 = roomLeft(free, { items: 12, bytes: 0 });
+assert.equal(whatIsFull(at12, { items: 1 }), "items", "the 13th does not");
 assert.equal(whatIsFull(roomLeft(free, { items: 250, bytes: 0 }), { items: 1 }), "items", "past the cap (after a downgrade) is full, never negative room");
 assert.equal(roomLeft(free, { items: 250, bytes: 0 }).items, 0);
 assert.equal(whatIsFull(roomLeft(free, { items: 10, bytes: GB - 100 }), { bytes: 100 }), null, "a file that fills it exactly fits");
 assert.equal(whatIsFull(roomLeft(free, { items: 10, bytes: GB - 100 }), { bytes: 101 }), "storage");
-assert.equal(whatIsFull(roomLeft(free, { items: 200, bytes: GB }), {}), null, "asking for nothing never fails: viewing, searching, exporting");
-assert.equal(whatIsFull(roomLeft(free, { items: 200, bytes: 0 }), { items: 1, bytes: 1 }), "items", "references are named before storage");
+assert.equal(whatIsFull(roomLeft(free, { items: 12, bytes: GB }), {}), null, "asking for nothing never fails: viewing, searching, exporting");
+assert.equal(whatIsFull(roomLeft(free, { items: 12, bytes: 0 }), { items: 1, bytes: 1 }), "items", "references are named before storage");
 const paid = PLANS.find(isPaid)!;
 
-// The paid plans (#89): a year is 10 months, searches are fair use up to 10 times the AI actions, Personal can't invite
+// The paid plans (#89): a year is 10 months, searches are fair use up to 10 times the AI actions, every plan invites
 assert.deepEqual(PLANS.map((p) => p.key), ["free", "personal", "studio", "agency"]);
 assert.deepEqual(free.searches, { kind: "capped", perMonth: 30 });
 for (const p of PLANS.filter(isPaid)) {
   assert.equal(p.price.year, p.price.month * 10, `${p.key}: 2 months free`);
   assert.deepEqual(p.searches, { kind: "fairUse", ceiling: 10 * p.aiActionsPerMonth! }, `${p.key}: fair use`);
 }
-assert.equal(PLANS.find((p) => p.key === "personal")!.members, 1, "Personal is one person: no invitations");
+assert.ok(PLANS.every((p) => p.members === null || p.members >= 2), "every plan is collaborative: two people at least");
 assert.equal(whatIsFull(roomLeft(paid, { items: 1e6, bytes: 1e13 }), { items: 1, bytes: GB }), null, "a paid plan never fills");
 
 // The room an import shares out among its references (addMany; check:limits runs one against the database)
-assert.equal(roomLeft(free, { items: 190, bytes: 0 }).items, 10, "an import of 25 at 190 brings in 10");
-assert.equal(roomLeft(free, { items: 0, bytes: 0 }).items, 200);
+assert.equal(roomLeft(free, { items: 2, bytes: 0 }).items, 10, "an import of 25 at 2 brings in 10");
+assert.equal(roomLeft(free, { items: 0, bytes: 0 }).items, 12);
 assert.equal(roomLeft(paid, { items: 5000, bytes: 0 }).items, null, "a paid plan shares out no room: all of it comes in");
 
 // Gigabytes in the person's language: "0,4 de 1 GB"

@@ -12,6 +12,7 @@ import { copySystem, getSystem } from "./system/areas";
 import { saveBrief } from "./brief";
 import { ensureBuiltinTemplates } from "./template-seed";
 import { keyOf } from "./storage";
+import { assertProjectRoom } from "./quota";
 import type { Project } from "@/types/inspo";
 import { RECIPE_MAX, type ProjectTemplate, type TemplateCard } from "@/types/system";
 
@@ -53,6 +54,7 @@ export async function useTemplate(organizationId: string, templateId: string, na
   const [tpl] = await db.select({ id: P.id, template: P.template, recipe: P.recipe }).from(P)
     .where(and(eq(P.organizationId, organizationId), eq(P.id, templateId), isNotNull(P.template))).limit(1);
   if (!tpl) throw new HttpError(404, (await getErrors()).projectNotFound);
+  await assertProjectRoom(organizationId);
   const now = new Date();
   const id = newId();
   const n = await freeName(organizationId, await cleanName(name));

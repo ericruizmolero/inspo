@@ -7,6 +7,7 @@ import { getErrors } from "./i18n";
 import { HttpError, newId } from "./workspace-core";
 import type { Project, ProjectLinks } from "@/types/inspo";
 import { deleteProjectBrandFiles, projectBrandPrefix } from "./brand-files";
+import { assertProjectRoom } from "./quota";
 
 const P = schema.project;
 const PI = schema.projectItem;
@@ -35,6 +36,7 @@ export async function loadProjects(organizationId: string): Promise<{ projects: 
 }
 
 export async function createProject(organizationId: string, name: string, userId: string): Promise<Project> {
+  await assertProjectRoom(organizationId);
   const now = new Date();
   const row = { id: newId(), organizationId, name: await cleanName(name), createdBy: userId, createdAt: now, updatedAt: now };
   await db.insert(P).values(row);

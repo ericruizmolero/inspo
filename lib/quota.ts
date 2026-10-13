@@ -28,6 +28,8 @@ export interface QuotaStatus {
   members: QuotaLine;
   /** References in the library, the sample project's left out */
   items: QuotaLine;
+  /** Projects in the workspace, templates left out */
+  projects: QuotaLine;
   /** Bytes of the workspace's own files */
   storage: QuotaLine;
   /** Workspaces the billing account pays for */
@@ -141,9 +143,9 @@ type QuotaWorkspace = Pick<Workspace, "id" | "plan" | "billingAccountId">;
 
 export async function quotaStatus(ws: QuotaWorkspace): Promise<QuotaStatus> {
   const plan: Plan = planOf(ws.plan);
-  const [ai, searches, members, workspaces, pendingInvites, items, bytes] = await Promise.all([
+  const [ai, searches, members, workspaces, pendingInvites, items, bytes, projects] = await Promise.all([
     countAction(ws.billingAccountId, "ai"), countAction(ws.billingAccountId, "jev_search"), countMembers(ws.id),
-    countWorkspaces(ws.billingAccountId), countPendingInvitations(ws.id), countItems(ws.id), storageUsed(ws.id),
+    countWorkspaces(ws.billingAccountId), countPendingInvitations(ws.id), countItems(ws.id), storageUsed(ws.id), countProjects(ws.id),
   ]);
   return {
     plan: plan.key, resetsAt: nextMonth().toISOString(),
@@ -153,6 +155,7 @@ export async function quotaStatus(ws: QuotaWorkspace): Promise<QuotaStatus> {
       : { used: searches, limit: plan.searches.ceiling, fairUse: true },
     members: { used: members, limit: plan.members },
     items: { used: items, limit: plan.itemsMax },
+    projects: { used: projects, limit: plan.projectsMax },
     storage: { used: bytes, limit: plan.storageMaxBytes },
     workspaces: { used: workspaces, limit: plan.workspaces },
     pendingInvites,
@@ -164,6 +167,24 @@ export async function countItems(organizationId: string): Promise<number> {
   const T = schema.inspoItem;
   const [r] = await db.select({ n: sql<number>`count(*)` }).from(T).where(and(eq(T.organizationId, organizationId), not(isSampleItem())));
   return Number(r?.n ?? 0);
+}
+
+/** Projects the plan counts: the workspace's own, templates left out (they carry `template`) */
+export async function countProjects(organizationId: string): Promise<number> {
+  const P = schema.project;
+  const [r] = await db.select({ n: sql<number>`count(*)` }).from(P).where(and(eq(P.organizationId, organizationId), isNull(P.template)));
+  return Number(r?.n ?? 0);
+}
+
+/**
+ * Throws HttpError(402) when the workspace already has as many projects as its plan allows. A workspace left over
+ * the limit by a downgrade keeps every project: only opening another one is refused.
+ */
+export async function assertProjectRoom(organizationId: string): Promise<void> {
+  const plan = planOf(await planIn(organizationId));
+  if (plan.projectsMax === null || (await countProjects(organizationId)) < plan.projectsMax) return;
+  const { t } = await getT();
+  throw new HttpError(402, t.quota.projectsFull(plan.projectsMax, t.plans.items[plan.key].name));
 }
 
 /** Bytes the workspace's files take. `except` leaves one key out: the file about to be written over */
