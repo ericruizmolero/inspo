@@ -16,6 +16,8 @@ import { brandTokenLines, brandIntroLines, brandCssLines, type BrandMdStrings } 
 import type { BrandSpec } from "@/types/brand";
 import { readBrief, type KeepPart, type Platform, type PriceRange } from "@/types/brief";
 import type { RefMeasured } from "@/lib/ref-measured";
+import type { RefComposition } from "@/types/inspo";
+import { compositionPatterns, isPage, type CompositionPattern } from "@/lib/composition-core";
 
 /** A reference as the file tells it: what it is, who brought it and what the team said about it */
 export interface RefInfo {
@@ -36,6 +38,8 @@ export interface RefInfo {
   said?: { who: string; text: string; /** The pictures attached to the comment: what its words point at */ images?: string[] }[];
   /** What its DESIGN.md and its saved palette measured */
   measured?: RefMeasured;
+  /** How its page is built (lib/composition.ts), when it reads as a page */
+  composition?: RefComposition;
 }
 /** A line of an area's conversation; `label` is the option it points at, `itemId` the reference */
 export interface TalkLine { who: string; text: string; label?: string; itemId?: string; /** The change it proposes, and whether the team took it */ proposal?: { decision: string; state: "open" | "accepted" | "rejected"; /** The AI client it came from over MCP, when it was not written in the app */ via?: string; /** Why the team said no, when it did */ reason?: string } }
@@ -88,6 +92,8 @@ export interface CriterioMdInput {
     use: { heading: string; lines: (k: UseMdKeys) => string[] };
     clientCopy: string;
     measured: { label: string; themes: Record<"light" | "dark", string>; density: string; colors: string; families: string; radius: string; pixels: string };
+    /** The page structures the board repeats (lib/composition-core.ts), under layout, and each reference's build */
+    composition: { repeats: string; build: string; describe: (p: CompositionPattern) => string; of: (n: number, of: number) => string };
   };
 }
 
@@ -251,6 +257,14 @@ export function criterioBlocks({ project, system, items: allItems, labels, strin
   // The brand in its own words: its statement and what it is, as the presentation opens with them
   const introLines = brand ? brandIntroLines(brand) : [];
   if (introLines.length) blocks.push({ kind: "section", id: "brand-intro", heading: title("brand-intro", strings.brand.intro), ...byHandOr("brand-intro", introLines) });
+  // The structures the team keeps saving, counted by the app: a fact about the board whatever layout decides
+  const at = (id: string) => (code.has(id) ? board.indexOf(id) : Infinity);
+  const repeated = compositionPatterns(board.filter((id) => items[id] && items[id].kind !== "text").map((id) => ({ id, composition: items[id].composition })))
+    .filter((p) => !p.ordinary)
+    .map((p) => {
+      const ids = [...p.refs].sort((x, y) => at(x) - at(y));
+      return { line: `- **${strings.composition.repeats}:** ${strings.composition.describe(p)}. ${strings.composition.of(p.refs.length, p.of)} (${ids.map((id) => code.get(id)).filter(Boolean).join(", ")})`, refs: ids.map((id) => `  - ${cite(id)}`) };
+    });
   for (const key of SYSTEM_AREAS) {
     const a = system.areas.find((x) => x.area === key);
     const base = { kind: "area" as const, area: key, heading: title(key, labels[key]), whyLabel: strings.why, neverLabel: strings.never, openText: strings.open, evidenceLabel: strings.evidence, never: a?.never ?? "" };
@@ -282,12 +296,12 @@ export function criterioBlocks({ project, system, items: allItems, labels, strin
     const byHand = doc[`meta:${key}`];
     const tokens = brand ? brandTokenLines(key, brand, strings.brand, { href, cite: (id) => cite(id) }) : [];
     // Codes in the line, so an agent reading the file finds them under References; only references the file knows
-    const support = a?.decision ? a.support.map((x) => {
-      const at = (id: string) => (code.has(id) ? board.indexOf(id) : Infinity);
+    const signalled = a?.decision ? a.support.map((x) => {
       const ids = x.itemIds.filter((id) => items[id]).sort((p, q) => at(p) - at(q));
       const codes = ids.map((id) => code.get(id)).filter(Boolean);
       return { line: `- **${strings.support}:** ${strings.supportOf(strings.signals[x.signal] ?? x.signal, x.itemIds.length, x.of)}${codes.length ? ` (${codes.join(", ")})` : ""}`, refs: ids.map((id) => `  - ${cite(id)}`) };
     }) : [];
+    const support = key === "layout" ? [...repeated, ...signalled] : signalled;
     // The values' first title is marked required; the imagery's examples are references, so they never are
     const valuesAt = tokens.findIndex((l) => /^\*\*[^*]+\*\*$/.test(l) && l !== `**${strings.brand.examples}**`);
     const marks = { required: strings.required, guidance: strings.guidance, valuesAt };
@@ -305,6 +319,7 @@ export function criterioBlocks({ project, system, items: allItems, labels, strin
     const where = kind === "image" && !it.source ? strings.kinds.image.toLowerCase() : readableDomain(abs(at).replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "")).slice(0, 60);
     out.push(`- **${strings.kinds[kind]}:** [${where}](${abs(at)})`);
     if (it.what) out.push(`- **${strings.what}:** ${one(it.what)}`);
+    if (isPage(it.composition) && it.composition.sketch) out.push(`- **${strings.composition.build}:** ${one(it.composition.sketch)}`);
     if (it.by) out.push(`- **${byLabel}:** ${it.by}${it.date ? ` · ${it.date}` : ""}`);
     if (it.said?.length) {
       out.push(`- **${strings.said}:**`);

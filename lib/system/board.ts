@@ -5,7 +5,7 @@ import { db, schema } from "../db";
 import { PROMPTS } from "../prompts";
 import { summarize } from "../jev";
 import { SIGNAL_AREA, TAXONOMY_VERSION } from "../taxonomy";
-import type { InspoColor, InspoTags } from "@/types/inspo";
+import type { InspoColor, InspoTags, RefComposition } from "@/types/inspo";
 import { rowToItem } from "../items";
 import { mediaKindOf } from "../url";
 import { getDesignMd, designDocsFor } from "../design-store";
@@ -17,6 +17,7 @@ import type { Brief } from "@/types/brief";
 import { projectGuides, type GuideCut } from "../brand-guides";
 import { areaMemory, type AreaMemory } from "../area-comments";
 import { getSystem, projectRow } from "./areas";
+import { compositionPatterns, isPage, type CompositionPattern } from "../composition-core";
 
 const P = schema.project;
 const PI = schema.projectItem;
@@ -53,6 +54,8 @@ interface BoardRef {
   ref: Record<string, unknown>;
   /** The tagger's signals on it, by area (v5 tags); empty before */
   signals: Partial<Record<SystemArea, string[]>>;
+  /** How its page is built (lib/composition.ts), when it was read */
+  composition?: RefComposition;
 }
 
 /** How many references of the board show each signal, by area, most shown first: what a decision's confidence
@@ -139,9 +142,13 @@ export async function loadBoard(organizationId: string, projectId: string): Prom
     const base = summarize(item, row.tagsJson ?? undefined);
     const tags = row.tagsJson && row.tagsJson.v >= TAXONOMY_VERSION ? row.tagsJson : null;
     const v5 = tags ? signalsOf(tags, spec) : null;
+    const composition = row.tagsJson?.composition;
+    // How it is built, in the model's words and keys: only for a reference that reads as a page
+    const build = isPage(composition) ? { structure: composition.structure, side_share: composition.share || undefined, fixed: composition.fixed, nav: composition.nav, sketch: composition.sketch } : undefined;
     return {
       code,
       itemId: row.id,
+      composition,
       signals: Object.fromEntries(Object.entries(tags?.areas ?? {}).map(([area, a]) => [area, a!.signals])),
       words: [base.curator_notes ?? "", ...comments, ...pointed.map((p) => p.quote)],
       // A pasted text is the project's content: the model gets its title and first lines, nothing to read a look from
@@ -155,11 +162,13 @@ export async function loadBoard(organizationId: string, projectId: string): Prom
         team_pointed_at: pointed.length ? pointed : undefined,
         signals: v5.signals,
         measured: v5.measured,
+        build,
       } : {
         id: code, kind: mediaKindOf(row.web), ...base,
         team_comments: comments.length ? comments : undefined, team_comments_omitted: omitted,
         team_pointed_at: pointed.length ? pointed : undefined,
         measured: measuredSummary(spec, row.tagsJson?.colors),
+        build,
       },
     };
   });
@@ -194,6 +203,8 @@ export interface SystemSnapshot {
   guidesCut?: GuideCut;
   /** The board's signals counted (signalTally); missing on a board frozen before v5 tags */
   signals?: SignalTally;
+  /** The page structures that repeat across the board, by board code (lib/composition-core.ts); missing before they were read */
+  compositions?: CompositionPattern[];
 }
 
 /** The system pass's input as the database has it now */
@@ -218,6 +229,7 @@ export async function loadSnapshot(organizationId: string, projectId: string): P
     guides: guides.texts,
     ...(guides.cut ? { guidesCut: guides.cut } : {}),
     signals: signalTally(refs),
+    compositions: compositionPatterns(refs.map((r) => ({ id: r.code, composition: r.composition }))),
   };
   return { snapshot, refs, stamp, current };
 }

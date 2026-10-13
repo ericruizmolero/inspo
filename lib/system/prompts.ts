@@ -24,6 +24,7 @@ References the team saved for this project: websites, images, posts. Each comes 
 - The team's words say WHY a reference is here: that is where a decision starts. The measured values say WHAT it does: use them to make a decision concrete (families, weights, palette logic, easing, grid), never to invent a direction nobody asked for.
 - hex and families in "measured" are real values: a decision that uses one cites it literally, as given. Never round a hex or rename a family.
 - "team_comments" are the latest ones; "team_comments_omitted" counts the older ones left out.
+- "build" says how a reference is laid out as a page: its structure, the side column's share of the width, what stays put while the rest scrolls, where the navigation sits, and a sentence of what sits where.
 - Ids: use them exactly as given, never invent one.`;
 
 const CLIENT_SITE = `- A reference marked "client_site" is the client's own current website: this project is a REDESIGN of it. Its copy (headline, closing, positioning lines), its typefaces (as its stylesheets name them), its logo and its figures are the source of truth. Carry them literally into typography, logo and voice, never propose others for those, and never invent figures or dates. The rest of the board is inspiration for everything else.`;
@@ -67,6 +68,7 @@ ${DECISION}
 ${MEMORY}
 - An area the board says nothing about stays EMPTY: decision "", confidence 0, no evidence. Never fill an area from general taste. Empty areas are useful: they show the team what is still open.
 - Be faithful to what the team brought. The board speaks to an area only when: the team's words (a note, a comment, what they pointed at) are about it; a reference was filed under it ("filed_by_team"); or a reference is that area's own material (a type specimen or a foundry for typography, a palette for color, a logo for logo, an animation or a clip of an interaction for motion, an icon set for iconography, a photo or an illustration for imagery, pasted copy for voice). A website saved without words decides no area on its own: its measured brief only makes concrete an area something above already opened. Two saved websites are not eight decided areas.
+- One exception, for layout only: a structure in PAGE STRUCTURES THE BOARD REPEATS is the team choosing the same page again and again, and that opens layout by itself. Its decision describes that structure literally, as a developer would lay it out: the columns and their share of the width, what stays put and what scrolls, where the navigation sits, what the first screen leads with, taken from the "build" of the references that show it. Never soften it into "a clean grid" or "generous whitespace". Its evidence is those references, its confidence follows how many share it. When two structures repeat, decide the one most references share and name the other as the alternative for a different kind of page.
 - "why" is the criterio behind the decision: why this and not the rest, in 1 or 2 sentences (at most 40 words), rooted in the brief and the team's words. Empty when the area is empty.
 ${SIGNALS_RULE}
 ${EVIDENCE(20)}

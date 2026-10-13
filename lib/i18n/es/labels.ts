@@ -45,5 +45,6 @@ export const labels: typeof EnLabels = {
     embed: "Búsqueda por significado",
     system: "Sistemas construidos",
     brand: "Valores de marca",
+    composition: "Composiciones leídas",
   },
 };

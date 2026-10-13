@@ -64,6 +64,26 @@ export interface InspoMeta {
 
 export interface AreaSignals { signals: string[]; evidence: string }
 
+/** How a reference's page is built, from the closed vocabulary of lib/composition-core.ts */
+export interface RefComposition {
+  /** PAGE_KINDS key */
+  page: string;
+  /** STRUCTURES key */
+  structure: string;
+  /** The narrower column's share of the width, 0 to 50 (0 when there is none) */
+  share: number;
+  /** FIXED key */
+  fixed: string;
+  /** NAV key */
+  nav: string;
+  /** OPENING key */
+  opening: string;
+  /** The page's build in one plain English sentence: what sits where, what stays and what scrolls */
+  sketch: string;
+  /** COMPOSITION_VERSION it was read with */
+  v: number;
+}
+
 export interface InspoTags {
   /** Sector (a SECTORS key) */
   sector: string;
@@ -101,6 +121,9 @@ export interface InspoTags {
   areas?: Partial<Record<SystemArea, AreaSignals>>;
   /** v5: the families the page's CSS names, cleaned (lib/font-names.ts) */
   fonts?: string[];
+  /** How its page is built (lib/composition.ts), read for the references of a project; kept across a retag only
+   *  when the tags are copied, otherwise read again */
+  composition?: RefComposition;
   /** The workspace's own edits (inspo_item.tags_user), attached when the item is loaded */
   user?: UserTags;
   /** ISO date of when it was tagged */

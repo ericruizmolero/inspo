@@ -220,6 +220,13 @@ export async function inputsOf(web: string, { capture = true } = {}): Promise<Ta
   return { image: image ? await forModel(image).catch(() => null) : null, site: words };
 }
 
+/** The picture the model would look at, from what is stored only (no browser, no fetch of the page), sized for the
+ *  model; null when there is none. For the readings that come after the tags (lib/composition.ts) */
+export async function storedPicture(web: string): Promise<Buffer | null> {
+  const image = await imageOf(web, false).catch(() => null);
+  return image ? forModel(image).catch(() => null) : null;
+}
+
 /** One model call over prepared inputs. Returns the tags and the call's bill. */
 export async function tagWith(item: InspoItem, { image, site }: TagInputs, over: Partial<Pick<LlmInput, "model" | "fallback">> = {}): Promise<{ tags: InspoTags } & LlmResult> {
   const [colours, res] = await Promise.all([

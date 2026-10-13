@@ -18,6 +18,8 @@ import { log } from "../log";
 import { ensureHead, getSystem, writeArea, type AreaWrite } from "./areas";
 import { loadSnapshot, supportOf, type SignalTally, type SystemSnapshot } from "./board";
 import { SYSTEM } from "./prompts";
+import { ensureCompositions } from "../composition";
+import type { CompositionPattern } from "../composition-core";
 
 const S = schema.projectSystem;
 const A = schema.systemArea;
@@ -65,6 +67,13 @@ function tallyForModel(t: SignalTally | undefined): string | null {
   return rows.length ? `SIGNALS ACROSS THE BOARD: per area, how many of the ${t!.of} references show each signal\n${rows.join("\n")}` : null;
 }
 
+/** The structures the board repeats, as the model reads them: each with its references and what most of them share */
+function compositionsForModel(patterns: CompositionPattern[] | undefined): string | null {
+  if (!patterns?.length) return null;
+  const rows = patterns.map((p) => `- ${p.structure} in ${p.refs.length} of ${p.of} (${p.refs.join(", ")})${p.share ? `, side column about ${p.share}% of the width` : ""}${p.fixed ? `, fixed: ${p.fixed}` : ""}${p.nav ? `, nav: ${p.nav}` : ""}${p.opening ? `, opens with: ${p.opening}` : ""}${p.ordinary ? " (how most websites are built: it opens nothing on its own)" : ""}`);
+  return `PAGE STRUCTURES THE BOARD REPEATS: of the references that read as a page, how many share each structure (each reference's "build" says how it is laid out)\n${rows.join("\n")}`;
+}
+
 /** The system pass as one model call */
 export function systemRequest(s: SystemSnapshot, o: { language?: OutputLanguage; focus?: SystemFocus } = {}): LlmInput & { schema: typeof SystemOutSchema } {
   const text = [
@@ -74,6 +83,7 @@ export function systemRequest(s: SystemSnapshot, o: { language?: OutputLanguage;
     `References on the board (JSON): ${JSON.stringify(s.refs)}`,
     s.omitted ? `${s.omitted} references on the board were left out of this reading; what you see is not everything the team saved.` : null,
     tallyForModel(s.signals),
+    compositionsForModel(s.compositions),
     s.guides.length ? `GUIDE: brand guidelines the team brought in, verbatim. They are the brand's own word, as strong as the client's site: decisions follow their explicit rules and values unless the team's own words on the board say otherwise. Cite no reference for what only the guide says.\n${s.guides.map((g) => `<<<\n${g}\n>>>`).join("\n")}` : null,
     s.guides.length ? guideCutLine(s.guidesCut) : null,
     focusForModel(o.focus, s.standing.filter((a) => a.status === "team").map((a) => a.area)),
@@ -98,6 +108,8 @@ export async function passBusy(): Promise<never> {
 export async function runSystem(input: { organizationId: string; projectId: string; usage: UsageCtx; language?: OutputLanguage; focus?: SystemFocus; /** The client calls this pass automatic; autoSystemPass decides whether it counts */ auto?: boolean }): Promise<ProjectSystem> {
   const key = `system:${input.organizationId}|${input.projectId}`;
   return (await once(key, PASS_CLAIM, async () => {
+    // How each reference is built, read once: the structures the team keeps saving reach the pass counted
+    await ensureCompositions(input.organizationId, input.projectId, input.usage).catch((err) => log.warn("composition.ensure_failed", { ref: input.projectId, err }));
     const { snapshot, refs, stamp, current } = await loadSnapshot(input.organizationId, input.projectId);
     if (!refs.length && !snapshot.guides.length) throw new HttpError(400, (await getErrors()).systemEmptyBoard);
     const asked = !!input.auto && !input.focus;

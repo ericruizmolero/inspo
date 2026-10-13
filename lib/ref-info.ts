@@ -5,6 +5,7 @@ import type { Dict } from "@/lib/i18n/en";
 import type { RefInfo } from "./criterio-md";
 import { TAGS, TAG_THRESHOLD } from "./taxonomy";
 import { mediaKindOf } from "./url";
+import { isPage } from "./composition-core";
 
 /** The item's day (it travels as d/m/yyyy) as YYYY-MM-DD */
 function dayOf(date: string): string | undefined {
@@ -30,5 +31,6 @@ export function refInfoOf(item: InspoItem, tags: InspoTags | undefined, comments
     what: (mediaKindOf(item.web) === "web" ? tags?.summary || tags?.visual : tags?.visual || tags?.summary) || undefined,
     tags: [style, sector, ...traits].filter((x): x is string => !!x),
     said,
+    ...(isPage(tags?.composition) ? { composition: tags.composition } : {}),
   };
 }

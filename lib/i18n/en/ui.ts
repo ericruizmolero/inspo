@@ -3,6 +3,7 @@
 // object, so a missing key does not compile.
 //
 // Anything with variables inside is a function, not a template with placeholders.
+import { fractionOf, type CompositionPattern } from "@/lib/composition-core";
 import { taxonomy } from "./taxonomy";
 import type { UseMdKeys } from "../../criterio-md";
 export const ui = {
@@ -835,6 +836,17 @@ export const ui = {
       measured: {
         label: "Measured", themes: { light: "light theme", dark: "dark theme" }, density: "density",
         colors: "Colours", families: "Typefaces", radius: "Radius", pixels: "Pixel colours",
+      },
+      composition: {
+        repeats: "Structure the board repeats", build: "How it is built",
+        describe: (p: CompositionPattern): string => [
+          ({ "aside-left": "a narrow column on the left", "aside-right": "a narrow column on the right", "split-even": "two halves of the same width", "multi-column": "three or more columns side by side", "tile-grid": "the page as a grid of tiles", "full-bleed-stack": "edge-to-edge bands stacked down the page", "centered-narrow": "one narrow centred column", freeform: "elements placed freely, no column", "single-column": "one full-width column" } as Record<string, string>)[p.structure] ?? p.structure,
+          p.share ? `about ${fractionOf(p.share)} of the width` : "",
+          p.fixed === "aside" ? "that stays put while the rest scrolls" : p.fixed === "top-bar" ? "a top bar that stays put" : p.fixed === "bottom-bar" ? "a bottom bar that stays put" : "",
+          ({ "top-bar": "navigation across the top", "in-aside": "navigation inside the side column", bottom: "navigation at the bottom", "menu-button": "navigation behind a menu button" } as Record<string, string>)[p.nav ?? ""] ?? "",
+          ({ "big-type": "opens with a large headline", "big-image": "opens with a large image", split: "opens split, words and picture", "content-first": "goes straight into the content" } as Record<string, string>)[p.opening ?? ""] ?? "",
+        ].filter(Boolean).join(", "),
+        of: (n: number, of: number): string => `In ${n} of the ${of} references that read as a page`,
       },
       brand: {
         values: "Values", intro: "The brand", tokens: "Tokens", tokensIntro: "The values above as CSS variables. Paste them into the project's main stylesheet.",

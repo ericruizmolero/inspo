@@ -24,7 +24,7 @@ const SYSTEM_FIELDS = "every decision, why, take, reason, question, option and s
 
 export const PROMPTS = {
   /** Reads the board into the eight areas (lib/system/run.ts runSystem). Reasoning counts against the budget: room for it, the answer itself is short */
-  system: { model: env("SYSTEM_MODEL", DEEPSEEK), fallback: FALLBACK_MODEL, effort: "medium", maxTokens: 16000, version: 7, language: SYSTEM_FIELDS },
+  system: { model: env("SYSTEM_MODEL", DEEPSEEK), fallback: FALLBACK_MODEL, effort: "medium", maxTokens: 16000, version: 8, language: SYSTEM_FIELDS },
   /** Other directions for one area */
   options: { model: env("OPTIONS_MODEL", DEEPSEEK), fallback: FALLBACK_MODEL, effort: "medium", maxTokens: 12000, version: 6, language: SYSTEM_FIELDS },
   /** The question that starts an empty area: a person is waiting, so a quick model that does not stop to reason */
@@ -45,6 +45,9 @@ export const PROMPTS = {
    *  The fallback, second in the bake-off at ~$0.0002 an item, also takes a job's last try (lib/tag-jobs.ts): Gemini
    *  stops mid-answer on some pages, every time */
   tag: { model: env("TAG_MODEL", "google/gemini-2.5-flash-lite"), fallback: env("TAG_FALLBACK_MODEL", "mistralai/mistral-small-3.2-24b-instruct"), maxTokens: 1500, version: 2, language: null },
+  /** How a reference's page is built (lib/composition.ts): the tagger's model and its picture, a closed vocabulary, so
+   *  always English. Read only for a project's references, before the system pass */
+  composition: { model: env("COMPOSITION_MODEL", env("TAG_MODEL", "google/gemini-2.5-flash-lite")), fallback: env("TAG_FALLBACK_MODEL", "mistralai/mistral-small-3.2-24b-instruct"), maxTokens: 600, version: 1, language: null },
   /** A site's DESIGN.md: one per URL serves every workspace, so always English (its "es" lines are part of the shape).
    *  Trap 2 (#5): reasoning eats the budget on long answers, so plenty of room */
   design_md: { model: env("DESIGN_MD_MODEL", DEEPSEEK), fallback: FALLBACK_MODEL, effort: "medium", maxTokens: 32000, version: 1, language: null },

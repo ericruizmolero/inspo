@@ -1,4 +1,5 @@
 // Spanish. Typed against lib/i18n/en/ui.ts: a missing key does not compile.
+import { fractionOf, type CompositionPattern } from "@/lib/composition-core";
 import { taxonomy } from "./taxonomy";
 import type { UseMdKeys } from "../../criterio-md";
 import type { ui as EnUi } from "../en/ui";
@@ -827,6 +828,17 @@ export const ui: typeof EnUi = {
       measured: {
         label: "Medido", themes: { light: "tema claro", dark: "tema oscuro" }, density: "densidad",
         colors: "Colores", families: "Fuentes", radius: "Radios", pixels: "Colores en píxeles",
+      },
+      composition: {
+        repeats: "Estructura que se repite", build: "Cómo está montada",
+        describe: (p: CompositionPattern): string => [
+          ({ "aside-left": "una columna estrecha a la izquierda", "aside-right": "una columna estrecha a la derecha", "split-even": "dos mitades del mismo ancho", "multi-column": "tres o más columnas en paralelo", "tile-grid": "la página como rejilla de piezas", "full-bleed-stack": "bandas a sangre apiladas", "centered-narrow": "una sola columna estrecha y centrada", freeform: "piezas colocadas libremente, sin columnas", "single-column": "una columna a todo el ancho" } as Record<string, string>)[p.structure] ?? p.structure,
+          p.share ? `de alrededor de ${fractionOf(p.share)} del ancho` : "",
+          p.fixed === "aside" ? "que se queda fija mientras el resto se desplaza" : p.fixed === "top-bar" ? "una barra superior fija" : p.fixed === "bottom-bar" ? "una barra inferior fija" : "",
+          ({ "top-bar": "navegación arriba", "in-aside": "navegación dentro de la columna lateral", bottom: "navegación abajo", "menu-button": "navegación tras un botón de menú" } as Record<string, string>)[p.nav ?? ""] ?? "",
+          ({ "big-type": "abre con un titular grande", "big-image": "abre con una imagen grande", split: "abre partida, texto e imagen", "content-first": "entra directa al contenido" } as Record<string, string>)[p.opening ?? ""] ?? "",
+        ].filter(Boolean).join(", "),
+        of: (n: number, of: number): string => `En ${n} de las ${of} referencias que se leen como página`,
       },
       brand: {
         values: "Valores", intro: "La marca", tokens: "Tokens", tokensIntro: "Los valores de arriba como variables CSS. Pégalos en la hoja de estilos principal del proyecto.",
