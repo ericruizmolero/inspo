@@ -724,7 +724,7 @@ export const criterioResult = pgTable("criterio_result", {
   id: text("id").primaryKey(),
   organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
   projectId: text("project_id").notNull().references(() => project.id, { onDelete: "cascade" }),
-  /** The kind of page asked for (lib/composition-core.ts PAGE_KINDS key) */
+  /** What was asked for: a PAGE_KINDS key (lib/composition-core.ts), "storyboard", or "ask:" and the team's words */
   page: text("page").notNull(),
   /** The version of criterio.md it was built from (criterio_version.n) */
   versionN: integer("version_n"),

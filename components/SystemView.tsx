@@ -322,7 +322,7 @@ export default function SystemView({ project, system, onSystem, board, library, 
           </div>
         ) : view === "result" ? (
           <div className="spage-sheet">
-            <ResultView projectId={project.id} projectName={project.name} filled={filled > 0} />
+            <ResultView projectId={project.id} projectName={project.name} filled={filled > 0} refs={refs} />
           </div>
         ) : (
           <SystemDoc look={view === "doc" ? "doc" : "md"} blocks={blocks} system={sys} labels={labels} boardIds={boardIds} itemOf={itemOf} imageOf={imageOf} refInfo={refInfo} activity={activity}

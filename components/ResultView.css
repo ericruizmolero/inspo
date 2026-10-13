@@ -1,6 +1,19 @@
-/* The Result view (components/ResultView.tsx): the page picker and its actions in one row, then the page in a frame.
- * The frame is the page itself at the width of the sheet; no card around it, one line of border */
-.res { display: flex; flex-direction: column; gap: 12px; padding-top: var(--space-2); }
+/* The Result view (components/ResultView.tsx), in the same column as the other views (criterio.md's .sdoc, the
+ * presentation's .brand): an index of 188 on the left, here what was built before, a 40 gap, 1080 in all. In the
+ * column, one question with the board's shortcuts inside it, the result's line and actions, then the result in a frame.
+ * The frame is the page itself at the width of the column; no card around it, one line of border */
+.res { display: grid; grid-template-columns: 188px minmax(0, 1fr); gap: 40px; width: 100%; max-width: 1080px; margin: 8px auto 0; }
+.res__main { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+/* The index: the presentation's (.brand-toc), with a quiet label over it */
+.res-toc { position: sticky; top: 0; align-self: start; display: flex; flex-direction: column; gap: 6px; padding-top: 4px; }
+.res-toc__label { margin: 0; padding: 0 10px; font-size: var(--fs-label); color: var(--muted-2); }
+.res-toc ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1px; }
+.res-toc li button { display: block; width: 100%; min-height: 30px; padding: 0 10px; border: 0; border-radius: var(--radius-s); background: none; color: var(--text-2); font: inherit; font-size: var(--fs-small); text-align: left; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; transition: background 0.15s, color 0.15s; }
+.res-toc li button:hover:not(:disabled), .res-toc li button.is-on { background: var(--surface); color: var(--text); }
+.res-toc li button:disabled { cursor: default; }
+.res__prompt { width: 100%; max-width: none; }
+.res__below { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.res__shortcuts { display: flex; flex-wrap: wrap; gap: 6px; }
 .res__bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .res__actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
 .res__meta { margin: 0; font-size: var(--fs-small); color: var(--muted); }
@@ -9,6 +22,28 @@
 .res__frame--busy, .res__frame--empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; background: var(--surface-2); color: var(--text); text-align: center; padding: 24px; box-sizing: border-box; }
 .res__frame--busy p, .res__frame--empty p { margin: 0; font-size: var(--fs-ui); }
 .res__frame .res__hint { color: var(--muted); font-size: var(--fs-small); }
+/* While it is built: what is read and written, newest at the bottom, each line coming in */
+.res__frame--busy { justify-content: center; gap: 16px; }
+.res__head { display: flex; align-items: center; gap: 10px; }
+.res__log { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; width: min(640px, 100%); text-align: left; }
+.res__step { font-size: var(--fs-small); line-height: var(--lh-small); color: var(--muted); animation: res-in 240ms var(--ease-out) both; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.res__step.is-write { color: var(--text-2); }
+.res__step.is-now { color: var(--text); }
+/* The references handed to the model, each coming in as it is read; the ones of the step being read lit, the rest quiet */
+.res__refs { margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; width: min(640px, 100%); }
+.res__refs li { width: 72px; height: 54px; border-radius: var(--radius-s); overflow: hidden; background: var(--surface); opacity: 0.45; animation: res-ref 320ms var(--ease-out) both; transition: opacity 240ms var(--ease-out); }
+.res__refs li.is-now { opacity: 1; }
+.res__refs img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
+.res__refs span { display: block; padding: 6px; font-size: var(--fs-label); color: var(--text-2); overflow: hidden; }
+@keyframes res-ref { from { opacity: 0; transform: scale(0.9); } }
+@keyframes res-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .res__step, .res__refs li { animation: none; } }
+@media (max-width: 900px) {
+  .res { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .res-toc { position: static; }
+  .res-toc ol { flex-direction: row; overflow-x: auto; scrollbar-width: none; }
+  .res-toc li button { width: auto; max-width: 220px; }
+}
 @media (max-width: 720px) {
   .res__actions { margin-left: 0; }
   .res__frame { height: 70vh; }
