@@ -3,7 +3,7 @@
 // file (it is the same text: saved here, the file changes; changed there, it shows here), and the areas that cite
 // it. Each part's heading leads to where it is in the system. Above the file, the eight areas: the team picks which
 // ones it brings to, and the file follows.
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { InspoItem, Project } from "@/types/inspo";
 import { SYSTEM_AREAS, type ProjectSystem, type SystemArea } from "@/types/system";
 import { criterioBlocks, refSlice, withRefEntry, type CriterioBlock, type RefInfo } from "@/lib/criterio-md";
@@ -37,12 +37,23 @@ export default function RefCriterio({ item, project, system, library, boardIds, 
   const c = t.panel.criterio;
   const labels = t.system.areas as Record<SystemArea, string>;
   const code = item.id ? `R${boardIds.indexOf(item.id) + 1}` : "";
+  // Public links for the stored files the file cites, as the system's copy gets them (app/api/system/measured)
+  const [links, setLinks] = useState<Record<string, string>>({});
+  const projectId = project?.id;
+  useEffect(() => {
+    if (!projectId) return;
+    let alive = true;
+    fetch(`/api/system/measured?projectId=${encodeURIComponent(projectId)}`)
+      .then((res) => (res.ok ? res.json() as Promise<{ links?: Record<string, string> }> : null))
+      .then((m) => { if (alive && m?.links) setLinks(m.links); }, () => { /* the app's own paths stand */ });
+    return () => { alive = false; };
+  }, [projectId, boardIds.length]);
   const blocks = useMemo<CriterioBlock[]>(() => (project && system ? criterioBlocks({
     project: project.name, system,
     items: Object.fromEntries(library.filter((i) => i.id).map((i) => [i.id!, refInfo(i)])),
-    labels, strings: t.system.md, board: boardIds,
+    labels, strings: t.system.md, board: boardIds, links,
     origin: typeof window === "undefined" ? "" : window.location.origin,
-  }) : []), [project, system, library, refInfo, labels, t, boardIds]);
+  }) : []), [project, system, library, refInfo, labels, t, boardIds, links]);
   const slice = useMemo(() => (code && code !== "R0" ? refSlice(blocks, code) : null), [blocks, code]);
   // The area being switched, so a second press waits for the first
   const [busy, setBusy] = useState<SystemArea | null>(null);

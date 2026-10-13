@@ -10,6 +10,7 @@ import { webKeyOf } from "@/lib/url";
 import { GET } from "@/app/api/files/[...key]/route";
 import { GET as measured } from "@/app/api/system/measured/route";
 import { proxy } from "@/proxy";
+import robots from "@/app/robots";
 import { actAs, files } from "./harness";
 import { cleanupTeam, seedTeam, type Team } from "./library/seed";
 
@@ -101,4 +102,30 @@ test("the proxy lets a signed link through to the route with no session cookie, 
   expect(passes(signedFilePath(KEY)), "a signed link reaches the route, which checks it").toBe(true);
   expect(passes(`/api/files/${KEY}`), "an unsigned one is stopped at the door").toBe(false);
   expect(passes(`/api/library?t=1`), "a t elsewhere opens nothing").toBe(false);
+});
+
+test("Anthropic's fetcher, which reads no image, gets a signed picture as a PDF; anyone else gets the picture", async () => {
+  actAs(null);
+  const png = await sharp({ create: { width: 300, height: 200, channels: 4, background: "#2c3325" } }).png().toBuffer();
+  files.set(KEY, { body: png, contentType: "image/png" });
+  const as = (ua: string) => GET(new NextRequest(`http://localhost${signedFilePath(KEY)}`, { headers: { "user-agent": ua } }), { params: Promise.resolve({ key: KEY.split("/") }) });
+
+  const claude = await as("Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; Claude-User/1.0; +Claude-User@anthropic.com)");
+  expect(claude.headers.get("content-type")).toBe("application/pdf");
+  expect(claude.headers.get("x-robots-tag"), "never listed by a search engine").toContain("noindex");
+  const pdf = Buffer.from(await claude.arrayBuffer());
+  expect(pdf.subarray(0, 5).toString(), "a PDF").toBe("%PDF-");
+  expect(pdf.toString("latin1"), "one page the picture's size").toContain("/MediaBox [0 0 300 200]");
+  expect(pdf.toString("latin1").trimEnd().endsWith("%%EOF")).toBe(true);
+
+  const browser = await as("Mozilla/5.0 (Macintosh) Safari/605.1.15");
+  expect(browser.headers.get("content-type")).toBe("image/png");
+  expect(browser.headers.get("vary"), "a cache keeps the two answers apart").toBe("User-Agent");
+  expect(Buffer.from(await browser.arrayBuffer()).equals(png)).toBe(true);
+});
+
+test("robots.txt lets fetchers reach file links and nothing else under /api/", () => {
+  const rules = robots().rules as { allow: string[]; disallow: string[] };
+  expect(rules.allow).toContain("/api/files/");
+  expect(rules.disallow).toContain("/api/");
 });

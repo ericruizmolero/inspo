@@ -9,9 +9,10 @@ import { textPrefix } from "@/lib/text-refs";
 import { POSTS_PREFIX } from "@/lib/posts";
 import { PAGES_PREFIX } from "@/lib/page-shots";
 import { SCREEN_STUDIO_PREFIX } from "@/lib/screen-studio";
-import { openFile, fileUrl, signedFileUrl, isSafeKey, ensureCardCopy } from "@/lib/storage";
+import { openFile, getFile, fileUrl, signedFileUrl, isSafeKey, ensureCardCopy } from "@/lib/storage";
 import { originalOfCard } from "@/lib/board";
 import { fileTokenValid } from "@/lib/file-links";
+import { imagePdf, wantsPdf } from "@/lib/image-pdf";
 import { brandPrefix } from "@/lib/brand-files";
 import { log } from "@/lib/log";
 
@@ -23,6 +24,9 @@ import { log } from "@/lib/log";
 // A link signed for one key (lib/file-links.ts) reads that key with no session: criterio.md read from outside the app.
 // With R2 the answer is a redirect to a signed R2 URL: the bytes, ranges included, come from R2,
 // so a 60 MB video never runs through a function. On disk (development) the file is streamed here.
+// A link out of the app may be fetched by anyone (robots.txt lets fetchers in), but is never listed by a search engine
+const OUTSIDE_HEADERS = { "Cache-Control": "public, max-age=86400", Vary: "User-Agent", "X-Robots-Tag": "noindex, nofollow" };
+
 export async function GET(req: NextRequest, ctx: RouteContext<"/api/files/[...key]">) {
   const { key: parts } = await ctx.params;
   // Checked after the join: a segment can hold an encoded slash ("..%2F..")
@@ -51,7 +55,16 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/api/files/[...ke
 
   try {
     // Outside the app the bytes come from here: a fetcher does not follow a redirect to another host, and an
-    // allowlist then needs only this one. Vercel's cache keeps the copy, so a shared link costs one function call a day
+    // allowlist then needs only this one. Anthropic's fetcher reads no image, so it gets the picture as a PDF
+    // (lib/image-pdf.ts). Neither is cached by Vercel: the same address answers two ways, by who asks.
+    if (outside && wantsPdf(req.headers.get("user-agent"))) {
+      const f = await getFile(key);
+      if (!f) return new Response("not found", { status: 404 });
+      if (f.contentType.startsWith("image/")) {
+        const pdf = await imagePdf(f.body);
+        return new Response(new Uint8Array(pdf), { headers: { ...OUTSIDE_HEADERS, "Content-Type": "application/pdf", "Content-Length": String(pdf.length) } });
+      }
+    }
     const signed = outside ? null : await signedFileUrl(key);
     if (signed) {
       // The redirect is cached as long as the URL it points to stays valid (lib/storage.ts)
@@ -65,7 +78,7 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/api/files/[...ke
       "Content-Length": String(file.size),
       "Accept-Ranges": "bytes",
       // Keys carry a timestamp: a changed file gets a new path, so a day of caching is safe
-      "Cache-Control": outside ? "public, max-age=86400, s-maxage=86400" : "private, max-age=86400",
+      ...(outside ? OUTSIDE_HEADERS : { "Cache-Control": "private, max-age=86400" }),
     };
     if (file.range) headers["Content-Range"] = file.range;
     // An SVG opened on its own runs as a page: nothing in it may run
