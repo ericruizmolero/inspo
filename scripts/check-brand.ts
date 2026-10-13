@@ -1,4 +1,5 @@
-// Checks the brand presentation's server side against the LOCAL database, with files on disk (never the bucket).
+// Checks the brand presentation's server side against the LOCAL database, with files on disk (never the bucket):
+// files, saving and conflicts, exports, share links, and what an AI client brings in through bring_brand.
 // No model calls unless --model is given: then it also runs both passes on a throwaway project with a pasted guide
 // (a fraction of a cent) and checks that a section the team set by hand stays as it was.
 // Not a test framework: it asserts, prints, and cleans up what it creates.
@@ -6,15 +7,21 @@
 import { config as loadEnv } from "dotenv";
 loadEnv({ path: ".env.local" }); loadEnv();
 import assert from "node:assert/strict";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import sharp from "sharp";
 import { eq } from "drizzle-orm";
 import { db, schema } from "../lib/db";
 import { runMigrations } from "../lib/db/migrate";
 import { putFile, deleteFiles, usingR2 } from "../lib/storage";
-import { inspectBrandFile, svgIsSafe, brandTypeFor } from "../lib/brand-files";
+import { inspectBrandFile, svgIsSafe, brandTypeFor, projectBrandPrefix } from "../lib/brand-files";
 import { createProject, deleteProject } from "../lib/projects";
 import { saveBrandSection, writeBrandSections, getBrand } from "../lib/brand-store";
 import { storeGuide } from "../lib/brand-guides";
+import { HttpError, listWorkspaces } from "../lib/workspace-core";
+import { toLocale } from "../lib/i18n/locale";
+import { bringBrand } from "../lib/mcp/brand";
+import type { McpCtx } from "../lib/mcp/auth";
 import { createShare, resolveShare, revokeShare } from "../lib/share";
 import { loadShareView } from "../lib/share-view";
 import { brandZip } from "../lib/brand-zip";
@@ -72,6 +79,47 @@ async function main() {
     await revokeShare(m.org, project.id, link.id);
     assert.equal(await resolveShare(link.token), null);
     console.log("✓ share links");
+
+    // bring_brand: an AI client's values land as an import, its logo as a file, its guide with the sources
+    const [u] = await db.select({ id: schema.user.id, name: schema.user.name, email: schema.user.email, image: schema.user.image, language: schema.user.language }).from(schema.user).where(eq(schema.user.id, m.user)).limit(1);
+    const ctx: McpCtx = { user: { ...u, language: toLocale(u.language) }, workspaces: await listWorkspaces(m.user), via: "check" };
+    const onDisk = (key: string) => existsSync(join(process.cwd(), ".data", "files", key));
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 40"><rect width="120" height="40" rx="8"/></svg>';
+    const bring = () => bringBrand(ctx, "http://localhost", {
+      project: project.id, source: "check:brand", guide: "# Check\n\nSpacing on a 4px grid.",
+      color: { lede: "", items: [{ id: "ember", name: "Ember", hex: "#d9480f", role: "Accent", group: "accent", weight: 2 }], accentId: "ember" },
+      typography: { lede: "", faces: [{ id: "inter", family: "Inter", role: "text", source: "google", weights: [400, 600], note: "Text" }], scale: [{ id: "body", label: "Body", px: 16, faceId: "inter", weight: 400, lineHeight: 1.5, tracking: 0 }], sample: "", trackingRule: "" },
+      logo: { lede: "", primary: { light: { svg, name: "check.svg" }, dark: null }, mark: { light: null, dark: null }, clearSpace: 1, minPx: null },
+    });
+    const one = await bring();
+    // The team's palette (saved above) stays; the rest is written
+    assert.deepEqual(one.written, ["logo", "typography"]);
+    assert.deepEqual(one.kept_by_team, ["color"]);
+    assert.equal(one.guide_kept, true);
+    let b = await getBrand(m.org, project.id);
+    const logoKey = b.logo.primary.light?.key;
+    assert.ok(logoKey?.startsWith(projectBrandPrefix(m.org, project.id)) && onDisk(logoKey), "the logo is a file of the project's brand");
+    assert.equal(b.logo.primary.light?.name, "check.svg");
+    assert.equal(b.color.items[0]?.name, "Ink", "the team's palette survives an import");
+    const guideKey = b.sources.find((s) => s.kind === "text" && s.label === "check:brand")?.key;
+    assert.ok(guideKey && onDisk(guideKey), "the guide is kept with the sources");
+    assert.equal(b.typography.scale[0]?.faceId, "inter");
+    // Twice: the same brand, one set of files
+    const two = await bring();
+    assert.deepEqual(two.written, ["logo", "typography"]);
+    b = await getBrand(m.org, project.id);
+    assert.ok(b.logo.primary.light?.key !== logoKey && onDisk(b.logo.primary.light!.key) && !onDisk(logoKey!), "the replaced logo file is gone");
+    const guides = b.sources.filter((s) => s.kind === "text" && s.label === "check:brand");
+    assert.ok(guides.length === 1 && guides[0].key !== guideKey && onDisk(guides[0].key!) && !onDisk(guideKey!), "the replaced guide file is gone");
+    // An SVG that runs something is refused whole and leaves nothing behind
+    const unsafe = { ...b.logo, primary: { light: { svg: "<svg><script>x()</script></svg>" }, dark: null }, mark: { light: null, dark: null } };
+    await assert.rejects(bringBrand(ctx, "http://localhost", { project: project.id, source: "check:brand", logo: unsafe }), (e: unknown) => e instanceof HttpError && e.status === 415);
+    const after = await getBrand(m.org, project.id);
+    assert.equal(after.logo.primary.light?.key, b.logo.primary.light?.key, "a refused logo changes nothing");
+    const { readdirSync } = await import("node:fs");
+    const stored = readdirSync(join(process.cwd(), ".data", "files", projectBrandPrefix(m.org, project.id))).filter((f) => f.startsWith("logo-"));
+    assert.equal(stored.length, 1, "one logo file on disk");
+    console.log("✓ bring_brand");
 
     if (process.argv.includes("--model")) {
       const key = await storeGuide(m.org, project.id, "# Northwind\nColors: Espresso #2B1D16 for text, Crema #F4ECE1 ground, Ember #D9480F the only accent.\nType: Fraunces 600 headlines, Inter 400 text.\nVoice: short, warm, no exclamation marks.");

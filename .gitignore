@@ -71,3 +71,6 @@ extension/dist/
 
 # Söhne test fonts (Klim Test Font Licence: internal evaluation only, never shipped, never shared)
 /app/fonts/soehne-test/
+
+# A connector skill's scripts install their own dependencies next to them (skills/<id>/scripts); never in the tree
+/skills/*/scripts/node_modules/

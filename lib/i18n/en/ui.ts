@@ -1410,7 +1410,7 @@ export const ui = {
       title: "What it does for you",
       items: [
         "Designs and writes following your criterio.",
-        "Turns a repo, a Figma file or a site into references.",
+        "Turns a repo, a Figma file or a site into references and fills in the brand's presentation.",
         "Saves the references and decisions from a conversation.",
         "Reviews a page or a design against the criterio.",
       ],

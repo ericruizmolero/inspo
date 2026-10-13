@@ -1,0 +1,11 @@
+{
+  "name": "extract-design-system",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Reads the computed design tokens (colors, type, spacing, radius, shadows, buttons) off a live page with headless Chrome via playwright-core.",
+  "bin": { "extract-tokens": "./extract-url.mjs" },
+  "dependencies": {
+    "playwright-core": "^1.49.0"
+  }
+}

@@ -4,6 +4,7 @@
 // (a site, a picture, a text), or a change to an area's
 // decision, which is never written straight in: it waits under its area as a proposal for the team's yes or no.
 import "server-only";
+import { z } from "zod";
 import { and, asc, eq, inArray, isNull } from "drizzle-orm";
 import { db, schema } from "../db";
 import { HttpError, type Workspace } from "../workspace-core";
@@ -31,9 +32,11 @@ const P = schema.project;
 const PI = schema.projectItem;
 const T = schema.inspoItem;
 
+/** The argument every tool names a project by, as resolveProject reads it */
+export const ProjectArg = z.string().min(1).max(120).describe("The project: its id or its name, as list_projects gives them.");
 /** The address of a project's system in the app, for the person to open */
-const projectUrl = (origin: string, projectId: string) => `${origin}/?in=${projectId}&view=system`;
-const authorOf = (ctx: McpCtx) => ({ id: ctx.user.id, name: ctx.user.name || ctx.user.email, image: ctx.user.image ?? null });
+export const projectUrl = (origin: string, projectId: string) => `${origin}/?in=${projectId}&view=system`;
+export const authorOf = (ctx: McpCtx) => ({ id: ctx.user.id, name: ctx.user.name || ctx.user.email, image: ctx.user.image ?? null });
 
 // ─── Projects ────────────────────────────────────────────────────────────────
 

@@ -1,6 +1,8 @@
 // The skills for agents on /skills/, grouped by topic. They left the app's Discover on 2026-10-11.
 // criterio.design's own (OWN_SKILLS) are a copy of the app's MD_SKILLS (lib/md-skill-ids.ts) with their names and
 // text from system.skillsList (lib/i18n/<locale>/ui.ts): tests/marketing-site-copy.test.ts fails when they drift.
+// CONNECTOR_SKILLS are criterio.design's too, but they work the connector instead of a section of criterio.md: they
+// live as folders in the app's skills/, next to the thirteen that build-skills writes there.
 import type { Locale } from "./i18n";
 
 type Text = Record<Locale, string>;
@@ -13,6 +15,7 @@ export const SKILL_TOPICS = [
   { key: "voice", title: { en: "Voice", es: "Voz" } },
   { key: "interface", title: { en: "Interface and components", es: "Interfaz y componentes" } },
   { key: "review", title: { en: "Review and accessibility", es: "Revisión y accesibilidad" } },
+  { key: "connect", title: { en: "The criterio connector", es: "El conector de Criterio" } },
 ] as const satisfies readonly { key: string; title: Text }[];
 export type SkillTopic = (typeof SKILL_TOPICS)[number]["key"];
 
@@ -31,8 +34,8 @@ export interface Skill {
   inCriterio?: string;
 }
 
-/** The public repo that holds criterio.design's skills as SKILL.md files (SKILLS_REPO in lib/md-skill-ids.ts) */
-export const SKILLS_REPO = "https://github.com/ericruizmolero/criterio-skills";
+/** The repo that holds criterio.design's skills as SKILL.md files under skills/ (SKILLS_REPO in lib/md-skill-ids.ts) */
+export const SKILLS_REPO = "https://github.com/ericruizmolero/inspo";
 
 /** criterio.design's own: the skills criterio.md can carry, in the app's order, with the app's names and text */
 export const OWN_SKILLS = [
@@ -50,6 +53,12 @@ export const OWN_SKILLS = [
   { id: "a11y", topic: "review", name: { en: "Accessibility", es: "Accesibilidad" }, what: { en: "The whole system: keyboard, focus, contrast and reduced motion", es: "Todo el sistema: teclado, foco, contraste y movimiento reducido" } },
   { id: "tailwind", topic: "foundations", name: { en: "Tailwind", es: "Tailwind" }, what: { en: "The whole system as a Tailwind 4 theme", es: "Todo el sistema como tema de Tailwind 4" } },
 ] as const satisfies readonly { id: string; topic: SkillTopic; name: Text; what: Text }[];
+
+/** criterio.design's own skills that are not sections of criterio.md: they work through the MCP connector */
+const CONNECTOR_SKILLS: Skill[] = [
+  { name: { en: "Bring in a brand", es: "Traer una marca" }, topic: "connect", url: `${SKILLS_REPO}/tree/main/skills/bring-brand`, install: `npx skills add ${SKILLS_REPO} --skill bring-brand`, added: "2026-10-13", author: "criterio.design",
+    text: { en: "Reads a site or a repo (tokens, components, logo, fonts) and fills the project's presentation through the criterio MCP.", es: "Lee una web o un repo (tokens, componentes, logo, fuentes) y rellena la presentación del proyecto por el MCP de Criterio." } },
+];
 
 /** Other authors' skills. The GitHub owner in the install command is the author */
 const OTHERS: (Omit<Skill, "author" | "name"> & { name: string })[] = [
@@ -91,6 +100,7 @@ export const SKILLS: Skill[] = [
     name: s.name, url: `${SKILLS_REPO}/tree/main/skills/${s.id}`, install: `npx skills add ${SKILLS_REPO} --skill ${s.id}`,
     topic: s.topic, text: s.what, author: "criterio.design",
   })),
+  ...CONNECTOR_SKILLS,
   ...OTHERS.map((s) => ({ ...s, name: { en: s.name, es: s.name }, author: ownerOf(s.install) })),
 ];
 

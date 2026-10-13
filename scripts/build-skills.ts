@@ -1,16 +1,22 @@
-// Writes the thirteen skills of criterio.md as agent skills: one SKILL.md per skill, in the layout `npx skills add`
-// reads (skills/<id>/SKILL.md), plus the repo's README. The craft is the same text the file's sections carry
+// Writes the thirteen skills of criterio.md as agent skills into this repo's skills/: one SKILL.md per skill, in the
+// layout `npx skills add` reads (skills/<id>/SKILL.md), plus skills/README.md. The craft is the same text the file's sections carry
 // (lib/md-skills.ts, lib/md-skills-more.ts); what changes is the project half: an installed skill cannot know the
 // project, so it tells the agent to read the area in the project's criterio.md first. English only: that is the
-// language agents read skills in. No model call.
-//   npx tsx scripts/build-skills.ts [dir]      (default: ../criterio-skills, the public repo's checkout)
-import { mkdirSync, writeFileSync } from "node:fs";
+// language agents read skills in. No model call. The connector's skills (written by hand, with their scripts) live
+// in the same folder and only get their README row here.
+//   npm run skills:build
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { MD_SKILLS, skillCraft, type MdSkill } from "../lib/md-skills";
 import { SKILLS_REPO, skillInstall } from "../lib/md-skill-ids";
 import { ui } from "../lib/i18n/en/ui";
 
 const names = ui.system.skillsList as Record<MdSkill, { name: string; what: string }>;
+
+/** The skills that work the MCP connector, kept as folders in skills/ (SKILL.md, scripts, references) */
+const CONNECTOR_SKILLS = [
+  { id: "bring-brand", name: "Bring in a brand", what: "Reads a site or a repo and fills the project's presentation through the criterio MCP" },
+];
 
 /** What criterio.md is, for an agent that has never seen one */
 const ABOUT = "`criterio.md` is the design system file that [criterio.design](https://criterio.design) writes from a team's references: eight areas (typography, colour, layout, motion, iconography, logo, imagery, voice and tone), each with what the team decided, the references that back it and a list of what it never does.";
@@ -73,15 +79,17 @@ function readme(): string {
     "| Skill | What it builds | Install |",
     "| --- | --- | --- |",
   ];
-  for (const id of MD_SKILLS) L.push(`| [${names[id].name}](skills/${id}/SKILL.md) | ${names[id].what} | \`${skillInstall(id)}\` |`);
-  L.push("", "Built from [criterio.design](https://criterio.design) with `scripts/build-skills.ts`; the text is edited there, not here.", "");
+  for (const id of MD_SKILLS) L.push(`| [${names[id].name}](${id}/SKILL.md) | ${names[id].what} | \`${skillInstall(id)}\` |`);
+  for (const s of CONNECTOR_SKILLS) L.push(`| [${s.name}](${s.id}/SKILL.md) | ${s.what} | \`npx skills add ${SKILLS_REPO} --skill ${s.id}\` |`);
+  L.push("", "The thirteen are written by `scripts/build-skills.ts` from the same text criterio.md carries (`lib/md-skills.ts`): edit it there and run `npm run skills:build`. The connector's are written by hand in their folder.", "");
   return L.join("\n");
 }
 
-const dir = resolve(process.argv[2] ?? "../criterio-skills");
+const dir = resolve("skills");
 for (const id of MD_SKILLS) {
-  mkdirSync(join(dir, "skills", id), { recursive: true });
-  writeFileSync(join(dir, "skills", id, "SKILL.md"), skillFile(id));
+  mkdirSync(join(dir, id), { recursive: true });
+  writeFileSync(join(dir, id, "SKILL.md"), skillFile(id));
 }
+for (const s of CONNECTOR_SKILLS) if (!existsSync(join(dir, s.id, "SKILL.md"))) throw new Error(`skills/${s.id}/SKILL.md is missing`);
 writeFileSync(join(dir, "README.md"), readme());
-console.log(`${MD_SKILLS.length} skills written to ${dir}`);
+console.log(`${MD_SKILLS.length} skills written to ${dir}; ${CONNECTOR_SKILLS.length} of the connector listed`);

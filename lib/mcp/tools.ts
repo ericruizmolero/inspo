@@ -6,9 +6,9 @@ import "server-only";
 import { z } from "zod";
 import { SYSTEM_AREAS } from "@/types/system";
 import type { McpCtx } from "./auth";
-import { CRITERIO_SECTIONS, addPiece, listProjects, listReferences, newProject, proposeDecision, readCriterio, readReference } from "./pieces";
+import { CRITERIO_SECTIONS, ProjectArg as Project, addPiece, listProjects, listReferences, newProject, proposeDecision, readCriterio, readReference } from "./pieces";
+import { BringInput, bringBrand } from "./brand";
 
-const Project = z.string().min(1).max(120).describe("The project: its id or its name, as list_projects gives them.");
 const Areas = z.array(z.enum(SYSTEM_AREAS)).max(SYSTEM_AREAS.length).optional();
 
 const piece = {
@@ -89,6 +89,17 @@ export const TOOLS: Tool[] = [
     run: (i, ctx, origin) => proposeDecision(ctx, origin, i),
   }),
   tool({
+    name: "bring_brand", title: "Bring in a brand",
+    description: [
+      "Brings a brand that already exists into a project's presentation: the palette, the faces and the type scale, the logo, the motion, the voice, the imagery and the handles it shows up with, as values the team then edits in the app. Read the values from the real thing (the theme file, the CSS variables, the component code, the logo's SVG, the site measured), never from how it looks to you.",
+      "Each section you pass replaces that section whole; pass only the sections you have values for. A section the team set by hand is left alone and named in the answer. Give each item a short id of your own; a scale step names its face by that id. A logo comes as SVG markup or a public address, per light and dark ground, and is kept with the project. guide is the DESIGN.md you wrote, kept for the app's next passes.",
+      "It changes no decision of the criterio: what belongs to an area (spacing, radius, elevation, a rule) goes through propose_decision. Show the person what you are about to bring before calling it.",
+    ].join("\n"),
+    input: BringInput,
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true },
+    run: (i, ctx, origin) => bringBrand(ctx, origin, i),
+  }),
+  tool({
     name: "create_project", title: "Create a project",
     description: "Creates an empty project in criterio: a place for the references and the criterio of one piece of work (a brand, a site, an app). Only when the person asks for a new one; check list_projects first so it does not duplicate one that exists.",
     input: z.object({
@@ -101,9 +112,10 @@ export const TOOLS: Tool[] = [
   }),
 ];
 
-/** The tools as tools/list hands them out */
+/** The tools as tools/list hands them out. io "input": the brand's schemas trim and uppercase on the way in, and a
+ *  JSON Schema says what the model sends, not what comes out. */
 export const toolList = () => TOOLS.map((t) => {
-  const { $schema: _s, ...inputSchema } = z.toJSONSchema(t.input) as Record<string, unknown>;
+  const { $schema: _s, ...inputSchema } = z.toJSONSchema(t.input, { io: "input" }) as Record<string, unknown>;
   return { name: t.name, title: t.title, description: t.description, inputSchema, annotations: { title: t.title, ...t.annotations } };
 });
 
@@ -111,6 +123,6 @@ export const toolList = () => TOOLS.map((t) => {
 export const INSTRUCTIONS = [
   "criterio holds the design criteria of each of the person's projects as one file, criterio.md: what the team decided about typography, color, layout, motion, iconography, logo, imagery and voice, with the references behind each decision.",
   "Before designing, writing or reviewing anything for a project, call read_criterio and follow it. A decided area is a rule. Where an area is open, ask the person; do not invent.",
-  "You never rewrite criterio.md. You add pieces: references (add_reference) and proposals for what an area should say (propose_decision), which wait for the team's yes or no in the app.",
+  "You never rewrite criterio.md. You add pieces: references (add_reference), proposals for what an area should say (propose_decision), which wait for the team's yes or no in the app, and a brand's values (bring_brand), which the team edits or hands back in the app.",
   "Write only what the person asked for or agreed to.",
 ].join("\n");

@@ -1,8 +1,9 @@
 // Walks the MCP connector end to end against a running LOCAL dev server: registers a client (RFC 7591), approves
 // it for the dev user as the consent page would, exchanges the code for tokens, speaks MCP (initialize, tools,
-// prompts, resources) and reads a project's criterio.md. With --write it also saves a reference, a text
-// and a proposal in a project called "Prueba MCP" (made if missing), as Claude would. Cleans up its client and
-// grant at the end; what --write saved stays, as it would in the app. Not a test framework: look at the output.
+// prompts, resources) and reads a project's criterio.md. With --write it also saves a reference, a text, a proposal
+// and a brand's palette and type (sections only: a dev server writes files to the production bucket, so no logo and
+// no guide go through it) in a project called "Prueba MCP" (made if missing), as Claude would. Cleans up its client
+// and grant at the end; what --write saved stays, as it would in the app. Not a test framework: look at the output.
 //   npm run check:mcp -- [--write] [server url, default http://localhost:3837]
 import { config as loadEnv } from "dotenv";
 loadEnv({ path: ".env.local" }); loadEnv();
@@ -72,7 +73,9 @@ async function main() {
   const icon = ((init.result?.serverInfo as Json)?.icons as { src: string }[] | undefined)?.[0]?.src ?? "";
   ok("server icon is public", (await fetch(icon, { redirect: "manual" }).catch(() => null))?.headers.get("content-type") === "image/png", icon);
   const tools = ((await rpc("tools/list")).result?.tools as Json[]) ?? [];
-  ok("tools/list", tools.length >= 8, tools.map((t) => t.name).join(", "));
+  ok("tools/list", tools.length === 8, tools.map((t) => t.name).join(", "));
+  const bring = tools.find((t) => t.name === "bring_brand")?.inputSchema as { properties?: Record<string, unknown> } | undefined;
+  ok("bring_brand schema has the brand's sections", !!bring?.properties?.color && !!bring?.properties?.logo, Object.keys(bring?.properties ?? {}).join(", "));
   const prompts = ((await rpc("prompts/list")).result?.prompts as Json[]) ?? [];
   ok("prompts/list", prompts.length === 4, prompts.map((p) => p.name).join(", "));
   const projects = JSON.parse((await call("list_projects", {})).text) as Json[];
@@ -104,6 +107,15 @@ async function main() {
     ok("propose_decision", !prop.isError && prop.text.includes('"proposed": true'));
     const empty = await call("propose_decision", { project: project.id, area: "voice", decision: "   " });
     ok("an empty decision is refused", empty.isError, empty.text.slice(0, 40));
+    const brought = await call("bring_brand", {
+      project: project.id, source: "check:mcp --write",
+      color: { lede: "Prueba del conector.", items: [{ id: "ember", name: "Ember", hex: "#d9480f", role: "Acento", group: "accent", weight: 2 }, { id: "crema", name: "Crema", hex: "#f4ece1", role: "Fondo", group: "neutral", weight: 4 }], accentId: "ember" },
+      typography: { lede: "", faces: [{ id: "inter", family: "Inter", role: "text", source: "google", weights: [400, 600], note: "Texto" }], scale: [{ id: "body", label: "Body", px: 16, faceId: "inter", weight: 400, lineHeight: 1.5, tracking: 0 }], sample: "", trackingRule: "" },
+    });
+    const written = brought.isError ? [] : (JSON.parse(brought.text) as { written: string[] }).written;
+    ok("bring_brand (sections only)", written.includes("color") && written.includes("typography"), brought.text.replace(/\s+/g, " ").slice(0, 120));
+    const md = await call("read_criterio", { project: project.id, section: "decisions" });
+    ok("the palette is in criterio.md", /#D9480F/i.test(md.text), `${md.text.length} chars`);
   }
 
   // 6. Gone: the grant and the client this run made

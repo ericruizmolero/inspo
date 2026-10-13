@@ -21,7 +21,7 @@ export interface SectionMeta { src: BrandSrc | null; by?: string | null; at?: st
 const TEXT = 600;
 const LINE = 160;
 const short = (max = LINE) => z.string().max(max).transform((s) => s.replace(/\r/g, "").trim());
-const id = z.string().min(1).max(24).regex(/^[\w-]+$/);
+const id = z.string().min(1).max(24).regex(/^[\w-]+$/).describe("A short id of your own: letters, digits, - or _.");
 export const HEX_RE = /^#[0-9a-f]{6}$/i;
 
 // ─── Files ───────────────────────────────────────────────────────────────────
@@ -40,39 +40,35 @@ export type BrandFile = z.infer<typeof BrandFileSchema>;
 // ─── Sections ────────────────────────────────────────────────────────────────
 
 export const IntroSchema = z.object({
-  headline: short(200),
-  paragraphs: z.array(short(TEXT)).max(3),
+  headline: short(200).describe("The brand in one line, as the presentation opens."),
+  paragraphs: z.array(short(TEXT)).max(3).describe("Up to three short paragraphs under the headline."),
 });
 
 const LogoPair = z.object({ light: BrandFileSchema.nullable(), dark: BrandFileSchema.nullable() });
 export const LogoSchema = z.object({
-  lede: short(TEXT),
-  primary: LogoPair,
-  mark: LogoPair,
-  /** Clear space around the mark, in x; 1x = half the logo's height */
-  clearSpace: z.number().min(0).max(4),
-  /** The smallest the logo is shown, in px; null when not set */
-  minPx: z.number().int().min(0).max(2000).nullable(),
+  lede: short(TEXT).describe("A sentence or two on the logo: what it is, how it is used."),
+  primary: LogoPair.describe("The full logo, one file per ground it sits on."),
+  mark: LogoPair.describe("The mark alone (the symbol, the monogram), one file per ground."),
+  clearSpace: z.number().min(0).max(4).describe("Clear space around the logo, in x, where 1x is half the logo's height."),
+  minPx: z.number().int().min(0).max(2000).nullable().describe("The smallest the logo is shown, in px; null when not set."),
 });
 
 export const COLOR_GROUPS = ["brand", "accent", "neutral", "semantic"] as const;
 export const BrandColorSchema = z.object({
   id,
-  name: short(40),
-  hex: z.string().regex(HEX_RE).transform((h) => h.toUpperCase()),
-  role: short(200),
-  group: z.enum(COLOR_GROUPS),
-  /** How much of the brand it covers, 1 to 4: the tile's size on the presentation */
-  weight: z.number().int().min(1).max(4),
+  name: short(40).describe("The colour's name as the team says it."),
+  hex: z.string().regex(HEX_RE).transform((h) => h.toUpperCase()).describe("Six-digit hex, like #1A1A1A."),
+  role: short(200).describe("What it is used for, in a line."),
+  group: z.enum(COLOR_GROUPS).describe("brand (the colours that are the brand), accent (what calls attention), neutral (grounds, text, borders), semantic (success, warning, danger)."),
+  weight: z.number().int().min(1).max(4).describe("How much of the brand it covers, 1 to 4: the tile's size on the presentation. The page's ground is 4, text 3, an accent 2, a rare one 1."),
   /** The model wrote it far from every measured hex (lib/brand.ts toSections); an edit by hand drops it */
   unmeasured: z.boolean().optional(),
 });
 export type BrandColor = z.infer<typeof BrandColorSchema>;
 export const ColorSchema = z.object({
-  lede: short(TEXT),
+  lede: short(TEXT).describe("A sentence or two on the palette: how it is built, what carries it."),
   items: z.array(BrandColorSchema).max(16),
-  /** The colour that marks things on the page (the active section, the 1x of the logo, Do) */
-  accentId: id.nullable(),
+  accentId: id.nullable().describe("The id of the colour that marks things on the page (the active section, the 1x of the logo, Do); null for none."),
 });
 
 export const FONT_SOURCES = ["google", "fontshare", "site", "upload", "system"] as const;
@@ -80,96 +76,84 @@ export type FontSource = (typeof FONT_SOURCES)[number];
 export const FACE_ROLES = ["display", "text", "mono"] as const;
 export const BrandFaceSchema = z.object({
   id,
-  family: short(80),
-  role: z.enum(FACE_ROLES),
-  source: z.enum(FONT_SOURCES),
-  weights: z.array(z.number().int().min(100).max(1000)).max(9),
-  /** The Fontshare slug ("general-sans"), when it comes from there */
-  slug: z.string().max(80).optional(),
-  /** The reference whose CSS serves it, when the source is the site */
-  siteWeb: z.string().max(400).optional(),
+  family: short(80).describe("The family's name, as its foundry writes it."),
+  role: z.enum(FACE_ROLES).describe("display (headlines), text (reading), mono (code, data)."),
+  source: z.enum(FONT_SOURCES).describe("Where it loads from: google, fontshare (with slug), site (the site's own CSS, with siteWeb), upload, or system."),
+  weights: z.array(z.number().int().min(100).max(1000)).max(9).describe("The weights in use, 100 to 1000."),
+  slug: z.string().max(80).optional().describe('The Fontshare slug ("general-sans"), when the source is fontshare.'),
+  siteWeb: z.string().max(400).optional().describe("The address of the site whose CSS serves it, when the source is site."),
   /** Uploaded files, one per weight and style */
   files: z.array(z.object({ weight: z.number().int().min(100).max(1000), style: z.enum(["normal", "italic"]), key: BrandFileSchema.shape.key })).max(12).optional(),
-  /** What it is for, in a sentence */
-  note: short(TEXT),
+  note: short(TEXT).describe("What it is for, in a sentence."),
 });
 export type BrandFace = z.infer<typeof BrandFaceSchema>;
 export const ScaleStepSchema = z.object({
   id,
-  label: short(30),
-  px: z.number().min(6).max(400),
-  faceId: id,
-  weight: z.number().int().min(100).max(1000),
-  lineHeight: z.number().min(0.6).max(3),
-  /** em; negative tightens */
-  tracking: z.number().min(-0.2).max(0.5),
+  label: short(30).describe("The step's name: Display, H1, Body, Caption."),
+  px: z.number().min(6).max(400).describe("Its size in px on desktop."),
+  faceId: id.describe("The id of the face it is set in."),
+  weight: z.number().int().min(100).max(1000).describe("The weight it is set in, 100 to 1000."),
+  lineHeight: z.number().min(0.6).max(3).describe("Unitless, like 1.4."),
+  tracking: z.number().min(-0.2).max(0.5).describe("Letter-spacing in em; negative tightens."),
 });
 export type ScaleStep = z.infer<typeof ScaleStepSchema>;
 export const TypographySchema = z.object({
-  lede: short(TEXT),
+  lede: short(TEXT).describe("A sentence or two on the type: the pairing, what sets the tone."),
   faces: z.array(BrandFaceSchema).max(4),
-  scale: z.array(ScaleStepSchema).max(14),
-  /** The line every step of the scale is set in */
-  sample: short(120),
-  /** How tracking and sizes behave, in a sentence or two */
-  trackingRule: short(TEXT),
+  scale: z.array(ScaleStepSchema).max(14).describe("The type scale, largest first."),
+  sample: short(120).describe("The line every step of the scale is set in."),
+  trackingRule: short(TEXT).describe("How tracking and sizes behave, in a sentence or two."),
 });
 
 export const BrandCurveSchema = z.object({
   id,
-  name: short(40),
-  bezier: z.tuple([z.number().min(0).max(1), z.number().min(-1).max(2), z.number().min(0).max(1), z.number().min(-1).max(2)]),
-  use: short(200),
+  name: short(40).describe("The curve's name: Standard, Enter, Exit."),
+  bezier: z.tuple([z.number().min(0).max(1), z.number().min(-1).max(2), z.number().min(0).max(1), z.number().min(-1).max(2)]).describe("The cubic-bezier as four numbers, like [0.2, 0, 0, 1]."),
+  use: short(200).describe("What moves with it."),
 });
 export type BrandCurve = z.infer<typeof BrandCurveSchema>;
-export const BrandDurationSchema = z.object({ id, name: short(40), ms: z.number().int().min(0).max(5000), use: short(200) });
+export const BrandDurationSchema = z.object({ id, name: short(40).describe("Fast, Base, Slow."), ms: z.number().int().min(0).max(5000).describe("In milliseconds."), use: short(200).describe("What takes this long.") });
 export type BrandDuration = z.infer<typeof BrandDurationSchema>;
 export const MOTION_DEMOS = ["enter", "move", "exchange", "carousel", "toggle", "reveal"] as const;
 export type MotionDemo = (typeof MOTION_DEMOS)[number];
 export const MotionSchema = z.object({
-  lede: short(TEXT),
+  lede: short(TEXT).describe("A sentence or two on how things move."),
   curves: z.array(BrandCurveSchema).max(4),
   durations: z.array(BrandDurationSchema).max(5),
-  staggerMs: z.number().int().min(0).max(1000),
-  /** The rules in prose: how it accelerates, what never moves */
-  rule: short(1200),
+  staggerMs: z.number().int().min(0).max(1000).describe("The delay between items that enter one after another, in milliseconds."),
+  rule: short(1200).describe("The rules in prose: how it accelerates, what never moves."),
 });
 
-export const VoicePrincipleSchema = z.object({ id, title: short(80), body: short(300), sample: short(200) });
-export const VoicePairSchema = z.object({ id, context: short(60), do: short(200), dont: short(200) });
+export const VoicePrincipleSchema = z.object({ id, title: short(80).describe("The principle in a few words."), body: short(300).describe("What it means in practice."), sample: short(200).describe("A line that shows it.") });
+export const VoicePairSchema = z.object({ id, context: short(60).describe("Where it applies: an error, a button, an empty screen."), do: short(200).describe("The line as the brand writes it."), dont: short(200).describe("The same line as it never writes it.") });
 export const VoiceSchema = z.object({
-  lede: short(TEXT),
+  lede: short(TEXT).describe("A sentence or two on how the brand sounds."),
   principles: z.array(VoicePrincipleSchema).max(6),
   pairs: z.array(VoicePairSchema).max(8),
 });
 
 /** How the brand's pictures look, said as traits (light, colour, crop, subjects), what they never do, and a few
  *  examples: the board is the moodboard, this is the rule it adds up to */
-export const ImageryTraitSchema = z.object({ id, label: short(40), value: short(300) });
+export const ImageryTraitSchema = z.object({ id, label: short(40).describe("The trait: Light, Colour, Crop, Subjects."), value: short(300).describe("What the pictures do about it.") });
 export const ImagerySchema = z.object({
-  lede: short(TEXT),
+  lede: short(TEXT).describe("A sentence or two on the pictures."),
   traits: z.array(ImageryTraitSchema).max(8),
-  /** What the pictures never do, one line each */
-  avoid: z.array(short(200)).max(8),
-  /** References of the project that show it best, in order */
-  itemIds: z.array(z.string().max(40)).max(9),
+  avoid: z.array(short(200)).max(8).describe("What the pictures never do, one line each."),
+  itemIds: z.array(z.string().max(40)).max(9).describe("Ids of the project's references that show it best, in order (from list_references)."),
   /** Pictures uploaded as examples */
   files: z.array(BrandFileSchema).max(9),
 });
 export type ImageryTrait = z.infer<typeof ImageryTraitSchema>;
 
 export const ApplicationsSchema = z.object({
-  lede: short(TEXT),
-  /** The handle on social profiles, without @ */
-  handle: z.string().max(30).transform((s) => s.replace(/^@/, "").replace(/[^\w.]/g, "")),
-  /** The site's address shown in the browser tab */
-  domain: short(80),
-  tagline: short(120),
-  bio: short(200),
-  /** The line set on the post and the story */
-  postLine: short(120),
-  /** The picture behind the story and the profile's banner: a reference or a file */
-  heroItemId: z.string().max(40).nullable(),
+  lede: short(TEXT).describe("A sentence or two on where the brand shows up."),
+  handle: z.string().max(30).transform((s) => s.replace(/^@/, "").replace(/[^\w.]/g, "")).describe("The handle on social profiles, without @."),
+  domain: short(80).describe("The site's address as the browser tab shows it, like acme.com."),
+  tagline: short(120).describe("The line under the name."),
+  bio: short(200).describe("The profile's bio."),
+  postLine: short(120).describe("The line set on the post and the story."),
+  heroItemId: z.string().max(40).nullable().describe("The id of the reference behind the story and the profile's banner, or null."),
+  /** The same picture as a file, when uploaded */
   heroFile: BrandFileSchema.nullable(),
 });
 

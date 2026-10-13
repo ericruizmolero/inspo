@@ -320,6 +320,15 @@ export const routes: Record<string, Surface> = {
       expect((await db.select({ n: count() }).from(C).where(eq(C.projectId, fx.a.project)))[0].n, "A's project has no new proposal").toBe(before);
     },
   },
+  "mcp:bring_brand": {
+    probe: async (fx) => {
+      const S = schema.projectSystem;
+      const brandOf = async () => (await db.select({ brand: S.brand }).from(S).where(eq(S.projectId, fx.a.project)))[0].brand;
+      const before = await brandOf();
+      await refusedTool(fx, "bring_brand", { project: fx.a.project, source: "probe", color: { lede: "", items: [{ id: "c1", name: "Red", hex: "#ff0000", role: "Accent", group: "accent", weight: 2 }], accentId: "c1" } });
+      expect(await brandOf(), "A's brand is unchanged").toEqual(before);
+    },
+  },
   "mcp:create_project": {
     probe: async (fx) => {
       const before = await projectsOf(fx.a.team);

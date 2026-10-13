@@ -1402,7 +1402,7 @@ export const ui: typeof EnUi = {
       title: "Qué hace por ti",
       items: [
         "Diseña y escribe siguiendo tu criterio.",
-        "Convierte un repo, un Figma o una web en referencias.",
+        "Convierte un repo, un Figma o una web en referencias y rellena la presentación de la marca.",
         "Guarda las referencias y decisiones de una conversación.",
         "Revisa una página o un diseño contra el criterio.",
       ],
