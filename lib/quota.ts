@@ -68,7 +68,7 @@ async function countAction(accountId: string, action: "ai" | "jev_search"): Prom
  * pass chained to a system pass) or a FIRST_REF one (the account's first system pass). One click on "Improve with AI"
  * is one action.
  */
-export const AI_ACTIONS: UsageAction[] = ["system", "brand", "polish", "design_md", "design_why", "revise", "explain"];
+export const AI_ACTIONS: UsageAction[] = ["system", "brand", "polish", "design_md", "design_why", "revise", "explain", "result"];
 
 /** ai_usage rows the account paid for: of any of its workspaces, deleted ones included, while they were in it */
 const inAccount = (accountId: string) => eq(schema.aiUsage.billingAccountId, accountId);

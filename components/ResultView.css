@@ -1,0 +1,15 @@
+/* The Result view (components/ResultView.tsx): the page picker and its actions in one row, then the page in a frame.
+ * The frame is the page itself at the width of the sheet; no card around it, one line of border */
+.res { display: flex; flex-direction: column; gap: 12px; padding-top: var(--space-2); }
+.res__bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.res__actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+.res__meta { margin: 0; font-size: var(--fs-small); color: var(--muted); }
+.res__error { margin: 0; font-size: var(--fs-small); color: var(--warning); }
+.res__frame { width: 100%; height: min(78vh, 900px); border: 1px solid var(--border); border-radius: var(--radius-md); }
+.res__frame--busy, .res__frame--empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; background: var(--surface-2); color: var(--text); text-align: center; padding: 24px; box-sizing: border-box; }
+.res__frame--busy p, .res__frame--empty p { margin: 0; font-size: var(--fs-ui); }
+.res__frame .res__hint { color: var(--muted); font-size: var(--fs-small); }
+@media (max-width: 720px) {
+  .res__actions { margin-left: 0; }
+  .res__frame { height: 70vh; }
+}

@@ -488,6 +488,10 @@ Interruptores (`role=switch`); cada skill añade una sección al criterio.md.
 `FileMenu` · `components/FileMenu.tsx`
 La flecha junto a Copiar: "Descargar .md", "Versiones" (solo en un proyecto propio, no en un ejemplo) y "Abrir en un chat" (Claude, ChatGPT, Gemini). Abrir va en dos pasos: el primer clic copia el mensaje con el fichero, el segundo abre el chat.
 
+### Resultado
+`ResultView` · `components/ResultView.tsx` · `.res`
+La cuarta vista del Sistema, tras Markdown, Documento y Presentación: una página hecha por una IA desde el criterio.md del proyecto, dentro de la app. Arriba, una fila: los tipos de página como Chips en `.pills--line` (Home, About, Índice de trabajos, Caso de estudio, Artículo, Precios, Contacto) y a la derecha "Abrir en una pestaña" y "Descargar .html" (quiet s) y "Construir" (primary s; "Construir otra vez" en secondary cuando ya hay una). Debajo, apagado, de qué versión del fichero sale, quién y cuándo. La página va en un `iframe` con `sandbox` vacío (sin scripts, sin acceso a la app) a todo el ancho de la hoja, con una línea `--border` y sin tarjeta. Mientras se construye (40 a 60 s), el mismo hueco en `--surface-2` con `Busy` y "Más o menos un minuto". La primera visita a un proyecto con algo decidido construye sola la página que más enseña su tablero; las demás, a mano. Recordar la pestaña solo vale para Markdown y Presentación: al volver nunca se abre en Resultado.
+
 ### Versiones de criterio.md
 `VersionsModal` · `components/VersionsModal.tsx` · `.ver`
 El modal plano, como Mejorar con IA: a la izquierda las versiones, la más nueva arriba ("v2 la última", hace cuánto, quién y por dónde salió: copiado, descargado o leído por Claude, y qué áreas cambiaron); a la derecha el fichero de la elegida tal cual salió, en mono (el único sitio donde va: es el texto crudo), con "Descargar" (quiet) y "Copiar esta versión" (secondary), ambos s. Filas sin borde, la elegida con `--surface-2`. Bajo 720 px, la lista encima del fichero.

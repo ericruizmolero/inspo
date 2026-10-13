@@ -11,6 +11,7 @@ import { blocksToMd, criterioBlocks, type RefInfo } from "@/lib/criterio-md";
 import type { ProjectMeasures } from "@/lib/ref-measured";
 import SkillsMenu from "./SkillsMenu";
 import ImproveModal from "./ImproveModal";
+import ResultView from "./ResultView";
 import BriefPanel from "./BriefPanel";
 import { readBrief, type Brief } from "@/types/brief";
 import { loadSystem, decideSystemArea, setSystemNever, saveDocPart } from "@/app/actions/system";
@@ -38,7 +39,7 @@ import "./SystemView.css";
 // Three ways to see the project, in one row of tabs: criterio.md as the Markdown it is, the same file set as a
 // document, and the brand as a presentation. The document look is not remembered: the file opens as Markdown,
 // the file an agent reads
-type View = "markdown" | "doc" | "presentation";
+type View = "markdown" | "doc" | "presentation" | "result";
 // v2: criterio.md became the default, so an older remembered choice does not hide it
 const VIEW_KEY = "criterio.system.view.v2";
 function useView(): [View, (v: View) => void] {
@@ -267,10 +268,10 @@ export default function SystemView({ project, system, onSystem, board, library, 
 
   // The three ways to see the project sit in the page, not on the chrome: the paper tone, which follows the theme.
   // The whole row is size s (Eric, 07-10: "más pequeños"): tabs, "Improve with AI" and the "…"
-  const VIEWS = ["markdown", "doc", "presentation"] as const;
+  const VIEWS = ["markdown", "doc", "presentation", "result"] as const;
   const views = (
     <SegmentedControl tone="paper" size="s" label={project.name} className="spage-views" active={VIEWS.indexOf(view)} onChange={(i) => setView(VIEWS[i])}
-      items={VIEWS.map((v) => ({ label: v === "markdown" ? t.doc.markdown : v === "doc" ? t.doc.document : t.brand.views.presentation }))} />
+      items={VIEWS.map((v) => ({ label: v === "markdown" ? t.doc.markdown : v === "doc" ? t.doc.document : v === "result" ? t.system.result.tab : t.brand.views.presentation }))} />
   );
   const actions = (
     <div className="spage-head__actions">
@@ -318,6 +319,10 @@ export default function SystemView({ project, system, onSystem, board, library, 
               stack={fonts.stack} display={fonts.display} text={fonts.text} markdown={markdown}
               save={editor.save} release={editor.release} saving={editor.saving} findFace={findFace} brief={readBrief(project.brief)} onBrief={onBrief}
               upload={(file, purpose) => uploadBrandFile(project.id, file, purpose)} zipHref={`/api/system/brand/assets?projectId=${encodeURIComponent(project.id)}`} />
+          </div>
+        ) : view === "result" ? (
+          <div className="spage-sheet">
+            <ResultView projectId={project.id} projectName={project.name} filled={filled > 0} />
           </div>
         ) : (
           <SystemDoc look={view === "doc" ? "doc" : "md"} blocks={blocks} system={sys} labels={labels} boardIds={boardIds} itemOf={itemOf} imageOf={imageOf} refInfo={refInfo} activity={activity}

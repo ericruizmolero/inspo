@@ -35,7 +35,7 @@ export default function VersionsModal({ projectId, projectName, onClose }: { pro
     void criterioVersionFile(projectId, picked).then((r) => setFile(r.ok ? r.data : null));
   }, [projectId, picked]);
 
-  const how = (via: string) => via === "copy" ? s.via.copy : via === "download" ? s.via.download : s.via.mcp(via.replace(/^mcp:?/, "") || "MCP");
+  const how = (via: string) => via === "copy" ? s.via.copy : via === "download" ? s.via.download : via === "result" ? s.via.result : s.via.mcp(via.replace(/^mcp:?/, "") || "MCP");
   const areas = (keys: string[]) => keys.map((k) => t.system.areas[k as SystemArea] ?? k).join(", ");
   const copy = async () => { if (!file) return; try { await navigator.clipboard.writeText(file); setCopied(true); setTimeout(() => setCopied(false), 1500); } catch { /* download still works */ } };
   const download = () => {

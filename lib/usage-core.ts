@@ -4,7 +4,7 @@
 // No text or formatting here: the server sends codes, ISO dates and numbers, and
 // the client translates and formats them in its language (t.labels.action, fmtUsd, fmtDate).
 
-export type UsageAction = "design_md" | "vision" | "jev_tag" | "jev_search" | "jev_directory" | "explain" | "revise" | "design_why" | "polish" | "auto_tag" | "query_en" | "embed" | "system" | "brand";
+export type UsageAction = "design_md" | "vision" | "jev_tag" | "jev_search" | "jev_directory" | "explain" | "revise" | "design_why" | "polish" | "auto_tag" | "query_en" | "embed" | "system" | "brand" | "result";
 
 
 /** Prefix of `ref` on a model call nobody asked for by hand (the board's own re-read after filing a reference,

@@ -562,7 +562,7 @@ export const aiUsage = pgTable("ai_usage", {
   index("ai_usage_user_id_idx").on(t.userId),
   // The day's spend across the app, read before every model call (lib/spend.ts)
   index("ai_usage_created_idx").on(t.createdAt),
-  oneOf("ai_usage_action_check", t.action, ["design_md", "vision", "jev_tag", "jev_search", "jev_directory", "explain", "revise", "design_why", "polish", "auto_tag", "query_en", "embed", "system", "brand"]),
+  oneOf("ai_usage_action_check", t.action, ["design_md", "vision", "jev_tag", "jev_search", "jev_directory", "explain", "revise", "design_why", "polish", "auto_tag", "query_en", "embed", "system", "brand", "result"]),
   oneOf("ai_usage_cost_source_check", t.costSource, ["real", "estimated"]),
 ]);
 
@@ -717,6 +717,27 @@ export const criterioVersion = pgTable("criterio_version", {
 }, (t) => [
   uniqueIndex("criterio_version_project_n_idx").on(t.projectId, t.n),
   index("criterio_version_org_idx").on(t.organizationId),
+]);
+
+/** A page an AI built from the project's criterio.md, inside the app: the first proof of the file (lib/criterio-result.ts) */
+export const criterioResult = pgTable("criterio_result", {
+  id: text("id").primaryKey(),
+  organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
+  projectId: text("project_id").notNull().references(() => project.id, { onDelete: "cascade" }),
+  /** The kind of page asked for (lib/composition-core.ts PAGE_KINDS key) */
+  page: text("page").notNull(),
+  /** The version of criterio.md it was built from (criterio_version.n) */
+  versionN: integer("version_n"),
+  /** "running" while the model writes it, then "done" or "failed" */
+  status: text("status").notNull(),
+  /** The page, one self-contained HTML file; empty until done */
+  html: text("html").notNull().default(""),
+  model: text("model"),
+  byName: text("by_name"),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
+}, (t) => [
+  index("criterio_result_project_idx").on(t.projectId, t.createdAt),
+  check("criterio_result_status_check", sql`${t.status} in ('running', 'done', 'failed')`),
 ]);
 
 export const projectSystem = pgTable("project_system", {

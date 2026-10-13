@@ -13,7 +13,7 @@ import { log } from "./log";
 
 const V = schema.criterioVersion;
 
-export type VersionVia = "copy" | "download" | "mcp";
+export type VersionVia = "copy" | "download" | "mcp" | "result";
 
 export interface CriterioVersionRow {
   n: number;
