@@ -8,6 +8,7 @@ import sharp from "sharp";
 import { webKeyOf } from "@/lib/url";
 import { GET } from "@/app/api/files/[...key]/route";
 import { GET as measured } from "@/app/api/system/measured/route";
+import { proxy } from "@/proxy";
 import { actAs, files } from "./harness";
 import { cleanupTeam, seedTeam, type Team } from "./library/seed";
 
@@ -90,4 +91,11 @@ test("read_reference over MCP hands the client its picture inside the answer", a
   expect(image, "the picture is attached").toBeDefined();
   const meta = await sharp(Buffer.from(image!.data!, "base64")).metadata();
   expect(`image/${meta.format}`, "its type is the one it says").toBe(image!.mimeType);
+});
+
+test("the proxy lets a signed link through to the route with no session cookie, and nothing unsigned", () => {
+  const passes = (path: string) => proxy(new NextRequest(`http://localhost${path}`)).status !== 401;
+  expect(passes(signedFilePath(KEY)), "a signed link reaches the route, which checks it").toBe(true);
+  expect(passes(`/api/files/${KEY}`), "an unsigned one is stopped at the door").toBe(false);
+  expect(passes(`/api/library?t=1`), "a t elsewhere opens nothing").toBe(false);
 });

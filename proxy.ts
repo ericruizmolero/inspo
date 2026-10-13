@@ -15,6 +15,7 @@ import { INVITE_COOKIE, INVITE_COOKIE_MAX_AGE } from "@/lib/invite-cookie";
 // /api/health: BetterStack's uptime checks, which say only ok and timings
 // /unsubscribe and /api/unsubscribe: the one-click link at the foot of a team email; the signature is the proof (lib/notify.ts)
 // /s/: a project's brand shared by link; the token in the path is the proof (lib/share.ts)
+// /api/files/<key>?t=: a stored file's public link in a criterio.md taken out of the app; the route checks the signature (lib/file-links.ts)
 // /extension/download: the extension's zip, which criterio.design/extension/ (the marketing site) offers to anyone.
 // It is the same code as the public repo and the store package, with no key in it
 // /mcp, /api/mcp/ and /.well-known/: the MCP connector and its OAuth endpoints; an AI client gets in with a bearer
@@ -89,6 +90,7 @@ export function proxy(request: NextRequest) {
   };
 
   if (PUBLIC.some((re) => re.test(pathname))) return withLang(next());
+  if (pathname.startsWith("/api/files/") && request.nextUrl.searchParams.has("t")) return next();
 
   if (getSessionCookie(request)) return withLang(next());
 
