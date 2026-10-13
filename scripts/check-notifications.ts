@@ -7,7 +7,7 @@ loadEnv({ path: ".env.local" }); loadEnv();
 import assert from "node:assert/strict";
 import { pool } from "../lib/db";
 import { runMigrations } from "../lib/db/migrate";
-import { activityLines, digestGroups, digestSummary, sendDigests, unsubscribeUrl, unsubscribeValid, type TeamEvent } from "../lib/notify";
+import { activityLines, digestGroups, digestSummary, digestTime, sendDigests, unsubscribeUrl, unsubscribeValid, type TeamEvent } from "../lib/notify";
 
 async function main() {
   if (!/127\.0\.0\.1|localhost/.test(process.env.DATABASE_URL ?? "postgres://postgres@127.0.0.1:5432/criterio")) throw new Error("check:notifications only runs against the local database");
@@ -48,6 +48,10 @@ async function main() {
   const groups = digestGroups(events, "es", new Map([["p1", "Landing Criterio"]]));
   assert.deepEqual(groups.map((g) => g.title), ["Landing Criterio", "Biblioteca"], "the library goes last");
   assert.ok(groups[0].lines[0].url.startsWith("http"), "email links are absolute");
+
+  // The morning's emails land at 08:30 in Spain, in summer and in winter time
+  assert.equal(digestTime(new Date("2026-10-13T04:08:00Z")).toISOString(), "2026-10-13T06:30:00.000Z", "summer time");
+  assert.equal(digestTime(new Date("2026-10-26T04:30:00Z")).toISOString(), "2026-10-26T07:30:00.000Z", "winter time");
 
   // The real thing, dry: what the cron would send this morning
   const run = await sendDigests(new Date(), true);

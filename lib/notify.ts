@@ -331,6 +331,25 @@ export async function markActivitySeen(organizationId: string, userId: string, n
 
 // ─── The daily digest ────────────────────────────────────────────────────────
 
+/** When the morning's emails land: half past eight in Spain, where the team is, in summer and in winter time.
+ *  The cron runs hours before (Hobby only promises the hour, in UTC) and leaves them on the queue until then */
+const DIGEST_ZONE = "Europe/Madrid";
+const DIGEST_AT = { hour: 8, minute: 30 };
+
+const zoneParts = (d: Date) => Object.fromEntries(
+  new Intl.DateTimeFormat("en-US", { timeZone: DIGEST_ZONE, hourCycle: "h23", year: "numeric", month: "numeric", day: "numeric", hour: "numeric", minute: "numeric", second: "numeric" })
+    .formatToParts(d).filter((p) => p.type !== "literal").map((p) => [p.type, Number(p.value)]),
+) as Record<"year" | "month" | "day" | "hour" | "minute" | "second", number>;
+
+/** Today's DIGEST_AT in DIGEST_ZONE, as an instant */
+export function digestTime(now = new Date()): Date {
+  const p = zoneParts(now);
+  const wall = Date.UTC(p.year, p.month - 1, p.day, DIGEST_AT.hour, DIGEST_AT.minute);
+  // The zone's offset at that hour (it changes at night, never at half past eight), then the instant it names
+  const q = zoneParts(new Date(wall));
+  return new Date(wall - (Date.UTC(q.year, q.month - 1, q.day, q.hour, q.minute, q.second) - wall));
+}
+
 /** The counts for the subject line, in order of weight */
 export function digestSummary(events: TeamEvent[], locale: Locale): string {
   const t = DICTS[locale].mail.digest.count;

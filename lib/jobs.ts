@@ -1,5 +1,6 @@
 // Work that runs after the answer, each piece in its own function: tagging an item, making its meaning
-// vector, capturing a site's first screen, and the sweep that catches what fell through. Server only.
+// vector, capturing a site's first screen, the sweep that catches what fell through and the morning's emails.
+// Server only.
 //
 // enqueue() sends a job to Vercel Queues (topic "jobs"), which calls app/api/queue/jobs with it: each job gets
 // that route's own time budget, whatever route sent it, and a failure is delivered again later (lib/job-run.ts
@@ -21,7 +22,9 @@ export type Job =
   /** A site's first screen, for its card */
   | { kind: "shot"; url: string }
   /** Every job left behind, sent again; then the next sweep */
-  | { kind: "sweep" };
+  | { kind: "sweep" }
+  /** The morning's emails (the team digests, the day-3 nudge), held by the cron until lib/notify.ts digestTime */
+  | { kind: "mail" };
 
 /** The safety net's period: what no job carries any more is sent again within this */
 export const SWEEP_EVERY_S = 5 * 60;

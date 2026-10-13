@@ -7,6 +7,9 @@ import { embedItems } from "./embed";
 import { getOrCaptureShot } from "./screenshot";
 import { QueueFull } from "./browser";
 import { openWorkspacesWithJobs, PER_WORKSPACE, runTagJob } from "./tag-jobs";
+import { sendDigests } from "./notify";
+import { sendNudges } from "./first-use-mail";
+import { recordFailure } from "./log";
 import { enqueue, enqueueEmbed, scheduleSweep, EMBED_BATCH, type Job } from "./jobs";
 
 const T = schema.inspoItem;
@@ -44,6 +47,13 @@ const HANDLERS: Handlers = {
     if (!prod) { await sweep(); return; }
     const res = await fetch(`https://${prod}/api/cron/sweep`, { headers: { Authorization: `Bearer ${process.env.CRON_SECRET}` }, signal: AbortSignal.timeout(60_000) });
     if (!res.ok) throw new RetryLater(60);
+  },
+  // Both run even if one fails. Delivered again, nobody gets one twice: a digest moves its marker as it goes
+  // and the nudge is sent once per person (lib/mail-once.ts)
+  async mail() {
+    const digests = await sendDigests().catch((err) => { void recordFailure("job", "digest", err); return null; });
+    const nudges = await sendNudges().catch((err) => { void recordFailure("job", "nudge", err); return null; });
+    if (!digests || !nudges) throw new RetryLater(15 * 60);
   },
 };
 
