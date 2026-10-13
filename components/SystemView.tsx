@@ -197,11 +197,11 @@ export default function SystemView({ project, system, onSystem, board, library, 
     if (r.ok) setSystem(r.data); else setError(r.error);
   };
   // What each reference measured and the client's own words, read on the server so the file says what a share link's does
-  const [measures, setMeasures] = useState<ProjectMeasures>({ measured: {}, clientCopy: [] });
+  const [measures, setMeasures] = useState<ProjectMeasures & { links?: Record<string, string> }>({ measured: {}, clientCopy: [] });
   useEffect(() => {
     let alive = true;
     fetch(`/api/system/measured?projectId=${encodeURIComponent(project.id)}`)
-      .then((res) => (res.ok ? res.json() as Promise<ProjectMeasures> : null))
+      .then((res) => (res.ok ? res.json() as Promise<ProjectMeasures & { links: Record<string, string> }> : null))
       .then((m) => { if (alive && m) setMeasures(m); }, () => { /* the file is whole without them */ });
     return () => { alive = false; };
   }, [project.id, board.length, project.clientItemId]);
@@ -218,7 +218,7 @@ export default function SystemView({ project, system, onSystem, board, library, 
     client: clientItem ? { name: clientItem.name, web: clientItem.web } : null,
     about: project.intent, brief: project.brief, board: boardIds, talk: activity?.notes,
     origin: typeof window === "undefined" ? "" : window.location.origin,
-    skills: skillsOn, locale, brand: sys.brand,
+    skills: skillsOn, locale, brand: sys.brand, links: measures.links,
   }), [sys, project.name, project.intent, project.brief, library, boardIds, labels, t, clientItem, refInfo, activity, skillsOn, locale, measures]);
   const markdown = useMemo(() => blocksToMd(blocks), [blocks]);
   // Bringing in a brand that exists: asked for here, or from the empty project's start (?bring=site)

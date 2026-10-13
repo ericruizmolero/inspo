@@ -69,6 +69,9 @@ export interface CriterioMdInput {
   mode?: "full" | "clean";
   /** A stored file's whole address (a logo), as this reader can open it */
   fileHref?: (key: string) => string;
+  /** A public path for each stored file the file cites (/api/files/<key> → a signed one, lib/file-links.ts): the app's
+   *  own copy, which leaves the app and is read where there is no session */
+  links?: Record<string, string>;
   /** The client's own words, read off its site (headline, headings, buttons): the voice samples when the brief has none */
   clientCopy?: string[];
   strings: {
@@ -176,14 +179,14 @@ function measuredLines(m: RefMeasured | undefined, s: CriterioMdInput["strings"]
   return out;
 }
 
-export function criterioBlocks({ project, system, items: allItems, labels, strings, client, about, brief, board = [], talk: allTalk = {}, origin = "", skills = [], locale, brand, mode = "full", fileHref, clientCopy = [] }: CriterioMdInput): CriterioBlock[] {
+export function criterioBlocks({ project, system, items: allItems, labels, strings, client, about, brief, board = [], talk: allTalk = {}, origin = "", skills = [], locale, brand, mode = "full", fileHref, links = {}, clientCopy = [] }: CriterioMdInput): CriterioBlock[] {
   const date = (system.updatedAt ?? new Date().toISOString()).slice(0, 10);
   // Clean: what each reference is stays; who saved it and what the team said of it do not
   const clean = mode === "clean";
   const items = clean ? Object.fromEntries(Object.entries(allItems).map(([id, it]) => [id, { ...it, by: undefined, date: undefined, said: undefined }])) as Record<string, RefInfo> : allItems;
   const talk = clean ? {} : allTalk;
-  const abs = (u: string) => (u.startsWith("/") ? `${origin}${u}` : u);
-  const href = (key: string) => (fileHref ? fileHref(key) : `${origin}/api/files/${key}`);
+  const abs = (u: string) => (u.startsWith("/") ? `${origin}${links[u] ?? u}` : u);
+  const href = (key: string) => (fileHref ? fileHref(key) : abs(`/api/files/${key}`));
   // What someone said, and the pictures they attached to say it: the words often point at them ("these 3D…")
   const told = (w: NonNullable<RefInfo["said"]>[number], max: number) => {
     const pics = (w.images ?? []).map((u, i, all) => `[${strings.attached}${all.length > 1 ? ` ${i + 1}` : ""}](${abs(u)})`);

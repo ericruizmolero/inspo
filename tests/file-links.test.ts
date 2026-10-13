@@ -7,6 +7,7 @@ import { handleRpc } from "@/lib/mcp/server";
 import sharp from "sharp";
 import { webKeyOf } from "@/lib/url";
 import { GET } from "@/app/api/files/[...key]/route";
+import { GET as measured } from "@/app/api/system/measured/route";
 import { actAs, files } from "./harness";
 import { cleanupTeam, seedTeam, type Team } from "./library/seed";
 
@@ -42,7 +43,7 @@ test("a signed link reads its own file with no session, and nothing else does", 
   expect((await get(signedFilePath(KEY, Date.now() - 29 * DAY))).status, "a link inside its days still works").toBe(200);
 });
 
-test("criterio.md read over MCP links its uploaded image where a client with no session can load it", async () => {
+test("criterio.md, read over MCP or copied in the app, links its uploaded image where no session can load it", async () => {
   const key = `inspo/${team.ws.id}/media/1760000000000-upload.png`;
   files.set(key, { body: Buffer.from("upload bytes"), contentType: "image/png" });
   const now = new Date(), web = `/api/files/${key}`, projectId = `${team.tag}-p`;
@@ -52,6 +53,13 @@ test("criterio.md read over MCP links its uploaded image where a client with no 
   });
   await db.insert(schema.project).values({ id: projectId, organizationId: team.ws.id, name: "outside", createdAt: now, updatedAt: now });
   await db.insert(schema.projectItem).values({ projectId, itemId: `${team.tag}-img`, organizationId: team.ws.id, createdAt: now });
+
+  actAs({ id: team.user.id, name: team.user.name, email: team.user.email, workspaceId: team.ws.id });
+  const res = await measured(new NextRequest(`http://localhost/api/system/measured?projectId=${projectId}`));
+  const copied = ((await res.json()) as { links: Record<string, string> }).links[web];
+  expect(copied, "the app's copy gets a public link for the upload").toMatch(/^\/api\/files\/.+\?t=\d+\.[0-9a-f]{32}$/);
+  actAs(null);
+  expect((await get(copied)).status, "that link loads with no session").toBe(200);
 
   const md = await readCriterio({ user: team.user, workspaces: [team.ws], via: "Claude" }, "https://app.test", projectId);
   const links = [...md.matchAll(/https:\/\/app\.test(\/api\/files\/[^\s)]+)/g)].map((m) => m[1]);
