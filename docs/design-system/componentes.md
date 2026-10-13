@@ -525,7 +525,7 @@ Autor, @usuario, fecha, texto, fotos, vídeo o gif. El vídeo va en un iframe si
 
 ### Página de texto
 `TextPage` · `components/TextPage.tsx` · `.ip-text`
-La referencia de texto entera, editable en el sitio con autoguardado (también al cerrar).
+La referencia de texto entera, editable en el sitio con autoguardado (también al cerrar). El texto es Markdown y se escribe como en Bear: cada marca (`#`, `**`, `_`, `` ` ``, `-`, `>`, `[]()`) se queda donde se tecleó, en `--muted`, y las palabras toman lo que significa; `#` va en title-m, `##` en title-s, el código en mono. Lo pinta `highlightMarkdown` (`lib/markdown-highlight.ts`), que conserva cada carácter para que el cursor vuelva a su sitio, y lo edita CodeJar (`codejar`), que guarda el cursor y el historial de deshacer. Enter sigue una lista (numerada o de tareas) y, en un elemento vacío, la termina; ⌘B negrita, ⌘I cursiva, ⌘K enlace (sobre una dirección, la pone de destino); Esc sale. Solo leída, los enlaces se abren. Clases `.mde-*` en `components/TextRef.css`.
 
 ### Reproductor de vídeo
 `VideoPlayer` · `components/VideoPlayer.tsx` · `.vp`

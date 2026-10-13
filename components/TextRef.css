@@ -16,6 +16,23 @@
 .ip-text__body[contenteditable] { min-height: 40vh; outline: none; cursor: text; caret-color: var(--text); }
 .ip-text__body[contenteditable]:focus { color: var(--text); }
 /* Saving and saved: a cell of the system's StatusBar, kept in sight at the bottom */
+/* The words are Markdown (lib/markdown-highlight.ts), shown the way Bear writes it: every mark stays where it was
+   typed, in --muted, and the words take what it means. Read and typed alike; headings step down from the page's
+   title-l: # is title-m, ## title-s, deeper ones only the weight */
+.mde .mde-mark { color: var(--muted); font-weight: var(--fw-regular); font-style: normal; }
+.mde .mde-h { color: var(--text-strong); font-weight: var(--fw-semibold); }
+.mde .mde-h1 { font-size: var(--fs-title-m); line-height: var(--lh-title-m); font-weight: var(--fw-title-m); }
+.mde .mde-h2 { font-size: var(--fs-title-s); line-height: var(--lh-title-s); font-weight: var(--fw-title-s); }
+.mde .mde-b { color: var(--text); font-weight: var(--fw-semibold); }
+.mde .mde-i { font-style: italic; }
+.mde .mde-s { color: var(--muted); }
+.mde .mde-q { font-style: italic; }
+.mde .mde-code, .mde .mde-pre, .mde .mde-fence { font-family: var(--font-mono); font-size: 0.92em; }
+.mde .mde-code, .mde .mde-pre { color: var(--text); }
+.mde .mde-link { color: var(--text); text-decoration: underline; text-decoration-color: var(--muted); text-underline-offset: 3px; }
+.mde .mde-url { overflow-wrap: anywhere; }
+.mde .mde-task.is-done { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--muted); }
+.mde .mde-task.is-done .mde-mark, .mde .mde-check { text-decoration: none; }
 .ip-text__state.cr-statusbar { position: sticky; bottom: 0; width: fit-content; max-width: 100%; margin: 12px 0 0; }
 .ip-text__state .cr-statusbar-cell.is-error { color: var(--danger); }
 .ip-text__missing { font-size: var(--fs-ui); color: var(--muted); }

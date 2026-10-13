@@ -66,7 +66,8 @@ export async function deleteTextFile(organizationId: string, url: string): Promi
 /** Its first lines on one line: what the card shows and what the models are told of it */
 export function excerptOf(text: string): string {
   // Markdown marks are dropped and the lines run on: a list reads as an enumeration
-  const lines = text.split("\n").map((l) => l.replace(/^\s*(#{1,6}|[-*\u2022]|\d+[.)])\s+/, "").replace(/\*\*|__/g, "").replace(/\s+/g, " ").trim()).filter(Boolean);
+  const lines = text.split("\n").filter((l) => !/^\s*(```|~~~|([-*_])(\s*\2){2,}\s*$)/.test(l))
+    .map((l) => l.replace(/^\s*(>\s*)?((#{1,6}|[-*+\u2022]|\d+[.)])\s+)?(\[[ xX]\]\s+)?/, "").replace(/\[([^\]]+)\]\([^)]*\)/g, "$1").replace(/\*\*|__|~~|`/g, "").replace(/(^|[^\p{L}\p{N}])[*_](?=\S)|(?<=\S)[*_](?![\p{L}\p{N}])/gu, "$1").replace(/\s+/g, " ").trim()).filter(Boolean);
   const one = lines.reduce((all, l) => (all ? `${all}${/[.:;!?\u2026]$/.test(all) ? " " : ", "}${l}` : l), "");
   return one.length > EXCERPT_MAX ? `${one.slice(0, EXCERPT_MAX - 1).replace(/\s+\S*$/, "")}…` : one;
 }
