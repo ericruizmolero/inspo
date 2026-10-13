@@ -1,7 +1,8 @@
-import { afterAll, beforeAll, expect, test } from "vitest";
+import { afterAll, beforeAll, expect, test, vi } from "vitest";
 import { NextRequest } from "next/server";
 import { db, pool, schema } from "@/lib/db";
 import { signedFilePath } from "@/lib/file-links";
+import * as storage from "@/lib/storage";
 import { readCriterio } from "@/lib/mcp/pieces";
 import { handleRpc } from "@/lib/mcp/server";
 import sharp from "sharp";
@@ -31,8 +32,10 @@ test("a signed link reads its own file with no session, and nothing else does", 
   files.set(OTHER, { body: Buffer.from("other bytes"), contentType: "image/png" });
 
   const signed = signedFilePath(KEY);
+  const sign = vi.spyOn(storage, "signedFileUrl").mockResolvedValue({ url: "https://bucket.test/elsewhere", maxAge: 3600 });
   const ok = await get(signed);
-  expect(ok.status, "the signed link is served").toBe(200);
+  sign.mockRestore();
+  expect(ok.status, "the signed link is served from this host, not redirected to the bucket's").toBe(200);
   expect(await ok.text()).toBe("png bytes");
 
   expect((await get(`/api/files/${KEY}`)).status, "no signature still needs a session").toBe(401);

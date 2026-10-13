@@ -32,7 +32,8 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/api/files/[...ke
   const original = originalOfCard(key);
 
   // A link signed for this key (lib/file-links.ts) was handed to someone outside the app: it needs no session
-  if (!fileTokenValid(key, req.nextUrl.searchParams.get("t"))) {
+  const outside = fileTokenValid(key, req.nextUrl.searchParams.get("t"));
+  if (!outside) {
     const session = await requireCtx();
     if (isResponse(session)) return session;
     // The active workspace first: it answers nearly every request without looking further
@@ -49,7 +50,9 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/api/files/[...ke
   if (original && !(await ensureCardCopy(key).catch((err) => { log.warn("files.card_copy_failed", { ref: key, err }); return false; }))) key = original;
 
   try {
-    const signed = await signedFileUrl(key);
+    // Outside the app the bytes come from here: a fetcher does not follow a redirect to another host, and an
+    // allowlist then needs only this one. Vercel's cache keeps the copy, so a shared link costs one function call a day
+    const signed = outside ? null : await signedFileUrl(key);
     if (signed) {
       // The redirect is cached as long as the URL it points to stays valid (lib/storage.ts)
       return new Response(null, { status: 302, headers: { Location: signed.url, "Cache-Control": `private, max-age=${signed.maxAge}` } });
@@ -62,7 +65,7 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/api/files/[...ke
       "Content-Length": String(file.size),
       "Accept-Ranges": "bytes",
       // Keys carry a timestamp: a changed file gets a new path, so a day of caching is safe
-      "Cache-Control": "private, max-age=86400",
+      "Cache-Control": outside ? "public, max-age=86400, s-maxage=86400" : "private, max-age=86400",
     };
     if (file.range) headers["Content-Range"] = file.range;
     // An SVG opened on its own runs as a page: nothing in it may run
