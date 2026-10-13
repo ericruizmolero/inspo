@@ -22,12 +22,14 @@ interface EmptyStartProps {
   lead?: ReactNode;
   /** Under the paste field: the signed-out home's price and example file */
   children?: ReactNode;
+  /** Signed in: the way to Discover's examples, which only shows where a space is still empty (meeting of 13-10) */
+  onExamples?: () => void;
 }
 
 /**
  * Workspace with no inspos yet: one prompt box to paste a URL, and under it the way to the places we look.
  */
-export default function EmptyStart({ onAddUrl, isDuplicate, onImportBoard, arriving, lead, children }: EmptyStartProps) {
+export default function EmptyStart({ onAddUrl, isDuplicate, onImportBoard, arriving, lead, children, onExamples }: EmptyStartProps) {
   const { t, locale } = useT();
   const [raw, setRaw] = useState("");
   const [error, setError] = useState("");
@@ -75,9 +77,11 @@ export default function EmptyStart({ onAddUrl, isDuplicate, onImportBoard, arriv
 
       {children}
 
-      {/* Nothing to paste yet: the places we look, on the marketing site. Each one there saves back here (?add=) */}
-      <div className={s.section} data-flip>
-        <Button icon="compass" iconEnd="arrow-up-right" href={marketingHref("/resources/", locale)}>{t.start.resources}</Button>
+      {/* Nothing to paste yet: an example to start from (Discover, in the app) and the places we look, on the marketing
+          site. Each one there saves back here (?add=) */}
+      <div className={`${s.section} ${s.links}`} data-flip>
+        {onExamples && <Button icon="compass" onClick={onExamples}>{t.start.examples}</Button>}
+        <Button icon="search" iconEnd="arrow-up-right" href={marketingHref("/resources/", locale)}>{t.start.resources}</Button>
       </div>
     </section>
     </div>

@@ -1,5 +1,5 @@
 // The resources page (/resources/ and /es/resources/): the places to look, group by group, in this order. Each domain
-// appears once. A thumbnail per site lives in public/resources/<slug>.jpg (scripts/resource-shots.ts makes them).
+// appears once, except a section of a site already listed that's worth its own row (it gets its own shot). A thumbnail per site lives in public/resources/<slug>.jpg (scripts/resource-shots.ts makes them).
 import type { Locale } from "./i18n";
 
 export interface Resource {
@@ -7,6 +7,8 @@ export interface Resource {
   url: string;
   /** The day it joined the list (yyyy-mm-dd), for the ones after the first batch: shown as new for NEW_DAYS */
   added?: string;
+  /** The thumbnail's file name when another entry already has this domain's (see resourceShot) */
+  shot?: string;
   text: Record<Locale, string>;
 }
 
@@ -24,6 +26,8 @@ export const isNew = (r: Resource, now: number) => !!r.added && now - Date.parse
 export const resourceHost = (url: string) => new URL(url).hostname.replace(/^www\./, "");
 /** The thumbnail's file name: the host with every run of other characters turned into a dash */
 export const resourceSlug = (url: string) => resourceHost(url).replace(/[^a-z0-9]+/gi, "-").toLowerCase();
+/** The thumbnail of a resource: its own shot if it has one, the domain's otherwise */
+export const resourceShot = (r: Resource) => r.shot ?? resourceSlug(r.url);
 
 export const RESOURCES: ResourceGroup[] = [
   {
@@ -236,6 +240,8 @@ export const RESOURCES: ResourceGroup[] = [
         text: { en: "Micro-interactions, ready to drop in.", es: "Microinteracciones listas para usar." } },
       { name: "Anime.js", url: "https://animejs.com", added: "2026-10-08",
         text: { en: "A lightweight animation engine for the web, with a playground.", es: "Motor de animación ligero para la web, con playground." } },
+      { name: "Recent.design Launch Videos", url: "https://recent.design/launch-videos", added: "2026-10-13", shot: "recent-design-launch-videos",
+        text: { en: "Launch videos, trailers and announcement films from companies like Anthropic, Cursor and Runway.", es: "Vídeos de lanzamiento, tráilers y piezas de anuncio de empresas como Anthropic, Cursor o Runway." } },
       { name: "60fps", url: "https://60fps.design",
         text: { en: "UI animation and interaction, captured on video.", es: "Animaciones e interacciones de UI grabadas en vídeo." } },
       { name: "Detail", url: "https://detail.design", added: "2026-10-04",

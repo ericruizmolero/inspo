@@ -741,6 +741,7 @@ export default function InspoClient({
             isDuplicate={isDuplicate}
             onImportBoard={importBoard}
             arriving={arrivingBoard}
+            onExamples={() => setSpace("templates")}
           />
         ) : currentProject && projectView === "system" ? (
           <>
@@ -796,6 +797,7 @@ export default function InspoClient({
             onUpload={async (files) => { await Promise.all(files.map((file) => addByUpload({ web: "", file, type: "inspiration", note: "" }))); }}
             onFile={(picked) => fileMany(picked, currentProject.id)}
             onBringBrand={() => setParams({ view: "system", bring: "site" })}
+            onExamples={() => setSpace("templates")}
           />
         ) : spaceItems.length === 0 && space === "inbox" ? (
           <InboxZero

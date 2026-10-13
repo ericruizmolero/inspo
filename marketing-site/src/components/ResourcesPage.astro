@@ -4,7 +4,7 @@ import Header from "./Header.astro";
 import Footer from "./Footer.astro";
 import PageHead from "./PageHead.astro";
 import { APP_URL, copy, type Locale } from "../i18n";
-import { RESOURCES, isNew, resourceHost, resourceSlug } from "../resources";
+import { RESOURCES, isNew, resourceHost, resourceShot } from "../resources";
 import { plain } from "../plain";
 
 interface Props { locale: Locale }
@@ -41,7 +41,7 @@ const saveHref = (url: string) => `${APP_URL}/?add=${encodeURIComponent(url)}`;
           {g.items.map((r) => (
             <li class="row" data-text={plain([r.name, resourceHost(r.url), r.text[locale], g.title[locale]].join(" "))}>
               <a class="row__open" href={r.url} target="_blank" rel="noopener">
-                <img class="row__thumb" src={`/resources/${resourceSlug(r.url)}.jpg`} alt="" width="144" height="90" loading="lazy" decoding="async" />
+                <img class="row__thumb" src={`/resources/${resourceShot(r)}.jpg`} alt="" width="144" height="90" loading="lazy" decoding="async" />
                 <span class="row__text">
                   <span class="row__name">{r.name}{isNew(r, now) && <span class="badge">{t.new}</span>}</span>
                   <span class="row__desc">{r.text[locale]}</span>

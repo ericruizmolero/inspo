@@ -220,17 +220,15 @@ function SidebarNav({ quota, steps, items, onPick,
   // Projects: which one is being named in place ("new" = the row at the bottom), and each one's count
   const [naming, setNaming] = useState<string | null>(null);
   const counts = useSpaceCounts(items, links);
-  const inDiscover = space === "templates" || space === "discover" || space === "skills";
   return (
     <>
       {/* SidebarContent stays still; FadeScroll owns the scroll so the edge fades can follow it */}
       <SidebarContent className="overflow-hidden">
         <FadeScroll>
-          {/* The island's first two tabs: home (every project, as pictures) and Discover (opens on its examples) */}
+          {/* The island's first tab: home (every project, as pictures). Discover is no tab since 13-10: its examples are in the workspace menu */}
           <SidebarGroup>
             <SidebarMenu>
               <NavItem icon={I.home} label={t.projects.home} active={space === "home"} onClick={pick(() => onSpace("home"))} />
-              <NavItem icon={I.compass} label={t.sidebar.discover} active={inDiscover} onClick={pick(() => onSpace("templates"))} />
             </SidebarMenu>
           </SidebarGroup>
 

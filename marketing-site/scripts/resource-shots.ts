@@ -9,7 +9,7 @@ import { access, mkdir, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import puppeteer from "puppeteer-core";
-import { RESOURCES, resourceSlug } from "../src/resources.ts";
+import { RESOURCES, resourceShot, type Resource } from "../src/resources.ts";
 
 const OUT = join(dirname(fileURLToPath(import.meta.url)), "..", "public", "resources");
 // A 1440 × 900 screen drawn at half density: the file comes out 720 wide, as the page shows it
@@ -39,8 +39,9 @@ const browser = await puppeteer.launch({
   args: ["--disable-blink-features=AutomationControlled", "--hide-scrollbars"],
 });
 
-async function one(name: string, url: string) {
-  const file = join(OUT, `${resourceSlug(url)}.jpg`);
+async function one(r: Resource) {
+  const { name, url } = r;
+  const file = join(OUT, `${resourceShot(r)}.jpg`);
   if (!force && (await exists(file))) { console.log(`· ${name} (already exists)`); return; }
   const page = await browser.newPage();
   try {
@@ -66,6 +67,6 @@ async function one(name: string, url: string) {
 await mkdir(OUT, { recursive: true });
 const queue = RESOURCES.flatMap((g) => g.items).filter((r) => !needle || `${r.name} ${r.url}`.toLowerCase().includes(needle));
 await Promise.all(Array.from({ length: visible ? 1 : 2 }, async () => {
-  while (queue.length) { const r = queue.shift()!; await one(r.name, r.url); }
+  while (queue.length) { const r = queue.shift()!; await one(r); }
 }));
 await browser.close();

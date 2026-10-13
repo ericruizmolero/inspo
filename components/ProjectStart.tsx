@@ -49,7 +49,7 @@ function sourceOf(web: string, kinds: Record<MediaKind, string>, gif: string): s
   try { return readableDomain(new URL(web).hostname.replace(/^www\./, "")); } catch { return kinds[kind]; }
 }
 
-export default function ProjectStart({ project, items, links, imageOf, onAddUrl, onUpload, onDescribe, onFile, onBringBrand }: {
+export default function ProjectStart({ project, items, links, imageOf, onAddUrl, onUpload, onDescribe, onFile, onBringBrand, onExamples }: {
   project: Project;
   /** The whole library, newest first */
   items: InspoItem[];
@@ -65,6 +65,8 @@ export default function ProjectStart({ project, items, links, imageOf, onAddUrl,
   onFile: (items: InspoItem[]) => Promise<void>;
   /** The project has a brand already (a site, files, a guide): opens the system to bring it in */
   onBringBrand?: () => void;
+  /** Discover's examples: offered while the workspace has no references at all, as part of starting out (13-10) */
+  onExamples?: () => void;
 }) {
   const { t } = useT();
   const w = t.projects;
@@ -250,6 +252,9 @@ export default function ProjectStart({ project, items, links, imageOf, onAddUrl,
               : (picked.size ? w.startPicked(picked.size) : w.startNothingPicked)}</p>
             {step === 2 && onBringBrand && (
               <Button variant="quiet" size="s" icon="folder" data-tip={w.startBrand} onClick={onBringBrand}>{w.startBrandShort}</Button>
+            )}
+            {step === 2 && onExamples && library.length === 0 && (
+              <Button variant="quiet" size="s" icon="compass" data-tip={t.start.examples} onClick={onExamples}>{t.ws.examples}</Button>
             )}
           </div>
           <div className={p.footEnd}>

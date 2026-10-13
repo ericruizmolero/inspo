@@ -245,8 +245,6 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
     return { shown: openTabs.filter((p) => keep.has(p.id)), hidden: openTabs.filter((p) => !keep.has(p.id)) };
   }, [openTabs, fitOrder, fit]);
 
-  // No library tab: Discover holds the examples, the resources and the skills, and the Inbox what is in no project yet
-  const inDiscover = space === "templates" || space === "discover" || space === "skills";
   const createNew = async (name: string, about: string) => {
     const p = await onCreateProject(name);
     if (!p) return;
@@ -316,8 +314,11 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
             <Link className="island__team-manage" href="/settings/members" aria-label={t.ws.manageTeam}>{t.ws.manage}</Link>
           </div>
           <Separator />
-          {/* The places to look and the skills for agents are Discover's other two sections (the same lists the marketing site shows) */}
-          <MenuItem icon="compass" onClick={() => onSpace("discover")}>{t.ws.resources}</MenuItem>
+          {/* Discover is no tab of the bar (meeting of 13-10: it read as one more project, and the first, "lo primero que
+              encuentras es descubrir, que no tiene que ver con el producto"): its three sections open from here ("tienes
+              recursos y tienes skills y vas directamente"), and its examples also from wherever a space is still empty */}
+          <MenuItem icon="compass" onClick={() => onSpace("templates")}>{t.ws.examples}</MenuItem>
+          <MenuItem icon="search" onClick={() => onSpace("discover")}>{t.ws.resources}</MenuItem>
           <MenuItem icon="file" onClick={() => onSpace("skills")}>{t.ws.skills}</MenuItem>
           <MenuItem icon={sectionIcon("feedback")} data-feedback-toolbar="true" data-tip={t.feedback.entryHint} onClick={() => enterFeedbackMode()}>
             {t.feedback.open}
@@ -334,10 +335,6 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
             chosen state (is-on), like any other tab, so the home never hovers differently from the rest */}
         <a href={hrefOf("home")} className={`cr-iconbtn cr-iconbtn-quiet cr-iconbtn-m island__home${space === "home" ? " is-on is-active" : ""}`} aria-current={space === "home" ? "page" : undefined}
           aria-label={t.projects.home} data-tip={t.projects.home} data-fixed onClick={go("home")}><Icon name="home" size={18} /></a>
-        {/* Discover is its examples */}
-        <a href={hrefOf("templates")} className={`island__tab${inDiscover ? " is-on" : ""}`} aria-current={inDiscover ? "page" : undefined} data-fixed onClick={go("templates")}>
-          <span className="island__label">{t.sidebar.discover}</span>
-        </a>
         {/* What is in no project yet: always a tab away, so nothing saved is ever out of reach */}
         {tab("inbox", t.projects.inbox, counts.inbox, true)}
         {shown.map((p) => naming === p.id ? (
