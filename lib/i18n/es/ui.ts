@@ -854,6 +854,9 @@ export const ui: typeof EnUi = {
           ({ "big-type": "abre con un titular grande", "big-image": "abre con una imagen grande", split: "abre partida, texto e imagen", "content-first": "entra directa al contenido" } as Record<string, string>)[p.opening ?? ""] ?? "",
         ].filter(Boolean).join(", "),
         of: (n: number, of: number): string => `En ${n} de las ${of} referencias que se leen como página`,
+        pages: "Por página",
+        pagesIntro: "Si te piden una página concreta (un About, un proyecto, la home), parte de las referencias de ese tipo y de cómo están montadas; si no hay, de la estructura que Layout dice que se repite.",
+        kinds: { home: "Home", about: "About", "work-index": "Índice de trabajos", "case-study": "Caso de estudio", article: "Artículo", pricing: "Precios", contact: "Contacto", docs: "Documentación", "app-screen": "Pantalla de app" },
       },
       brand: {
         values: "Valores", intro: "La marca", tokens: "Tokens", tokensIntro: "Los valores de arriba como variables CSS. Pégalos en la hoja de estilos principal del proyecto.",

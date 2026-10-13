@@ -93,7 +93,11 @@ export interface CriterioMdInput {
     clientCopy: string;
     measured: { label: string; themes: Record<"light" | "dark", string>; density: string; colors: string; families: string; radius: string; pixels: string };
     /** The page structures the board repeats (lib/composition-core.ts), under layout, and each reference's build */
-    composition: { repeats: string; build: string; describe: (p: CompositionPattern) => string; of: (n: number, of: number) => string };
+    composition: {
+      repeats: string; build: string; describe: (p: CompositionPattern) => string; of: (n: number, of: number) => string;
+      /** "By page": the references grouped by the kind of page they show (PAGE_KINDS), for an agent asked for one page */
+      pages: string; pagesIntro: string; kinds: Record<string, string>;
+    };
   };
 }
 
@@ -334,6 +338,18 @@ export function criterioBlocks({ project, system, items: allItems, labels, strin
     out.push(...measuredLines(it.measured, strings.measured));
     return out;
   };
+  // By page: what each kind of page looks like on this board, so "build the About" starts from the references of
+  // an About and how they are built. Only kinds of whole pages; a section, a picture or a logo is no page to ask for
+  const kinds = Object.keys(strings.composition.kinds);
+  const byKind = kinds.map((k) => ({ k, ids: board.filter((id) => items[id] && isPage(items[id].composition) && items[id].composition!.page === k) })).filter((x) => x.ids.length);
+  if (byKind.length) {
+    const lines = [`> ${strings.composition.pagesIntro}`, ""];
+    for (const { k, ids } of byKind) {
+      lines.push(`- **${strings.composition.kinds[k]} (${ids.length}):**`);
+      for (const id of ids) lines.push(`  - ${cite(id)}: ${one(items[id].composition!.sketch)}`);
+    }
+    blocks.push({ kind: "section", id: "pages", heading: title("pages", strings.composition.pages), ...byHandOr("pages", lines) });
+  }
   // How to build it with the tools the team switched on, after the decisions it builds and before the appendix
   // Typed over by hand, a skill's section stays as the team left it until they bring the app's back
   for (const s of skillSections(system, skills, locale)) blocks.push({ kind: "section", ...s, heading: title(s.id, s.heading), lines: doc[s.id] ? doc[s.id].split("\n") : s.lines, edited: !!doc[s.id] });

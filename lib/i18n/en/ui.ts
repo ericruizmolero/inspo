@@ -862,6 +862,9 @@ export const ui = {
           ({ "big-type": "opens with a large headline", "big-image": "opens with a large image", split: "opens split, words and picture", "content-first": "goes straight into the content" } as Record<string, string>)[p.opening ?? ""] ?? "",
         ].filter(Boolean).join(", "),
         of: (n: number, of: number): string => `In ${n} of the ${of} references that read as a page`,
+        pages: "By page",
+        pagesIntro: "Asked for one page (an About, a project, the home), start from the references of that kind and how they are built; with none, from the structure Layout says repeats.",
+        kinds: { home: "Home", about: "About", "work-index": "Index of work", "case-study": "Case study", article: "Article", pricing: "Pricing", contact: "Contact", docs: "Docs", "app-screen": "App screen" },
       },
       brand: {
         values: "Values", intro: "The brand", tokens: "Tokens", tokensIntro: "The values above as CSS variables. Paste them into the project's main stylesheet.",
