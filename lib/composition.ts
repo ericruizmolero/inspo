@@ -63,8 +63,8 @@ async function readOne(web: string, name: string, usage: UsageCtx): Promise<RefC
   const image = await storedPicture(web);
   if (!image) return null;
   const res = await llm({ ...prompt("composition", { system: COMPOSITION_SYSTEM, text: `Name: ${name}\nRead how it is built.`, image, schema: CompositionSchema }) });
-  // Nobody asked for it by hand: logged with its cost, never one of the plan's AI actions
-  void recordUsage(usage, { action: "composition", ...billOf(res), ref: `${AUTO_REF}${web}` });
+  // Logged as "vision" (a capture described), with an auto: ref: nobody asked for it by hand, so never one of the plan's AI actions
+  void recordUsage(usage, { action: "vision", ...billOf(res), ref: `${AUTO_REF}${web}` });
   const out = CompositionSchema.parse(JSON.parse(res.text));
   const aside = out.structure === "aside-left" || out.structure === "aside-right";
   return {

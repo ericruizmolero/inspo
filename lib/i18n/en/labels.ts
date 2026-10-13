@@ -50,6 +50,5 @@ export const labels = {
     embed: "Search by meaning",
     system: "Systems built",
     brand: "Brand values",
-    composition: "Page builds read",
   },
 };
