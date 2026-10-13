@@ -12,7 +12,7 @@ import { SCREEN_STUDIO_PREFIX } from "@/lib/screen-studio";
 import { openFile, getFile, fileUrl, signedFileUrl, isSafeKey, ensureCardCopy } from "@/lib/storage";
 import { originalOfCard } from "@/lib/board";
 import { fileTokenValid, SIGNED_MARK } from "@/lib/file-links";
-import { imagePdf, wantsPdf } from "@/lib/image-pdf";
+import { describeStoredImage, readsOnlyText } from "@/lib/file-text";
 import { brandPrefix } from "@/lib/brand-files";
 import { log } from "@/lib/log";
 
@@ -58,16 +58,18 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/api/files/[...ke
 
   try {
     // Outside the app the bytes come from here: a fetcher does not follow a redirect to another host, and an
-    // allowlist then needs only this one. Anthropic's fetcher reads no image, so it gets the picture as a PDF
-    // (lib/image-pdf.ts). Neither is cached by Vercel: the same address answers two ways, by who asks.
-    // Who reads the links taken out of the app, and what they got: a fetcher that still fails shows up here
-    if (outside) log.info("files.outside", { ref: key, ua: req.headers.get("user-agent")?.slice(0, 200), pdf: wantsPdf(req.headers.get("user-agent")) });
-    if (outside && wantsPdf(req.headers.get("user-agent"))) {
+    // allowlist then needs only this one. claude.ai's reader passes on only text, so it gets the picture in words
+    // (lib/file-text.ts). Vary keeps a cache from handing one answer to the other.
+    const textOnly = outside && readsOnlyText(req.headers.get("user-agent"));
+    if (outside) log.info("files.outside", { ref: key, ua: req.headers.get("user-agent")?.slice(0, 200), text: textOnly });
+    if (textOnly) {
       const f = await getFile(key);
       if (!f) return new Response("not found", { status: 404 });
       if (f.contentType.startsWith("image/")) {
-        const pdf = await imagePdf(f.body);
-        return new Response(new Uint8Array(pdf), { headers: { ...OUTSIDE_HEADERS, "Content-Type": "application/pdf", "Content-Length": String(pdf.length) } });
+        const sharp = (await import("sharp")).default;
+        const size = await sharp(f.body).metadata().catch(() => ({ width: undefined, height: undefined }));
+        const md = await describeStoredImage(original ?? key, size);
+        return new Response(md, { headers: { ...OUTSIDE_HEADERS, "Content-Type": "text/markdown; charset=utf-8" } });
       }
     }
     const signed = outside ? null : await signedFileUrl(key);

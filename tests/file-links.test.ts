@@ -109,20 +109,28 @@ test("the proxy lets a signed link through to the route with no session cookie, 
   expect(passes(`/api/library/~1.0/x`), "nor a ~ elsewhere").toBe(false);
 });
 
-test("Anthropic's fetcher, which reads no image, gets a signed picture as a PDF; anyone else gets the picture", async () => {
+test("claude.ai's reader, which passes on only text, gets a signed picture in words; anyone else gets the picture", async () => {
   actAs(null);
+  const key = `inspo/${team.ws.id}/media/1760000000000-told.png`;
   const png = await sharp({ create: { width: 300, height: 200, channels: 4, background: "#2c3325" } }).png().toBuffer();
-  files.set(KEY, { body: png, contentType: "image/png" });
-  const path = signedFilePath(KEY);
+  files.set(key, { body: png, contentType: "image/png" });
+  const now = new Date(), web = `/api/files/${key}`;
+  await db.insert(schema.inspoItem).values({
+    id: `${team.tag}-told`, organizationId: team.ws.id, name: "01 Identity@2x", web, webKey: webKeyOf(web), date: now.toISOString().slice(0, 10),
+    author: team.user.name, createdBy: team.user.id, note: "", tagStatus: "done", createdAt: now, updatedAt: now,
+    tagsJson: { visual: "A brand guideline page presenting a logo system.", summary: "", colors: [{ hex: "#ece5d6", share: 0.45, family: "beige" }], style: "minimal", sector: "studio", styleP: 1, sectorP: 1, tags: {} } as never,
+  });
+  const path = signedFilePath(key);
   const as = (ua: string) => GET(new NextRequest(`http://localhost${path}`, { headers: { "user-agent": ua } }), { params: Promise.resolve({ key: path.slice("/api/files/".length).split("/") }) });
 
   const claude = await as("Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; Claude-User/1.0; +Claude-User@anthropic.com)");
-  expect(claude.headers.get("content-type")).toBe("application/pdf");
+  expect(claude.headers.get("content-type")).toMatch(/^text\/markdown/);
   expect(claude.headers.get("x-robots-tag"), "never listed by a search engine").toContain("noindex");
-  const pdf = Buffer.from(await claude.arrayBuffer());
-  expect(pdf.subarray(0, 5).toString(), "a PDF").toBe("%PDF-");
-  expect(pdf.toString("latin1"), "one page the picture's size").toContain("/MediaBox [0 0 300 200]");
-  expect(pdf.toString("latin1").trimEnd().endsWith("%%EOF")).toBe(true);
+  const md = await claude.text();
+  expect(md).toContain("# 01 Identity@2x");
+  expect(md).toContain("(300 × 200 px)");
+  expect(md).toContain("A brand guideline page presenting a logo system.");
+  expect(md).toContain("#ece5d6 45%");
 
   const browser = await as("Mozilla/5.0 (Macintosh) Safari/605.1.15");
   expect(browser.headers.get("content-type")).toBe("image/png");
