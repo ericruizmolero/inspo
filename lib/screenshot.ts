@@ -1,7 +1,7 @@
 import { createHash } from "crypto";
 import { webKeyOf } from "./url";
 import { getFile, fileExists, putFile, keyOf } from "./storage";
-import { withPage, QueueFull } from "./browser";
+import { withPage, QueueFull, PAGE_MAX_H } from "./browser";
 import type { PageShot } from "@/types/inspo";
 import { log, recordFailure } from "./log";
 
@@ -9,8 +9,6 @@ const VIEWPORT = { width: 1440, height: 900 };
 const GOTO_TIMEOUT_MS = 20000;
 const SETTLE_MS = 1500;
 const JPEG_QUALITY = 78;
-/** The whole page is cut here, as the DESIGN.md capture does */
-const MAX_PAGE_H = 6000;
 
 // ─── Storage ─────────────────────────────────────────────────────────────────
 // One hero screenshot per site, shared across workspaces (lib/storage.ts, inspo/shots/).
@@ -44,7 +42,7 @@ const HIDE_CSS = `
 
 const ACCEPT_TEXTS = ["aceptar", "accept", "agree", "allow", "ok", "got it", "entendido", "onartu"];
 
-/** The first screen of the site; with `full`, the whole page (up to 6000px tall), scrolled once so lazy parts load */
+/** The first screen of the site; with `full`, the whole page (up to PAGE_MAX_H tall), scrolled once so lazy parts load */
 export async function captureHero(url: string, full = false): Promise<Buffer> {
   try {
     return await withPage("shot", async (page) => {
@@ -78,12 +76,12 @@ export async function captureHero(url: string, full = false): Promise<Buffer> {
       if (full) {
         await page.evaluate(`(async () => {
           const h = document.documentElement.scrollHeight;
-          for (let y = 0; y < Math.min(h, ${MAX_PAGE_H}); y += 700) { window.scrollTo(0, y); await new Promise(r => setTimeout(r, 120)); }
+          for (let y = 0; y < Math.min(h, ${PAGE_MAX_H}); y += 700) { window.scrollTo(0, y); await new Promise(r => setTimeout(r, 120)); }
           window.scrollTo(0, 0);
         })()`).catch(() => {}); // best effort: the lazy images that loaded are enough
         await new Promise((r) => setTimeout(r, 600));
         const h = (await page.evaluate("document.documentElement.scrollHeight").catch(() => VIEWPORT.height)) as number;
-        const height = Math.max(VIEWPORT.height, Math.min(Number(h) || VIEWPORT.height, MAX_PAGE_H));
+        const height = Math.max(VIEWPORT.height, Math.min(Number(h) || VIEWPORT.height, PAGE_MAX_H));
         const jpeg = await page.screenshot({ type: "jpeg", quality: 62, clip: { x: 0, y: 0, width: VIEWPORT.width, height }, captureBeyondViewport: true });
         return Buffer.from(jpeg);
       }

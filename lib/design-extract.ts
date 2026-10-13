@@ -1,5 +1,5 @@
 import type { Page } from "puppeteer-core";
-import { withPage } from "./browser";
+import { withPage, PAGE_MAX_H } from "./browser";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -81,7 +81,7 @@ export interface DesignTokens {
 export interface ExtractResult {
   tokens: DesignTokens;
   screenshot: Buffer; // jpeg of the viewport at 1440px (for Claude)
-  fullShot: Buffer;   // jpeg of the whole page at 1440px, up to 6000px (for the detail view)
+  fullShot: Buffer;   // jpeg of the whole page at 1440px, up to PAGE_MAX_H (for the detail view)
   cover: Buffer;      // jpeg 720x450 (grid cover, ~25KB)
   scroll: Buffer;     // jpeg 720px wide, up to 2250px (strip that scrolls on hover, ~100KB)
   logo: Buffer | null; // png of the logo as it sits on the page, at 2x
@@ -486,14 +486,14 @@ export async function extractDesign(url: string, signal?: AbortSignal): Promise<
     // Smooth scroll to trigger lazy-load / on-scroll animations, then back to top.
     await page.evaluate(`(async () => {
       const h = document.documentElement.scrollHeight;
-      for (let y = 0; y < Math.min(h, 6000); y += 700) { window.scrollTo(0, y); await new Promise(r => setTimeout(r, 120)); }
+      for (let y = 0; y < Math.min(h, ${PAGE_MAX_H}); y += 700) { window.scrollTo(0, y); await new Promise(r => setTimeout(r, 120)); }
       window.scrollTo(0, 0);
     })()`);
     await new Promise((r) => setTimeout(r, 600));
 
     const raw = (await page.evaluate(COLLECT)) as Omit<DesignTokens, "url" | "finalUrl" | "viewport"> & { pageHeight: number; iconSvgs: string[]; logoSvg: string | null };
     const screenshot = Buffer.from(await page.screenshot({ type: "jpeg", quality: 70, fullPage: false }));
-    const fullHeight = Math.min(raw.pageHeight, 6000);
+    const fullHeight = Math.min(raw.pageHeight, PAGE_MAX_H);
     const fullShot = Buffer.from(await page.screenshot({
       type: "jpeg", quality: 60,
       clip: { x: 0, y: 0, width: 1440, height: fullHeight },

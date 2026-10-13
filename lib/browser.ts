@@ -48,6 +48,8 @@ async function gatedLaunch(launch: () => Promise<Browser>): Promise<Browser> {
 // Extraction adds one flag so the recorder can play media.
 
 const VIEWPORT = { width: 1440, height: 900 };
+/** A whole-page capture stops here: past about 16384px Chromium cannot paint the page in one screenshot */
+export const PAGE_MAX_H = 16000;
 
 // On Vercel, executablePath() unpacks Chromium into /tmp the first time. If two
 // requests ask at once, one runs the binary while the other is still writing it
