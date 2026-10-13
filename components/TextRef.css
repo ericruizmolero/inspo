@@ -71,3 +71,11 @@
   -webkit-mask-image: linear-gradient(#000 calc(100% - 56px), transparent calc(100% - 8px));
   mask-image: linear-gradient(#000 calc(100% - 56px), transparent calc(100% - 8px));
 }
+
+/* A text's card is a page to read (Eric, 13-10: "tiene que dar gusto leer ya su preview"): its type grows with the
+   card (cqw), so a line keeps some 40 characters at any zoom, the words in --text at reading line height, its
+   paragraphs kept, and the card as tall as its words (lib/text-excerpt.ts textCardRatio) */
+.tile__text--page { gap: clamp(6px, 2.4cqw, 14px); padding: clamp(16px, 8cqw, 44px) clamp(16px, 8cqw, 44px) 0; }
+.tile__text--page .tile__text-kind { font-size: clamp(12px, 3cqw, 15px); }
+.tile__text--page .tile__text-title { font-size: clamp(17px, 6.6cqw, 36px); line-height: 1.15; }
+.tile__text--page .tile__text-body { font-size: clamp(14px, 4.2cqw, 21px); line-height: var(--lh-body); color: var(--text); white-space: pre-line; hyphens: manual; }

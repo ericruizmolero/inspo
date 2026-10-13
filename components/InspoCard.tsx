@@ -1,6 +1,6 @@
 "use client";
 
-import { excerptOf } from "@/lib/text-excerpt";
+import { paragraphsOf, textCardRatio } from "@/lib/text-excerpt";
 import { useState, useEffect, useRef } from "react";
 import { InspoItem, InspoTags, Project, TagStatus, type InspoComment } from "@/types/inspo";
 import { TAGS, TAG_THRESHOLD, viewOf } from "@/lib/taxonomy";
@@ -338,7 +338,7 @@ export default function InspoCard({ item, text, tags, tagJob, score, reason, man
   const domain = kind === "text" ? t.card.text : item.source ? getDomain(item.source) : kind === "image" ? (isGif(item.web) ? t.card.gif : t.card.image) : getDomain(item.web);
   // A text is its own poster: its title, and its first lines where a site's note would go
   // A text's card runs as far down as its words go; the words past its edge fade (TextRef.css)
-  const posterNote = kind === "text" ? (text ? excerptOf(text, 4000) : tags?.summary || item.note) : item.note;
+  const posterNote = kind === "text" ? (text ? paragraphsOf(text, 4000) : tags?.summary || item.note) : item.note;
   const isError = !useManual && !useDesign && !useFrame && source === "error";
   // A post with no picture is read for its card (author, face, words); the rest of the time nothing is asked
   const post = usePostWords(isError && kind === "post" ? item.web : null, item.name, tags?.summary);
@@ -378,9 +378,9 @@ export default function InspoCard({ item, text, tags, tagJob, score, reason, man
     return () => { el.removeEventListener("load", onLoad, true); el.removeEventListener("loadeddata", onLoad, true); };
   }, [onMeasure, knownRatio]);
 
-  // No picture at all: a text's page and a post's are square (.tile__text), a site's is 4:3
-  // (.tile__text--site), and the layout hears it
-  const posterRatio = kind === "text" || kind === "post" ? 1 : 0.75;
+  // No picture at all: a text's page is as tall as its words (textCardRatio), a post's square (.tile__text), a site's
+  // 4:3 (.tile__text--site), and the layout hears it
+  const posterRatio = kind === "text" ? textCardRatio(posterNote ?? "") : kind === "post" ? 1 : 0.75;
   useEffect(() => {
     if (isError && onMeasure && (knownRatio === undefined || Math.abs(knownRatio - posterRatio) > 0.01)) onMeasure(posterRatio);
   }, [isError, onMeasure, knownRatio, posterRatio]);
@@ -590,7 +590,7 @@ export default function InspoCard({ item, text, tags, tagJob, score, reason, man
 
           {isError && kind === "text" && (
             // A text is a page of words: its title and its first lines, running on under the card's edge (TextRef.css)
-            <div className="tile__text">
+            <div className="tile__text tile__text--page">
               <span className="tile__text-kind">
                 <Icon name="text" size={14} />
                 {t.card.text}
