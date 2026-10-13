@@ -170,6 +170,39 @@ export const actions: Record<string, Surface> = {
       if (r.ok) expect((await projectRow(r.data.id)).organizationId, "with A's team active, the project is made in B's").toBe(fx.b.team);
     },
   },
+  "action:app/actions/library.ts#copyProject": {
+    probe: async (fx) => {
+      const { copyProject } = await import("@/app/actions/library");
+      const mine = () => db.select({ id: schema.project.id }).from(schema.project).where(eq(schema.project.organizationId, fx.b.team));
+      for (const active of [fx.b.team, fx.a.team]) {
+        asB(fx, active);
+        const before = (await mine()).length;
+        await projectKept(fx, fx.a.project, async () => {
+          const r = await copyProject(fx.a.project);
+          expectRefused(fx, r, "B cannot copy A's project");
+          return r;
+        }, "copy A's project");
+        expect((await mine()).length, "no copy of A's project lands in B's workspace").toBe(before);
+      }
+    },
+  },
+  "action:app/actions/library.ts#relocateProject": {
+    probe: async (fx) => {
+      const { relocateProject } = await import("@/app/actions/library");
+      for (const to of [fx.b.team, fx.b.personal]) {
+        asB(fx);
+        await projectKept(fx, fx.a.project, async () => {
+          const r = await relocateProject(fx.a.project, to);
+          expectRefused(fx, r, "B cannot move A's project");
+          return r;
+        }, "move A's project into B's workspace");
+      }
+      asB(fx);
+      const own = await relocateProject(fx.b.project, fx.a.team);
+      expectRefused(fx, own, "B cannot move its own project into A's workspace");
+      expect((await projectRow(fx.b.project)).organizationId, "B's project stays in B's workspace").toBe(fx.b.team);
+    },
+  },
   "action:app/actions/library.ts#markProjectStarted": {
     probe: async (fx) => {
       const { markProjectStarted } = await import("@/app/actions/library");
