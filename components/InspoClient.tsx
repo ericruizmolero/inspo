@@ -575,9 +575,10 @@ export default function InspoClient({
       // On a project's board the bin takes the card out of the project (back to the Inbox); off it, it deletes
       spaceName={workspace.name}
       takeOutOf={currentProject?.id}
+      text={item.id ? textBodies[item.id] : undefined}
       actions={gridActions}
     />
-  ), [workspace.name, ratioOf, tagMap, tagJobs, jevScores, reasons, commentMap, authorImages, thumbMap, signed, designMdIndex, pageShots, projects, links, currentProject, backsOf, areasByItem, selected, canManage, user, polishVotes]);
+  ), [textBodies, workspace.name, ratioOf, tagMap, tagJobs, jevScores, reasons, commentMap, authorImages, thumbMap, signed, designMdIndex, pageShots, projects, links, currentProject, backsOf, areasByItem, selected, canManage, user, polishVotes]);
 
   // The board stays mounted under Polish and under the system, inert and hidden: coming back is instant, and the
   // cards fly from the tornado onto a board already laid out (components/view-morph.ts). The same element first in

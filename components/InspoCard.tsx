@@ -1,5 +1,6 @@
 "use client";
 
+import { excerptOf } from "@/lib/text-excerpt";
 import { useState, useEffect, useRef } from "react";
 import { InspoItem, InspoTags, Project, TagStatus, type InspoComment } from "@/types/inspo";
 import { TAGS, TAG_THRESHOLD, viewOf } from "@/lib/taxonomy";
@@ -109,6 +110,8 @@ export function cachedCardImage(web: string): string | null {
 
 interface InspoCardProps {
   item: InspoItem;
+  /** A pasted text's whole words, once loaded: the card fills its height with them (the tags only keep an excerpt) */
+  text?: string | null;
   tags?: InspoTags;
   /** Its tagging job while it isn't done: the card says it is gathering them */
   tagJob?: TagStatus;
@@ -196,7 +199,7 @@ export function captionFor(item: InspoItem, comments: InspoComment[] | undefined
   return { ...root, people, more: comments?.length ?? 0 };
 }
 
-export default function InspoCard({ item, tags, tagJob, score, reason, manualThumbnail: uploadedThumb, signedThumbnail, onUpload, onRemoveThumbnail, onOpen, designCover: coverSrc, designCoverFallback, designScroll: scrollSrc, designScrollFallback, commentCount = 0, caption, onComments, onDelete, onTakeOut, spaceName, projects, projectIds = [], onToggleProject, onCreateProject, backs = [], onToggleArea, areasIn, board, selected = false, selecting = false, onSelect, forgotten = false }: InspoCardProps) {
+export default function InspoCard({ item, text, tags, tagJob, score, reason, manualThumbnail: uploadedThumb, signedThumbnail, onUpload, onRemoveThumbnail, onOpen, designCover: coverSrc, designCoverFallback, designScroll: scrollSrc, designScrollFallback, commentCount = 0, caption, onComments, onDelete, onTakeOut, spaceName, projects, projectIds = [], onToggleProject, onCreateProject, backs = [], onToggleArea, areasIn, board, selected = false, selecting = false, onSelect, forgotten = false }: InspoCardProps) {
   const { t } = useT();
   // An uploaded image is its own thumbnail; a video shows its frame when the provider gives one away
   const kind = mediaKindOf(item.web);
@@ -334,7 +337,8 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
   // A copied picture or video says where it was found, when it knows
   const domain = kind === "text" ? t.card.text : item.source ? getDomain(item.source) : kind === "image" ? (isGif(item.web) ? t.card.gif : t.card.image) : getDomain(item.web);
   // A text is its own poster: its title, and its first lines where a site's note would go
-  const posterNote = kind === "text" ? tags?.summary || item.note : item.note;
+  // A text's card runs as far down as its words go; the words past its edge fade (TextRef.css)
+  const posterNote = kind === "text" ? (text ? excerptOf(text, 4000) : tags?.summary || item.note) : item.note;
   const isError = !useManual && !useDesign && !useFrame && source === "error";
   // A post with no picture is read for its card (author, face, words); the rest of the time nothing is asked
   const post = usePostWords(isError && kind === "post" ? item.web : null, item.name, tags?.summary);

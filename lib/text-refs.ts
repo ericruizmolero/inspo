@@ -9,12 +9,13 @@ import { webKeyOf } from "./url";
 import { TAXONOMY_VERSION } from "./taxonomy";
 import type { InspoTags } from "@/types/inspo";
 import { log } from "./log";
+import { excerptOf } from "./text-excerpt";
+
+export { excerptOf };
 
 /** What a text can hold: a long page of copy, not a book */
 export const TEXT_MAX = 40_000;
 export const TEXT_TITLE_MAX = 80;
-/** Enough to fill its card on the board */
-const EXCERPT_MAX = 480;
 
 export const textPrefix = (organizationId: string) => `inspo/${organizationId}/text/`;
 
@@ -63,14 +64,6 @@ export async function deleteTextFile(organizationId: string, url: string): Promi
   if (ownsTextFile(organizationId, url)) await deleteFiles([keyOf(url)!]);
 }
 
-/** Its first lines on one line: what the card shows and what the models are told of it */
-export function excerptOf(text: string): string {
-  // Markdown marks are dropped and the lines run on: a list reads as an enumeration
-  const lines = text.split("\n").filter((l) => !/^\s*(```|~~~|([-*_])(\s*\2){2,}\s*$)/.test(l))
-    .map((l) => l.replace(/^\s*(>\s*)?((#{1,6}|[-*+\u2022]|\d+[.)])\s+)?(\[[ xX]\]\s+)?/, "").replace(/\[([^\]]+)\]\([^)]*\)/g, "$1").replace(/\*\*|__|~~|`/g, "").replace(/(^|[^\p{L}\p{N}])[*_](?=\S)|(?<=\S)[*_](?![\p{L}\p{N}])/gu, "$1").replace(/\s+/g, " ").trim()).filter(Boolean);
-  const one = lines.reduce((all, l) => (all ? `${all}${/[.:;!?\u2026]$/.test(all) ? " " : ", "}${l}` : l), "");
-  return one.length > EXCERPT_MAX ? `${one.slice(0, EXCERPT_MAX - 1).replace(/\s+\S*$/, "")}…` : one;
-}
 
 /** A text has no look to tag: its "tags" are its first lines, so the card, the search and the models have
  *  something to read. No model call. */

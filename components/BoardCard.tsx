@@ -20,7 +20,9 @@ export interface GridActions {
 }
 
 /** One card with its handlers bound. Memoised on its own data: moving the camera or another card leaves it alone. */
-const BoardCard = memo(function BoardCard({ item, level, ratio, tags, tagJob, score, reason, comments, authorImage, manualThumbnail, signedThumbnail, signedCard, designMd, signedCover, signedScroll, shot, projects, projectIds, backs, areasIn, selected, selecting, forgotten, deletable, spaceName, takeOutOf, actions }: {
+const BoardCard = memo(function BoardCard({ item, level, ratio, tags, tagJob, score, reason, comments, authorImage, manualThumbnail, signedThumbnail, signedCard, designMd, signedCover, signedScroll, shot, projects, projectIds, backs, areasIn, selected, selecting, forgotten, deletable, spaceName, takeOutOf, text, actions }: {
+  /** A pasted text's whole words, once loaded: its card fills with them instead of the short excerpt in its tags */
+  text?: string | null;
   item: InspoItem; level: ShotLevel; ratio: number; tags: InspoTags | undefined; tagJob: TagStatus | undefined; score: number | undefined; reason: string | undefined;
   /** Inside a project: the areas of its system this reference backs */
   backs?: SystemArea[];
@@ -63,6 +65,7 @@ const BoardCard = memo(function BoardCard({ item, level, ratio, tags, tagJob, sc
   return (
     <InspoCard
       item={item}
+      text={text}
       tags={tags}
       tagJob={tagJob}
       score={score}
