@@ -533,7 +533,7 @@ Póster que solo carga el iframe del proveedor (YouTube, Vimeo) al pulsarlo. Un 
 
 ### Reproductor propio
 `MediaPlayer` · `components/MediaPlayer.tsx` · `.mp`
-Nuestro reproductor para todo vídeo que se mira en la ficha, en lugar de los controles del navegador. Mudo y sin tocar, solo el botón de sonido en la esquina (`.mp__corner`); al pasar el ratón sube la barra de cromo sólido (`.mp__bar`): play o pausa, tiempo, línea que se arrastra, sonido y pantalla completa, `IconButton` quiet s. Se va a los 1,5 s con el puntero quieto y vuelve al pasar. Manda sobre un `<video>` directo o sobre el de dentro del iframe sin Referer de X. → [decisión](decisiones/2026-10-13-en-la-ficha-el-video-se-ve-con-nuestro-reproductor-y-sonido.md)
+Nuestro reproductor para todo vídeo que se mira en la ficha, en lugar de los controles del navegador. Mudo y sin tocar, solo el botón de sonido en la esquina (`.mp__corner`), y un clic en el vídeo le da sonido; al pasar el ratón sube la barra de cromo sólido (`.mp__bar`): play o pausa, tiempo, línea que se arrastra, sonido y pantalla completa, `IconButton` quiet s. Se va a los 1,5 s con el puntero quieto y vuelve al pasar. Manda sobre un `<video>` directo o sobre el de dentro del iframe sin Referer de X. → [decisión](decisiones/2026-10-13-en-la-ficha-el-video-se-ve-con-nuestro-reproductor-y-sonido.md)
 
 ### Conversación
 `CommentsPanel` · `components/CommentsPanel.tsx` · `.cm`

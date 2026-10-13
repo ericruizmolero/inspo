@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 import { Icon, IconButton } from "@/components/criterio";
 import { useT } from "./I18nProvider";
+import { hush } from "./SoundControl";
 
 // Our player for a video in the sheet: it starts as it always did (looping, silent) and lets you watch it properly,
 // with sound, without the browser's own controls. The video can be a plain <video> or one inside the tiny frame that
@@ -41,8 +42,13 @@ export default function MediaPlayer({ video, ratio, className = "", children }: 
     const v = video;
     media.current = v;
     if (!v) return;
+    // While it sounds, the app's music keeps quiet
+    let release: (() => void) | null = null;
     const read = () => {
-      setPaused(v.paused); setMuted(v.muted || v.volume === 0);
+      const silent = v.muted || v.volume === 0;
+      if (!v.paused && !silent) release ??= hush();
+      else if (release) { release(); release = null; }
+      setPaused(v.paused); setMuted(silent);
       setLength(Number.isFinite(v.duration) ? v.duration : 0);
     };
     // The fill follows by transform on every frame; the clock in seconds only renders when its second changes
@@ -56,7 +62,7 @@ export default function MediaPlayer({ video, ratio, className = "", children }: 
     read(); raf = requestAnimationFrame(tick);
     const evs = ["play", "pause", "volumechange", "loadedmetadata", "durationchange"] as const;
     evs.forEach((e) => v.addEventListener(e, read));
-    return () => { cancelAnimationFrame(raf); evs.forEach((e) => v.removeEventListener(e, read)); };
+    return () => { cancelAnimationFrame(raf); evs.forEach((e) => v.removeEventListener(e, read)); release?.(); };
   }, [video]);
 
   useEffect(() => {
@@ -79,6 +85,8 @@ export default function MediaPlayer({ video, ratio, className = "", children }: 
     if (video.paused) void video.play().catch(() => {}); else video.pause();
     wake();
   };
+  // A click on a silent video brings its sound in straight away (Eric, 13-10: "que si clickas en el video que salga
+  // ya sonido directamente"); with sound, a click pauses and plays.
   // The first time sound comes in the video goes back to the start: it was playing silent as a loop until now
   const heard = useRef(false);
   const sound = () => {
@@ -118,7 +126,7 @@ export default function MediaPlayer({ video, ratio, className = "", children }: 
     <div ref={box} className={`mp${shown ? " is-awake" : ""}${full ? " is-full" : ""} ${className}`} style={{ aspectRatio: ratio }}
       tabIndex={0} onKeyDown={onKey} onPointerEnter={wake} onPointerMove={wake} onPointerLeave={() => { window.clearTimeout(sleep.current); setAwake(false); }}>
       {children}
-      <button type="button" className="mp__hit" aria-label={paused ? p.play : p.pause} onClick={toggle} onDoubleClick={fullscreen} tabIndex={-1} />
+      <button type="button" className="mp__hit" aria-label={muted ? p.unmute : paused ? p.play : p.pause} onClick={muted ? sound : toggle} onDoubleClick={fullscreen} tabIndex={-1} />
       {paused && <span className="mp__big" aria-hidden><Icon name="play" size={22} /></span>}
       {/* Silent and untouched, the sound is the one thing said up front */}
       {muted && !shown && (

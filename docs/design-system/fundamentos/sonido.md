@@ -54,6 +54,7 @@ Nada más suena: ni los botones, ni las teclas, ni abrir o cerrar, ni pasar el r
 | Volumen y fundidos | Volumen 0,5 (`SOUND_VOLUME`). Entra y sale en 700 ms (`SOUND_FADE_MS`); al cambiar de canción la que se va baja en 260 ms (`SOUND_SWAP_MS`); al acabar una sigue la siguiente de la emisora sin fundido |
 | Qué se recuerda | La emisora y la canción (`inspo:polish-station`, `inspo:polish-track`), no si estaba encendida: cada vez que se abre la página arranca apagada |
 | Dónde vive | Fuera de React (un solo `Audio` para la página, en `globalThis`): cambiar de pantalla no la corta y otra pestaña del navegador tampoco (sigue detrás). Suena solo mientras uno de sus botones está en pantalla: sin ninguno durante 1,5 s (`LEAVE_MS`) se funde y para, y vuelve con el siguiente |
+| Un vídeo con sonido | Mientras un vídeo suena en nuestro reproductor (`MediaPlayer`), la música baja en 260 ms y espera, encendida; cuando el último vídeo se calla (pausa o silencio) vuelve a entrar en 700 ms (`hush` en `SoundControl.tsx`) → [decisión](../decisiones/2026-10-13-en-la-ficha-el-video-se-ve-con-nuestro-reproductor-y-sonido.md) |
 
 ## Reglas
 

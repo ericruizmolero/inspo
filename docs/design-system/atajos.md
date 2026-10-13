@@ -37,7 +37,7 @@ Todos los que maneja la app. Al añadir uno: que no choque con estos, que no sal
 | ← → / Esc | Navegar y cerrar el lightbox |
 | Enter / Shift+Enter | Enviar o guardar / salto de línea |
 | ⌘V | Pegar una imagen en un comentario |
-| Espacio / K con el foco en un vídeo | Reproducir o pausar (también clic en el vídeo) |
+| Espacio / K con el foco en un vídeo | Reproducir o pausar (también clic en el vídeo cuando ya suena; mudo, el clic le da sonido) |
 | M con el foco en un vídeo | Sonido sí o no (botón de sonido) |
 | F con el foco en un vídeo | Pantalla completa (botón, o doble clic en el vídeo) |
 | Doble clic en la papelera de una tarjeta | Borra la referencia (el primer clic pide el segundo) |

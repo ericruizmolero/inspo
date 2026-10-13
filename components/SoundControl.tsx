@@ -51,12 +51,14 @@ interface Ambience {
   turn: number;
   /** How many of its buttons are on screen, and the wait before going quiet without any */
   holders: number; leave: number;
+  /** How many videos are sounding right now: while any is, the music keeps quiet (hush) */
+  hushed: number;
   read: boolean;
   subs: Set<() => void>;
 }
 // One for the page, kept across a hot reload of this file so a track left playing is never orphaned
 const page = globalThis as typeof globalThis & { __criterioAmbience?: Ambience };
-const A: Ambience = (page.__criterioAmbience ??= { on: false, station: "all", track: 0, audio: null, ramp: 0, wanted: false, turn: 0, holders: 0, leave: 0, read: false, subs: new Set() });
+const A: Ambience = (page.__criterioAmbience ??= { on: false, station: "all", track: 0, audio: null, ramp: 0, wanted: false, turn: 0, holders: 0, leave: 0, hushed: 0, read: false, subs: new Set() });
 
 const emit = () => { for (const f of A.subs) f(); };
 const subscribe = (f: () => void) => { A.subs.add(f); return () => { A.subs.delete(f); }; };
@@ -77,7 +79,7 @@ function fade(to: number, ms: number, then?: () => void) {
 }
 function start() {
   const el = A.audio;
-  if (!el) return;
+  if (!el || A.hushed > 0) return;
   const mine = A.turn;
   // An answer only counts for the audio and the track that are still the ones playing: a play() cut short by a
   // change of track must not turn the button off
@@ -161,6 +163,22 @@ function hold(): () => void {
     A.holders--;
     if (A.holders > 0) return;
     A.leave = window.setTimeout(() => { if (A.holders <= 0 && A.wanted) play(false); }, LEAVE_MS);
+  };
+}
+
+/** A video is sounding (MediaPlayer): the music fades out and waits, still on, and comes back in when the last
+ *  video goes quiet (Eric, 13-10: "resolvemos esto", the music and a video's sound playing at once). Returns what
+ *  to call when this one stops sounding */
+export function hush(): () => void {
+  A.hushed++;
+  const el = A.audio;
+  if (el && !el.paused) fade(0, SOUND_SWAP_MS, () => { if (A.hushed > 0) el.pause(); });
+  let done = false;
+  return () => {
+    if (done) return;
+    done = true;
+    A.hushed--;
+    if (A.hushed === 0 && A.wanted) start();
   };
 }
 
