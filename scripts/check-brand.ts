@@ -7,9 +7,10 @@
 import { config as loadEnv } from "dotenv";
 loadEnv({ path: ".env.local" }); loadEnv();
 import assert from "node:assert/strict";
-import { existsSync } from "node:fs";
+import { existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import sharp from "sharp";
+import { z } from "zod";
 import { eq } from "drizzle-orm";
 import { db, schema } from "../lib/db";
 import { runMigrations } from "../lib/db/migrate";
@@ -20,7 +21,7 @@ import { saveBrandSection, writeBrandSections, getBrand } from "../lib/brand-sto
 import { storeGuide } from "../lib/brand-guides";
 import { HttpError, listWorkspaces } from "../lib/workspace-core";
 import { toLocale } from "../lib/i18n/locale";
-import { bringBrand } from "../lib/mcp/brand";
+import { BringInput, bringBrand } from "../lib/mcp/brand";
 import type { McpCtx } from "../lib/mcp/auth";
 import { createShare, resolveShare, revokeShare } from "../lib/share";
 import { loadShareView } from "../lib/share-view";
@@ -36,8 +37,24 @@ async function main() {
   const [m] = await db.select({ org: schema.member.organizationId, user: schema.member.userId }).from(schema.member).limit(1);
   assert.ok(m, "the local database needs a workspace (npm run db:pull)");
 
+  // The tool's schema as tools/list hands it out: no $ref (clients choke on them), the file fields described
+  const shape = z.toJSONSchema(BringInput, { io: "input" });
+  const dump = JSON.stringify(shape);
+  assert.ok(!dump.includes('"$ref"'), "the bring_brand schema has no $ref");
+  const undescribed: string[] = [];
+  const walk = (node: unknown, path: string) => {
+    if (!node || typeof node !== "object") return;
+    const props = (node as { properties?: Record<string, { description?: string }> }).properties;
+    if (props) for (const [k, v] of Object.entries(props)) { if (!v.description) undescribed.push(`${path}.${k}`); walk(v, `${path}.${k}`); }
+    for (const k of ["items", "anyOf", "oneOf"]) { const v = (node as Record<string, unknown>)[k]; if (Array.isArray(v)) v.forEach((x, i) => walk(x, `${path}[${i}]`)); else walk(v, path); }
+  };
+  walk(shape, "bring_brand");
+  assert.ok(dump.includes('"images":{') && dump.includes('"data":{'), "imagery.images and the slot's data are in the schema");
+  assert.deepEqual(undescribed.filter((p) => /\.(svg|url|data|name|images)$/.test(p)), [], "every file field is described");
+  console.log(`✓ schema (${dump.length} chars, ${undescribed.length} fields without a description)`);
+
   // Files: the bytes match the name, an SVG is a plain drawing
-  const png = await sharp({ create: { width: 40, height: 20, channels: 4, background: "#ff0000" } }).png().toBuffer();
+  const png =await sharp({ create: { width: 40, height: 20, channels: 4, background: "#ff0000" } }).png().toBuffer();
   const k = `inspo/${m.org}/brand/check/logo.png`;
   await putFile(k, png, "image/png");
   const got = await inspectBrandFile(k, "image/png");
@@ -117,10 +134,43 @@ async function main() {
     await assert.rejects(bringBrand(ctx, "http://localhost", { project: project.id, source: "check:brand", logo: unsafe }), (e: unknown) => e instanceof HttpError && e.status === 415);
     const after = await getBrand(m.org, project.id);
     assert.equal(after.logo.primary.light?.key, b.logo.primary.light?.key, "a refused logo changes nothing");
-    const { readdirSync } = await import("node:fs");
     const stored = readdirSync(join(process.cwd(), ".data", "files", projectBrandPrefix(m.org, project.id))).filter((f) => f.startsWith("logo-"));
     assert.equal(stored.length, 1, "one logo file on disk");
     console.log("✓ bring_brand");
+
+    // Files as bytes: a capture on the agent's disk comes as base64 and its type is what the bytes say, never what
+    // the agent says; the imagery's own pictures come the same way and are replaced whole, like the logo
+    const webp = await sharp({ create: { width: 64, height: 32, channels: 4, background: "#0000ff" } }).webp().toBuffer();
+    const pics = () => readdirSync(join(process.cwd(), ".data", "files", projectBrandPrefix(m.org, project.id))).filter((f) => f.startsWith("image-"));
+    const bringPics = (images: { data?: string; url?: string; name?: string }[]) => bringBrand(ctx, "http://localhost", {
+      project: project.id, source: "check:brand",
+      logo: { ...b.logo, primary: { light: { svg, name: "check.svg" }, dark: null }, mark: { light: { data: png.toString("base64"), name: "mark.png" }, dark: null } },
+      imagery: { lede: "Warm.", traits: [], avoid: [], itemIds: [], images },
+    });
+    const three = await bringPics([{ data: png.toString("base64"), name: "hero.png" }, { data: webp.toString("base64") }]);
+    assert.deepEqual(three.written, ["logo", "imagery"]);
+    b = await getBrand(m.org, project.id);
+    const mark = b.logo.mark.light;
+    assert.ok(mark?.type === "image/png" && mark.w === 40 && mark.name === "mark.png" && onDisk(mark.key), "a logo passed as base64 is stored as the PNG its bytes are");
+    assert.deepEqual(b.imagery.files.map((f) => [f.type, f.w, f.name]), [["image/png", 40, "hero.png"], ["image/webp", 64, undefined]]);
+    assert.ok(b.imagery.files.every((f) => f.key.startsWith(`${projectBrandPrefix(m.org, project.id)}image-`) && onDisk(f.key)), "the pictures are files of the project's brand");
+    const firstPics = b.imagery.files.map((f) => f.key);
+    const four = await bringPics([{ data: webp.toString("base64"), name: "only.webp" }]);
+    assert.deepEqual(four.written, ["logo", "imagery"]);
+    b = await getBrand(m.org, project.id);
+    assert.equal(b.imagery.files.length, 1);
+    assert.ok(firstPics.every((k) => !onDisk(k)) && pics().length === 1, "the replaced pictures are gone");
+    // Bytes that are no picture are refused before anything is stored
+    await assert.rejects(bringPics([{ data: Buffer.from("not a picture at all").toString("base64") }]), (e: unknown) => e instanceof HttpError && e.status === 415);
+    assert.equal(pics().length, 1, "a refused picture leaves nothing behind");
+    assert.equal(readdirSync(join(process.cwd(), ".data", "files", projectBrandPrefix(m.org, project.id))).filter((f) => f.startsWith("logo-")).length, 2, "the logos uploaded before the refusal are gone too");
+    assert.equal((await getBrand(m.org, project.id)).imagery.files[0]?.key, b.imagery.files[0]?.key, "a refused picture changes nothing");
+    // The team's pictures are theirs: what was uploaded for a section they kept is deleted again
+    await saveBrandSection(m.org, project.id, "imagery", { ...b.imagery, lede: "By hand." }, b.meta.imagery?.at ?? null, m.user);
+    const five = await bringPics([{ data: png.toString("base64") }]);
+    assert.deepEqual(five.kept_by_team, ["imagery"]);
+    assert.equal(pics().length, 1, "nothing is stored for a section the team kept");
+    console.log("✓ bring_brand files as base64, the imagery's pictures");
 
     if (process.argv.includes("--model")) {
       const key = await storeGuide(m.org, project.id, "# Northwind\nColors: Espresso #2B1D16 for text, Crema #F4ECE1 ground, Ember #D9480F the only accent.\nType: Fraunces 600 headlines, Inter 400 text.\nVoice: short, warm, no exclamation marks.");

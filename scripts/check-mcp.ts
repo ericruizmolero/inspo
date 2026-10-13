@@ -76,6 +76,8 @@ async function main() {
   ok("tools/list", tools.length === 8, tools.map((t) => t.name).join(", "));
   const bring = tools.find((t) => t.name === "bring_brand")?.inputSchema as { properties?: Record<string, unknown> } | undefined;
   ok("bring_brand schema has the brand's sections", !!bring?.properties?.color && !!bring?.properties?.logo, Object.keys(bring?.properties ?? {}).join(", "));
+  const imagery = bring?.properties?.imagery as { properties?: Record<string, unknown> } | undefined;
+  ok("bring_brand takes the imagery's pictures and a file as base64", !!imagery?.properties?.images && JSON.stringify(bring?.properties?.logo).includes('"data":{') && !JSON.stringify(bring).includes('"$ref"'));
   const prompts = ((await rpc("prompts/list")).result?.prompts as Json[]) ?? [];
   ok("prompts/list", prompts.length === 4, prompts.map((p) => p.name).join(", "));
   const projects = JSON.parse((await call("list_projects", {})).text) as Json[];

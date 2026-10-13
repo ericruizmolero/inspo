@@ -56,6 +56,10 @@ export function brandTypeFor(purpose: BrandPurpose, name: string): string | null
 export const newBrandKey = (organizationId: string, projectId: string, purpose: BrandPurpose, name: string) =>
   `${projectBrandPrefix(organizationId, projectId)}${purpose}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${extOf(name) === "jpeg" ? "jpg" : extOf(name)}`;
 
+/** The picture type the bytes say they are, among the ones a brand keeps as a plain picture; null for anything else */
+export const imageTypeOf = (buf: Buffer): "image/png" | "image/webp" | "image/jpeg" | null =>
+  (["image/png", "image/webp", "image/jpeg"] as const).find((t) => sniff(buf, t)) ?? null;
+
 /** Does the start of the file match what it claims to be */
 function sniff(buf: Buffer, type: string): boolean {
   const head = buf.subarray(0, 16);

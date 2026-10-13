@@ -8,7 +8,8 @@ import { allow } from "@/lib/rate-limit";
 
 export const maxDuration = 300; // saving a reference names it from its site, and tags it once answered
 
-const MAX_BODY = 512 * 1024;
+// bring_brand carries a brand's files as base64, about 1 MB each; Vercel stops a body at 4.5 MB before it gets here
+const MAX_BODY = 4 * 1024 * 1024;
 /** A person's requests per minute, across instances and whichever token they come with */
 const PER_MINUTE = 120;
 const json = (body: unknown, status = 200, headers: Record<string, string> = {}) =>
