@@ -12,6 +12,7 @@ const TAG_WATCH_MS = 5 * 60 * 1000;
 // Every add starts its item's job (lib/tag-jobs.ts), whatever the tab does next. Here: which items are
 // still gathering, and asking how they go for the ones added or retried in this tab.
 export function useTagWatch({ items, tagJobs, setTagJobs, setTagMap }: {
+  /** The items on the board in view: "gathering" counts only those, like the bar above it */
   items: InspoItem[];
   tagJobs: Record<string, TagStatus>;
   setTagJobs: Dispatch<SetStateAction<Record<string, TagStatus>>>;

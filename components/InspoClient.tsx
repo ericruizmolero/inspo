@@ -260,7 +260,7 @@ export default function InspoClient({
     : items.filter((i) => !!i.id && !!links[i.id]?.includes(space)),
   [items, links, space]);
 
-  const { watch, gathering } = useTagWatch({ items, tagJobs, setTagJobs, setTagMap });
+  const { watch, gathering } = useTagWatch({ items: spaceItems, tagJobs, setTagJobs, setTagMap });
   const { bellNews, beatRef, filling } = useLibrarySync({ first, stamp, since, bell, workspace, items, setMirror, setProjects, setLinks, setVotes, withVoteWrites, watch });
 
   const { showAdd, setShowAdd, addInitial, setAddInitial, boardDrag } = useAddDialog({ t, setToast });
