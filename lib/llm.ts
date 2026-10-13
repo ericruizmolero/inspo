@@ -28,6 +28,9 @@ export interface LlmInput {
   fallback?: string | null;
   /** The task and version that built this call (lib/prompts.ts), handed back on the result for ai_usage */
   prompt?: string;
+  /** Streams the answer: called with the whole text so far as it grows (a person watching it being written).
+   *  `thinking` is true while the model reasons and has written nothing yet */
+  onText?: (soFar: string, thinking: boolean) => void;
 }
 
 export interface LlmResult {
@@ -106,6 +109,7 @@ async function call(i: LlmInput): Promise<Omit<LlmResult, "fallbackFrom" | "prom
       provider: { require_parameters: true },
     } : {}),
     usage: { include: true },
+    ...(i.onText ? { stream: true } : {}),
   };
 
   const t0 = Date.now();
@@ -115,7 +119,7 @@ async function call(i: LlmInput): Promise<Omit<LlmResult, "fallbackFrom" | "prom
     body: JSON.stringify(body),
     signal: i.signal,
   });
-  const json = await res.json().catch(() => null) as OpenRouterResponse | null;
+  const json = (i.onText && res.ok ? await readStream(res, i.onText) : await res.json().catch(() => null)) as OpenRouterResponse | null;
   if (!res.ok || !json || json.error) {
     const e = json?.error;
     throw new LlmError(`OpenRouter ${res.status}: ${e?.message ?? res.statusText}${e?.metadata?.raw ? ` (${String(e.metadata.raw).slice(0, 300)})` : ""}`, null, "", res.status);
@@ -150,6 +154,44 @@ async function call(i: LlmInput): Promise<Omit<LlmResult, "fallbackFrom" | "prom
     costUsd,
     ms: Date.now() - t0,
   };
+}
+
+/** A streamed answer (server-sent events) put back together as the one-piece response: the text, the last finish
+ *  reason, the usage of the last chunk. An error event mid-stream comes back as the response's error */
+async function readStream(res: Response, onText: (soFar: string, thinking: boolean) => void): Promise<OpenRouterResponse> {
+  const out: OpenRouterResponse = { choices: [{ message: { content: "" } }] };
+  const reader = res.body!.getReader();
+  const decoder = new TextDecoder();
+  let text = "";
+  let buffer = "";
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() ?? "";
+    for (const line of lines) {
+      // ": OPENROUTER PROCESSING" keeps the connection open; only "data:" lines carry the answer
+      if (!line.startsWith("data:")) continue;
+      const data = line.slice(5).trim();
+      if (!data || data === "[DONE]") continue;
+      let chunk: OpenRouterChunk;
+      try { chunk = JSON.parse(data) as OpenRouterChunk; } catch { continue; }
+      if (chunk.error) { out.error = chunk.error; continue; }
+      out.id ??= chunk.id; out.model ??= chunk.model; out.provider ??= chunk.provider;
+      const c = chunk.choices?.[0];
+      if (c?.delta?.content) { text += c.delta.content; onText(text, false); }
+      else if (c?.delta?.reasoning && !text) onText("", true);
+      if (c?.finish_reason) out.choices![0].finish_reason = c.finish_reason;
+      if (chunk.usage) out.usage = chunk.usage;
+    }
+  }
+  out.choices![0].message!.content = text;
+  return out;
+}
+
+interface OpenRouterChunk extends Omit<OpenRouterResponse, "choices"> {
+  choices?: { finish_reason?: string | null; delta?: { content?: string; reasoning?: string } }[];
 }
 
 interface OpenRouterResponse {

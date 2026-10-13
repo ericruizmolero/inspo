@@ -47,7 +47,9 @@ export const PROMPTS = {
   tag: { model: env("TAG_MODEL", "google/gemini-2.5-flash-lite"), fallback: env("TAG_FALLBACK_MODEL", "mistralai/mistral-small-3.2-24b-instruct"), maxTokens: 1500, version: 2, language: null },
   /** A page built from criterio.md inside the app (lib/criterio-result.ts): the first proof of the file. A frontier model,
    *  because a weak first result works against the file; ~$0.10 a page (October 2026). Its copy in the project's language */
-  result: { model: env("RESULT_MODEL", "anthropic/claude-sonnet-5.5"), fallback: env("RESULT_FALLBACK_MODEL", "anthropic/claude-sonnet-4.5"), maxTokens: 16000, version: 1, language: "the page's copy" },
+  // Sonnet 5.5 thinks at length unless told: 10k tokens and 90 s before the first line (13-10), so a low effort keeps
+  // the person watching it come and the budget for the page itself
+  result: { model: env("RESULT_MODEL", "anthropic/claude-sonnet-5.5"), fallback: env("RESULT_FALLBACK_MODEL", "anthropic/claude-sonnet-4.5"), effort: "low", maxTokens: 24000, version: 1, language: "the page's copy" },
   /** How a reference's page is built (lib/composition.ts): the tagger's model and its picture, a closed vocabulary, so
    *  always English. Read only for a project's references, before the system pass */
   composition: { model: env("COMPOSITION_MODEL", env("TAG_MODEL", "google/gemini-2.5-flash-lite")), fallback: env("TAG_FALLBACK_MODEL", "mistralai/mistral-small-3.2-24b-instruct"), maxTokens: 600, version: 1, language: null },
