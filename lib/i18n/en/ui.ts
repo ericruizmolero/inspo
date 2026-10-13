@@ -152,6 +152,8 @@ export const ui = {
     seeLess: "See less",
   },
   ws: {
+    /** Whole systems to start a project from (Discover, in the app) */
+    examples: "Examples",
     /** The places we look for references, on the marketing site */
     resources: "Resources",
     /** The skills for agents, on the marketing site */
@@ -250,6 +252,7 @@ export const ui = {
   },
   start: {
     /** Under the paste field: the places we look, on the marketing site */
+    examples: "Start from an example",
     resources: "See where we look for references",
     title: "Your library starts empty. Inspiration does not.",
     lead: "Paste the site you cannot stop thinking about. It gets saved, it tags itself, and we pull its DESIGN.md so you can see what this is about.",
@@ -929,6 +932,15 @@ export const ui = {
     textMissing: "This text could not be read.",
     gif: "GIF",
     play: "Play",
+  },
+  player: {
+    play: "Play",
+    pause: "Pause",
+    mute: "Mute",
+    unmute: "Turn the sound on",
+    seek: "Position in the video",
+    fullscreen: "Full screen",
+    exitFullscreen: "Leave full screen",
   },
   theme: {
     system: "System",

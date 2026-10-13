@@ -1076,6 +1076,35 @@ video.vp__media { object-fit: contain; }
 }
 .vp--poster:hover .vp__play { transform: translate(-50%, -50%) scale(1.08); background: var(--scrim-strong); }
 .vp--poster:focus-visible { outline: 2px solid var(--ember-glow); outline-offset: 2px; }
+/* Our video player in the sheet (MediaPlayer): the video fills it, a hit area over it plays and pauses, and a solid
+   chrome bar comes up while the pointer is over it and goes after 1.5 s still; silent and untouched, only the sound button shows */
+.mp { position: relative; display: block; width: 100%; max-height: 60dvh; overflow: hidden; border-radius: 10px; background: var(--scrim-strong); outline: none; }
+.mp:focus-visible { box-shadow: 0 0 0 2px var(--ember-glow); }
+.mp__media { position: absolute; inset: 0; display: block; width: 100%; height: 100%; border: 0; object-fit: contain; }
+.mp__hit { position: absolute; inset: 0; padding: 0; border: 0; background: none; cursor: pointer; }
+.mp:not(.is-awake) .mp__hit { cursor: none; }
+.mp__big {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); pointer-events: none;
+  display: flex; align-items: center; justify-content: center; width: 56px; height: 56px; padding-left: 3px;
+  border-radius: 999px; background: var(--scrim); color: var(--paper); box-shadow: 0 0 0 1px var(--chrome-border);
+  animation: fade-in 0.15s var(--ease-out);
+}
+.mp__corner { position: absolute; right: 10px; bottom: 10px; animation: fade-in 0.15s var(--ease-out); }
+.mp__bar {
+  position: absolute; left: 8px; right: 8px; bottom: 8px; display: flex; align-items: center; gap: 2px; padding: 4px;
+  border-radius: 999px; background: var(--chrome); box-shadow: 0 0 0 1px var(--chrome-border);
+  opacity: 0; transform: translateY(4px); pointer-events: none; transition: opacity 0.15s var(--ease-out), transform 0.15s var(--ease-out);
+}
+.mp.is-awake .mp__bar, .mp:has(:focus-visible) .mp__bar { opacity: 1; transform: none; pointer-events: auto; }
+.mp__time { flex-shrink: 0; padding: 0 6px 0 2px; font-size: var(--fs-label); font-variant-numeric: tabular-nums; color: var(--chrome-ink); }
+.mp__time span { color: var(--chrome-muted); }
+.mp__track { flex: 1; min-width: 40px; display: flex; align-items: center; height: 24px; margin: 0 6px; cursor: pointer; touch-action: none; }
+.mp__rail { position: relative; display: block; width: 100%; height: 4px; border-radius: 999px; overflow: hidden; background: var(--chrome-border); transition: height 0.12s var(--ease-out); }
+.mp__track:hover .mp__rail { height: 6px; }
+.mp__fill { position: absolute; inset: 0; display: block; background: var(--chrome-ink); transform-origin: left; transform: scaleX(0); }
+.mp.is-full { max-height: none; border-radius: 0; }
+.mp.is-full .mp__bar { left: 50%; right: auto; width: min(720px, calc(100% - 32px)); bottom: 24px; transform: translateX(-50%); }
+@media (prefers-reduced-motion: reduce) { .mp__bar { transform: none; } .mp.is-full .mp__bar { transform: translateX(-50%); } }
 /* A post from X at the top of its thread: who, what they wrote, and what it carried */
 .pv { display: flex; flex-direction: column; gap: 10px; flex-shrink: 0; padding: 14px; border-radius: var(--radius-m); background: var(--surface); box-shadow: inset 0 0 0 1px var(--border); }
 .pv--loading { position: relative; min-height: 180px; overflow: hidden; }

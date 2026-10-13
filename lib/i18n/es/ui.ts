@@ -150,6 +150,7 @@ export const ui: typeof EnUi = {
     seeLess: "Ver menos",
   },
   ws: {
+    examples: "Ejemplos",
     resources: "Recursos",
     skills: "Skills",
     manageTeam: "Gestionar equipo",
@@ -245,6 +246,7 @@ export const ui: typeof EnUi = {
     foldMenu: "Ocultar el menú",
   },
   start: {
+    examples: "Empieza desde un ejemplo",
     resources: "Mira dónde buscamos referencias",
     title: "Tu librería empieza vacía. La inspiración, no.",
     lead: "Pega la web que te tenga enganchado. Se guarda, se etiqueta sola y te sacamos su DESIGN.md para que veas de qué va esto.",
@@ -922,6 +924,15 @@ export const ui: typeof EnUi = {
     textMissing: "No se ha podido leer este texto.",
     gif: "GIF",
     play: "Reproducir",
+  },
+  player: {
+    play: "Reproducir",
+    pause: "Pausar",
+    mute: "Silenciar",
+    unmute: "Activar el sonido",
+    seek: "Posición en el vídeo",
+    fullscreen: "Pantalla completa",
+    exitFullscreen: "Salir de pantalla completa",
   },
   theme: {
     system: "Sistema",

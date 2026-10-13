@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import MediaPlayer from "./MediaPlayer";
 import type { Post, PostMedia } from "@/lib/posts";
 import { fmtDate } from "@/lib/i18n/format";
 import { useT } from "./I18nProvider";
@@ -36,7 +37,7 @@ export function PostBox({ post, playing = true }: { post: Post; playing?: boolea
         {post.createdAt && <time className="pv__date" dateTime={post.createdAt}>{fmtDate(post.createdAt, locale, { day: "numeric", month: "short", year: "numeric" })}</time>}
       </header>
       {post.text && <p className="pv__text">{post.text}</p>}
-      {moving.map((m, i) => (playing ? <Moving key={i} m={m} /> : <Still key={i} m={m} />))}
+      {moving.map((m, i) => (playing ? <Moving key={i} m={m} player={m.kind === "video"} /> : <Still key={i} m={m} />))}
       {photos.length > 0 && (
         <div className={`pv__photos pv__photos--${Math.min(photos.length, 4)}`}>
           {photos.map((m, i) => (
@@ -57,18 +58,22 @@ export function Still({ m }: { m: PostMedia }) {
   return <img className="pv__video" style={{ aspectRatio: ratio }} src={m.poster} alt="" referrerPolicy="no-referrer" />;
 }
 
-/** A video plays X's own best file; if X no longer serves it, our lighter copy. Both loop on their own,
- *  silent and without controls, like a gif (Eric, 08-10: no player in the sheet either, as in Polish).
+/** A video plays X's own best file; if X no longer serves it, our lighter copy. Both start looping on their own,
+ *  silent, like a gif. In the sheet a video (not a gif) comes inside our player (`player`, MediaPlayer) to be watched
+ *  with sound (Eric, 13-10: "que el video lo puedas reproducir tranquilamente en la ficha con un reproductor que
+ *  nosotros diseñemos y sonido"); in Polish it stays a bare loop.
  *  X refuses its files to requests carrying another site's Referer, and <video> can't drop it on its own:
  *  X's file plays inside a tiny frame whose document sends no Referer. Our own copy plays directly. */
-export function Moving({ m }: { m: PostMedia }) {
+export function Moving({ m, player = false }: { m: PostMedia; player?: boolean }) {
+  const [video, setVideo] = useState<HTMLVideoElement | null>(null);
   const ratio = m.w && m.h ? `${m.w} / ${m.h}` : "16 / 9";
   const poster = m.poster ? m.poster : "";
   const backup = m.backup ? m.backup : "";
+  const wrap = (media: React.ReactNode) => (player ? <MediaPlayer video={video} ratio={ratio} className="pv__video">{media}</MediaPlayer> : media);
   if (!/^https:\/\/video\.twimg\.com\//.test(m.src)) {
     const src = m.src || m.backup || "";
-    return <video className="pv__video" style={{ aspectRatio: ratio }} src={src} poster={poster || undefined}
-      autoPlay loop muted playsInline />;
+    return wrap(<video ref={setVideo} className={player ? "mp__media" : "pv__video"} style={player ? undefined : { aspectRatio: ratio }}
+      src={src} poster={poster || undefined} autoPlay loop muted playsInline />);
   }
   const attr = (v: string) => v.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
   const doc = `<!doctype html><meta name="referrer" content="no-referrer"><style>html,body{margin:0;height:100%;background:#000}video{display:block;width:100%;height:100%;object-fit:contain}</style>`
@@ -76,9 +81,12 @@ export function Moving({ m }: { m: PostMedia }) {
   // The backup is wired from here: the frame shares our CSP, which allows no inline handler in it
   const onLoad = (e: React.SyntheticEvent<HTMLIFrameElement>) => {
     const v = e.currentTarget.contentDocument?.querySelector("video");
-    if (!v || !backup) return;
+    if (!v) return;
+    setVideo(v);
+    if (!backup) return;
     const swap = () => { if (v.getAttribute("src") !== backup) { v.src = backup; void v.play().catch(() => {}); } };
     if (v.error) swap(); else v.addEventListener("error", swap, { once: true });
   };
-  return <iframe className="pv__video pv__video--frame" style={{ aspectRatio: ratio }} srcDoc={doc} onLoad={onLoad} title="" allow="autoplay; fullscreen; picture-in-picture" allowFullScreen />;
+  return wrap(<iframe className={player ? "mp__media" : "pv__video pv__video--frame"} style={player ? undefined : { aspectRatio: ratio }}
+    srcDoc={doc} onLoad={onLoad} title="" allow="autoplay; fullscreen; picture-in-picture" allowFullScreen />);
 }

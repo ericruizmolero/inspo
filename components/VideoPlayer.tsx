@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { videoEmbedOf } from "@/lib/url";
+import MediaPlayer from "./MediaPlayer";
 import { Icon } from "@/components/criterio";
 import { useT } from "./I18nProvider";
 
@@ -11,14 +12,15 @@ export default function VideoPlayer({ web, title }: { web: string; title: string
   const { t } = useT();
   const [playing, setPlaying] = useState(false);
   const [posterFailed, setPosterFailed] = useState(false);
+  const [file, setFile] = useState<HTMLVideoElement | null>(null);
   const video = videoEmbedOf(web);
   if (!video) return null;
 
   if (video.provider === "file" || video.provider === "screenstudio") {
     return (
-      <div className="vp">
-        <video className="vp__media" src={video.src} poster={video.poster} controls playsInline preload="metadata" />
-      </div>
+      <MediaPlayer video={file} ratio="16 / 9">
+        <video ref={setFile} className="mp__media" src={video.src} poster={video.poster} playsInline preload="metadata" />
+      </MediaPlayer>
     );
   }
 
