@@ -16,7 +16,7 @@ import { runJob, sweep, RetryLater } from "../lib/job-run";
 const T = schema.inspoItem;
 const id = () => crypto.randomUUID().replace(/-/g, "").slice(0, 24);
 const TAG = `jobcheck-${id().slice(0, 8)}`;
-const orgId = id(), userId = id();
+const orgId = id(), idleOrgId = id(), userId = id();
 const ITEMS = 12;
 
 const rows = () => db.select({ id: T.id, tagStatus: T.tagStatus, tagAttempts: T.tagAttempts }).from(T).where(eq(T.organizationId, orgId));
@@ -71,10 +71,17 @@ async function main() {
   console.log(`✓ pauses of ${retryAfterS(1)} s and ${retryAfterS(2)} s, then the last try lets go`);
 
   // Stalled: something waiting over 15 minutes with nothing started in that time. Moving is not stalled.
+  // On a workspace of its own: each job above sends the next one, and off Vercel it runs in this process
+  // (lib/jobs.ts) whenever it gets to it; one landing here would start a job and make that workspace "moving"
+  await db.insert(schema.organization).values({ id: idleOrgId, name: `${TAG}-idle`, slug: `${TAG}-idle`, createdAt: now, billingAccountId: orgId });
+  const idle = Array.from({ length: 2 }, (_, i) => {
+    const web = `/api/files/inspo/media/${TAG}-idle-${i}.jpg`;
+    return { id: id(), organizationId: idleOrgId, name: `${TAG} idle ${i}`, web, webKey: web, date: "2026-10-10", author: TAG, createdBy: userId, createdAt: now, updatedAt: now };
+  });
   const before = (await jobStats()).stalled;
-  await db.update(T).set({ tagStatus: "pending", tagStartedAt: sql`now() - interval '20 minutes'` }).where(eq(T.organizationId, orgId));
+  await db.insert(T).values(idle.map((x) => ({ ...x, tagStatus: "pending", tagStartedAt: sql`now() - interval '20 minutes'` })));
   assert.equal((await jobStats()).stalled, before + 1, "a workspace with old work and nothing started is stalled");
-  await db.update(T).set({ tagStartedAt: sql`now()` }).where(eq(T.id, one));
+  await db.update(T).set({ tagStartedAt: sql`now()` }).where(eq(T.id, idle[0].id));
   assert.equal((await jobStats()).stalled, before, "one started in the last 15 minutes: moving, not stalled");
   console.log("✓ /api/health/deep tells a stalled workspace from a moving one");
 
@@ -92,7 +99,7 @@ main()
 async function cleanup() {
   await db.delete(schema.failure).where(eq(schema.failure.organizationId, orgId)).catch(() => {});
   await db.delete(schema.aiUsage).where(eq(schema.aiUsage.organizationId, orgId)).catch(() => {});
-  await db.delete(schema.organization).where(eq(schema.organization.id, orgId));
+  await db.delete(schema.organization).where(inArray(schema.organization.id, [orgId, idleOrgId]));
   await db.delete(schema.billingAccount).where(eq(schema.billingAccount.id, orgId));
   await db.delete(schema.user).where(eq(schema.user.id, userId));
 }
