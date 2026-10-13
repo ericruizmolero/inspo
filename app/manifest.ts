@@ -7,8 +7,8 @@ export default function manifest(): MetadataRoute.Manifest {
     short_name: "Criterio",
     start_url: "/",
     display: "standalone",
-    background_color: "#0F0F0F",
-    theme_color: "#0F0F0F",
+    background_color: "#161614",
+    theme_color: "#161614",
     icons: [
       { src: "/icon.png", sizes: "256x256", type: "image/png" },
       { src: "/apple-icon.png", sizes: "180x180", type: "image/png" },

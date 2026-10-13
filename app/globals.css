@@ -14,8 +14,8 @@
   --paper-white: #FCFAF6; /* Paper theme: the floor; cards, panels and chrome over it are plain white */
   --paper-pressed: #D9CFBA;
   --ink: #1B1B18;
-  --board: #0F0F0F;
-  --board-card: #1A1A1A; /* "card" in the system; renamed here because shadcn owns --card */
+  --board: #161614;
+  --board-card: #201F1C; /* "card" in the system; renamed here because shadcn owns --card */
   --moss: #4F6B3A;
   --moss-light: #7E9A5C;
   --moss-dark: #24301C;
@@ -24,7 +24,7 @@
   --butter: #FBF1C7;
   /* Fields (inputs, textareas, checkboxes, progress tracks, switches): sunken below the ground. On Board a
      near-black well with paper text and a grey border (3.7:1); on Paper the system's white with ink */
-  --field: #0A0A09;
+  --field: #0F0F0E;
   --field-ink: var(--paper);
   --field-border: #6E695F;
   --field-stroke: 1.5px;
@@ -43,10 +43,10 @@
 
   /* Product chrome: tab bar, view switcher, zoom, command bar, viewer. Dark on Board; on Paper it turns light
      (Alberto, 2026-10-07: the black bars on paper read as holes). --chrome-ink is the strong text on it */
-  --chrome: #161616;
-  --chrome-panel: #1C1C1C;
-  --chrome-raised: #2A2A2A;
-  --chrome-border: #262626;
+  --chrome: #1D1C1A;
+  --chrome-panel: #24231F;
+  --chrome-raised: #32302C;
+  --chrome-border: #2F2E2A;
   --chrome-text: #D8D0C0;
   --chrome-text-muted: #B8B1A3;
   --chrome-muted: #8A847A;
@@ -64,9 +64,9 @@
   --panel: var(--board-card);
   --surface: var(--chrome-panel);
   --surface-2: var(--chrome-raised);
-  --surface-3: #34342F;
-  --border: #2A2A2A;
-  --border-strong: #3A3A35;
+  --surface-3: #3B3A35;
+  --border: #32302C;
+  --border-strong: #43413B;
   --text: var(--paper);
   --text-2: var(--text-muted);
   --muted: var(--chrome-muted);
@@ -852,6 +852,27 @@ select.cr-input { appearance: none; padding-right: 32px; cursor: pointer;
   border: 1px solid var(--chrome-border); border-radius: var(--radius-xl);
   box-shadow: var(--float); font-family: var(--font-sans);
 }
+/* The fold (Eric, 13-10: "una pestañita, subes, bajas"): a small chrome tab on the bar's top edge folds the bar
+   away, and folded only a tab is left at the bottom (search and an arrow up) to bring it back. Same chrome, same
+   hairline as the bar, so it reads as part of it */
+.dock__fold, .dock__tab {
+  display: inline-flex; align-items: center; justify-content: center; gap: 4px; cursor: pointer;
+  background: var(--chrome-panel); color: var(--chrome-muted); border: 1px solid var(--chrome-border);
+  font: inherit; transition: color 0.15s var(--ease-out);
+}
+.dock__fold:hover, .dock__tab:hover { color: var(--chrome-ink); }
+.dock__fold:focus-visible, .dock__tab:focus-visible { outline: 2px solid var(--ember-glow); outline-offset: 2px; }
+.dock__fold {
+  position: absolute; left: 50%; bottom: 100%; transform: translateX(-50%); width: 44px; height: 18px; padding: 0;
+  border-bottom: 0; border-radius: 8px 8px 0 0; margin-bottom: -1px;
+}
+/* Fixed size (TAB_W × TAB_H in components/dock-fold.ts): the bar pours into exactly this pill, liquid, and the tab takes
+   its place with no step. It shows the shortcut that brings the bar back (⌘K, Ctrl K off a Mac; "/" works too) */
+.dock__tab { width: 84px; height: 36px; padding: 0 10px; gap: 6px; border-radius: 999px; box-shadow: var(--float); }
+/* The shortcut as plain quiet text, no keycap (Eric, 13-10: "tiene que ser minimalista") */
+.dock__tab-key { font-size: var(--fs-small); line-height: 1; white-space: nowrap; }
+/* A phone has no room to spare for a fold: the bar is one row there already */
+@media (max-width: 640px) { .dock__fold { display: none; } }
 /* The menu hangs from the whole bar, not from the field */
 .dock__bar .sb { position: static; width: 100%; }
 /* What the bar counts, over it: the system's StatusBar, a sunken cell per fact (the count; "reading" while it works) */
@@ -865,7 +886,7 @@ select.cr-input { appearance: none; padding-right: 32px; cursor: pointer;
   .sb--dock .sb__menu { transition: opacity 140ms var(--ease-out); @starting-style { opacity: 0; transform: none; } }
   .dock__status { transition: opacity 180ms var(--ease-out); @starting-style { opacity: 0; transform: none; } }
 }
-/* The search row: the bar's bottom, under the top row's divider. Focus wears the ember-glow ring, inset */
+/* The search row: the bar's bottom, under the top row's divider */
 .sb--dock .sb__field,
 .sb--dock .sb__field:hover,
 .sb--dock:focus-within .sb__field {
@@ -874,7 +895,8 @@ select.cr-input { appearance: none; padding-right: 32px; cursor: pointer;
   -webkit-backdrop-filter: none; backdrop-filter: none;
 }
 .dock__bar > :not(.sb) + .sb .sb__field { border-top: 1px solid var(--chrome-raised); border-radius: 0 0 calc(var(--radius-xl) - 1px) calc(var(--radius-xl) - 1px); }
-.sb--dock:focus-within .sb__field { box-shadow: inset 0 0 0 2px var(--ember-glow); }
+/* No ring when the field has the focus: the blinking caret says it (Eric, 13-10: "no hace falta que esté ese borde naranja") */
+.sb--dock:focus-within .sb__field { box-shadow: none; }
 .sb--dock .sb__icon { padding-right: 6px; background: var(--chrome-panel); color: var(--chrome-muted); }
 .sb--dock .sb__icon svg { width: 18px; height: 18px; }
 .sb--dock .sb__input { height: 34px; font-size: var(--fs-ui); color: var(--chrome-ink); }
@@ -917,7 +939,14 @@ select.cr-input { appearance: none; padding-right: 32px; cursor: pointer;
 
 /* Nothing matches: the system's EmptyState, said over the empty board */
 .empty--over.cr-empty { position: absolute; inset: 0; z-index: 5; justify-content: center; pointer-events: none; }
-.empty__reset { margin-top: 8px; }
+/* The title, one quiet line under it, and the way back on a line of its own: never the button beside the words */
+.empty--over .cr-empty-text { display: flex; flex-direction: column; align-items: center; gap: var(--space-4); }
+.empty__line { margin: 0; }
+/* Still searching: the dots and the word, small and quiet, where the result will be */
+.empty--busy {
+  position: absolute; inset: 0; z-index: 5; display: flex; align-items: center; justify-content: center; gap: 8px;
+  pointer-events: none; font-size: var(--fs-small); color: var(--text-2);
+}
 .empty--over > * { pointer-events: auto; }
 
 

@@ -342,8 +342,8 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
   const [postBodyRef, postCut] = useCut();
   // A site with no picture says what it is: the team's note, else what the page says about itself
   // (tags.summary is "title · description", lib/tagger.ts)
+  // The note goes under the card, like any other card's (the board keeps room for it): the poster says what the site says
   const siteWords = (() => {
-    if (item.note) return item.note;
     const s = tags?.summary ?? "";
     const at = s.indexOf(" · ");
     return at > 0 ? s.slice(at + 3) : s && s !== item.name ? s : "";
@@ -709,8 +709,9 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
       </article>
 
       {/* The root of the thread, under the tile: why this site is here, in the words of whoever saved it.
-          The typographic poster already carries the note, so it gets nothing. */}
-      {!isError && onComments && (caption ? (
+          A text's page already carries its words, so it gets nothing; a post or a site drawn as a poster gets its line
+          like any card (the board keeps 44px for it either way, and an empty one left a hole: Eric, 13-10) */}
+      {!(isError && kind === "text") && onComments && (caption ? (
         <button type="button" className="tile__note cr-comment" onClick={onComments} data-tip={t.card.seeComments}>
           {caption.people.length > 1 ? (
             // Several people in the thread: the system's AvatarStack, whoever saved it first

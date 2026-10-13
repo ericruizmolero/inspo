@@ -1789,10 +1789,11 @@ export const ui: typeof EnUi = {
   gather: {
     title: "El tabl\u00f3n",
     count: (n: number): string => (n === 1 ? "1 referencia" : `${n} referencias`),
-    lead: "Sube lo que te inspira.",
     inboxLead: "Lo que a\u00fan no tiene proyecto. Desde cada tarjeta lo llevas a uno.",
     add: "A\u00f1adir",
     ready: "Ya tengo las referencias",
+    fold: "Plegar la barra",
+    unfold: "Mostrar la barra y el buscador",
   },
   polish: {
     mode: "Pulido",

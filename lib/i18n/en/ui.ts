@@ -1798,10 +1798,11 @@ export const ui = {
   gather: {
     title: "The board",
     count: (n: number): string => (n === 1 ? "1 reference" : `${n} references`),
-    lead: "Add what inspires you.",
     inboxLead: "What has no project yet. Each card takes it to one.",
     add: "Add",
     ready: "I have my references",
+    fold: "Fold the bar",
+    unfold: "Show the bar and the search",
   },
   polish: {
     mode: "Polish",

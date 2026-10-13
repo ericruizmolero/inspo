@@ -12,3 +12,5 @@ supersedes: Canvas infinito (PR #56)
 **Por qué.** Se queda todo lo bueno del canvas (buscador por capas, isla, auto-tags) sin la sensación de perderse.
 
 **Cómo aplicarlo.** Nada de lienzos infinitos para colecciones. `lib/canvas.ts` y `canvas_position` se borraron el 10/10 (migración `0028`).
+
+→ El 13-10 el 100 % pasa a ser tres columnas y el hueco 24 px: [decisión](2026-10-13-el-tablon-abre-en-tres-columnas-y-la-barra-se-pliega.md).

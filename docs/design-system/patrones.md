@@ -35,7 +35,7 @@ La página de [Sonido](fundamentos/sonido.md) tiene la tabla de los catorce soni
 
 ## Zoom del tablero
 
-Zoom = pasos de columnas (base 360 px de columna = 100 %; el tablero abre un paso más lejos, `DEFAULT_ZOOM = -1`, para ver más de golpe), control `ZoomPill` (`.zoom-pill`, `− % +`) abajo a la izquierda, clic en el % vuelve a 100, pellizco o ⌘/Ctrl+rueda. Scroll vertical, nunca lienzo infinito. → [grid en vez de canvas](decisiones/2026-10-03-grid-en-vez-de-canvas.md)
+Zoom = pasos de columnas (100 % = tres columnas, `BASE_COLS`, a 24 px unas de otras; el tablero abre en el 100 %, `DEFAULT_ZOOM = 0` → [decisión](decisiones/2026-10-13-el-tablon-abre-en-tres-columnas-y-la-barra-se-pliega.md)), control `ZoomPill` (`.zoom-pill`, `− % +`) abajo a la izquierda, clic en el % vuelve a 100, pellizco o ⌘/Ctrl+rueda. Scroll vertical, nunca lienzo infinito. → [grid en vez de canvas](decisiones/2026-10-03-grid-en-vez-de-canvas.md)
 
 Pulido tiene el mismo control en la misma esquina, con los mismos gestos: allí el zoom es el tamaño del tornado, no columnas. La pastilla lleva también la música, y donde no hay zoom (Sistema, Descubrir, Ajustes) es el altavoz solo: está en toda la app con sesión iniciada, siempre en la esquina inferior izquierda de la ventana, también en Ajustes (fija, por encima de la columna). Como la columna hace scroll por debajo, su lista deja 88 px libres al final y las filas se funden (`mask-image`) antes de llegar a la pastilla: ninguna queda cortada por ella (Eric, 07-10: "cuidado que aquí se solapan cosas"). → [zoom y música en la misma pastilla](decisiones/2026-10-06-zoom-y-musica-comparten-la-pastilla-de-la-esquina.md), [Ajustes planos](decisiones/2026-10-07-ajustes-planos-sin-barra-moss-ni-sidebar-plegable.md)
 

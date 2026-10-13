@@ -6,8 +6,8 @@
 // cards within a screen of the viewport are mounted: a board of 300 or 3000 costs what a few screens cost.
 // A card that changes place glides there (a CSS transition on its transform, so a key pressed mid-way
 // retargets instead of restarting); a new result arrives a beat after the one ranked before it.
-// Zooming changes how many columns there are: out to see more at once, in to look closer. 100% is the usual
-// number for the screen, cards about as wide as a page drawn at a quarter.
+// Zooming changes how many columns there are: out to see more at once, in to look closer. 100% is three
+// columns, a little apart (the meeting of 13-10: José Luis, Alberto and Eric all looked at it in three).
 
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Clouds from "@/components/Clouds";
@@ -28,18 +28,20 @@ const levelFor = (col: number): ShotLevel => (screenPx(col) <= 300 ? "thumb" : s
 export interface Insets { top: number; left: number; right: number; bottom: number }
 
 /** The zoom is columns away from the usual number: positive is closer (fewer columns). A phone takes its own from its width.
- *  The board opens one step out (one column more than 100%): more of the library at a glance. */
-export const DEFAULT_ZOOM = -1;
-/** How wide a card aims to be at 100%: the usual number of columns is however many of these fit */
-const BASE_COL = 360;
+ *  The board opens at 100%, so the % in the corner reads 100 when nothing was touched (it read 133% before: 13-10). */
+export const DEFAULT_ZOOM = 0;
+/** The usual number of columns, 100%: three, unless the screen can't hold three readable ones */
+const BASE_COLS = 3;
 const MIN_COLS = 2;
 const MAX_COLS = 8;
 /** Narrower than this a card can't be read: the zoom stops before */
 const MIN_COL = 180;
 /** Narrower than this the note under a card is a few words a line: only the pages remain */
 const BARE_COL = 220;
-const PAD = 12;
-const GAP = 10;
+const PAD = 16;
+/** Between the cards, across and down alike: --space-5, more air than the 10 it was (Alberto, 13-10: "me falta aire";
+ *  Eric, the same day: "separa un poco el espacio entre refes") */
+const GAP = 24;
 /** Under the media: the note line, two lines at most, in a fixed box (CSS .board .tile__note) so no card is measured */
 const CAPTION_H = 44;
 /** A pinch (or ctrl + wheel) moves one column each time it adds up to this much */
@@ -134,7 +136,7 @@ export default memo(function Grid({ under = false, items, ratioOf, hasNote, inse
   const phone = !!width && width < 801;
   const maxCols = Math.max(MIN_COLS, Math.min(MAX_COLS, Math.floor((room + GAP) / (MIN_COL + GAP))));
   const clampCols = (n: number) => Math.min(maxCols, Math.max(MIN_COLS, n));
-  const base = clampCols(Math.round((room + GAP) / (BASE_COL + GAP)));
+  const base = clampCols(BASE_COLS);
   const cols = phone ? (width <= 520 ? 1 : 2) : clampCols(base - zoom);
   const col = (room - (cols - 1) * GAP) / cols;
   const level = levelFor(col);

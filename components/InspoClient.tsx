@@ -12,7 +12,7 @@ import Connectors from "./Connectors";
 import ThemeToggle from "./ThemeToggle";
 import Island from "./Island";
 import SearchBar from "./SearchBar";
-import { Button as CrButton, Busy, EmptyState, IconButton, PillBar, PillBarSep, StatusBar, StatusCell } from "@/components/criterio";
+import { Button as CrButton, Busy, EmptyState, Icon, IconButton, PillBar, PillBarSep, StatusBar, StatusCell } from "@/components/criterio";
 import { captionFor } from "./InspoCard";
 import BoardCard, { type GridActions } from "./BoardCard";
 import AgentCard from "./AgentCard";
@@ -41,6 +41,8 @@ import { usePanelRoute } from "@/hooks/use-panel-route";
 import { useBoardSearch } from "@/hooks/use-board-search";
 import { useBoardRatios } from "@/hooks/use-board-ratios";
 import { useKeptZoom } from "@/hooks/use-kept-zoom";
+import { useKeptFold } from "@/hooks/use-kept-fold";
+import { pourDock } from "./dock-fold";
 import { useWindowWidth } from "@/hooks/use-window-width";
 import { useSelection } from "@/hooks/use-selection";
 import { useAgent } from "@/hooks/use-agent";
@@ -403,6 +405,34 @@ export default function InspoClient({
   // The same choice a card makes on the board, at the smallest stored size: a project's cover is its board from afar
   const miniImageOf = useCallback((i: InspoItem) => signedOf(thumbOf(i.web) ?? pageShots[i.web]?.thumbUrl ?? designMdIndex[i.web]?.coverUrl ?? null), [signedOf, thumbOf, designMdIndex, pageShots]);
   const [zoom, setZoom] = useKeptZoom();
+  // The bar's small stack: the three newest references that have a picture (a post or a site drawn as a poster has
+  // none, and three of those at the top left the stack with one card or none: Eric, 13-10)
+  const gatherThumbs = useMemo(() => {
+    const out: string[] = [];
+    for (const i of boardItems) { const src = smallImageOf(i); if (src) out.push(src); if (out.length === 3) break; }
+    return out;
+  }, [boardItems, smallImageOf]);
+  // The bottom bar folds into a small tab for a clean board (Eric, 13-10: "una pestañita, subes, bajas"). A search
+  // or the agent at work keeps it open: folded is only ever the board with nothing asked of it
+  const [folded, setFolded] = useKeptFold();
+  const dockFolded = folded && !filtering;
+  // The fold pours the bar into the tab and back (components/dock-fold.ts); the way back runs once the bar is drawn again
+  const barRef = useRef<HTMLDivElement>(null);
+  const pourOut = useRef(false);
+  const foldDock = useCallback(() => {
+    const el = barRef.current;
+    if (!el) { setFolded(true); return; }
+    void pourDock(el, "in").then(() => setFolded(true));
+  }, [setFolded]);
+  const unfoldDock = useCallback(() => { pourOut.current = true; setFolded(false); }, [setFolded]);
+  useLayoutEffect(() => {
+    if (dockFolded || !pourOut.current) return;
+    pourOut.current = false;
+    if (barRef.current) void pourDock(barRef.current, "out");
+  }, [dockFolded]);
+  // The shortcut the folded tab shows: ⌘K on a Mac, Ctrl K elsewhere (read after hydration, the server can't know)
+  const [modKey, setModKey] = useState("⌘K");
+  useEffect(() => { if (!/Mac|iPhone|iPad/.test(navigator.userAgent)) setModKey("Ctrl K"); }, []);
 
   // What floats over the board, so the cards keep clear of it
   const winW = useWindowWidth();
@@ -411,6 +441,8 @@ export default function InspoClient({
     top: desktop ? TOP_DESKTOP : TOP_MOBILE,
     left: 0,
     right: 0,
+    // Folded or not: the bottom cloud (components/Clouds.tsx) and the board's end keep their size, or they jumped
+    // when the fold ended (Eric, 13-10: "la nubecita [...] se mueve o cambia, cuidado con eso")
     bottom: searchHere ? BOTTOM : BOTTOM_BARE,
   }), [desktop, searchHere]);
   // The board starts from the top again when the space or the search changes, not when a slower layer reorders
@@ -449,6 +481,34 @@ export default function InspoClient({
   const [focusRef, setFocusRef] = useState<{ code: string; n: number } | null>(null);
   const { agent, setAgent, agentSpeaks, agentTargetItem, setAgentTarget, agentQuick, askAgent, undoAgent, confirmAgent } = useAgent({ t, items, projects, links, currentProject, space, projectView, panelItem, filtered, searchHere, openArea, setFocusArea, setProjects, setLinks, setItems, setSystem, setQuery, setSpace, setProjectView, saveTarget });
 
+  // On a board with its search below, ⌘K / Ctrl K is that search, never the command palette (Eric, 13-10: "que comando K
+  // haga que se abra el buscador [...] pero que luego si das a comando K otra vez no abra esa pestaña central"): it
+  // unfolds the bar if folded and takes the field; pressed again in the field, it lets go. Caught before the palette's
+  // own key (hooks/use-command-palette.ts), which keeps ⌘K everywhere else. "/" (components/SearchBar.tsx) does the
+  // same when the bar is folded, where the field isn't drawn yet.
+  const dockSearch = searchHere && spaceItems.length > 0 && selected.size === 0;
+  useEffect(() => {
+    if (!dockSearch) return;
+    const field = () => document.querySelector<HTMLInputElement>(".sb--dock .sb__input");
+    const onKey = (e: KeyboardEvent) => {
+      const mod = e.key.toLowerCase() === "k" && (e.metaKey || e.ctrlKey) && !e.altKey;
+      const slash = e.key === "/" && !e.metaKey && !e.ctrlKey && !e.altKey;
+      if (!mod && !(slash && dockFolded)) return;
+      const el = e.target as HTMLElement | null;
+      if (slash && el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT" || el.isContentEditable)) return;
+      // Typing in a dialog over the board (the panel, Add) keeps its own keys. Only where the focus is: a closed
+      // panel stays mounted, and counting every [role=dialog] gave ⌘K back to the palette after one was opened
+      if (el?.closest("[role='dialog']")) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const f = field();
+      if (mod && f && document.activeElement === f) { f.blur(); return; }
+      if (dockFolded) unfoldDock();
+      requestAnimationFrame(() => field()?.focus());
+    };
+    document.addEventListener("keydown", onKey, true);
+    return () => document.removeEventListener("keydown", onKey, true);
+  }, [dockSearch, dockFolded, unfoldDock]);
   // The open reference: its thread, every comment with its replies (the post-its once pinned on the page among them)
   const panelComments = (panelItem?.id ? commentMap[panelItem.id] : undefined) ?? [];
   // The note's reactions come from the library, which the pulse keeps current; the sheet's copy of the item does not
@@ -755,10 +815,16 @@ export default function InspoClient({
           <>
             {grid}
             {filtered.length === 0 && projectView !== "polish" && (
-              <EmptyState className="empty empty--over" title={t.app.nothingHere}>
-                <span>{searchBusy ? t.app.searchingShort : t.app.tryAnother}</span>
-                <CrButton className="empty__reset" onClick={resetFilters}>{t.app.seeEverything}</CrButton>
-              </EmptyState>
+              // Still looking: only that, quietly; "nothing here" waits until the search has really found nothing
+              // (Eric, 13-10: "mejora este diseño", it said both at once with the button stuck to the line)
+              searchBusy ? (
+                <div className="empty empty--over empty--busy" role="status"><Busy label={t.app.searchingShort} />{t.app.searchingShort}</div>
+              ) : (
+                <EmptyState className="empty empty--over" title={t.app.nothingHere}>
+                  <p className="empty__line">{t.app.tryAnother}</p>
+                  <CrButton variant="quiet" size="s" icon="undo" className="empty__reset" onClick={resetFilters}>{t.app.seeEverything}</CrButton>
+                </EmptyState>
+              )
             )}
             {currentProject && projectView === "polish" && (
             // Between the board and the system: the board goes by card by card, and each one stays or goes back to the Inbox
@@ -816,16 +882,28 @@ export default function InspoClient({
               <AgentCard agent={agent} projects={projects} onConfirm={() => void confirmAgent()} onCancel={() => setAgent((a) => (a ? { ...a, pending: [] } : a))} onClose={() => setAgent(null)} onAsk={(order) => void askAgent(order)} onUndo={(i) => void undoAgent(i)} />
             )}
             {/* The command bar: one chrome panel, what the board is for over the search */}
-            {((space === "inbox" && spaceItems.length > 0 && !filtering && !agent) || (searchHere && spaceItems.length > 0)) && (
-            <div className="dock__bar">
+            {/* Folded: only the tab is left, the board clean under it; the tab or "/" brings the bar back */}
+            {dockFolded && !agent && ((space === "inbox" && spaceItems.length > 0) || (searchHere && spaceItems.length > 0)) && (
+              <button type="button" className="dock__tab" aria-label={`${t.gather.unfold} (${modKey})`} data-tip={t.gather.unfold} onClick={unfoldDock}>
+                <Icon name="search" size={16} /><span className="dock__tab-key">{modKey}</span>
+              </button>
+            )}
+            {!(dockFolded && !agent) && ((space === "inbox" && spaceItems.length > 0 && !filtering && !agent) || (searchHere && spaceItems.length > 0)) && (
+            <div className="dock__bar" ref={barRef}>
+            {/* The tab on the bar's top edge folds it away; not while a search or the agent is on it */}
+            {!filtering && !agent && (
+              <button type="button" className="dock__fold" aria-label={t.gather.fold} data-tip={t.gather.fold} onClick={foldDock}>
+                <Icon name="chevron-down" size={14} />
+              </button>
+            )}
             {/* On a project's board, always: what the board is for, and the step to the system (the first time it also
                 marks the project as started). Polishing the board is its own tab, never a stop on the way (Eric, 06-10) */}
             {space === "inbox" && spaceItems.length > 0 && !filtering && !agent && (
-              <GatherBar count={spaceItems.length} thumbs={boardItems.slice(0, 3).map(smallImageOf)} onAdd={() => setShowAdd(true)}
+              <GatherBar count={spaceItems.length} thumbs={gatherThumbs} onAdd={() => setShowAdd(true)}
                 title={t.projects.inbox} lead={t.gather.inboxLead} />
             )}
             {searchHere && currentProject && spaceItems.length > 0 && !filtering && !agent && (
-              <GatherBar count={spaceItems.length} thumbs={boardItems.slice(0, 3).map(smallImageOf)} onAdd={() => setShowAdd(true)}
+              <GatherBar count={spaceItems.length} thumbs={gatherThumbs} onAdd={() => setShowAdd(true)}
                 onStart={startSystem} />
             )}
             {/* Only over a board with something on it: an empty project starts from its own box (ProjectStart), and a
