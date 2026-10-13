@@ -199,6 +199,10 @@ export async function buildResult(input: {
   const asked = input.page.startsWith(ASK) ? input.page.slice(ASK.length).replace(/\s+/g, " ").trim().slice(0, ASK_MAX) : "";
   const page = asked ? `${ASK}${asked}` : input.page === STORYBOARD || RESULT_PAGES.includes(input.page) ? input.page : "home";
   const storyboard = page === STORYBOARD;
+  // The project must be this workspace's before anything is written under its id
+  const [own] = await db.select({ id: schema.project.id }).from(schema.project)
+    .where(and(eq(schema.project.organizationId, input.organizationId), eq(schema.project.id, input.projectId))).limit(1);
+  if (!own) throw new Error("project not found");
   const id = newId();
   const now = new Date();
   await db.insert(R).values({ id, organizationId: input.organizationId, projectId: input.projectId, page, status: "running", byName: input.byName, createdAt: now });

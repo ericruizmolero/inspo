@@ -31,6 +31,18 @@ const bEvidence = async (fx: Fixture, area: string) =>
 
 const aFiles = (fx: Fixture) => [...files.keys()].filter((k) => k.startsWith(`inspo/${fx.a.team}/`)).sort();
 
+/** A version of A's criterio.md and a result built from it, both holding A's secret, for B to try to read */
+async function aVersionAndResult(fx: Fixture) {
+  const now = new Date(), tag = `${fx.a.project}-v${Math.random().toString(36).slice(2, 8)}`;
+  await db.insert(schema.criterioVersion).values({ id: tag, organizationId: fx.a.team, projectId: fx.a.project, n: 1, markdown: `# ${fx.a.secret}`, hash: tag, via: "copy", createdAt: now });
+  await db.insert(schema.criterioResult).values({ id: `${tag}-r`, organizationId: fx.a.team, projectId: fx.a.project, page: "home", versionN: 1, status: "done", html: `<p>${fx.a.secret}</p>`, createdAt: now });
+  return async () => {
+    await db.delete(schema.criterioResult).where(eq(schema.criterioResult.id, `${tag}-r`));
+    await db.delete(schema.criterioVersion).where(eq(schema.criterioVersion.id, tag));
+  };
+}
+const aResults = (fx: Fixture) => db.select().from(schema.criterioResult).where(eq(schema.criterioResult.projectId, fx.a.project));
+
 const sys = () => import("@/app/actions/system");
 const talk = () => import("@/app/actions/area-comments");
 const brand = () => import("@/app/actions/brand");
@@ -323,6 +335,53 @@ export const system: Record<string, Surface> = {
       expect(await a.json(), "no face of A's board").toEqual({ faces: {} });
       const mixed = await GET(request(`/api/system/fonts?projectId=${fx.b.project}&ids=${fx.a.item}`));
       expect(await mixed.json(), "A's reference named on B's board").toEqual({ faces: {} });
+    },
+  },
+  "action:app/actions/system.ts#criterioVersions": {
+    probe: async (fx) => {
+      const drop = await aVersionAndResult(fx);
+      try {
+        asB(fx);
+        const { criterioVersions } = await sys();
+        const r = await criterioVersions(fx.a.project);
+        expectNoSecret(fx, r, "the versions of A's criterio.md");
+        if (r.ok) expect(r.data, "B lists none of A's versions").toEqual([]);
+      } finally { await drop(); }
+    },
+  },
+  "action:app/actions/system.ts#criterioVersionFile": {
+    probe: async (fx) => {
+      const drop = await aVersionAndResult(fx);
+      try {
+        asB(fx);
+        const { criterioVersionFile } = await sys();
+        const r = await criterioVersionFile(fx.a.project, 1);
+        expectNoSecret(fx, r, "a version of A's criterio.md");
+        if (r.ok) expect(r.data, "B reads none of A's versions").toBeNull();
+      } finally { await drop(); }
+    },
+  },
+  "route:app/api/system/result/route.ts#GET": {
+    probe: async (fx) => {
+      const drop = await aVersionAndResult(fx);
+      try {
+        const { GET } = await import("@/app/api/system/result/route");
+        asB(fx);
+        const res = await GET(request(`/api/system/result?projectId=${fx.a.project}`));
+        const body = await res.text();
+        expectNoSecret(fx, body, "A's results");
+        if (res.ok) expect((JSON.parse(body) as { results: unknown[] }).results, "B lists none of A's results").toEqual([]);
+      } finally { await drop(); }
+    },
+  },
+  "route:app/api/system/result/route.ts#POST": {
+    probe: async (fx) => {
+      const { POST } = await import("@/app/api/system/result/route");
+      asB(fx);
+      const before = await aResults(fx);
+      const res = await withKeys(() => POST(request("/api/system/result", { method: "POST", body: { projectId: fx.a.project, page: "home" } })));
+      expectNoSecret(fx, await res.text(), "a result built from A's project");
+      expect(await aResults(fx), "no result is written into A's project").toEqual(before);
     },
   },
   "route:app/api/system/measured/route.ts#GET": {
