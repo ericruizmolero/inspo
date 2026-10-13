@@ -1959,7 +1959,7 @@ export const ui: typeof EnUi = {
     },
     type: {
       uploadFont: "Subir sus archivos de fuente", uploaded: (list: string): string => `Subidas: ${list}`,
-      roles: { display: "Tipografía de titulares", text: "Tipografía de texto", mono: "Monoespaciada" },
+      roles: { display: "Tipografía de titulares", text: "Tipografía de texto", accent: "Tipografía de acento", mono: "Monoespaciada" },
       sources: { google: "Google Fonts", fontshare: "Fontshare", site: "La web", upload: "Subida", system: "Sin cargar" },
       styles: (n: number): string => `${n} ${n === 1 ? "estilo" : "estilos"}`,
       notLoaded: "Esta fuente no está en Google Fonts ni en Fontshare, y la web no la sirve. La sustituye una parecida.",

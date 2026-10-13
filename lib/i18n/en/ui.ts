@@ -1969,7 +1969,7 @@ export const ui = {
     },
     type: {
       uploadFont: "Upload its font files", uploaded: (list: string): string => `Uploaded: ${list}`,
-      roles: { display: "Display typeface", text: "Text typeface", mono: "Monospace" },
+      roles: { display: "Display typeface", text: "Text typeface", accent: "Accent typeface", mono: "Monospace" },
       sources: { google: "Google Fonts", fontshare: "Fontshare", site: "The site", upload: "Uploaded", system: "Not loaded" },
       styles: (n: number): string => `${n} ${n === 1 ? "style" : "styles"}`,
       notLoaded: "This face is not on Google Fonts or Fontshare, and the site does not serve it. A similar face stands in.",

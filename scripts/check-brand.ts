@@ -88,7 +88,7 @@ async function main() {
     const bring = () => bringBrand(ctx, "http://localhost", {
       project: project.id, source: "check:brand", guide: "# Check\n\nSpacing on a 4px grid.",
       color: { lede: "", items: [{ id: "ember", name: "Ember", hex: "#d9480f", role: "Accent", group: "accent", weight: 2 }], accentId: "ember" },
-      typography: { lede: "", faces: [{ id: "inter", family: "Inter", role: "text", source: "google", weights: [400, 600], note: "Text" }], scale: [{ id: "body", label: "Body", px: 16, faceId: "inter", weight: 400, lineHeight: 1.5, tracking: 0 }], sample: "", trackingRule: "" },
+      typography: { lede: "", faces: [{ id: "inter", family: "Inter", role: "text", source: "google", weights: [400, 600], note: "Text" }, { id: "caveat", family: "Caveat", role: "accent", source: "google", weights: [600], note: "One margin note per page" }], scale: [{ id: "body", label: "Body", px: 16, faceId: "inter", weight: 400, lineHeight: 1.5, tracking: 0 }], sample: "", trackingRule: "" },
       logo: { lede: "", primary: { light: { svg, name: "check.svg" }, dark: null }, mark: { light: null, dark: null }, clearSpace: 1, minPx: null },
     });
     const one = await bring();
@@ -104,6 +104,7 @@ async function main() {
     const guideKey = b.sources.find((s) => s.kind === "text" && s.label === "check:brand")?.key;
     assert.ok(guideKey && onDisk(guideKey), "the guide is kept with the sources");
     assert.equal(b.typography.scale[0]?.faceId, "inter");
+    assert.match(tokensCss(b, "Check"), /--font-accent: "Caveat"/, "an accent face is exported as --font-accent");
     // Twice: the same brand, one set of files
     const two = await bring();
     assert.deepEqual(two.written, ["logo", "typography"]);

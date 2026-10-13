@@ -11,7 +11,7 @@ function parts(spec: BrandSpec) {
   const colors = spec.color.items;
   const colorNames = uniq(colors.map((c) => c.name));
   const faces = spec.typography.faces;
-  const faceVar = (id: string) => { const f = faces.find((x) => x.id === id); return f ? `--font-${f.role === "display" ? "display" : f.role === "mono" ? "mono" : "text"}` : "--font-text"; };
+  const faceVar = (id: string) => { const f = faces.find((x) => x.id === id); return f ? `--font-${f.role}` : "--font-text"; };
   const steps = spec.typography.scale;
   const stepNames = uniq(steps.map((s) => s.label));
   const curves = spec.motion.curves;

@@ -73,11 +73,11 @@ export const ColorSchema = z.object({
 
 export const FONT_SOURCES = ["google", "fontshare", "site", "upload", "system"] as const;
 export type FontSource = (typeof FONT_SOURCES)[number];
-export const FACE_ROLES = ["display", "text", "mono"] as const;
+export const FACE_ROLES = ["display", "text", "accent", "mono"] as const;
 export const BrandFaceSchema = z.object({
   id,
   family: short(80).describe("The family's name, as its foundry writes it."),
-  role: z.enum(FACE_ROLES).describe("display (headlines), text (reading), mono (code, data)."),
+  role: z.enum(FACE_ROLES).describe("display (headlines), text (reading), accent (a face used sparingly: a handwritten note, a quote, a label), mono (code, data)"),
   source: z.enum(FONT_SOURCES).describe("Where it loads from: google, fontshare (with slug), site (the site's own CSS, with siteWeb), upload, or system."),
   weights: z.array(z.number().int().min(100).max(1000)).max(9).describe("The weights in use, 100 to 1000."),
   slug: z.string().max(80).optional().describe('The Fontshare slug ("general-sans"), when the source is fontshare.'),
