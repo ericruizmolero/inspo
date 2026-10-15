@@ -87,7 +87,8 @@ Lo más delicado: la app descarga lo que una persona le pide (una web, una image
 - Están en producción desde el 2026-10-07 y el login las enlaza siempre. → [decisión](decisiones/2026-10-07-el-login-es-plano-y-enlaza-siempre-a-terminos-y-privacidad.md)
 - Viven en la web de marketing (`criterio.design`, en inglés y bajo `/es/` en castellano); la app redirige sus direcciones antiguas y el login enlaza allí en el idioma de quien lee. → [decisión](decisiones/2026-10-11-las-paginas-legales-y-los-recursos-viven-en-la-web-de-marketing.md)
 - Las firma treseiscero, NIF E75239277, con domicilio en Hondarribia (Gipuzkoa): `LEGAL` en `marketing-site/src/legal.ts`, que no lleva DNI ni teléfono de nadie. Contacto: `hola@criterio.design`. Al cambiar un texto, cambiar `LEGAL_UPDATED`.
-- Sin analítica de terceros ni anuncios: las únicas cookies son la sesión, el idioma (`lang`) y el estado del menú. El tema va en `localStorage`.
+- Sin analítica de terceros ni anuncios: las únicas cookies son la sesión, el idioma (`lang`), el estado del menú y `criterio_signed_in`. El tema va en `localStorage`.
+- `criterio_signed_in=1` es solo una pista para la web de marketing: `proxy.ts` la pone en `.criterio.design` (httpOnly, 30 días) mientras hay cookie de sesión y la borra en la primera página sin ella, así que salir la quita. No dice quién eres y la app nunca se fía de ella; con ella, el Worker de `criterio.design` manda la portada a la app (`lib/signed-in-cookie.ts`, `marketing-site/worker/index.ts`).
 - Un proveedor nuevo en el stack es también una línea nueva en "Con quién lo compartimos" de la política de privacidad, en los dos idiomas, en el mismo trabajo.
 
 ## Pendiente

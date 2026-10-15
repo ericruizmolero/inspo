@@ -78,7 +78,7 @@ Importar no es una ruta: es un diálogo (`ImportDialog`) que se abre desde el me
 
 | Ruta | Qué es |
 | --- | --- |
-| `/`, `/es/` | Portada con el botón de entrada a la app |
+| `/`, `/es/` | Portada con el botón de entrada a la app. Con sesión abierta en la app (cookie `criterio_signed_in`) el Worker redirige a `app.criterio.design/`, directo al tablón; `?landing` enseña la portada igualmente ([decisión](decisiones/2026-10-15-con-sesion-abierta-criterio-design-entra-directo-a-la-app.md)) |
 | `/resources/`, `/es/resources/` | Las webs donde buscamos referencias, por grupos, con buscador y tipo (`?q=`, `?kind=`) y "Guardar en Criterio" (`app.criterio.design/?add=<url>`) |
 | `/skills/`, `/es/skills/` | Las skills para agentes por tema, con autor, qué hacen y el comando de instalar con Copiar; buscador y tema en la dirección (`?q=`, `?topic=`) |
 | `/pricing/`, `/es/pricing/` | Los cuatro planes (precio al mes y anual, en USD o EUR según el idioma), lo que incluye cada uno, una tabla con las cifras y "Empieza gratis" al login de la app |

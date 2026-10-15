@@ -5,6 +5,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getSessionCookie } from "better-auth/cookies";
 import { LANG_COOKIE, LANG_COOKIE_MAX_AGE, DEFAULT_LOCALE, isLocale, localeFromHeader } from "@/lib/i18n/locale";
 import { INVITE_COOKIE, INVITE_COOKIE_MAX_AGE } from "@/lib/invite-cookie";
+import { SIGNED_IN_COOKIE, SIGNED_IN_COOKIE_MAX_AGE, signedInCookieDomain } from "@/lib/signed-in-cookie";
 
 // The home page (/) is public too: signed out it shows the start canvas (app/page.tsx)
 // and the first action opens the sign-in dialog. Everything else needs a session.
@@ -79,9 +80,16 @@ export function proxy(request: NextRequest) {
   // SameSite none in production: Apple returns by a cross-site POST, which a lax cookie would miss
   const invite = pathname === "/login" ? request.nextUrl.searchParams.get("invite")?.trim().slice(0, 100) : null;
 
+  // The marketing site's "already signed in" hint (lib/signed-in-cookie.ts) follows the session cookie, on pages only.
+  // Signing out lands on a page with no session, which clears it
+  const signedIn = !!getSessionCookie(request);
+  const hintDomain = page ? signedInCookieDomain(request.nextUrl.hostname) : null;
+  const hintStale = !!hintDomain && signedIn !== request.cookies.has(SIGNED_IN_COOKIE);
+
   // The cookie goes on the response no matter what, including the redirect to login
   const withLang = <T extends NextResponse>(res: T): T => {
     if (lang) res.cookies.set(LANG_COOKIE, lang, { path: "/", maxAge: LANG_COOKIE_MAX_AGE, sameSite: "lax" });
+    if (hintStale) res.cookies.set(SIGNED_IN_COOKIE, signedIn ? "1" : "", { domain: hintDomain!, path: "/", maxAge: signedIn ? SIGNED_IN_COOKIE_MAX_AGE : 0, httpOnly: true, secure: true, sameSite: "lax" });
     if (invite) {
       const prod = process.env.NODE_ENV === "production";
       res.cookies.set(INVITE_COOKIE, invite, { path: "/", maxAge: INVITE_COOKIE_MAX_AGE, httpOnly: true, secure: prod, sameSite: prod ? "none" : "lax" });
@@ -92,7 +100,7 @@ export function proxy(request: NextRequest) {
   if (PUBLIC.some((re) => re.test(pathname))) return withLang(next());
   if (pathname.startsWith("/api/files/~") || (pathname.startsWith("/api/files/") && request.nextUrl.searchParams.has("t"))) return next();
 
-  if (getSessionCookie(request)) return withLang(next());
+  if (signedIn) return withLang(next());
 
   if (pathname.startsWith("/api/")) {
     // Signed out there's no user locale: answer with the cookie it brings, or English
