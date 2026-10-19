@@ -11,6 +11,7 @@
 // it as it is and let a block be edited: the system stays the one source, the file is its other face.
 import { SYSTEM_AREAS, confidenceOf, type ProjectSystem, type SystemArea } from "@/types/system";
 import { skillSections } from "@/lib/md-skills";
+import { areaTokenLines } from "@/lib/area-tokens";
 import { hostOf, readableDomain } from "@/lib/url";
 import { brandTokenLines, brandIntroLines, brandCssLines, type BrandMdStrings } from "@/lib/brand-md";
 import type { BrandSpec } from "@/types/brand";
@@ -88,8 +89,10 @@ export interface CriterioMdInput {
     brand: BrandMdStrings;
     brief: BriefMdStrings;
     version: (n: number) => string;
-    required: string; guidance: string;
+    required: string; guidance: string; must: string; should: string;
     use: { heading: string; lines: (k: UseMdKeys) => string[] };
+    /** Every area's never lines gathered in one place, for the reader who reads one list before building */
+    rejects: { heading: string; intro: string };
     clientCopy: string;
     measured: { label: string; themes: Record<"light" | "dark", string>; density: string; colors: string; families: string; radius: string; pixels: string };
     /** The page structures the board repeats (lib/composition-core.ts), under layout, and each reference's build */
@@ -158,7 +161,7 @@ export type CriterioBlock =
     never: string;
     whyLabel: string; neverLabel: string; openText: string; evidenceLabel: string;
     /** The words the file marks rules and references with. The Markdown view leaves them out, so they never reach a stored text */
-    marks?: { required: string; guidance: string; /** The tokens' line that titles the brand's values ("**Values**"), or -1 */ valuesAt: number };
+    marks?: { required: string; guidance: string; must: string; should: string; /** The tokens' line that titles the brand's values ("**Values**"), or -1 */ valuesAt: number };
     /** The status, the references behind the decision with what the team said of each, and the area's conversation, as lines of the file */
     meta: string[];
     /** The team rewrote the status and references by hand */
@@ -223,6 +226,9 @@ export function criterioBlocks({ project, system, items: allItems, labels, strin
   const blocks: CriterioBlock[] = [{ kind: "head", lines: doc.head ? doc.head.split("\n") : headLines, edited: !!doc.head }];
   const useLines = strings.use.lines({ never: strings.never, evidence: strings.evidence, tokens: strings.brand.tokens, refs: strings.refs, required: strings.required, guidance: strings.guidance, measured: strings.measured.label, client: client?.name ?? null });
   blocks.push({ kind: "section", id: "use", heading: title("use", strings.use.heading), ...byHandOr("use", useLines) });
+  // Every area's never lines in one list, written by the app from the areas: it is a view of them, so it is never typed over
+  const rejected = SYSTEM_AREAS.flatMap((key) => splitRules(system.areas.find((x) => x.area === key)?.never ?? "").never.map((l) => `- **${labels[key]}:** ${l}`));
+  if (rejected.length) blocks.push({ kind: "section", id: "rejects", heading: title("rejects", strings.rejects.heading), mark: strings.required, lines: [`> ${strings.rejects.intro}`, "", ...rejected] });
   if (about?.trim()) blocks.push({ kind: "section", id: "project", heading: title("project", strings.project), lines: [about.trim()] });
   // A brief with no copy pasted in borrows the client's own words, as its site says them
   const heard = readBrief(brief)?.voiceSamples.length ? [] : clientCopy.map(one).filter(Boolean);
@@ -285,7 +291,8 @@ export function criterioBlocks({ project, system, items: allItems, labels, strin
         for (const w of (items[e.itemId]?.said ?? []).slice(0, 3)) meta.push(`    - ${w.who}: ${told(w, 220)}`);
       }
     }
-    const lines = talk[key] ?? [];
+    // Only what changes a decision (a proposal, taken, waiting or turned down): a loose comment serves the team, not the agent
+    const lines = (talk[key] ?? []).filter((l) => l.proposal);
     if (lines.length) {
       meta.push(`- **${strings.talk} (${lines.length}):**`);
       for (const l of lines) {
@@ -308,7 +315,7 @@ export function criterioBlocks({ project, system, items: allItems, labels, strin
     const support = key === "layout" ? [...repeated, ...signalled] : signalled;
     // The values' first title is marked required; the imagery's examples are references, so they never are
     const valuesAt = tokens.findIndex((l) => /^\*\*[^*]+\*\*$/.test(l) && l !== `**${strings.brand.examples}**`);
-    const marks = { required: strings.required, guidance: strings.guidance, valuesAt };
+    const marks = { required: strings.required, guidance: strings.guidance, must: strings.must, should: strings.should, valuesAt };
     blocks.push({ ...base, marks, decision: a?.decision ?? "", why: a?.decision ? a.why : "", meta: byHand ? byHand.split("\n") : meta, metaEdited: !!byHand, ...(tokens.length ? { tokens } : {}), ...(support.length ? { support } : {}) });
   }
   /** One reference's entry: what it is, who brought it, what was said of it and what it brings to each area */
@@ -332,7 +339,7 @@ export function criterioBlocks({ project, system, items: allItems, labels, strin
     const brings = system.areas.flatMap((a) => a.evidence.filter((e) => e.itemId === id).map((e) => ({ area: a.area, take: e.take })));
     if (brings.length) {
       out.push(`- **${strings.brings}:**`);
-      for (const b of brings) out.push(`  - ${labels[b.area]}${b.take ? `: ${b.take}` : ""}`);
+      for (const b of brings) out.push(`  - ${labels[b.area]}`);
     } else out.push(`- **${strings.brings}:** _${strings.noArea}_`);
     if (it.tags?.length) out.push(`- **${strings.tags}:** ${it.tags.join(", ")}`);
     out.push(...measuredLines(it.measured, strings.measured));
@@ -356,6 +363,11 @@ export function criterioBlocks({ project, system, items: allItems, labels, strin
   // The values as variables, ready to paste into a project
   const css = brand ? brandCssLines(brand, project) : [];
   if (css.length) blocks.push({ kind: "section", id: "brand-tokens", heading: title("brand-tokens", strings.brand.tokens), mark: strings.required, ...byHandOr("brand-tokens", [`> ${strings.brand.tokensIntro}`, "", ...css]) });
+  // No brand drawn: the values the areas already decided, gathered so an agent need not dig them out of the prose
+  else {
+    const derived = areaTokenLines(system, labels);
+    if (derived.length) blocks.push({ kind: "section", id: "area-tokens", heading: title("area-tokens", strings.brand.tokens), mark: strings.required, ...byHandOr("area-tokens", [`> ${strings.brand.areaTokensIntro}`, "", ...derived]) });
+  }
   // Every reference once, with what it is, what was said of it and what it brings to each area
   // (a text is already whole under Content)
   const refs = board.filter((id) => items[id] && items[id].kind !== "text");
@@ -417,6 +429,16 @@ export function readAreaMeta(text: string, strings: { decided: string; proposed:
   return { status, refs };
 }
 
+/** An area's rule lines by strength: "`id` MUST: …" and "`id` SHOULD: …" apart, everything else (NEVER, or no id) is a Never */
+export function splitRules(text: string): { never: string[]; must: string[]; should: string[] } {
+  const out = { never: [] as string[], must: [] as string[], should: [] as string[] };
+  for (const l of text.split("\n").map((x) => x.trim()).filter(Boolean)) {
+    const m = /^`[^`\n]+`\s+(MUST|SHOULD):/.exec(l);
+    (m ? (m[1] === "MUST" ? out.must : out.should) : out.never).push(l);
+  }
+  return out;
+}
+
 /** An area's never list: one rule a line under its bold label. `mark` is the file's "(required)": the Markdown view
  *  types over the list without it, so its parser never meets it */
 export const neverMd = (b: { never: string; neverLabel: string }, mark?: string) => [mark ? `**${b.neverLabel}** (${mark}):` : `**${b.neverLabel}:**`, ...b.never.split("\n").filter(Boolean).map((l) => `- ${l}`)].join("\n");
@@ -434,6 +456,12 @@ export function parseAreaText(text: string, whyLabel: string, neverLabel: string
   return { decision: before.slice(0, w.index).trim(), why: before.slice(w.index + w[0].length).trim(), never };
 }
 
+/** Where the app is for anyone outside this machine (lib/share-origin.ts falls back to the same) */
+export const PUBLIC_ORIGIN = "https://app.criterio.design";
+const LOCAL_ORIGIN = /https?:\/\/(?:localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\])(?::\d+)?(?=[/)\s"']|$)/g;
+/** A link to this machine opens nowhere else: whichever place the file is built in, it leaves with the public address */
+export const publicLinks = (md: string) => md.replace(LOCAL_ORIGIN, PUBLIC_ORIGIN);
+
 /** The file, from its blocks */
 export function blocksToMd(blocks: CriterioBlock[]): string {
   const L: string[] = [];
@@ -446,14 +474,34 @@ export function blocksToMd(blocks: CriterioBlock[]): string {
     p();
     if (!b.decision) { p(`_${b.openText}_`); p(); }
     else { p(b.decision); p(); if (b.why) { p(`**${b.whyLabel}:** ${b.why}`); p(); } }
-    if (b.never) { p(neverMd(b, b.marks?.required)); p(); }
+    if (b.never) {
+      // A rule written MUST or SHOULD is not a Never: the file keeps each strength under its own label
+      const { never, must, should } = b.marks ? splitRules(b.never) : { never: b.never.split("\n").filter(Boolean), must: [], should: [] };
+      if (never.length) { p(neverMd({ ...b, never: never.join("\n") }, b.marks?.required)); p(); }
+      if (must.length) { p(neverMd({ neverLabel: b.marks!.must, never: must.join("\n") }, b.marks?.required)); p(); }
+      if (should.length) { p(neverMd({ neverLabel: b.marks!.should, never: should.join("\n") }, b.marks?.guidance)); p(); }
+    }
     if (b.tokens?.length) { b.tokens.forEach((line, i) => p(i === b.marks?.valuesAt ? `${line} (${b.marks.required})` : line)); p(); }
     // The references' line as the app writes it, or as the team left it: "- **References (3):**"
     const cites = new RegExp(`^- \\*\\*${escRe(b.evidenceLabel)} \\((\\d+)\\):\\*\\*$`);
     if (b.meta.length) { for (const line of b.meta) p(b.marks ? line.replace(cites, `- **${b.evidenceLabel} ($1)** (${b.marks.guidance}):`) : line); p(); }
     if (b.support?.length) { for (const x of b.support) p(x.line); p(); }
   }
-  return L.join("\n");
+  return publicLinks(L.join("\n"));
+}
+
+/** The parts a reader can ask for: the whole file, the decisions (without the long lists at the end), or one area */
+export const CRITERIO_PARTS = ["all", "decisions", ...SYSTEM_AREAS] as const;
+export type CriterioPart = (typeof CRITERIO_PARTS)[number];
+export const isCriterioPart = (x: unknown): x is CriterioPart => (CRITERIO_PARTS as readonly unknown[]).includes(x);
+
+/** One part of the file as Markdown. "decisions" leaves out every reference's own entry and the texts, whole; an area's
+ *  name gives that area under the file's head and its "How to use this file", so a single area still says what binds */
+export function partMd(blocks: CriterioBlock[], part: CriterioPart = "all"): string {
+  if (part === "all") return blocksToMd(blocks);
+  return blocksToMd(blocks.filter((b) => part === "decisions"
+    ? b.kind !== "section" || !["refs", "content"].includes(b.id)
+    : b.kind === "head" || (b.kind === "section" && b.id === "use") || (b.kind === "area" && b.area === part)));
 }
 
 export function renderCriterioMd(input: CriterioMdInput): string {

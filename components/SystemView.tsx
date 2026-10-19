@@ -10,6 +10,7 @@ import { emptySystem, type ProjectSystem, type SystemArea, type SystemFocus } fr
 import { blocksToMd, criterioBlocks, type RefInfo } from "@/lib/criterio-md";
 import type { ProjectMeasures } from "@/lib/ref-measured";
 import SkillsMenu from "./SkillsMenu";
+import { MD_SKILL_EXCLUSIVE, type MdSkill } from "@/lib/md-skill-ids";
 import ImproveModal from "./ImproveModal";
 import ResultView from "./ResultView";
 import BriefPanel from "./BriefPanel";
@@ -193,7 +194,8 @@ export default function SystemView({ project, system, onSystem, board, library, 
   // The skills switched on for criterio.md, kept with the system so the whole team copies the same file
   const skillsOn = useMemo(() => (sys.doc?.skills ?? "").split(",").filter(Boolean), [sys.doc?.skills]);
   const toggleSkill = async (id: string) => {
-    const next = skillsOn.includes(id) ? skillsOn.filter((s) => s !== id) : [...skillsOn, id];
+    const rival = MD_SKILL_EXCLUSIVE[id as MdSkill];
+    const next = skillsOn.includes(id) ? skillsOn.filter((s) => s !== id) : [...skillsOn.filter((s) => s !== rival), id];
     const r = await saveDocPart(project.id, "skills", next.length ? next.join(",") : null);
     if (r.ok) setSystem(r.data); else setError(r.error);
   };

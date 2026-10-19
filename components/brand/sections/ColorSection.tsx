@@ -40,6 +40,7 @@ function ColorForm({ color, isAccent, onChange, onRemove, onAccent, onMove, firs
         </span>
       </label>
       <label><span>{s.role}</span><textarea className="cr-input cr-textarea" rows={2} defaultValue={color.role} maxLength={200} onBlur={(e) => { const v = e.currentTarget.value.trim(); if (v !== color.role) onChange({ ...color, role: v }); }} /></label>
+      <label><span>{s.notFor}</span><textarea className="cr-input cr-textarea" rows={2} defaultValue={color.notFor ?? ""} maxLength={200} placeholder={s.notForHint} onBlur={(e) => { const v = e.currentTarget.value.trim(); if (v !== (color.notFor ?? "")) onChange({ ...color, notFor: v || undefined }); }} /></label>
       <div className="bc-form__row">
         <label><span>{s.group}</span>
           <select className="cr-input" value={color.group} onChange={(e) => onChange({ ...color, group: e.currentTarget.value as BrandColor["group"] })}>

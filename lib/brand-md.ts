@@ -7,8 +7,8 @@ import { accentOf, type BrandSpec } from "@/types/brand";
 import type { SystemArea } from "@/types/system";
 
 export interface BrandMdStrings {
-  values: string; intro: string; tokens: string; tokensIntro: string;
-  name: string; role: string; accent: string;
+  values: string; intro: string; tokens: string; tokensIntro: string; areaTokensIntro: string;
+  name: string; role: string; notFor: string; accent: string;
   faces: string; scale: string; step: string; size: string; face: string; weight: string; lineHeight: string; tracking: string; sample: string;
   curves: string; durations: string; stagger: string; use: string;
   files: string; primary: string; mark: string; light: string; dark: string; clearSpace: (x: number) => string; minSize: string;
@@ -36,8 +36,10 @@ export function brandTokenLines(area: SystemArea, b: BrandSpec, s: BrandMdString
       if (!b.color.items.length) break;
       const accent = accentOf(b);
       head(s.values);
-      L.push(`| ${s.name} | HEX | RGB | HSL | ${s.role} |`, "|---|---|---|---|---|");
-      for (const c of b.color.items) { const k = colorCodes(c.hex); L.push(`| ${cell(c.name)}${c.id === accent?.id ? ` (${s.accent})` : ""} | \`${k.hex}\` | ${k.rgb} | ${k.hsl} | ${cell(c.role)} |`); }
+      // The "not for" column only when a colour has one: a palette nobody warned about has no empty column
+      const warned = b.color.items.some((c) => c.notFor);
+      L.push(`| ${s.name} | HEX | RGB | HSL | ${s.role} |${warned ? ` ${s.notFor} |` : ""}`, `|---|---|---|---|---|${warned ? "---|" : ""}`);
+      for (const c of b.color.items) { const k = colorCodes(c.hex); L.push(`| ${cell(c.name)}${c.id === accent?.id ? ` (${s.accent})` : ""} | \`${k.hex}\` | ${k.rgb} | ${k.hsl} | ${cell(c.role)} |${warned ? ` ${cell(c.notFor ?? "")} |` : ""}`); }
       break;
     }
     case "typography": {

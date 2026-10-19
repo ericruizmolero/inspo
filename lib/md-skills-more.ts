@@ -6,7 +6,7 @@ import type { ProjectSystem, SystemArea, SystemAreaState } from "@/types/system"
 type Lang = "en" | "es";
 
 /** In the order the file has them: the areas' order, then the ones that cross them */
-export const MORE_SKILLS = ["fonts", "color-tokens", "grid", "transitions", "icons", "logo-svg", "images", "iso-figure", "microcopy", "no-ai-slop", "a11y", "tailwind"] as const;
+export const MORE_SKILLS = ["fonts", "color-tokens", "grid", "transitions", "icons", "logo-svg", "images", "iso-figure", "microcopy", "no-ai-slop", "no-ui-slop", "a11y", "tailwind"] as const;
 export type MoreSkill = (typeof MORE_SKILLS)[number];
 
 export interface SkillText {
@@ -34,13 +34,13 @@ export const AREAS: Record<Lang, Record<SystemArea, string>> = {
 const COMMON = {
   en: {
     on: (what: string, area: string | null) => `Switched on in criterio.design. ${what}${area ? ` The ${area} area rules: where it and this section disagree, the area wins.` : " The areas rule: where one and this section disagree, the area wins."}`,
-    project: "This project", decided: (area: string) => `${area}, as decided`, open: (area: string) => `The ${area} area is still open. Use the defaults below until the team decides.`,
+    project: "This project", rejected: "What the areas already rule out", decided: (area: string) => `${area}, as decided`, open: (area: string) => `The ${area} area is still open. Use the defaults below until the team decides.`,
     never: (area: string) => `Never (from the ${area} area)`, defaults: "Defaults, while the area names no numbers", craft: "The craft",
     families: "Families the team kept", colors: "The colours the team kept, as tokens to start from", numbers: "Measures the decision names", theme: "The system so far, as a theme to start from", touches: "What the system decides that this touches",
   },
   es: {
     on: (what: string, area: string | null) => `Activado en criterio.design. ${what}${area ? ` Manda el área de ${area}: si esta sección y ella no coinciden, gana el área.` : " Mandan las áreas: si una y esta sección no coinciden, gana el área."}`,
-    project: "Este proyecto", decided: (area: string) => `${area}, tal como se ha decidido`, open: (area: string) => `El área de ${area} sigue abierta. Usa los valores por defecto de abajo hasta que el equipo decida.`,
+    project: "Este proyecto", rejected: "Lo que las áreas ya descartan", decided: (area: string) => `${area}, tal como se ha decidido`, open: (area: string) => `El área de ${area} sigue abierta. Usa los valores por defecto de abajo hasta que el equipo decida.`,
     never: (area: string) => `Nunca (del área de ${area})`, defaults: "Valores por defecto, mientras el área no dé números", craft: "El oficio",
     families: "Familias que el equipo se quedó", colors: "Los colores que el equipo se quedó, como tokens de partida", numbers: "Medidas que nombra la decisión", theme: "El sistema hasta ahora, como tema de partida", touches: "Lo que decide el sistema y esto toca",
   },
@@ -51,6 +51,17 @@ const COMMON = {
 const areaOf = (system: ProjectSystem, area: SystemArea) => system.areas.find((a) => a.area === area);
 const oneLine = (s: string) => s.replace(/\s+/g, " ").trim();
 const firstSentence = (s: string) => { const t = oneLine(s); const m = t.match(/^.*?[.!?](?=\s|$)/); return m ? m[0] : t; };
+/** What every area of the project already rules out, one line each under its area's name: the generic rules below
+ *  hold in every project, these are this project's own */
+function rejectFacts(system: ProjectSystem, lang: Lang): string[] {
+  const out: string[] = [];
+  for (const area of Object.keys(AREAS[lang]) as SystemArea[]) {
+    const never = (areaOf(system, area)?.never ?? "").split("\n").map((l) => l.trim()).filter(Boolean);
+    for (const l of never) out.push(`- **${AREAS[lang][area]}:** ${l}`);
+  }
+  return out.length ? [`**${COMMON[lang].rejected}:**`, ...out, ""] : [];
+}
+
 const keptOf = (a: SystemAreaState | undefined) => {
   const kept = new Set((a?.curation?.verdicts ?? []).filter((v) => v.keep).map((v) => v.id));
   return (a?.curation?.candidates ?? []).filter((c) => kept.has(c.id));
@@ -218,7 +229,7 @@ export const MORE_SKILL_DEFS: Record<MoreSkill, SkillDef> = {
     en: {
       heading: "Build it: motion without a library",
       lead: "How to build the Motion area above with what the browser already has: CSS transitions, `@starting-style`, view transitions and scroll timelines.",
-      setup: "Nothing to install. Put the area's curves and durations in tokens (`--ease-out: cubic-bezier(0.23, 1, 0.32, 1); --dur-fast: 180ms`) and use only those.",
+      setup: "Nothing to install. Put each curve and duration the area gives in a token named for its job, not for the curve type (`--ease-fall`, `--ease-reveal`, `--dur-fast`), and use only those. If the area names a GSAP ease, write its cubic-bezier equivalent.",
       defaults: ["Feedback (hover, focus, press): 150 to 250ms. Things entering: 300 to 500ms. Leaving: shorter than entering.", "One curve for entering (`cubic-bezier(0.23, 1, 0.32, 1)`) and one for moving across (`cubic-bezier(0.65, 0, 0.35, 1)`).", "A press is `scale: 0.97` and back."],
       rules: [
         "Move with `translate`, `scale`, `rotate` and `opacity` only. Never transition `width`, `height`, `top`, `left` or a large `box-shadow`.",
@@ -234,7 +245,7 @@ export const MORE_SKILL_DEFS: Record<MoreSkill, SkillDef> = {
     es: {
       heading: "Construirlo: movimiento sin librería",
       lead: "Cómo construir el área de Movimiento de arriba con lo que el navegador ya trae: transiciones CSS, `@starting-style`, view transitions y líneas de tiempo de scroll.",
-      setup: "No hay nada que instalar. Pon las curvas y duraciones del área en tokens (`--ease-out: cubic-bezier(0.23, 1, 0.32, 1); --dur-fast: 180ms`) y usa solo esos.",
+      setup: "No hay nada que instalar. Pon cada curva y duración que dé el área en un token con nombre por su función, no por el tipo de curva (`--ease-caida`, `--ease-aparicion`, `--dur-fast`), y usa solo esos. Si el área nombra una curva de GSAP, escribe su equivalente en cubic-bezier.",
       defaults: ["Respuesta (hover, foco, pulsación): de 150 a 250ms. Lo que entra: de 300 a 500ms. Lo que sale: más corto que al entrar.", "Una curva para entrar (`cubic-bezier(0.23, 1, 0.32, 1)`) y otra para desplazarse (`cubic-bezier(0.65, 0, 0.35, 1)`).", "Pulsar es `scale: 0.97` y volver."],
       rules: [
         "Mueve solo con `translate`, `scale`, `rotate` y `opacity`. Nunca transiciones de `width`, `height`, `top`, `left` ni de un `box-shadow` grande.",
@@ -253,7 +264,7 @@ export const MORE_SKILL_DEFS: Record<MoreSkill, SkillDef> = {
     en: {
       heading: "Build it: one set of icons",
       lead: "How to bring the Iconography area above into the site as one consistent set.",
-      setup: "Pick one library that matches the area and install it as components: Lucide (`lucide-react`) for a fine, round outline; Phosphor (`@phosphor-icons/react`) when the area wants several weights of the same drawing. Import icon by icon, so only the ones used are shipped.",
+      setup: "If the area rules out stock or ready-made icons, install nothing: draw them on the grid below. Otherwise pick one library that matches the area and install it as components: Lucide (`lucide-react`) for a fine, round outline; Phosphor (`@phosphor-icons/react`) when the area wants several weights of the same drawing. Import icon by icon, so only the ones used are shipped.",
       defaults: ["Outline, 1.5px stroke, round caps and joins.", "16px beside text, 20px in buttons, 24px on their own.", "The icon takes the colour of its text: `currentColor`."],
       rules: [
         "One set and one weight in the whole site. A filled icon never sits beside an outlined one, and an emoji is not an icon.",
@@ -269,7 +280,7 @@ export const MORE_SKILL_DEFS: Record<MoreSkill, SkillDef> = {
     es: {
       heading: "Construirlo: un solo set de iconos",
       lead: "Cómo llevar a la web el área de Iconografía de arriba como un único set coherente.",
-      setup: "Elige una librería que encaje con el área e instálala como componentes: Lucide (`lucide-react`) para un contorno fino y redondeado; Phosphor (`@phosphor-icons/react`) cuando el área pida varios pesos del mismo dibujo. Importa icono a icono, para servir solo los que se usan.",
+      setup: "Si el área descarta los iconos de stock o ya hechos, no instales nada: dibújalos sobre la retícula de abajo. Si no, elige una librería que encaje con el área e instálala como componentes: Lucide (`lucide-react`) para un contorno fino y redondeado; Phosphor (`@phosphor-icons/react`) cuando el área pida varios pesos del mismo dibujo. Importa icono a icono, para servir solo los que se usan.",
       defaults: ["Contorno, trazo de 1,5px, extremos y uniones redondeados.", "16px junto al texto, 20px en botones y 24px cuando van solos.", "El icono toma el color de su texto: `currentColor`."],
       rules: [
         "Un solo set y un solo peso en toda la web. Un icono relleno nunca va junto a uno de contorno, y un emoji no es un icono.",
@@ -477,6 +488,60 @@ export const MORE_SKILL_DEFS: Record<MoreSkill, SkillDef> = {
         "El formato sigue al contenido: sin emojis en los títulos, sin negritas sueltas en mitad de la frase, sin viñetas donde dos frases se leen mejor. Sin rayas en textos cortos.",
         "Palabras que se quitan: potenciar, impulsar, optimizar, empoderar, revolucionar, transformador, innovador, disruptivo, de vanguardia, robusto, integral, holístico, sinergia, cambio de paradigma, llevar al siguiente nivel, sumergirse en, desbloquear.",
         "Frases que solo retrasan lo que se quiere decir: cabe destacar, es importante señalar, al fin y al cabo, a la hora de, en el mundo actual, la realidad es que, en definitiva, sin lugar a dudas.",
+      ],
+    },
+  },
+  "no-ui-slop": {
+    area: null,
+    facts: rejectFacts,
+    en: {
+      heading: "Build it: avoiding UI slop",
+      lead: "How to build every screen of the project without the habits that make an interface read as generated. Each rule has an id, a strength (MUST, NEVER, SHOULD) and the reason; cite the id when you keep or break one.",
+      setup: "Adapted from the anti-slop rules of design.how's Glaze system, with the project's own never lists above. Where a rule and an area disagree, the area wins.",
+      defaults: [],
+      rules: [
+        "`ui-earn-the-card` MUST: group with spacing first; a card only around one thing a person acts on, and never a card inside a card. Because every box asks to be read as a separate thing.",
+        "`ui-no-stat-cards` NEVER: a row of equal cards that each hold one number. Because equal boxes make every number equally loud. Correct: one sentence stating the figures, or a table. Wrong: three labelled tiles.",
+        "`ui-no-icon-tiles` NEVER: an icon in a tinted tile or circle beside a heading. Because the tile adds nothing and looks like a button.",
+        "`ui-no-side-rail` NEVER: a coloured bar on one edge of a card, row or message. Because the bar implies a status nobody defined.",
+        "`ui-no-status-dots` NEVER: a small round dot alone for status, unread counts or series. Because a dot relies on hue only. Correct: a glyph and a word.",
+        "`ui-no-eyebrow` NEVER: a small label, category or number above a title. Because the heading already names the section.",
+        "`ui-no-caps` NEVER: capitals or letter-spacing on text, unless the Typography area asks for it. Because capitals are slower to read and louder than the page needs.",
+        "`ui-no-decoration` NEVER: gradients, blobs, glows, dot or grid backgrounds and backdrop blur, unless an area decides them. Because decoration competes with the one action of the screen.",
+        "`ui-no-shadow-reflex` NEVER: a shadow to make a card or menu stand out. Because depth is better drawn with spacing, a line or a tone from the palette.",
+        "`ui-one-primary` MUST: at most one primary action in a card, footer, dialog or row of actions; the rest are quiet. Because two loud buttons side by side split the eye. Correct: `Not now` quiet, `Join` primary.",
+        "`ui-no-mono-cosplay` NEVER: monospace for labels, headings or numbers; only for values a person copies, such as ids and code. Because mono as a costume reads as a template.",
+        "`ui-no-emoji` NEVER: emoji in copy, titles, buttons or as icons. Because they render differently on every device and make a tool read as a chat.",
+        "`ui-no-fake-data` SHOULD: believable sample data. No lorem ipsum, no `John Doe`, no round filler numbers. Because they hide truncation and alignment problems.",
+        "`ui-no-scroll-reveal` NEVER: content that fades or slides in as it scrolls into view, unless the Motion area decides it. Because what stays hidden until scrolled can be missed and costs reading time.",
+        "`ui-no-stream-effects` NEVER: blinking cursors, shimmer sweeps or per-word fades on streamed answers. Because they slow reading and make the layout jitter.",
+        "`ui-actions-name-the-object` MUST: a verb and its object on every action, in sentence case. Correct: `Run eval`. Wrong: `OK`, `Submit`.",
+        "When a need is not covered by this file, an area or these rules: stop and say so. Never invent a token, a colour, a component or a pattern to fill the gap.",
+      ],
+    },
+    es: {
+      heading: "Construirlo: evitar el UI slop",
+      lead: "Cómo construir cada pantalla del proyecto sin los vicios que hacen que una interfaz parezca generada. Cada regla tiene un id, una fuerza (MUST, NEVER, SHOULD) y su porqué; cita el id cuando mantengas o rompas una.",
+      setup: "Adaptada de las reglas anti-slop del sistema Glaze de design.how, con las listas de nunca del propio proyecto arriba. Donde una regla y un área no coincidan, gana el área.",
+      defaults: [],
+      rules: [
+        "`ui-earn-the-card` MUST: se agrupa primero con espacio; una tarjeta solo alrededor de algo sobre lo que la persona actúa, y nunca una tarjeta dentro de otra. Porque cada caja pide leerse como una cosa aparte.",
+        "`ui-no-stat-cards` NEVER: una fila de tarjetas iguales con un número cada una. Porque cajas iguales hacen que todos los números griten igual. Bien: una frase con las cifras, o una tabla. Mal: tres teselas con etiqueta.",
+        "`ui-no-icon-tiles` NEVER: un icono en una tesela o círculo teñido junto a un título. Porque la tesela no aporta nada y parece un botón.",
+        "`ui-no-side-rail` NEVER: una barra de color en un borde de una tarjeta, fila o mensaje. Porque la barra insinúa un estado que nadie ha definido.",
+        "`ui-no-status-dots` NEVER: un punto redondo solo para estados, contadores o series. Porque un punto depende solo del tono. Bien: un glifo y una palabra.",
+        "`ui-no-eyebrow` NEVER: una etiqueta pequeña, categoría o número encima de un título. Porque el título ya nombra la sección.",
+        "`ui-no-caps` NEVER: mayúsculas ni espaciado de letras en el texto, salvo que lo pida el área de Tipografía. Porque las mayúsculas se leen más despacio y gritan más de lo que la página necesita.",
+        "`ui-no-decoration` NEVER: degradados, manchas, resplandores, fondos de puntos o rejilla y desenfoque de fondo, salvo que un área los decida. Porque la decoración compite con la única acción de la pantalla.",
+        "`ui-no-shadow-reflex` NEVER: una sombra para que una tarjeta o un menú destaque. Porque la profundidad se dibuja mejor con espacio, una línea o un tono de la paleta.",
+        "`ui-one-primary` MUST: como mucho una acción principal en una tarjeta, pie, diálogo o fila de acciones; las demás, discretas. Porque dos botones fuertes juntos parten la mirada. Bien: `Ahora no` discreto, `Unirme` principal.",
+        "`ui-no-mono-cosplay` NEVER: monoespaciada en etiquetas, títulos o números; solo en valores que alguien copia, como ids y código. Porque la mono de disfraz parece una plantilla.",
+        "`ui-no-emoji` NEVER: emoji en textos, títulos, botones ni como iconos. Porque se ven distinto en cada dispositivo y hacen que una herramienta parezca un chat.",
+        "`ui-no-fake-data` SHOULD: datos de muestra creíbles. Sin lorem ipsum, sin `Juan Pérez`, sin cifras redondas de relleno. Porque esconden los problemas de truncado y alineación.",
+        "`ui-no-scroll-reveal` NEVER: contenido que aparece con un fundido o deslizándose al entrar en pantalla, salvo que lo decida el área de Movimiento. Porque lo que sigue oculto hasta hacer scroll se puede perder y cuesta tiempo de lectura.",
+        "`ui-no-stream-effects` NEVER: cursores parpadeantes, brillos que barren ni fundidos palabra a palabra en respuestas que llegan en directo. Porque frenan la lectura y hacen saltar el layout.",
+        "`ui-actions-name-the-object` MUST: un verbo con su objeto en cada acción, en minúscula tras la inicial. Bien: `Lanzar evaluación`. Mal: `Aceptar`, `Enviar`.",
+        "Cuando una necesidad no la cubre este fichero, un área ni estas reglas: se para y se dice. Nunca se inventa un token, un color, un componente ni un patrón para rellenar el hueco.",
       ],
     },
   },

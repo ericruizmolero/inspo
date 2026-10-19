@@ -14,7 +14,7 @@ import { readAreaMeta } from "@/lib/criterio-md";
 import { timeAgo } from "@/lib/i18n/format";
 import SystemMarkdown from "./SystemMarkdown";
 import { useT } from "./I18nProvider";
-import { Avatar, Chip, Icon, toneFor } from "@/components/criterio";
+import { Avatar, Chip, Icon, IconButton, toneFor } from "@/components/criterio";
 import "./SystemDoc.css";
 
 type AreaBlock = Extract<CriterioBlock, { kind: "area" }>;
@@ -111,6 +111,21 @@ export default function SystemDoc({ blocks, system, boardIds, itemOf, imageOf, r
     return true;
   };
   // Saying no opens a line under the proposal for why: optional, and it tells the next pass how far the no reaches
+  // The area's never list written as rules (an id, a reason, a right and a wrong example): the model writes them and
+  // they wait under the area as a proposal, like any other, until someone accepts them
+  const [sharpening, setSharpening] = useState<SystemArea | null>(null);
+  const sharpen = async (b: AreaBlock) => {
+    if (working || sharpening || !b.decision) return;
+    setSharpening(b.area); setError("");
+    try {
+      const res = await fetch("/api/system/rules", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ projectId, area: b.area }) });
+      const data = (await res.json().catch(() => ({}))) as { never?: string; error?: string };
+      if (!res.ok || !data.never) { setError(data.error ?? s.sharpenFailed); return; }
+      const r = await postAreaComment(projectId, b.area, s.sharpenNote, { proposal: { decision: b.decision, why: b.why, never: data.never, state: "open" } });
+      if (!r.ok) { setError(r.error); return; }
+      onTalk();
+    } catch { setError(s.sharpenFailed); } finally { setSharpening(null); }
+  };
   const [refusing, setRefusing] = useState<{ id: string; reason: string } | null>(null);
   const answer = async (note: Note, accept: boolean, reason?: string) => {
     if (working) return;
@@ -240,7 +255,7 @@ export default function SystemDoc({ blocks, system, boardIds, itemOf, imageOf, r
       <div className="sdoc-page sdoc-page--md">
         {error && <p className="sysv-error" role="alert">{error}</p>}
         <SystemMarkdown fileTools={fileTools} look={look} pictures={pictures} blocks={blocks} busy={busy} onSave={onSave} onCopy={onCopy} onDownload={onDownload} copied={copied} markdown={markdown} projectId={projectId} projectName={projectName} hasRecipe={hasRecipe}
-          onPropose={proposeArea} after={(b) => <>{proposalsOf(b)}</>} onAbout={onAbout}
+          onPropose={proposeArea} tools={(b) => (b.decision ? <IconButton icon="sparkle" label={sharpening === b.area ? s.sharpening : s.sharpen} variant="quiet" size="xs" disabled={!!sharpening || working} onClick={() => void sharpen(b)} /> : null)} after={(b) => <>{proposalsOf(b)}</>} onAbout={onAbout}
           onText={onText && (async (id, text) => { try { await onText(id, text); setError(""); } catch (e) { setError(e instanceof Error ? e.message : String(e)); throw e; } })}
           onTextTitle={onTextTitle && (async (id, title) => { try { await onTextTitle(id, title); setError(""); } catch (e) { setError(e instanceof Error ? e.message : String(e)); throw e; } })}
           onSummary={async (text) => { const r = await saveSystemSummary(projectId, text); if (r.ok) onSystem(r.data); else setError(r.error); }}

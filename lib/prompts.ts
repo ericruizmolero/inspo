@@ -36,8 +36,10 @@ export const PROMPTS = {
   /** The brief's draft from the client's site or an imported document (lib/brief-draft.ts): it runs by itself on
    *  saving, so little reasoning and a short answer */
   brief: { model: env("SYSTEM_MODEL", DEEPSEEK), fallback: FALLBACK_MODEL, effort: "low", maxTokens: 6000, version: 1, language: '"product.what" and every trait' },
+  /** One area's never list written as rules with an id, a reason and a right and a wrong example (lib/system/rules.ts): it comes back as a proposal, never written by itself */
+  rules: { model: env("RULES_MODEL", DEEPSEEK), fallback: FALLBACK_MODEL, effort: "low", maxTokens: 8000, version: 1, language: '"rule", "because", "correct" and "wrong"' },
   /** The brand's values from the areas (lib/brand.ts) */
-  brand: { model: env("BRAND_MODEL", DEEPSEEK), fallback: FALLBACK_MODEL, effort: "medium", maxTokens: 12000, version: 4, language: "every lede, paragraph, headline, role, note, rule, principle, sample, pair, tagline, bio and line" },
+  brand: { model: env("BRAND_MODEL", DEEPSEEK), fallback: FALLBACK_MODEL, effort: "medium", maxTokens: 12000, version: 5, language: "every lede, paragraph, headline, role, notFor, note, rule, principle, sample, pair, tagline, bio and line" },
   /** The agent's plan for a request (lib/agent.ts) */
   agent: { model: env("AGENT_MODEL", DEEPSEEK), fallback: FALLBACK_MODEL, effort: "low", maxTokens: 6000, version: 1, language: '"say", every decision, why, "never" rule, brief, question, label and guide text' },
   /** A reference's tags: words the search matches, so always English. Picked with `npm run tags:bakeoff` (October 2026):

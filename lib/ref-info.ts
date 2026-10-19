@@ -6,6 +6,7 @@ import type { RefInfo } from "./criterio-md";
 import { TAGS, TAG_THRESHOLD } from "./taxonomy";
 import { mediaKindOf } from "./url";
 import { isPage } from "./composition-core";
+import { pageFailed } from "./page-failed";
 
 /** The item's day (it travels as d/m/yyyy) as YYYY-MM-DD */
 function dayOf(date: string): string | undefined {
@@ -25,10 +26,12 @@ export function refInfoOf(item: InspoItem, tags: InspoTags | undefined, comments
     ...(comments ?? []).filter((c) => (c.body.trim() || c.attachments?.length) && !c.parentId)
       .map((c) => ({ who: c.authorName, text: c.body.trim(), ...(c.attachments?.length ? { images: c.attachments.map((a) => a.url) } : {}) })),
   ];
+  const summary = tags?.summary && !pageFailed(tags.summary) ? tags.summary : undefined;
   return {
     name: item.name, web: item.web, ...(item.source ? { source: item.source } : {}), kind: mediaKindOf(item.web), by: item.via ? t.mcp.byVia(item.addedBy, item.via) : item.addedBy, date: dayOf(item.date),
     // A picture is what the AI saw in it; a site, what it says it is
-    what: (mediaKindOf(item.web) === "web" ? tags?.summary || tags?.visual : tags?.visual || tags?.summary) || undefined,
+    // A summary stored from an error page (a 404, a bot check) is not what the site is
+    what: (mediaKindOf(item.web) === "web" ? summary || tags?.visual : tags?.visual || summary) || undefined,
     tags: [style, sector, ...traits].filter((x): x is string => !!x),
     said,
     ...(isPage(tags?.composition) ? { composition: tags.composition } : {}),

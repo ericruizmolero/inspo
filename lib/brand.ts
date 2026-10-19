@@ -69,7 +69,7 @@ export const BrandOutSchema = z.object({
   intro: z.object({ headline: z.string(), paragraphs: z.array(z.string()) }),
   color: z.object({
     lede: z.string(),
-    items: z.array(z.object({ name: z.string(), hex: z.string(), role: z.string(), group: z.enum(["brand", "accent", "neutral", "semantic"]), weight: z.number() })),
+    items: z.array(z.object({ name: z.string(), hex: z.string(), role: z.string(), notFor: z.string().optional(), group: z.enum(["brand", "accent", "neutral", "semantic"]), weight: z.number() })),
     accent: z.string(),
   }),
   typography: z.object({
@@ -109,7 +109,7 @@ INPUT
 
 WHAT TO WRITE
 - intro.headline: the brand's statement, 4 to 9 words, said the way the brand speaks (see voice). Not a description of the project. intro.paragraphs: 2 or 3 short paragraphs (40 to 70 words each): what the brand is and for whom, what the design does on purpose, what this guideline is for.
-- color.items: 4 to 8 colours. Names are evocative, one or two words ("Ink", "Paper", "Signal"). hex is #RRGGBB. role says where it goes, one sentence. group: neutral (grounds, inks, greys), brand, accent, semantic. weight 1 to 4 is how much of the brand it covers: the ground 4, the ink and the main brand colour 3, an accent 2, the rest 1. Neutrals ordered dark to light. color.accent: the name of the one colour that marks things (a button, a link, the active item).
+- color.items: 4 to 8 colours. Names are evocative, one or two words ("Ink", "Paper", "Signal"). hex is #RRGGBB. role says where it goes, one sentence. notFor says what it must NOT be used for, one short sentence, only where a wrong use is easy (an accent on body text, a grey on borders); leave it empty otherwise, and never invent a rule the decision does not back. group: neutral (grounds, inks, greys), brand, accent, semantic. weight 1 to 4 is how much of the brand it covers: the ground 4, the ink and the main brand colour 3, an accent 2, the rest 1. Neutrals ordered dark to light. color.accent: the name of the one colour that marks things (a button, a link, the active item).
 - typography.faces: 1 to 3 families, exactly as the decision or the measurements name them. role display (headlines), text (everything read), accent (a face used sparingly: a handwritten note, a quote, a label; only when the brand loads one for that), mono. weights: the ones the brand uses. note: what it carries and how, one sentence.
 - typography.scale: 6 to 10 steps from the largest to the smallest: Display, H1 to H4 as needed, Body large, Body, Small. px, the family of one of the faces, weight, lineHeight (unitless), tracking in em (negative at large sizes when the decision tightens headlines). sample: one short line in the brand's voice that every step is set in. trackingRule: one or two sentences on how sizes and tracking behave.
 - motion: lede (one sentence on how the brand moves); curves: 1 or 2 cubic-bezier curves with x1 y1 x2 y2 (x between 0 and 1), named by their job; durations: 2 or 3 (fast, base, slow) in ms with what each is for; staggerMs; rule: 2 to 4 sentences on how things accelerate, settle and what never moves. A static brand gets a short honest rule and one gentle curve.
@@ -216,7 +216,7 @@ export async function runBrand(input: { organizationId: string; projectId: strin
       guides,
       ...(guidesCut ? { guidesCut } : {}),
       keep: Object.fromEntries((Object.keys(brand.meta) as BrandSection[]).filter((k) => !runMayWrite(brand, k) && !input.force?.includes(k)).map((k) => [k, brand[k]])),
-      current: { intro: brand.intro, color: brand.color.items.map((c) => ({ name: c.name, hex: c.hex, role: c.role, group: c.group })), faces: brand.typography.faces.map((f) => ({ family: f.family, role: f.role })), voice: brand.voice },
+      current: { intro: brand.intro, color: brand.color.items.map((c) => ({ name: c.name, hex: c.hex, role: c.role, notFor: c.notFor, group: c.group })), faces: brand.typography.faces.map((f) => ({ family: f.family, role: f.role })), voice: brand.voice },
       pictures: pictures.slice(0, MAX_PICTURES).map((r) => ({ id: code.get(r.id), name: r.name, kind: mediaKindOf(r.web) })),
       ...(pictures.length > MAX_PICTURES ? { picturesOmitted: pictures.length - MAX_PICTURES } : {}),
     };
@@ -249,7 +249,7 @@ async function toSections(out: Out, brand: BrandSpec, clientWeb: string | null, 
     const hex = `#${c.hex.replace("#", "").slice(0, 6)}`.toUpperCase();
     return {
       id: brand.color.items.find((x) => x.name.toLowerCase() === c.name.toLowerCase())?.id ?? brandId(),
-      name: clean(c.name, 40), hex, role: clean(c.role, 200), group: c.group,
+      name: clean(c.name, 40), hex, role: clean(c.role, 200), ...(c.notFor?.trim() ? { notFor: clean(c.notFor, 200) } : {}), group: c.group,
       weight: Math.min(4, Math.max(1, Math.round(c.weight))), ...(unmeasured(hex, measured) ? { unmeasured: true } : {}),
     };
   });

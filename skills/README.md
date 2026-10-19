@@ -25,8 +25,9 @@ npx skills add https://github.com/ericruizmolero/inspo --skill <name>
 | [Isometric figure](iso-figure/SKILL.md) | Imagery: an object as an interactive isometric line drawing in SVG | `npx skills add https://github.com/ericruizmolero/inspo --skill iso-figure` |
 | [Microcopy](microcopy/SKILL.md) | Voice: buttons, errors, empty screens, forms and metadata | `npx skills add https://github.com/ericruizmolero/inspo --skill microcopy` |
 | [Avoid AI slop](no-ai-slop/SKILL.md) | Voice: writing without the patterns of generated text (no-ai-slop, by Peter Yang) | `npx skills add https://github.com/ericruizmolero/inspo --skill no-ai-slop` |
+| [Avoid UI slop](no-ui-slop/SKILL.md) | The whole system: the habits that make an interface read as generated, as rules with an id | `npx skills add https://github.com/ericruizmolero/inspo --skill no-ui-slop` |
 | [Accessibility](a11y/SKILL.md) | The whole system: keyboard, focus, contrast and reduced motion | `npx skills add https://github.com/ericruizmolero/inspo --skill a11y` |
 | [Tailwind](tailwind/SKILL.md) | The whole system as a Tailwind 4 theme | `npx skills add https://github.com/ericruizmolero/inspo --skill tailwind` |
 | [Bring in a brand](bring-brand/SKILL.md) | Reads a site or a repo and fills the project's presentation through the criterio MCP | `npx skills add https://github.com/ericruizmolero/inspo --skill bring-brand` |
 
-The thirteen are written by `scripts/build-skills.ts` from the same text criterio.md carries (`lib/md-skills.ts`): edit it there and run `npm run skills:build`. The connector's are written by hand in their folder.
+The fourteen are written by `scripts/build-skills.ts` from the same text criterio.md carries (`lib/md-skills.ts`): edit it there and run `npm run skills:build`. The connector's are written by hand in their folder.

@@ -27,7 +27,7 @@ const stackOf = (family: string) => `"${family}", ${genericOf(family)}`;
 export function tokensCss(spec: BrandSpec, name: string): string {
   const p = parts(spec);
   const L = [`/* ${name}: brand tokens, from criterio.design */`, ":root {"];
-  p.colors.forEach((c, i) => L.push(`  --color-${p.colorNames[i]}: ${c.hex};${c.role ? ` /* ${c.role.replace(/\*\//g, "")} */` : ""}`));
+  p.colors.forEach((c, i) => L.push(`  --color-${p.colorNames[i]}: ${c.hex};${c.role ? ` /* ${[c.role, c.notFor ? `Not for: ${c.notFor}` : ""].filter(Boolean).join(". ").replace(/\*\//g, "")} */` : ""}`));
   const accent = accentOf(spec);
   if (accent) L.push(`  --color-accent: var(--color-${p.colorNames[p.colors.indexOf(accent)]});`);
   const roles = new Set<string>();
@@ -47,7 +47,7 @@ export function tokensCss(spec: BrandSpec, name: string): string {
 export function tokensJson(spec: BrandSpec): string {
   const p = parts(spec);
   const out: Record<string, unknown> = {};
-  if (p.colors.length) out.color = Object.fromEntries(p.colors.map((c, i) => [p.colorNames[i], { $type: "color", $value: c.hex, ...(c.role ? { $description: c.role } : {}) }]));
+  if (p.colors.length) out.color = Object.fromEntries(p.colors.map((c, i) => [p.colorNames[i], { $type: "color", $value: c.hex, ...(c.role ? { $description: c.notFor ? `${c.role}. Not for: ${c.notFor}` : c.role } : {}) }]));
   if (p.faces.length) out.font = Object.fromEntries(p.faces.map((f) => [p.faceVar(f.id).replace("--font-", ""), { $type: "fontFamily", $value: [f.family, ...genericOf(f.family).split(",").map((x) => x.trim().replace(/^'|'$/g, ""))], $description: f.note || undefined }]));
   if (p.steps.length) out.typography = Object.fromEntries(p.steps.map((s, i) => [p.stepNames[i], {
     $type: "typography",

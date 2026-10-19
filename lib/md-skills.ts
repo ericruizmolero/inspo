@@ -30,7 +30,7 @@ const DURATION_RE = /(\d+(?:[.,]\d+)?)\s*(ms|s)\b/g;
 const num = (s: string) => String(Number(parseFloat(s).toFixed(3)));
 
 /** The curves and durations the project has chosen: what the team kept in the area's curation, and what its decision names */
-function motionFacts(a: SystemAreaState | undefined) {
+export function motionFacts(a: SystemAreaState | undefined) {
   const curves: Curve[] = [];
   const seen = new Set<string>();
   const add = (c: Omit<Curve, "name">) => {
@@ -65,7 +65,7 @@ const T = {
     decision: "Motion, as decided",
     open: "The Motion area is still open. Use the defaults below and keep motion to feedback on what can be pressed until the team decides.",
     curves: "Curves",
-    curvesHint: "Register the custom ones once and use every curve by name. A duration is what the reference measured.",
+    curvesHint: (custom: boolean, measured: boolean) => [custom && "Register the custom ones once and use every curve by name.", measured && "A duration is what the reference measured."].filter(Boolean).join(" "),
     durations: "Durations the decision names",
     never: "Never (from the Motion area)",
     defaults: "Defaults, while the area names no numbers",
@@ -101,7 +101,7 @@ const T = {
     decision: "El movimiento, tal como se ha decidido",
     open: "El área de Movimiento sigue abierta. Usa los valores por defecto de abajo y limita el movimiento a responder a lo que se puede pulsar hasta que el equipo decida.",
     curves: "Curvas",
-    curvesHint: "Registra una vez las propias y usa cada curva por su nombre. La duración es la que midió la referencia.",
+    curvesHint: (custom: boolean, measured: boolean) => [custom && "Registra una vez las propias y usa cada curva por su nombre.", measured && "La duración es la que midió la referencia."].filter(Boolean).join(" "),
     durations: "Duraciones que nombra la decisión",
     never: "Nunca (del área de Movimiento)",
     defaults: "Valores por defecto, mientras el área no dé números",
@@ -141,7 +141,7 @@ function gsapLines(system: ProjectSystem, lang: Lang): string[] {
   if (a?.decision) L.push(`**${s.decision}:** ${a.decision.replace(/\s+/g, " ").trim()}`, "");
   else L.push(`_${s.open}_`, "");
   if (curves.length) {
-    L.push(`**${s.curves}.** ${s.curvesHint}`, "");
+    L.push(`**${s.curves}.** ${s.curvesHint(curves.some((c) => c.points), curves.some((c) => c.ms))}`.trimEnd(), "");
     // GSAP's own eases need no registering: the code block only appears for the project's own curves
     if (curves.some((c) => c.points)) {
       L.push("```js", "gsap.registerPlugin(CustomEase);");
@@ -179,6 +179,8 @@ export function skillSections(system: ProjectSystem, skills: readonly string[], 
   const out: { id: string; heading: string; lines: string[] }[] = [];
   for (const id of MD_SKILLS) {
     if (!skills.includes(id)) continue;
+    // A project saved with both ways to build motion gets one: GSAP, the one that names its curves
+    if (id === "transitions" && skills.includes("gsap")) continue;
     if (id === "gsap") out.push({ id: "skill:gsap", heading: T[lang].heading, lines: gsapLines(system, lang) });
     else if ((MORE_SKILLS as readonly string[]).includes(id)) out.push(moreSkillSection(id as MoreSkill, system, lang));
   }

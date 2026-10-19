@@ -1,4 +1,4 @@
-// Writes the thirteen skills of criterio.md as agent skills into this repo's skills/: one SKILL.md per skill, in the
+// Writes the fourteen skills of criterio.md as agent skills into this repo's skills/: one SKILL.md per skill, in the
 // layout `npx skills add` reads (skills/<id>/SKILL.md), plus skills/README.md. The craft is the same text the file's sections carry
 // (lib/md-skills.ts, lib/md-skills-more.ts); what changes is the project half: an installed skill cannot know the
 // project, so it tells the agent to read the area in the project's criterio.md first. English only: that is the
@@ -81,7 +81,7 @@ function readme(): string {
   ];
   for (const id of MD_SKILLS) L.push(`| [${names[id].name}](${id}/SKILL.md) | ${names[id].what} | \`${skillInstall(id)}\` |`);
   for (const s of CONNECTOR_SKILLS) L.push(`| [${s.name}](${s.id}/SKILL.md) | ${s.what} | \`npx skills add ${SKILLS_REPO} --skill ${s.id}\` |`);
-  L.push("", "The thirteen are written by `scripts/build-skills.ts` from the same text criterio.md carries (`lib/md-skills.ts`): edit it there and run `npm run skills:build`. The connector's are written by hand in their folder.", "");
+  L.push("", "The fourteen are written by `scripts/build-skills.ts` from the same text criterio.md carries (`lib/md-skills.ts`): edit it there and run `npm run skills:build`. The connector's are written by hand in their folder.", "");
   return L.join("\n");
 }
 

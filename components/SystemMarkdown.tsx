@@ -543,7 +543,7 @@ export default function SystemMarkdown({ fileTools, blocks, busy, onSave, onCopy
             // A skill's section is written from the system (lib/md-skills.ts); typed over, it stays as the team left it
             // The content is the texts the team pasted, whole (lib/criterio-md.ts): each one's words are typed in place
             // and saved to the reference itself; who saved it and what was said of it stay the app's
-            const edit = b.id === "project" ? (onAbout ? { onSave: onAbout } : null) : b.id === "content" || b.id === "brief" ? null : over(b.id, b.edited);
+            const edit = b.id === "project" ? (onAbout ? { onSave: onAbout } : null) : b.id === "content" || b.id === "brief" || b.id === "rejects" ? null : over(b.id, b.edited);
             if (b.texts && onText) return (
               <div key={b.id} id={`sdoc-${b.id}`} className="mdv-block">
                 {title(b.id, b.heading, whole)}<Line text="" />

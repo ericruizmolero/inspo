@@ -27,7 +27,7 @@ How to build the Motion area with what the browser already has: CSS transitions,
 
 ## The craft
 
-Nothing to install. Put the area's curves and durations in tokens (`--ease-out: cubic-bezier(0.23, 1, 0.32, 1); --dur-fast: 180ms`) and use only those.
+Nothing to install. Put each curve and duration the area gives in a token named for its job, not for the curve type (`--ease-fall`, `--ease-reveal`, `--dur-fast`), and use only those. If the area names a GSAP ease, write its cubic-bezier equivalent.
 
 - Move with `translate`, `scale`, `rotate` and `opacity` only. Never transition `width`, `height`, `top`, `left` or a large `box-shadow`.
 - Something that appears: `@starting-style { opacity: 0; translate: 0 8px; }` and a transition. From `display: none`, add `transition-behavior: allow-discrete`.

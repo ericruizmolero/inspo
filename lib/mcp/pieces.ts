@@ -13,7 +13,7 @@ import { loadSystems, getSystem } from "../system/areas";
 import { loadShareView } from "../share-view";
 import { recordVersion } from "../criterio-versions";
 import { inBackground } from "../notify";
-import { blocksToMd } from "../criterio-md";
+import { CRITERIO_PARTS, partMd, type CriterioPart } from "../criterio-md";
 import { rowToItem, tagsOfRow, ITEM_COLUMNS } from "../items";
 import { addReference, cleanAreas, titleOf, type Piece } from "../add";
 import { addComment, listItemComments } from "../comments";
@@ -100,8 +100,8 @@ export async function newProject(ctx: McpCtx, origin: string, input: { name: str
 
 // ─── Reading ─────────────────────────────────────────────────────────────────
 
-export const CRITERIO_SECTIONS = ["all", "decisions", ...SYSTEM_AREAS] as const;
-export type CriterioSection = (typeof CRITERIO_SECTIONS)[number];
+export const CRITERIO_SECTIONS = CRITERIO_PARTS;
+export type CriterioSection = CriterioPart;
 
 /**
  * criterio.md as the team reads it, in the person's language. "decisions" leaves out the long tail (every
@@ -114,11 +114,7 @@ export async function readCriterio(ctx: McpCtx, origin: string, ref: string, sec
   if (!view) throw new HttpError(404, "That project is gone.");
   // What an agent read is a version of the file: kept when it changed since the last one left the app
   inBackground(async () => { await recordVersion({ organizationId: project.workspace.id, projectId: project.id, via: "mcp", viaName: ctx.via, byName: ctx.user.name, locale: ctx.user.language, origin, view }); });
-  if (section === "all") return view.markdown;
-  const blocks = view.blocks.filter((b) => section === "decisions"
-    ? b.kind !== "section" || !["refs", "content"].includes(b.id)
-    : b.kind === "head" || (b.kind === "section" && b.id === "use") || (b.kind === "area" && b.area === section));
-  return blocksToMd(blocks);
+  return section === "all" ? view.markdown : partMd(view.blocks, section);
 }
 
 /** The project's board: each reference with the code criterio.md cites it by (R1, R2…), oldest first */
@@ -284,7 +280,7 @@ export async function proposeDecision(ctx: McpCtx, origin: string, input: NewPro
   const decision = cleanDecision(input.decision);
   if (!decision) throw new HttpError(400, "The decision is empty.");
   const why = oneLine(input.why, 400);
-  const never = (input.never ?? []).map((l) => oneLine(l, 200)).filter(Boolean).join("\n").slice(0, NEVER_MAX);
+  const never = (input.never ?? []).map((l) => oneLine(l, 400)).filter(Boolean).join("\n").slice(0, NEVER_MAX);
   const [system, activity] = await Promise.all([getSystem(org, project.id), systemActivity(org, project.id, ctx.user.id)]);
   const current = system.areas.find((a) => a.area === area);
   if (current?.decision.trim() === decision && (!never || never === current.never)) {

@@ -6,6 +6,7 @@
 import "server-only";
 import { and, eq, ne, sql } from "drizzle-orm";
 import { z } from "zod";
+import { pageFailed } from "./page-failed";
 import { db, schema } from "./db";
 import { llm, llmEnabled, type LlmInput, type LlmResult } from "./llm";
 import { prompt } from "./prompts";
@@ -240,7 +241,8 @@ export async function tagWith(item: InspoItem, { image, site }: TagInputs, over:
     sector: out.sector, sectorP: 1,
     style: out.style, styleP: FIT[out.style_fit],
     tags: Object.fromEntries(TAGS.map((t) => [t.key, out.traits.includes(t.key) ? 1 : 0])),
-    summary: [site?.title, site?.description].filter(Boolean).join(" · ").slice(0, 300),
+    // An error page's own words are no summary of the site
+    summary: pageFailed(site?.title, site?.description) ? "" : [site?.title, site?.description].filter(Boolean).join(" · ").slice(0, 300),
     visual: out.visual.trim() || undefined,
     colors: colours?.colors ?? [],
     palette: colours?.palette ?? [],

@@ -59,6 +59,7 @@ export const BrandColorSchema = z.object({
   name: short(40).describe("The colour's name as the team says it."),
   hex: z.string().regex(HEX_RE).transform((h) => h.toUpperCase()).describe("Six-digit hex, like #1A1A1A."),
   role: short(200).describe("What it is used for, in a line."),
+  notFor: short(200).optional().describe("What it must not be used for, in a line, when a wrong use is easy: an accent that is not for body text, a grey that is not for borders. Empty when nothing is easy to get wrong."),
   group: z.enum(COLOR_GROUPS).describe("brand (the colours that are the brand), accent (what calls attention), neutral (grounds, text, borders), semantic (success, warning, danger)."),
   weight: z.number().int().min(1).max(4).describe("How much of the brand it covers, 1 to 4: the tile's size on the presentation. The page's ground is 4, text 3, an accent 2, a rare one 1."),
   /** The model wrote it far from every measured hex (lib/brand.ts toSections); an edit by hand drops it */

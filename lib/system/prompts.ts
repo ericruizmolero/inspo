@@ -96,6 +96,26 @@ ${EVIDENCE(20)}
 - Order the directions from best supported to least.
 ${STYLE}`;
 
+export const RULES_SYSTEM = `One area of a project's SYSTEM is decided. Write what that area must NEVER do as RULES an agent can obey and a reviewer can check, from the decision, its why and the references behind it.
+
+${AREAS}
+
+${BOARD}
+
+RULES
+${CLIENT_SITE}
+- A rule comes from this project: the decision, the team's words and what the references do or avoid. Never from general taste, and never a rule that holds in every project (an agent already carries those).
+- Keep every line of "never_now" (the team wrote them): rewrite each as a rule with the same meaning, without loosening it. Then add up to 5 more only when the decision or the references clearly back them. In total, at most 8 rules.
+- "slug": 2 to 4 lowercase words joined by hyphens that name what is ruled out ("no-gradients", "one-accent"). No area prefix: it is added.
+- "strength": NEVER for what is always wrong. MUST for what always has to hold. SHOULD for what holds unless there is a reason.
+- "rule": one sentence of at most 25 words. Concrete values from the decision when it has them (a hex, a family, a size), the principle when it does not.
+- "because": why, in one sentence of at most 25 words, rooted in the decision or the team's words.
+- "correct" and "wrong": one short example each, at most 15 words, that show the line between obeying and breaking the rule. They name real values of this project where there are any. Empty only when an example would add nothing.
+${DECISION}
+${MEMORY}
+- Never repeat a rule the team turned down ("rejected" in the memory), nor an equivalent one.
+${STYLE}`;
+
 export const START_ASK_SYSTEM = `One area of a project's SYSTEM is EMPTY. Ask the team the one question that gets it going, and give the answers it could have.
 
 ${AREAS}

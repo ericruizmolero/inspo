@@ -27,7 +27,7 @@ How to bring the Iconography area into the site as one consistent set.
 
 ## The craft
 
-Pick one library that matches the area and install it as components: Lucide (`lucide-react`) for a fine, round outline; Phosphor (`@phosphor-icons/react`) when the area wants several weights of the same drawing. Import icon by icon, so only the ones used are shipped.
+If the area rules out stock or ready-made icons, install nothing: draw them on the grid below. Otherwise pick one library that matches the area and install it as components: Lucide (`lucide-react`) for a fine, round outline; Phosphor (`@phosphor-icons/react`) when the area wants several weights of the same drawing. Import icon by icon, so only the ones used are shipped.
 
 - One set and one weight in the whole site. A filled icon never sits beside an outlined one, and an emoji is not an icon.
 - The stroke stays the same at every size (Lucide: `absoluteStrokeWidth`), so a 16px icon is not thinner than a 24px one.

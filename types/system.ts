@@ -128,8 +128,8 @@ export const DOC_PART_MAX = 60_000;
 export const DECISION_MAX = 2000;
 /** A decision's text as it is kept: its own line breaks stay (a paragraph is a paragraph), the rest of the white space is tidied */
 export const cleanDecision = (v: unknown) => String(v ?? "").replace(/\r/g, "").replace(/[^\S\n]+/g, " ").replace(/ ?\n ?/g, "\n").replace(/\n{3,}/g, "\n\n").trim().slice(0, DECISION_MAX);
-/** The never list of an area, all its lines together */
-export const NEVER_MAX = 800;
+/** The never list of an area, all its lines together. Room for rules written with an id, a reason and an example each (lib/system/rules.ts) */
+export const NEVER_MAX = 3000;
 
 /** Three looks on screen: nothing decided, a proposal the board half supports, a decision to build on */
 export type Confidence = "empty" | "low" | "high";
