@@ -69,7 +69,9 @@ function Shot({ item, image, onMeasure }: { item: InspoItem; image: string | nul
     const { naturalWidth: w, naturalHeight: h } = e.currentTarget;
     if (w && h) onMeasure?.(h / w);
   };
-  return src ? <img key={src} src={src} alt="" loading="lazy" decoding="async" onLoad={measure} onError={() => setAt((i) => i + 1)} /> : null;
+  // A picture that failed before hydration never calls onError: the ref finds it already complete and empty
+  const failedEarly = (img: HTMLImageElement | null) => { if (img?.complete && !img.naturalWidth) setAt((i) => i + 1); };
+  return src ? <img key={src} ref={failedEarly} src={src} alt="" loading="lazy" decoding="async" onLoad={measure} onError={() => setAt((i) => i + 1)} /> : null;
 }
 
 /** The mini masonry: five columns, the mosaic's 6px gap as a share of a column (a 330px card) and its height in
