@@ -27,7 +27,7 @@ Vistas excluyentes, una activa. Cada opción es un `SegmentItem` (`label`, `icon
 
 ### Pregunta de inicio
 `PromptInput` · `.cr-prompt` · muestra: prompt
-La única pregunta de la casa: un campo grande y redondeado con el botón redondo de enviar, que se enciende cuando hay texto. `leading` pone algo delante (adjuntar), `below` una segunda línea dentro de la misma forma, `busy` cambia la flecha por la espera. `inputRef`, `onKeyDown`, `onPaste` e `inputProps` para lo que el campo necesite (pegar una URL, una imagen). También es la caja de Inbox vacío y de proyecto vacío.
+La única pregunta de la casa: un campo grande y redondeado con el botón redondo de enviar, que se enciende cuando hay texto. `leading` pone algo delante (adjuntar), `trailing` algo detrás del campo y antes de enviar (la `Key` plana de un atajo, en la casa), `below` una segunda línea dentro de la misma forma, `busy` cambia la flecha por la espera. `inputRef`, `onKeyDown`, `onPaste` e `inputProps` para lo que el campo necesite (pegar una URL, una imagen). También es la caja de Inbox vacío y de proyecto vacío.
 
 ### Campo de texto
 `TextField` · `.cr-field` · `.cr-input` · `components/ui/input.tsx` · muestra: campo
@@ -379,6 +379,12 @@ La fase entre el Tablón y el Sistema (`?view=polish`): lo que queda por decidir
 ### Inicio: ¿qué vas a hacer?
 `ProjectChooser` · `Cover` · `components/ProjectChooser.tsx` · `.chooser` · `.cr-hello`
 Caja para nombrar un proyecto nuevo (Enter crea) y la cuadrícula de proyectos, cada uno con su portada (`boardColumns`: el masonry de su tablón en pequeño, con la regla de `layoutBoard` y los mismos `ratioOf`; la miniatura mide la imagen al cargar y se lo dice al tablón) y su anillo indicador. El placeholder rota ejemplos palabra a palabra y respeta reduced-motion. La caja no toma el foco al entrar. → [sin foco al entrar](decisiones/2026-10-07-la-casa-no-enfoca-el-buscador-al-entrar.md)
+- Dentro de la caja, a la derecha, la `Key` plana de ⌘K (o Ctrl K) por `trailing`, como el "/" del buscador: sin fondo ni bisel, `--chrome-muted` sobre `--chrome-border`. En pantallas táctiles (`hover: none`) no se pinta. En la casa ⌘K enfoca la caja y, pulsado otra vez en ella, la suelta; nunca abre la paleta ahí (`useCommandPalette("#chooser-name")`).
+- Bajo la caja, una fila de `Chip` chrome con icono (34 de alto, `--fs-ui`) que se parte en dos líneas si no cabe. Salen de una sola lista (`homeActions` en `lib/home.ts`, `HomeAction`): "Sort the Inbox N" solo si el Inbox tiene algo y lleva al Inbox; "Save a link" abre Añadir; "Continue <proyecto>" abre el último proyecto en el que se trabajó (`criterio:last-project:<espacio>` en este navegador) solo si sigue existiendo.
+- Sobre la cuadrícula, la cabecera: "Your projects" en `t-title-s`, la cuenta apagada ("5 projects, 44 references": las referencias distintas que están en algún proyecto) y a la derecha el orden, un `Button` quiet s que abre un `cr-menu` con `MenuItem` marcados: Recent first (el día de su referencia más nueva o el de su creación, el más reciente de los dos; a igual día, el creado después) y A to Z. El orden se guarda por espacio en `criterio:home-sort:<espacio>`. En el móvil la cabecera se parte y el orden baja a la derecha.
+- Un proyecto con 0 referencias cambia el mosaico por un recuadro discontinuo (`.chooser__empty`, `--border-strong`, radio md) con "+" y "Drop an image or paste a link": soltar una imagen o un enlace, o pegar uno con la tarjeta enfocada, lo guarda en ese proyecto (`onAddInto`, por `addByUrl` y `addByUpload` con su proyecto, o archivando el que ya estaba en la biblioteca). Mientras se guarda, la espera sustituye al "+". Un clic sigue abriendo el proyecto.
+- La última tarjeta es "New project": recuadro discontinuo del tamaño de un mosaico (33:20), "+" y el texto; lleva a la caja, la enfoca y la centra en pantalla. El discontinuo marca una forma de entrar, como `.add__pick` en Añadir, nunca el borde de una tarjeta de contenido.
+- El texto dice proyecto, nunca tablero, aunque el diseño dijera "board". → [decisión](decisiones/2026-10-20-en-la-casa-se-dice-proyecto-aunque-el-diseno-dijera-tablero.md)
 
 ### Inbox vacío
 `InboxZero` · `components/InboxZero.tsx`
