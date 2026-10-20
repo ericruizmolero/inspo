@@ -958,6 +958,10 @@ export const ui = {
     noneTitle: ["Well, that\u2019s new.", "That\u2019s strange. Very strange."],
     noneText: (what: string, inbox: number): string => `I found nothing ${what}.${inbox ? ` The inbox has ${inbox} more.` : ""}`,
     lookInbox: "Look in the inbox",
+    askMe: "Ask me:",
+    sameTitle: ["Same again. Fine."],
+    sameText: (n: number, total: number): string => `Same result: ${n} of ${total}.`,
+    failed: "I couldn\u2019t search just now. Try again in a moment.",
     polish: {
       start: ["Let\u2019s see. Keep this one?"],
       ask: ["Keep this one?", "And this one?", "Does it stay?"],

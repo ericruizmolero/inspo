@@ -52,6 +52,8 @@ export function useBoardSearch({ searchHere, query, filters, items, tagMap, comm
   const needMeaning = text.length >= 3 && (local.size === 0 || words.length >= 3);
   const [semantic, setSemantic] = useState<{ q: string; scores: Record<string, number> } | null>(null);
   const [semanticBusy, setSemanticBusy] = useState(false);
+  /** The meaning layer could not answer this query (network or server): Tino says so, plainly */
+  const [failedFor, setFailedFor] = useState<string | null>(null);
   useEffect(() => {
     if (!needMeaning) { setSemantic(null); setSemanticBusy(false); return; }
     const ctrl = new AbortController();
@@ -61,7 +63,8 @@ export function useBoardSearch({ searchHere, query, filters, items, tagMap, comm
         const res = await fetch("/api/search/semantic", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ q: text }), signal: ctrl.signal });
         const data = res.ok ? await res.json() : null;
         if (data?.scores) setSemantic({ q: text, scores: data.scores });
-      } catch { /* the words layer stands alone */ }
+        else if (res.status >= 500) setFailedFor(text);
+      } catch { if (!ctrl.signal.aborted) setFailedFor(text); /* the words layer stands alone */ }
       finally { if (!ctrl.signal.aborted) setSemanticBusy(false); }
     }, SEMANTIC_WAIT_MS);
     return () => { clearTimeout(id); ctrl.abort(); };
@@ -118,5 +121,6 @@ export function useBoardSearch({ searchHere, query, filters, items, tagMap, comm
     }
     return out;
   }, [filtered, words, tagMap, t]);
-  return { text, words, chips, filtered, jevScores, reasons, vocab, searchBusy, jevBusy };
+  const searchFailed = failedFor === text && !!text;
+  return { text, words, chips, filtered, jevScores, reasons, vocab, searchBusy, jevBusy, searchFailed };
 }

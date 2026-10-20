@@ -46,7 +46,7 @@ function ChipMark({ f, swatches, faces }: { f: Filter; swatches: Record<string, 
   return null;
 }
 
-export default function SearchBar({ filters, text, onFilters, onText, vocab, busy, gathering, swatches, faces, className = "", onAsk, asking, target, onClearTarget, quick = [], lead, actions }: {
+export default function SearchBar({ filters, text, onFilters, onText, vocab, busy, gathering, swatches, faces, className = "", onAsk, asking, target, onClearTarget, quick = [], lead, actions, onFocusChange }: {
   filters: Filter[];
   text: string;
   onFilters: (f: Filter[]) => void;
@@ -73,6 +73,8 @@ export default function SearchBar({ filters, text, onFilters, onText, vocab, bus
   lead?: ReactNode;
   /** At the end of the field, after the clear: the board's own actions (add, the step to the system) */
   actions?: ReactNode;
+  /** The field took or lost the focus (Tino offers what to ask while it is empty) */
+  onFocusChange?: (on: boolean) => void;
 }) {
   const { t } = useT();
   const ref = useRef<HTMLInputElement>(null);
@@ -164,8 +166,8 @@ export default function SearchBar({ filters, text, onFilters, onText, vocab, bus
           placeholder={target ? t.agent.targetPlaceholder : filters.length ? "" : t.search.placeholder}
           onChange={(e) => { onText(e.target.value); setClosed(false); }}
           onKeyDown={onKeyDown}
-          onFocus={() => { setFocused(true); setClosed(false); }}
-          onBlur={() => setFocused(false)}
+          onFocus={() => { setFocused(true); setClosed(false); onFocusChange?.(true); }}
+          onBlur={() => { setFocused(false); onFocusChange?.(false); }}
         />
         <span className="sb__right">
           {/* Background work, not an option of the search: it only shows while the box is empty */}

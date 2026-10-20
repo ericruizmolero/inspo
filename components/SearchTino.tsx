@@ -59,12 +59,20 @@ export function useSearchingLine(busy: boolean, total: number): string {
   return useAfter(busy, SLOW_MS) ? t.tino.searchSlow : t.tino.searching(total);
 }
 
-export default function SearchTino({ report, busy, typing, onClose, onAct }: {
+export default function SearchTino({ report, busy, typing, focused, failed, total, chips, onClose, onAct }: {
   report: SearchReport | null;
   /** The search is still reading (meaning, Jev) */
   busy: boolean;
-  /** The field has the focus and words in it */
+  /** The field has words in it */
   typing: boolean;
+  /** The field has the focus: empty, he offers what to ask */
+  focused: boolean;
+  /** The search could not run (network or server): he says so, plainly */
+  failed: boolean;
+  /** How many references the search goes through */
+  total: number;
+  /** What to ask, from this board's own tags: up to four */
+  chips: { key: string; label: string; onPick: () => void }[];
   /** The ×: closes the balloon and clears the search */
   onClose: () => void;
   /** The report's one way elsewhere (nothing found: the inbox) */
@@ -75,21 +83,45 @@ export default function SearchTino({ report, busy, typing, onClose, onAct }: {
   const tino = useRef<TinoApi>(null);
   const settled = useAfter(!!report && !busy, SETTLE_MS, report?.key);
   const shown = settled ? report : null;
-  const title = useLine(shown?.key, shown?.title);
+  // The same search again, after another or a clear, once a visit and only when it found something
+  const [same, setSame] = useState<string | null>(null);
+  const lastKey = useRef<string | null>(null);
+  useEffect(() => {
+    if (!shown) return;
+    if (shown.key === lastKey.current && shown.found && !readOnce()) { setSame(shown.key); markOnce(); }
+    lastKey.current = shown.key;
+  }, [shown]);
+  const again = shown && same === shown.key;
+  const asking = !report && focused && chips.length > 0;
+  const say = failed && report ? { key: `failed:${report.key}`, title: [t.tino.failed] }
+    : again ? { key: `same:${shown.key}`, title: t.tino.sameTitle, text: t.tino.sameText(shown.found, total) }
+    : shown ? { key: shown.key, title: shown.title, text: shown.text, act: shown.act }
+    : asking ? { key: "ask:me", title: [t.tino.askMe] }
+    : null;
+  const title = useLine(say?.key, say?.title);
   // The copy sheet's faces: resting while the bar is untouched, following the words, searching, then how it went
-  const mood: TinoMood = busy ? "searching" : shown ? (shown.found > 1 ? "smug" : shown.found ? "admirer" : "suspect") : typing || report ? "following" : "asleep";
+  const mood: TinoMood = failed && report ? "sad" : busy ? "searching" : again ? "judge"
+    : shown ? (shown.found > 1 ? "smug" : shown.found ? "admirer" : "suspect") : typing || report || asking ? "following" : "asleep";
   // A find gets a small hop, never a party
   useEffect(() => { if (shown?.found) tino.current?.jump(0.6); }, [shown?.key, shown?.found]);
   return (
     <div className="sb-tino">
-      {shown && title && (
-        <Balloon key={shown.key} className="sb-tino__say" tail="left"
+      {say && title && (
+        <Balloon key={say.key} className="sb-tino__say" tail="left"
           title={<><span className="sb-tino__who">Tino</span><span>{title}</span></>}
-          actions={shown.act && onAct ? <Button size="s" onClick={onAct}>{shown.act}</Button> : null}>
-          {shown.text}
-          <button type="button" className="cr-window-close sb-tino__close" aria-label={t.tino.closeSearch} onClick={onClose}>
-            <Icon name="close" size={10} weight="bold" />
-          </button>
+          actions={"act" in say && say.act && onAct ? <Button size="s" onClick={onAct}>{say.act}</Button> : null}>
+          {"text" in say && say.text}
+          {asking && say.key === "ask:me" && (
+            <span className="sb-tino__chips">
+              {/* Before the field's blur, so the click lands and the box keeps the focus */}
+              {chips.map((c) => <button key={c.key} type="button" className="cr-chip cr-chip-paper cr-chip-button" onMouseDown={(e) => { e.preventDefault(); c.onPick(); }}>{c.label}</button>)}
+            </span>
+          )}
+          {!asking && (
+            <button type="button" className="cr-window-close sb-tino__close" aria-label={t.tino.closeSearch} onClick={onClose}>
+              <Icon name="close" size={10} weight="bold" />
+            </button>
+          )}
         </Balloon>
       )}
       <span className="sb-tino__body" aria-hidden>
@@ -98,3 +130,7 @@ export default function SearchTino({ report, busy, typing, onClose, onAct }: {
     </div>
   );
 }
+
+const SAME_KEY = "criterio:tino-same";
+const readOnce = () => { try { return sessionStorage.getItem(SAME_KEY) === "1"; } catch { return true; } };
+const markOnce = () => { try { sessionStorage.setItem(SAME_KEY, "1"); } catch { /* no storage */ } };

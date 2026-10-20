@@ -950,6 +950,10 @@ export const ui: typeof EnUi = {
     noneTitle: ["Bueno, esto es nuevo.", "Qu\u00e9 raro. Muy raro."],
     noneText: (what: string, inbox: number): string => `No he encontrado nada ${what}.${inbox ? ` En la bandeja hay ${inbox} m\u00e1s.` : ""}`,
     lookInbox: "Mirar en la bandeja",
+    askMe: "P\u00eddeme:",
+    sameTitle: ["Lo mismo otra vez. Vale."],
+    sameText: (n: number, total: number): string => `Mismo resultado: ${n} de ${total}.`,
+    failed: "No he podido buscar ahora. Prueba otra vez en un momento.",
     polish: {
       start: ["A ver, a ver. \u00bfEsta te la quedas?"],
       ask: ["\u00bfTe la quedas?", "\u00bfY esta?", "\u00bfSe queda?"],

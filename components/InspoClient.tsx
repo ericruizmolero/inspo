@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 import { useState, useMemo, useEffect, useLayoutEffect, useRef, useCallback } from "react";
 import type { InspoItem, Project, ProjectLinks, PolishVote, ItemsPage } from "@/types/inspo";
-import { COLORS } from "@/lib/taxonomy";
+import { COLORS, viewOf } from "@/lib/taxonomy";
 import { filterKey, newestFirst } from "@/lib/search-query";
 import Sidebar, { type QuotaView } from "./Sidebar";
 import Connectors from "./Connectors";
@@ -80,6 +80,8 @@ import { replaceUrl } from "@/lib/url-history";
 
 // Opened by a click or a shortcut, never on the first paint: each loads on its own, and the panel (the
 // most used) is fetched once the page is idle, so the first click doesn't wait for it
+/** Tino offers this many things to ask when the search box is empty */
+const ASK_CHIPS = 4;
 const loadItemPanel = () => import("./ItemPanel");
 const loadCommentsPanel = () => import("./CommentsPanel");
 const ItemPanel = dynamic(loadItemPanel, { ssr: false });
@@ -336,8 +338,15 @@ export default function InspoClient({
   // the sidebar as a sheet behind the menu button.
   const isMobile = useIsMobile();
 
-  const { text, words, chips, filtered, jevScores, reasons, vocab, searchBusy, jevBusy } = useBoardSearch({ searchHere, query, filters, items, tagMap, commentMap, memberNames, spaceItems, aiEnabled, loadQuota, t });
+  const { text, words, chips, filtered, jevScores, reasons, vocab, searchBusy, jevBusy, searchFailed } = useBoardSearch({ searchHere, query, filters, items, tagMap, commentMap, memberNames, spaceItems, aiEnabled, loadQuota, t });
   const searchingLine = useSearchingLine(jevBusy, spaceItems.length);
+  // What Tino offers to ask when the box is empty: the words this board's references are tagged with most
+  const [searchFocused, setSearchFocused] = useState(false);
+  const askChips = useMemo(() => {
+    const count = new Map<string, number>();
+    for (const i of spaceItems) for (const k of viewOf(tagMap[i.web])?.keywords ?? []) count.set(k, (count.get(k) ?? 0) + 1);
+    return [...count].sort((a, b) => b[1] - a[1]).slice(0, ASK_CHIPS).map(([k]) => k);
+  }, [spaceItems, tagMap]);
 
   const swatches = useMemo(() => Object.fromEntries(COLORS.map((c) => [c.key, c.description])), []);
 
@@ -930,7 +939,7 @@ export default function InspoClient({
                 search with nothing to look through reads as broken (Andoni, 06-10) */}
             {searchHere && spaceItems.length > 0 && (
               <SearchBar className="sb--dock" filters={filters} text={query} onFilters={setFilters} onText={setQuery}
-                lead={<span className="sb__tino-room" aria-hidden />}
+                lead={<span className="sb__tino-room" aria-hidden />} onFocusChange={setSearchFocused}
                 // On a project's board the bar is one row: Tino, the search, adding and the step to the system
                 actions={currentProject ? <>
                   <IconButton icon="plus" variant="quiet" size="s" label={t.gather.add} onClick={() => setShowAdd(true)} />
@@ -942,6 +951,8 @@ export default function InspoClient({
             {searchHere && spaceItems.length > 0 && (
               <SearchTino report={agent ? null : searchReport(filters, query, filtered, space === "inbox" ? 0 : unfiled.length, t)}
                 busy={searchBusy || jevBusy || !!agent?.busy} typing={!!query.trim()} onClose={resetFilters}
+                focused={searchFocused} failed={searchFailed} total={spaceItems.length}
+                chips={askChips.map((k) => ({ key: k, label: k, onPick: () => setFilters([...filters, { kind: "tag", value: `k:${k}` }]) }))}
                 onAct={() => { resetFilters(); setSpace("inbox"); }} />
             )}
             </div>

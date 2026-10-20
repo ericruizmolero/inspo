@@ -17,3 +17,6 @@
 @media (prefers-reduced-motion: reduce) { .sb-tino__say.cr-balloon { animation: none; } }
 /* While the suggestions are open the person is choosing: the balloon waits under them */
 .dock__bar:has(.sb.is-open) .sb-tino__say { display: none; }
+/* "Ask me:" and what to ask, from the board's own tags: paper Chips in a row */
+.sb-tino__chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.sb-tino__chips .cr-chip { cursor: pointer; }
