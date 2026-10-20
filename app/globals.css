@@ -1761,15 +1761,16 @@ video.vp__media { object-fit: contain; }
 .page__lead { margin: 0; max-width: 62ch; font-size: var(--fs-body); line-height: var(--lh-body); color: var(--text-muted); }
 @media (max-width: 560px) { .page__lead { font-size: var(--fs-ui); } }
 
-/* Settings and Activity: shadcn Sidebar for the sections, one column of windows (SettingsWindow). The same 24
-   between the heading and the first window as between windows */
-.settings { max-width: 800px; width: 100%; padding-top: 32px; gap: 24px; }
+/* Settings and Activity: shadcn Sidebar for the sections, one column of sections (SettingsWindow). The settings
+   model (Alberto, 20-10): content 880 centred, 56 over the header, 40 from the lead to the first section's hairline,
+   which closes the header; the sections touch, each carries its own 40 and 32 */
+.settings { max-width: 880px; width: 100%; padding-top: 56px; gap: 40px; }
 .settings--wide { max-width: 1040px; }
 .settings__heading { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 16px 24px; }
-.settings__titles { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.settings__titles { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 .settings__titles h1 { color: var(--text); text-wrap: balance; }
 .settings__lead { margin: 0; max-width: 62ch; color: var(--text-muted); }
-.settings .page__body { gap: 24px; }
+.settings .page__body { gap: 0; }
 .settings__meta { font-size: var(--fs-label); color: var(--text-muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .settings__aside { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
 .section-nav__label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -1793,6 +1794,7 @@ video.vp__media { object-fit: contain; }
 .settings__logo { display: none; }
 /* A picture setting (photo, logo): the 44 picture, then its buttons, on the control line of a FieldRow */
 .setting-photo { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; }
+@media (min-width: 721px) { .cr-fieldrow:has(.setting-photo) .cr-fieldrow-label { padding-top: 11px; } }
 /* Invite: the email and the role side by side in the control column; the role takes its own width */
 .setting-invite { display: flex; align-items: center; gap: 8px; }
 .setting-invite .cr-input { flex: 1 1 auto; min-width: 0; }
@@ -1802,6 +1804,12 @@ video.vp__media { object-fit: contain; }
   .setting-invite { flex-wrap: wrap; flex-basis: 100%; }
   .setting-invite .cr-input { flex-basis: 100%; }
 }
+/* Members: one FieldRow per person (settings model, 20-10): the face, name and email in the label column, the role in
+   the control column, centred on the face */
+.setting-person { align-items: center; }
+.setting-person .cr-fieldrow-label { padding-top: 0; }
+.setting-person__who { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.setting-person__role { color: var(--text-muted); }
 /* A sent invitation in the footer: the line and its "Copy link" */
 .setting-ok { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; }
 .setting-alert { margin: 0; }
@@ -1887,53 +1895,14 @@ video.vp__media { object-fit: contain; }
 .sidebar__plan.is-full .sidebar__plan-note { color: var(--danger); }
 
 /* ─── /settings/plan ──────────────────────────────────────────────────────── */
-.pl-usage__grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
-.pl-quota { display: flex; flex-direction: column; gap: 8px; }
-/* One under the other, never side by side: the name small and muted, the figure under it in ink, the meter last.
-   Side by side, a long name and its figure both broke into two lines in a third of the row (Eric, 12-10) */
-.pl-quota__head { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.pl-quota__label { color: var(--text-muted); }
+/* Each count is a FieldRow (settings model, 20-10): its name in the label column, and in the control column the figure
+   in ink over the meter, the system's Progress (ember blocks in a sunken track) */
+.pl-quota__meter { display: flex; flex-direction: column; gap: 8px; min-width: 0; padding-top: 6px; }
 .pl-quota__nums { color: var(--text); font-variant-numeric: tabular-nums; }
-.pl-quota__label, .pl-quota__nums { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-/* The meter is the system's Progress: ember blocks in a sunken white track */
 .pl-quota__progress { width: 100%; }
 .pl-quota.is-full .pl-quota__nums { color: var(--danger); }
 .pl-quota__note { margin: 0; color: var(--danger); }
 .pl-over a { color: inherit; text-underline-offset: 3px; }
-
-/* Plan cards, first on the page (Eric, 07-10: "más presentes"; 12-10: "mejoremos el diseño"): a flat Card each, the
-   same height in a row (the tagline holds two lines, the features take the rest, the feet line up at the bottom).
-   The current plan is the only one on the raised surface and says so twice: "Tu plan" by its name and the line in
-   its foot, where the others have their full-width button. The ticks are plain glyphs, not the sunken checkbox:
-   nothing here is clickable but the button. Four in a row once the settings column reaches its 800 (16rem of
-   sidebar and 32 of padding: from 1088 wide), two down to 860, one below */
-.pl-plans { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; align-items: stretch; }
-.pl-plan.cr-card { padding: 18px 16px 16px; gap: 0; background: transparent; }
-.pl-plan.is-current { background: var(--surface-raised); }
-.pl-plan__head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
-.pl-plan__head h2 { margin: 0; color: var(--text); }
-.pl-plan__mine { color: var(--text-muted); white-space: nowrap; }
-.pl-plan__tagline { margin: 4px 0 0; min-height: 2lh; color: var(--text-muted); }
-.pl-plan__price { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 6px; margin-top: 20px; color: var(--text); }
-.pl-plan__price .t-title-l { font-variant-numeric: tabular-nums; }
-.pl-plan__per { color: var(--text-muted); }
-.pl-plan__year { flex-basis: 100%; min-height: 2lh; color: var(--text-muted); }
-.pl-plan__features { list-style: none; margin: 16px 0 0; padding: 16px 0 0; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px; flex: 1; color: var(--text); }
-.pl-plan__features li { display: flex; align-items: flex-start; gap: 8px; }
-.pl-plan__tick { flex-shrink: 0; margin-top: 3px; color: var(--text-muted); }
-.pl-plan__foot { margin-top: 20px; min-height: 34px; display: flex; align-items: center; justify-content: center; }
-.pl-plan__cta { width: 100%; }
-.pl-plan__current { color: var(--text-muted); }
-.pl-foot { margin: 0; color: var(--text-muted); }
-
-@media (max-width: 1087px) {
-  .pl-plans { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
-@media (max-width: 860px) {
-  .pl-usage__grid { grid-template-columns: 1fr; gap: 16px; }
-  .pl-plans { grid-template-columns: 1fr; }
-  .pl-plan__tagline, .pl-plan__year { min-height: 0; }
-}
 
 /* ─── Back (secondary pages) ──────────────────────────────────────────────── */
 /* The arrow sits in the raised IconButton look: paper, ink border, bevel; it sinks when pressed */

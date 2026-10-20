@@ -8,7 +8,7 @@ import { deleteTeam } from "@/app/actions/workspace";
 import { fileToSquareDataURL } from "@/lib/image-client";
 import type { Workspace, SessionUser } from "@/lib/workspace-core";
 import { useT, messageOf } from "@/components/I18nProvider";
-import { Avatar, Button, FieldRow, SettingsWindow, toneFor } from "@/components/criterio";
+import { Avatar, Button, FieldRow, ReadOnlyField, SettingsWindow, toneFor } from "@/components/criterio";
 import { useConfirm } from "@/components/useConfirm";
 import OutputLanguageSwitch from "@/components/OutputLanguageSwitch";
 import PersonAvatar from "@/components/PersonAvatar";
@@ -25,11 +25,26 @@ export default function WorkspacePanel({ workspace, workspaces, me, canManage }:
   const [outError, setOutError] = useState("");
   const [saved, setSaved] = useState(false);
 
+  // Output language is the workspace's own default: a member sees it, only who manages the team changes it
+  const defaults = (
+    <SettingsWindow title={t.settings.defaults}>
+      <FieldRow label={t.settings.outputLanguage} error={outError}
+        hint={workspace.kind === "personal" ? t.settings.outputLanguagePersonalHint : canManage ? t.settings.outputLanguageHint : t.settings.outputLanguageAdmins}>
+        <OutputLanguageSwitch workspaceId={workspace.id} value={workspace.outputLanguage} disabled={workspace.kind === "team" && !canManage} onError={setOutError} />
+      </FieldRow>
+    </SettingsWindow>
+  );
+
   if (workspace.kind === "personal") {
     return (
       <div className="page__body">
-        <SettingsWindow title={t.settings.personalSpace} note={t.settings.personalSpaceHint}
-          actions={<Link className="cr-btn cr-btn-secondary cr-btn-s" href="/settings/account">{t.settings.goToAccount}</Link>} />
+        <SettingsWindow title={t.settings.identity}>
+          <FieldRow label={t.settings.name} hint={t.settings.personalSpaceHint} htmlFor="space-name"
+            action={<Link className="cr-btn cr-btn-secondary cr-btn-s" href="/settings/account">{t.settings.goToAccount}</Link>}>
+            <ReadOnlyField id="space-name" value={workspace.name} />
+          </FieldRow>
+        </SettingsWindow>
+        {defaults}
         <ExportData workspace={workspace} />
         <Spaces workspace={workspace} workspaces={workspaces} me={me} />
       </div>
@@ -65,19 +80,7 @@ export default function WorkspacePanel({ workspace, workspaces, me, canManage }:
 
   return (
     <div className="page__body">
-
-      <SettingsWindow title={t.ws.team}>
-        <form onSubmit={rename}>
-          <FieldRow label={t.settings.name} hint={t.settings.teamNameHint} htmlFor="team-name" error={nameError}
-            action={canManage && (
-              <Button variant="primary" size="s" type="submit" disabled={busy || !name.trim() || name.trim() === workspace.name}>
-                {saved ? t.settings.saved : t.settings.save}
-              </Button>
-            )}>
-            <input id="team-name" className="cr-input" value={name} onChange={(e) => { setName(e.target.value); setSaved(false); }}
-              placeholder={t.ws.teamName} maxLength={60} required disabled={!canManage} aria-invalid={nameError ? true : undefined} />
-          </FieldRow>
-        </form>
+      <SettingsWindow title={t.settings.identity}>
         <FieldRow label={t.ws.logo} hint={t.settings.logoHint} error={logoError}>
           <span className="setting-photo">
             <Avatar initials={workspace.name.slice(0, 1).toUpperCase()} name={workspace.name} tone={toneFor(workspace.name)} src={workspace.logo} size={44} square />
@@ -86,16 +89,20 @@ export default function WorkspacePanel({ workspace, workspaces, me, canManage }:
             <input ref={logoRef} type="file" accept="image/*" hidden onChange={onLogoFile} />
           </span>
         </FieldRow>
+        <form onSubmit={rename}>
+          <FieldRow label={t.settings.name} hint={t.settings.teamNameHint} htmlFor="team-name" error={nameError}
+            action={canManage && (
+              <Button size="s" type="submit" disabled={busy || !name.trim() || name.trim() === workspace.name}>
+                {saved ? t.settings.saved : t.settings.save}
+              </Button>
+            )}>
+            <input id="team-name" className="cr-input" value={name} onChange={(e) => { setName(e.target.value); setSaved(false); }}
+              placeholder={t.ws.teamName} maxLength={60} required disabled={!canManage} aria-invalid={nameError ? true : undefined} />
+          </FieldRow>
+        </form>
       </SettingsWindow>
 
-      {/* A switch that does nothing needs a reason: members can see the language, not change it */}
-      <SettingsWindow title={t.settings.outputLanguage} description={t.settings.outputLanguageHint}
-        note={!canManage ? t.settings.outputLanguageAdmins : undefined}>
-        <FieldRow label={t.settings.language} error={outError}>
-          <OutputLanguageSwitch workspaceId={workspace.id} value={workspace.outputLanguage} disabled={!canManage} onError={setOutError} />
-        </FieldRow>
-      </SettingsWindow>
-
+      {defaults}
       <ExportData workspace={workspace} />
       <Spaces workspace={workspace} workspaces={workspaces} me={me} />
     </div>
@@ -159,10 +166,10 @@ function Spaces({ workspace, workspaces, me }: { workspace: Workspace; workspace
                 <span className="list__name t-ui"><span className="list__text">{w.name}{w.id === workspace.id && t.settings.spaceOpen}</span></span>
                 <span className="list__sub t-small">{w.kind === "personal" ? t.ws.personal : t.team.roles[w.role]}</span>
               </span>
-              {/* The danger red waits for the confirm step, which also asks for the name typed */}
+              {/* Outline at rest; the danger red waits for the confirm step, which also asks for the name typed */}
               {w.kind === "team" && (w.role === "owner"
-                ? <Button variant="quiet" size="s" onClick={() => remove(w)} disabled={busy}>{t.settings.deleteSpace}</Button>
-                : <Button variant="quiet" size="s" onClick={() => leave(w)} disabled={busy}>{t.team.leaveTeam}</Button>)}
+                ? <Button variant="outline" size="s" onClick={() => remove(w)} disabled={busy}>{t.settings.deleteSpace}</Button>
+                : <Button variant="outline" size="s" onClick={() => leave(w)} disabled={busy}>{t.team.leaveTeam}</Button>)}
             </li>
           );
         })}

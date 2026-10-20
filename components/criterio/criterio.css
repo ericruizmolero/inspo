@@ -322,6 +322,12 @@
 /* ---- Cohesion pass (2026-10-07): small 2000 pieces, each copied from an existing reference ---- */
 /* Type scale (fundamentos.md): display 40/28/20/16, sans 17/15/13/12. Nothing else */
 
+/* Button outline (settings model, 20-10): a destructive action at rest. Hairline, no fill, no bevel, never ember; the
+   red waits for the confirm step */
+.cr-btn-outline{background:transparent;border-color:var(--border-strong);box-shadow:none;color:var(--text)}
+.cr-btn-outline:hover{border-color:var(--text)}
+.cr-btn-outline:active,.cr-btn-outline.is-pressed{background:var(--surface-raised);box-shadow:none}
+
 /* Button danger: the primary's shape in deep red. Only the confirm step of something destructive */
 .cr-btn-danger{background:var(--danger-deep,#B3362C);color:var(--paper,#EDE6D6);box-shadow:var(--bevel-dark,inset 2px 2px 0 rgba(255,255,255,0.12),inset -2px -3px 0 rgba(0,0,0,0.4))}
 .cr-btn-danger:hover{background:#C2453A}
@@ -451,16 +457,18 @@
 .cr-seg-paper .cr-seg-count{color:inherit;opacity:.7}
 
 /* ---- app: SettingsWindow, a section of Settings, Activity or Admin, flat on the page ---- */
-/* No frame and no moss bar (Eric, 07-10: the green header was "too much"): a hairline over the section, the name
-   with its figure at the end, the description under the name, the body, and a foot with the note on the left and the
-   actions on the right. Sections sit one under the other on the page ground, 24 over and under each hairline */
-.cr-swin{width:100%;display:flex;flex-direction:column;gap:20px;padding-top:24px;border-top:1px solid var(--border)}
-.cr-swin-head{display:flex;align-items:flex-start;justify-content:space-between;gap:4px 16px;min-width:0}
-.cr-swin-titles{display:flex;flex-direction:column;gap:4px;min-width:0}
-.cr-swin-title{margin:0;color:var(--text);overflow-wrap:anywhere}
-.cr-swin-desc{margin:0;max-width:62ch;color:var(--text-muted)}
+/* No frame and no moss bar (Eric, 07-10: the green header was "too much"). The settings model (Alberto, 20-10): a
+   hairline over each section (the first one closes the page header), 40 above the name and 32 under the last row.
+   The name in title-m at bold, the help line in ui muted, then the rows, which carry their own 16 */
+.cr-swin{width:100%;box-sizing:border-box;display:flex;flex-direction:column;gap:16px;padding:40px 0 32px;border-top:1px solid var(--border)}
+.cr-swin-head{display:flex;align-items:flex-start;gap:4px 16px;min-width:0}
+.cr-swin-owner{flex:none;width:52px;height:52px;box-sizing:border-box;display:grid;place-items:center;border:1px solid var(--border);border-radius:var(--radius-lg,14px);background:var(--surface-raised);color:var(--text)}
+.cr-swin-titles{flex:1 1 auto;display:flex;flex-direction:column;gap:4px;min-width:0}
+.cr-swin-owner+.cr-swin-titles{justify-content:center;min-height:52px}
+.cr-swin-title{margin:0;color:var(--text);font-weight:var(--fw-bold);overflow-wrap:anywhere}
+.cr-swin-desc{margin:0;max-width:62ch;color:var(--text-muted);font-size:var(--fs-ui);line-height:var(--lh-ui)}
 .cr-swin-figure{flex:none;padding-top:2px;color:var(--text-muted);font-variant-numeric:tabular-nums;white-space:nowrap}
-.cr-swin-body{flex:1 1 auto;display:flex;flex-direction:column;gap:16px;min-width:0}
+.cr-swin-body{flex:1 1 auto;display:flex;flex-direction:column;gap:8px;min-width:0}
 .cr-swin-footer{min-height:44px;display:flex;align-items:center;justify-content:space-between;gap:8px 16px;flex-wrap:wrap}
 .cr-swin-note{flex:1 1 240px;min-width:0;color:var(--text-muted)}
 .cr-swin-note:empty{flex-basis:0}
@@ -470,10 +478,12 @@
 .cr-swin .cr-empty{align-items:flex-start;text-align:left;padding:0}
 .cr-swin .cr-empty-text{max-width:62ch}
 
-/* ---- app: FieldRow, a setting on one line: label column, control column (all 44), error under the control ---- */
+/* ---- app: FieldRow, a setting on one line: label column, control column, error under the control ---- */
 /* The row is the s size (Eric, 07-10: the paper buttons in Settings "have to be smaller", as in Discover and the
-   Island): Button s, the paper SegmentedControl s, and the field at 34 with the small face (.cr-input-s) */
-.cr-fieldrow{display:grid;grid-template-columns:200px minmax(0,1fr);gap:8px 24px;align-items:start}
+   Island): Button s, the paper SegmentedControl s, and the field at 34 with the small face (.cr-input-s). The settings
+   model (Alberto, 20-10): label 240, 32 to the control, 16 above and below, no divider: space does the work */
+.cr-fieldrow{display:grid;grid-template-columns:240px minmax(0,1fr);gap:8px 32px;align-items:start;padding:16px 0}
+.cr-swin-body>.cr-fieldrow:first-child,.cr-swin-body>form:first-child>.cr-fieldrow{padding-top:8px}
 .cr-fieldrow-label{display:flex;flex-direction:column;gap:2px;padding-top:6px;min-width:0;color:var(--text)}
 .cr-fieldrow-hint{color:var(--text-muted)}
 .cr-fieldrow-control{display:flex;flex-direction:column;gap:6px;min-width:0}
@@ -484,10 +494,16 @@
 .cr-fieldrow-line>.cr-input{width:100%}
 .cr-fieldrow-line .cr-input,.cr-fieldrow-line .select select{height:34px;padding-right:10px;padding-left:10px;font-size:var(--fs-small,13px)}
 .cr-fieldrow-line .select select{padding-right:30px}
-@media (max-width:560px){
+@media (max-width:720px){
   .cr-fieldrow{grid-template-columns:minmax(0,1fr)}
   .cr-fieldrow-label{padding-top:0}
 }
+
+/* ---- app: ReadOnlyField, a value that cannot change here: lock, hairline, no ink border, no well ---- */
+.cr-readonly{box-sizing:border-box;display:flex;align-items:center;gap:8px;height:34px;padding:0 10px;border:1px solid var(--border);border-radius:var(--radius-md,10px);background:var(--surface-raised);color:var(--text-muted)}
+.cr-readonly>svg{flex:none}
+.cr-readonly input{flex:1 1 auto;min-width:0;padding:0;border:0;background:none;color:inherit;font:inherit;font-size:var(--fs-small,13px);text-overflow:ellipsis;outline:none}
+.cr-readonly:focus-within{outline:2px solid var(--focus);outline-offset:2px}
 /* Board: a disabled field stays dark (a dimmer well), not the paper disabled fill */
 :root:not([data-theme="light"]) :is(.cr-input,.cr-textarea,.select select):disabled{background:#141413;color:#6E695F;border-color:#34342F}
 :root:not([data-theme="light"]) :is(.modal--window,.cr-window,.cr-menu) :is(.cr-input,.cr-textarea,.select select):disabled{background:#141413}

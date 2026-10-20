@@ -10,7 +10,8 @@ import { countMembers, quotaStatus } from "@/lib/quota";
 import { PLANS, PLANS_CONTACT, isPaid, planOf } from "@/lib/plans";
 import { fmtGb } from "@/lib/room";
 import { getT, fmtDate, fmtPrice, type Dict } from "@/lib/i18n";
-import { Button, Card, Icon, Progress, SettingsWindow } from "@/components/criterio";
+import { Button, FieldRow, Progress, ReadOnlyField, SettingsWindow } from "@/components/criterio";
+import { marketingHref } from "@/lib/site";
 
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -28,14 +29,13 @@ function Line({ label, used, limit, t, seats, fairUse, nums }: {
   // A monthly quota warns once it runs out; seats are fine at the limit and only warn when over it
   const full = limit !== null && (seats ? used > limit : used >= limit);
   return (
-    <div className={`pl-quota${full ? " is-full" : ""}`}>
-      <div className="pl-quota__head">
-        <span className="pl-quota__label t-small">{label}</span>
+    <FieldRow label={label} className={`pl-quota${full ? " is-full" : ""}`}>
+      <div className="pl-quota__meter">
         <span className="pl-quota__nums t-ui">{nums ?? (fairUse ? t.plans.fairUse(used) : limit === null ? t.plans.noLimit(used) : t.plans.usedOf(used, limit))}</span>
+        {limit !== null && !fairUse && <Progress value={pct} segments={16} label={label} className="pl-quota__progress" />}
+        {fairUse && full && <p className="pl-quota__note t-small">{t.plans.fairUsePassed}</p>}
       </div>
-      {limit !== null && !fairUse && <Progress value={pct} segments={16} label={label} className="pl-quota__progress" />}
-      {fairUse && full && <p className="pl-quota__note t-small">{t.plans.fairUsePassed}</p>}
-    </div>
+    </FieldRow>
   );
 }
 
@@ -64,10 +64,13 @@ export default async function PlanPage() {
   const ws = ctx.workspace;
   const [q, usage, members, account] = await Promise.all([quotaStatus(ws), usageSummary(ws.id, 30), listMembers(ws.id), planWorkspaces(ctx)]);
   const agency = planOf("agency");
+  const plan = planOf(q.plan);
+  // The next plan up, to ask for in one click; the top plan has none
+  const next = PLANS.find((p) => p.price.month > plan.price.month);
   const resets = fmtDate(q.resetsAt, locale, { day: "numeric", month: "long" });
   const planName = t.plans.items[q.plan].name;
   const overSeats = q.members.limit !== null && q.members.used > q.members.limit;
-  const mailto = (plan: string) => `mailto:${PLANS_CONTACT}?subject=${encodeURIComponent(t.plans.mailSubject(plan, ws.name))}`;
+  const mailto = (name: string) => `mailto:${PLANS_CONTACT}?subject=${encodeURIComponent(t.plans.mailSubject(name, ws.name))}`;
 
   return (
     <>
@@ -75,38 +78,19 @@ export default async function PlanPage() {
       <SettingsHeading title={t.settings.sections.plan} lead={t.settings.leads.plan} />
 
       <div className="page__body">
-        <div className="pl-plans">
-          {PLANS.map((p) => {
-            const current = p.key === q.plan;
-            const up = p.price.month > planOf(q.plan).price.month;
-            const name = t.plans.items[p.key].name;
-            return (
-              // Every plan the same height: the tagline holds two lines, the features grow, the footer sits at the bottom
-              <Card key={p.key} as="article" className={`pl-plan${current ? " is-current" : ""}`}>
-                <header className="pl-plan__head">
-                  <h2 className="t-title-s">{name}</h2>
-                  {current && <span className="pl-plan__mine t-small">{t.plans.yourPlan}</span>}
-                </header>
-                <p className="pl-plan__tagline t-small">{t.plans.items[p.key].tagline}</p>
-                <div className="pl-plan__price">
-                  <span className="t-title-l">{fmtPrice(p.price.month, locale)}</span><span className="pl-plan__per t-small">{t.plans.perMonth}</span>
-                  <span className="pl-plan__year t-small">{isPaid(p) ? t.plans.orYearly(fmtPrice(p.price.year, locale)) : t.plans.forGood}</span>
-                </div>
-                <ul className="pl-plan__features t-small">
-                  {t.plans.items[p.key].features.map((f) => <li key={f}><Icon name="check" size={14} weight="bold" className="pl-plan__tick" /><span>{f}</span></li>)}
-                </ul>
-                <div className="pl-plan__foot">
-                  {current
-                    ? <span className="pl-plan__current t-small">{t.plans.current}</span>
-                    : <Button variant={up ? "primary" : "secondary"} size="s" href={mailto(name)} className="pl-plan__cta">{up ? t.plans.moveUp : t.plans.moveDown}</Button>}
-                </div>
-              </Card>
-            );
-          })}
-        </div>
-        <p className="pl-foot t-small">{t.plans.foot}</p>
+        <SettingsWindow title={t.plans.planTitle} note={t.plans.foot}>
+          <FieldRow label={t.plans.yourPlan} htmlFor="current-plan"
+            action={
+              <>
+                {next && <Button size="s" href={mailto(t.plans.items[next.key].name)}>{t.plans.moveUpTo(t.plans.items[next.key].name)}</Button>}
+                <Button variant="quiet" size="s" href={marketingHref("/pricing/", locale)}>{t.plans.compare}</Button>
+              </>
+            }>
+            <ReadOnlyField id="current-plan" value={isPaid(plan) ? t.plans.currentLine(planName, fmtPrice(plan.price.month, locale)) : planName} />
+          </FieldRow>
+        </SettingsWindow>
 
-        <SettingsWindow title={ws.name}
+        <SettingsWindow title={t.plans.usageTitle}
           description={q.workspaces.used > 1 ? <>{t.plans.resets(planName, resets)}. {t.plans.aiShared(q.workspaces.used)}</> : t.plans.resets(planName, resets)}
           note={(overSeats || q.pendingInvites > 0) ? (
             <>
@@ -120,7 +104,6 @@ export default async function PlanPage() {
               {q.pendingInvites > 0 && t.plans.pendingInvites(q.pendingInvites)}
             </>
           ) : undefined}>
-          <div className="pl-usage__grid">
             <Line label={t.plans.aiThisMonth} used={q.ai.used} limit={q.ai.limit} t={t} />
             <Line label={t.plans.searchesThisMonth} used={q.searches.used} limit={q.searches.limit} t={t} fairUse={q.searches.fairUse} />
             <Line label={t.plans.people} used={q.members.used} limit={q.members.limit} t={t} seats />
@@ -128,7 +111,6 @@ export default async function PlanPage() {
             <Line label={t.plans.projects} used={q.projects.used} limit={q.projects.limit} t={t} seats />
             <Line label={t.plans.storage} used={q.storage.used} limit={q.storage.limit} t={t}
               nums={q.storage.limit === null ? t.plans.storageNoLimit(fmtGb(q.storage.used, locale)) : t.plans.storageOf(fmtGb(q.storage.used, locale), fmtGb(q.storage.limit, locale))} />
-          </div>
         </SettingsWindow>
 
         {account && (

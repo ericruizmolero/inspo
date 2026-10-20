@@ -6,7 +6,7 @@
 // TipWindow and EmptyState take no drawing.
 
 import { useEffect, useId, useLayoutEffect, useRef, useState, type ButtonHTMLAttributes, type CSSProperties, type InputHTMLAttributes, type ReactNode, type Ref, type TextareaHTMLAttributes } from "react";
-import { ArrowDown, ArrowRight, ArrowUUpLeft, ArrowUp, ArrowUpRight, Bell, CalendarBlank, CaretDown, CaretLeft, CaretRight, Chat, ChatCircle, Check, Compass, Copy, CornersIn, CornersOut, DotsThree, DownloadSimple, EnvelopeSimple, FileText, FilmStrip, Folder, Gauge, Gear, House, Info, Lightbulb, LinkSimple, MagnifyingGlass, Minus, MonitorPlay, Moon, PaperPlaneTilt, Pause, PencilSimple, Play, Plug, PlugsConnected, Plus, Pulse, Quotes, Shuffle, SidebarSimple, SlidersHorizontal, Smiley, Sparkle, SpeakerHigh, SpeakerSlash, SquaresFour, Sun, TextAlignLeft, Trash, Tray, UploadSimple, User, Users, X, Image as ImageIcon } from "@phosphor-icons/react/ssr";
+import { ArrowDown, ArrowRight, ArrowUUpLeft, ArrowUp, ArrowUpRight, Bell, CalendarBlank, CaretDown, CaretLeft, CaretRight, Chat, ChatCircle, Check, Compass, Copy, CornersIn, CornersOut, DotsThree, DownloadSimple, EnvelopeSimple, FileText, FilmStrip, Folder, Gauge, Gear, House, Info, Lightbulb, LinkSimple, LockSimple, MagnifyingGlass, Minus, MonitorPlay, Moon, PaperPlaneTilt, Pause, PencilSimple, Play, Plug, PlugsConnected, Plus, Pulse, Quotes, Shuffle, SidebarSimple, SlidersHorizontal, Smiley, Sparkle, SpeakerHigh, SpeakerSlash, SquaresFour, Sun, TextAlignLeft, Trash, Tray, UploadSimple, User, Users, X, Image as ImageIcon } from "@phosphor-icons/react/ssr";
 import type { Icon as PhosphorIcon, IconWeight } from "@phosphor-icons/react";
 import { Liquid } from "@/components/ui/liquid";
 import "./criterio.css";
@@ -58,6 +58,7 @@ const ICONS = {
   comment: Chat,
   quote: Quotes,
   check: Check,
+  lock: LockSimple,
   undo: ArrowUUpLeft,
   info: Info,
   video: MonitorPlay,
@@ -111,7 +112,7 @@ export function Icon({ name, size = 18, weight, className }: { name: IconName; s
 // ─── Actions ───────────────────────────────────────────────────────────────
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: "primary" | "secondary" | "dark" | "quiet" | "danger";
+  variant?: "primary" | "secondary" | "dark" | "quiet" | "danger" | "outline";
   /** s 34 (balloons, windows, toolbars), m 44 (default in product), l 52 (heroes) */
   size?: "s" | "m" | "l";
   pressed?: boolean;
@@ -355,9 +356,10 @@ export function TipWindow({ title, heading, children, footer, width, onClose, cl
 /** app: one section of Settings, Activity or Admin, flat on the page (no frame, no moss bar: Eric, 07-10, "too much"):
  * a hairline over it, the section's name (an h2 at title-m) with an optional figure at its end (plain tabular text,
  * never a chip), the description under the name, the body, and a foot with a one-line note on the left and the
- * actions on the right. Full width of the column. */
-export function SettingsWindow({ title, figure, description, children, note, actions, id, className }: {
-  title: ReactNode; figure?: ReactNode; description?: ReactNode; children?: ReactNode;
+ * actions on the right. Full width of the column. `owner` is a 52px tile before the title, only for a section that
+ * belongs to a character or an integration, one per page at most. */
+export function SettingsWindow({ title, figure, description, owner, children, note, actions, id, className }: {
+  title: ReactNode; figure?: ReactNode; description?: ReactNode; owner?: ReactNode; children?: ReactNode;
   /** foot, left: a one-line note, a success or an error that belongs to the whole section */
   note?: ReactNode;
   /** foot, right: the section's buttons */
@@ -369,9 +371,10 @@ export function SettingsWindow({ title, figure, description, children, note, act
   return (
     <section id={id} className={cx("cr-swin", className)} aria-labelledby={titleId}>
       <header className="cr-swin-head">
+        {owner ? <span className="cr-swin-owner" aria-hidden>{owner}</span> : null}
         <div className="cr-swin-titles">
           <h2 id={titleId} className="cr-swin-title t-title-m">{title}</h2>
-          {description ? <p className="cr-swin-desc t-small">{description}</p> : null}
+          {description ? <p className="cr-swin-desc">{description}</p> : null}
         </div>
         {figure != null && figure !== false ? <span className="cr-swin-figure t-ui">{figure}</span> : null}
       </header>
@@ -386,9 +389,9 @@ export function SettingsWindow({ title, figure, description, children, note, act
   );
 }
 
-/** app: a setting on one line. The label (and a hint under it) in a 200px column, the control and its inline action
- * in the other, all 44 high and centred; an error goes under the control. Stacks under 560px. Pass `htmlFor` when
- * the control is a field (the label becomes a <label>); a radio group or a picture names itself. */
+/** app: a setting on one line. The label (and a hint under it) in a 240px column, the control and its inline action
+ * in the other, 16 above and below and no divider; an error goes under the control. Stacks under 720px. Pass
+ * `htmlFor` when the control is a field (the label becomes a <label>); a radio group or a picture names itself. */
 export function FieldRow({ label, hint, htmlFor, children, action, error, className }: {
   label: ReactNode; hint?: ReactNode; htmlFor?: string; children: ReactNode; action?: ReactNode; error?: ReactNode; className?: string;
 }) {
@@ -403,6 +406,17 @@ export function FieldRow({ label, hint, htmlFor, children, action, error, classN
         {error ? <span className="cr-field-hint is-error" role="alert">{error}</span> : null}
       </div>
     </div>
+  );
+}
+
+/** app: a value that cannot be changed here: a lock, a hairline, no ink border. The row's hint says why and where
+ *  it can change. Still an input, so the label points at it and the value can be selected and copied. */
+export function ReadOnlyField({ value, id, className }: { value: string; id?: string; className?: string }) {
+  return (
+    <span className={cx("cr-readonly", className)}>
+      <Icon name="lock" size={14} />
+      <input id={id} value={value} readOnly onFocus={(e) => e.currentTarget.select()} />
+    </span>
   );
 }
 
