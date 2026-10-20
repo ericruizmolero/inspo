@@ -28,7 +28,7 @@ test("the library's system summary carries no run, file, brand, takes, why or cu
   const s = summaries[p];
   expect(JSON.stringify(summaries)).not.toContain(heavy);
   expect(Object.keys(s).sort()).toEqual(["areas", "projectId", "read"]);
-  expect(s.read).toEqual({ itemIds: [a, b], omitted: 1 });
+  expect(s.read).toEqual({ itemIds: [a, b], omitted: 1, at: now.toISOString() });
   expect(s.areas.find((x) => x.area === "color")).toEqual({ area: "color", decided: true, evidence: [a] });
   expect(s.areas.filter((x) => x.decided)).toHaveLength(1);
   expect(s).toEqual(summaryOf(await getSystem(team.ws.id, p)));
