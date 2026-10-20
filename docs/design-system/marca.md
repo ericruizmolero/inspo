@@ -37,5 +37,6 @@ La marca es la misma en Board y en Paper. → [Color](fundamentos/color.md)
 ## Reglas
 
 - Donde haga falta la marca, `Logo` con su `size`. No dibujar la criatura en otros sitios ni darle estados sin decisión nueva.
+- Tino, el peluche de la landing, está disponible como componente (`Tino`, [Componentes](componentes.md#mascota-propuesta)) pero **es una propuesta**: no sustituye a la criatura ni se usa en la interfaz hasta que el equipo lo decida.
 - El tile de la Isla muestra el espacio, no la mascota. → [decisión](decisiones/2026-10-07-el-tile-de-la-isla-muestra-el-espacio-no-la-mascota.md)
 - Nada de "savvia.studio" ni de los nombres anteriores en la interfaz ni en los correos. Los correos salen de `hola@criterio.design` (Resend, dominio verificado), van en texto plano y firman "Eric, Andoni y Alberto" ([decisión](decisiones/2026-10-10-correos-solo-texto.md)), y la imagen al compartir dice solo "criterio.design".

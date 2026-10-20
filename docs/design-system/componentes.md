@@ -621,3 +621,17 @@ La cabeza del logotipo flota en el sitio del cero de un "404" grande y tenue (`d
 - Por encima de 96 px `Logo` usa `icon-512.png` para que la cabeza no se vea blanda.
 - `LostTheme` pone el tema al montar: una 404 o un error lanzados desde una página se pintan enteros en el navegador y el script de tema del `<head>` no llega a ejecutarse.
 - `app/global-error.tsx` (falla el layout raíz) sigue sin estilos a propósito.
+
+## Mascota (propuesta)
+
+Tino, el peluche en 3D de la landing de Criterio, como componente para la app. **Es una propuesta: no se usa en ninguna pantalla** y no cambia la marca, cuyo logotipo sigue siendo la criatura (`Logo`, [Marca](marca.md)). Dónde y cómo entra, si entra, lo decide el equipo; esa decisión se registra entonces. Se puede ver y probar en https://criterio-landing.vercel.app/mascota/.
+
+### Tino
+`Tino` · `components/Tino.tsx` · `components/Tino.css` · `.tino` · motor en `components/tino/engine.js` (tipos en `engine.d.ts`) · modelos en `public/tino/`
+El peluche en 3D: orejas con física, un visor que cambia con cada gesto, pelo por capas y la luz del visor sobre el pelo. Componente de cliente: el motor (three.js) se descarga en un paquete aparte y solo en el navegador, así que no pesa en el resto de la app ni rompe el renderizado en servidor. Sin WebGL2, o si algo falla al cargar, enseña la marca plana (`public/tino/tino-plano.svg`) en su sitio.
+- `size` en px (sin él llena su contenedor, que tiene que tener ancho y alto); `state`: `reposo` (revisando, el de siempre), `pensando`, `aprueba`, `descarta` (los dos vuelven solos al anterior), `curiosa`, `leyendo`, `senala`, `dormida`, `error`.
+- Aspecto: `ears` (`capsula` por defecto), `bottom` (`redonda`, `media`, `plana`), `material` (`flocado`, el peluche, por defecto; `plastico`, `arcilla`, `cromo`, `casco`, `perla`, `irisado`, `cristal`), `tint` (hex; por defecto el blanco de peluche), `visor` (forma), `visorStyle` (acabado: cristal, CRT, LCD, LED, oro, holo), `show` (lo que pasa dentro del visor en reposo), `pet` (lo que sale al pasar el puntero), `dark`, `zoom`, `look` (`[giro, cabeceo]` en grados), `still` (una imagen quieta, para miniaturas), `petting`.
+- `ref` da el motor para gestos sueltos: `jump()`, `kick()`, `look()`, `press()`, `set()`. Al desmontarse para la animación, suelta la tarjeta gráfica y quita sus escuchadores (`destroy()`): se puede montar y desmontar sin acumular lienzos.
+- Con reduced-motion se queda quieto y sin parpadeos. Fuera de pantalla no pinta.
+- Peso: three.js va en su propio paquete; cada modelo pesa unos 140 KB (uno por combinación de orejas y base; en la carga solo baja el que se usa).
+- `public/tino/` se sirve sin sesión (`tino/` en el `matcher` de `proxy.ts`), para que Tino también salga en las páginas públicas.

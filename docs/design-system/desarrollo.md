@@ -4,7 +4,7 @@ Decisiones de cómo construimos, no de cómo se ve.
 
 ## Stack
 
-Cada servicio y librería, con su cuenta y cómo se mantiene, está en [Stack tecnológico](stack.md). Lo que decide cómo se construye: Next.js 16 (leer `node_modules/next/dist/docs/` antes de tocarlo), React 19 con el React Compiler activado (no hace falta memoizar a mano), Tailwind 4 con CSS propio y tokens, shadcn (`base-nova`) sobre Base UI, WAAPI y CSS para el movimiento (GSAP se quitó el 2026-10-05: no volver a añadirlo sin decisión), cuelume para los sonidos siempre a través de `lib/ui-sounds.ts`.
+Cada servicio y librería, con su cuenta y cómo se mantiene, está en [Stack tecnológico](stack.md). Lo que decide cómo se construye: Next.js 16 (leer `node_modules/next/dist/docs/` antes de tocarlo), React 19 con el React Compiler activado (no hace falta memoizar a mano), Tailwind 4 con CSS propio y tokens, shadcn (`base-nova`) sobre Base UI, WAAPI y CSS para el movimiento (GSAP se quitó el 2026-10-05: no volver a añadirlo sin decisión), cuelume para los sonidos siempre a través de `lib/ui-sounds.ts`. three.js 0.170 solo lo usa `Tino` (propuesta), cargado aparte y solo en el navegador; si la mascota no entra, se quita con él.
 
 ## Monorepo
 
