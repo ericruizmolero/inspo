@@ -670,7 +670,8 @@ export default function InspoClient({
         onAdd={() => setShowAdd(true)}
       />}
       {boardDrag && <div className="board-drop" aria-hidden><span className="t-title-l">{t.add.dropHere}</span></div>}
-      {space !== "home" && <ThemeToggle />}
+      {/* The home and Polish give the bottom-right corner to Tino: their theme button sits after the pill */}
+      {space !== "home" && !(currentProject && projectView === "polish") && <ThemeToggle />}
       {showAdd && (
         <AddInspoModal
           onClose={() => { setShowAdd(false); setAddInitial(undefined); }}
@@ -851,9 +852,11 @@ export default function InspoClient({
               ratioOf={ratioOf}
               textOf={(item) => (item.id ? textBodies[item.id] : "") || item.note}
               noteOf={(item) => captionFor(item, item.id ? commentMap[item.id] : undefined, authorImages[item.addedBy])}
+              commentsOf={(item) => (item.id ? commentMap[item.id]?.length ?? 0 : 0)}
               active={!panelItem && !showAdd}
               votes={polishVotes}
               me={user.id}
+              myName={user.name}
               members={members}
               canClose={canManage}
               onVote={(voted, vote) => castVote(currentProject.id, voted, vote)}

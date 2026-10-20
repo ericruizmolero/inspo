@@ -5,7 +5,7 @@
 // "Later" and the cross put it away until the next one, and a click on Tino brings it back with the rest. What the
 // person starts (typing a project's name) he answers every time. Muted, he sinks and sleeps: no balloons, and a
 // click wakes him. The switch in the corner pill (TinoSwitch) mutes him too, and both are remembered.
-import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode, type Ref } from "react";
 import Tino from "./Tino";
 import type { TinoApi, TinoState } from "./tino/engine";
 import { Balloon, Button, Icon } from "@/components/criterio";
@@ -112,7 +112,6 @@ export default function HomeTino({ nudges, say }: {
 }) {
   const { t } = useT();
   const on = useTinoOn();
-  const dark = useDark();
   const tino = useRef<TinoApi>(null);
   // Nothing is said until the visit is read, so a balloon closed a moment ago never flashes back in
   const [visit, setVisit] = useState<Visit | null>(null);
@@ -160,29 +159,58 @@ export default function HomeTino({ nudges, say }: {
   const state: TinoState = !on ? "dormida" : shown ? shown.gesture : left.length ? "reposo" : "dormida";
   const paged = shown && !say && left.length > 1;
   return (
-    <div className={`home-tino${on ? "" : " is-muted"}`}>
-      {shown && (
-        <Balloon key={shown.key} className="home-tino__say" tail="right"
-          title={<><span className="home-tino__who">{shown.who ?? "Tino"}</span><span>{title}</span></>}
-          actions={shown === say ? null : <>
-            {shown.act && <Button size="s" onClick={() => { tino.current?.set("aprueba"); shown.go?.(); }}>{shown.act}</Button>}
-            <Button size="s" variant="quiet" onClick={() => putOff(shown.key)}>{t.tino.later}</Button>
-            {paged && (
-              <button type="button" className="home-tino__next" aria-label={t.tino.next} onClick={() => setAt((i) => (i % left.length) + 1)}>
-                {(at % left.length) + 1} / {left.length}<Icon name="chevron-right" size={14} />
-              </button>
-            )}
-          </>}>
-          {shown.text}
-          {shown !== say && (
-            <button type="button" className="cr-window-close home-tino__close" aria-label={t.tino.close} onClick={close}>
+    <TinoCorner tinoRef={tino} state={state} muted={!on} bodyLabel={on ? t.tino.talk : t.tino.wake} onBody={wake}
+      say={shown && {
+        key: shown.key, who: shown.who, title, text: shown.text,
+        onClose: shown === say ? undefined : close,
+        actions: shown === say ? null : <>
+          {shown.act && <Button size="s" onClick={() => { tino.current?.set("aprueba"); shown.go?.(); }}>{shown.act}</Button>}
+          <Button size="s" variant="quiet" onClick={() => putOff(shown.key)}>{t.tino.later}</Button>
+          {paged && (
+            <button type="button" className="tino-corner__next" aria-label={t.tino.next} onClick={() => setAt((i) => (i % left.length) + 1)}>
+              {(at % left.length) + 1} / {left.length}<Icon name="chevron-right" size={14} />
+            </button>
+          )}
+        </>,
+      }} />
+  );
+}
+
+/** What Tino says in his corner: who speaks (Tino by default), a line, what goes under it, the buttons, and on the
+ *  title's right a small figure (Polish's "3 / 7"). Without `onClose` there is no × */
+export type CornerSay = { key: string; who?: string; title?: string; text?: ReactNode; top?: ReactNode; actions?: ReactNode; onClose?: () => void };
+
+/** Tino in the bottom-right corner with his balloon over him, tail down to him: the home's, and Polish's, where the
+ *  balloon holds Forget and Keep */
+export function TinoCorner({ say, tinoRef, state, muted = false, look, bodyLabel, onBody, className = "" }: {
+  say: CornerSay | null | undefined | false;
+  tinoRef: Ref<TinoApi>;
+  state: TinoState;
+  muted?: boolean;
+  /** Where he looks, [yaw, pitch] in degrees; by default nearly at the screen */
+  look?: [number, number];
+  bodyLabel: string;
+  onBody: () => void;
+  className?: string;
+}) {
+  const { t } = useT();
+  const dark = useDark();
+  return (
+    <div className={`tino-corner${muted ? " is-muted" : ""} ${className}`}>
+      {say && (
+        <Balloon key={say.key} className="tino-corner__say" tail="right"
+          title={<><span className="tino-corner__who">{say.who ?? "Tino"}{say.top != null && <span className="tino-corner__top">{say.top}</span>}</span>{say.title && <span>{say.title}</span>}</>}
+          actions={say.actions}>
+          {say.text}
+          {say.onClose && (
+            <button type="button" className="cr-window-close tino-corner__close" aria-label={t.tino.close} onClick={say.onClose}>
               <Icon name="close" size={10} weight="bold" />
             </button>
           )}
         </Balloon>
       )}
-      <button type="button" className="home-tino__body" aria-label={on ? t.tino.talk : t.tino.wake} onClick={wake}>
-        <Tino ref={tino} state={state} dark={dark} look={[110, 0]} />
+      <button type="button" className="tino-corner__body" aria-label={bodyLabel} onClick={onBody}>
+        <Tino ref={tinoRef} state={state} dark={dark} look={look ?? [110, 0]} />
       </button>
     </div>
   );

@@ -205,3 +205,12 @@ html[data-distill="polish"] .polish:not([data-ghost]) .polish__sky { animation: 
   .polish__in, .polish__bar, .polish__done > *, .polish__fan-card { animation: none; }
   .polish__btn:active { transform: none; }
 }
+
+/* Tino holds the answers on a desktop (TinoCorner): Forget and Keep share his balloon in two halves, as the bar did.
+   A phone keeps the bar; his corner does not fit there */
+.polish-tino .tino-corner__say.cr-balloon { width: 340px; }
+.polish-tino .cr-actions { gap: 8px; }
+/* No × in Polish: the figure on the title's right reaches the edge */
+.polish-tino .cr-balloon-title { padding-right: 0; }
+.polish-tino__btn { flex: 1; justify-content: center; gap: 8px; }
+@media (min-width: 801px) { .polish__choice { display: none; } }
