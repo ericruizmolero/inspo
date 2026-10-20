@@ -616,10 +616,9 @@ La extensión misma vive en `extension/chrome` (detalle en `extension/README.md`
 
 ### Error y 404
 `Lost` · `components/Lost.tsx` · `Lost.css` · `.lost` · lo usan `app/not-found.tsx` y `app/error.tsx`
-La cabeza del logotipo flota en el sitio del cero de un "404" grande y tenue (`digits`); en un error va sola y torcida. Debajo, título, una línea de por qué y las salidas como hijos.
+Tino (`LostTino`, el peluche en 3D) flota en el sitio del cero de un "404" grande y tenue (`digits`), curioso; en un error va solo y triste (gesto `error`). Debajo, título, una línea de por qué y las salidas como hijos. → [decisión](decisiones/2026-10-20-tino-entra-en-el-inicio-y-es-la-busqueda-del-tablon.md)
 - Un solo primario: volver a la librería en la 404, volver a intentarlo en el error (la librería pasa a `Button` secundario).
 - Las cifras son decoración (`aria-hidden`, texto al 12 %); el título sigue siendo el `h1`.
-- Por encima de 96 px `Logo` usa `icon-512.png` para que la cabeza no se vea blanda.
 - `LostTheme` pone el tema al montar: una 404 o un error lanzados desde una página se pintan enteros en el navegador y el script de tema del `<head>` no llega a ejecutarse.
 - `app/global-error.tsx` (falla el layout raíz) sigue sin estilos a propósito.
 
