@@ -6,7 +6,7 @@
 // TipWindow and EmptyState take no drawing.
 
 import { useEffect, useId, useLayoutEffect, useRef, useState, type ButtonHTMLAttributes, type CSSProperties, type InputHTMLAttributes, type ReactNode, type Ref, type TextareaHTMLAttributes } from "react";
-import { ArrowDown, ArrowRight, ArrowUUpLeft, ArrowUp, ArrowUpRight, Bell, CalendarBlank, CaretDown, CaretLeft, CaretRight, Chat, ChatCircle, Check, Compass, Copy, CornersIn, CornersOut, DotsThree, DownloadSimple, EnvelopeSimple, FileText, FilmStrip, Folder, Gauge, Gear, House, Info, Lightbulb, MagnifyingGlass, Minus, MonitorPlay, Moon, PaperPlaneTilt, Pause, PencilSimple, Play, Plug, PlugsConnected, Plus, Pulse, Quotes, Shuffle, SidebarSimple, SlidersHorizontal, Smiley, Sparkle, SpeakerHigh, SpeakerSlash, SquaresFour, Sun, TextAlignLeft, Trash, Tray, UploadSimple, User, Users, X, Image as ImageIcon } from "@phosphor-icons/react/ssr";
+import { ArrowDown, ArrowRight, ArrowUUpLeft, ArrowUp, ArrowUpRight, Bell, CalendarBlank, CaretDown, CaretLeft, CaretRight, Chat, ChatCircle, Check, Compass, Copy, CornersIn, CornersOut, DotsThree, DownloadSimple, EnvelopeSimple, FileText, FilmStrip, Folder, Gauge, Gear, House, Info, Lightbulb, LinkSimple, MagnifyingGlass, Minus, MonitorPlay, Moon, PaperPlaneTilt, Pause, PencilSimple, Play, Plug, PlugsConnected, Plus, Pulse, Quotes, Shuffle, SidebarSimple, SlidersHorizontal, Smiley, Sparkle, SpeakerHigh, SpeakerSlash, SquaresFour, Sun, TextAlignLeft, Trash, Tray, UploadSimple, User, Users, X, Image as ImageIcon } from "@phosphor-icons/react/ssr";
 import type { Icon as PhosphorIcon, IconWeight } from "@phosphor-icons/react";
 import { Liquid } from "@/components/ui/liquid";
 import "./criterio.css";
@@ -64,6 +64,7 @@ const ICONS = {
   bulb: Lightbulb,
   film: FilmStrip,
   inbox: Tray,
+  link: LinkSimple,
   dots: DotsThree,
   user: User,
   users: Users,
@@ -195,11 +196,13 @@ export function SegmentedControl({ items, active = 0, onChange, tone = "chrome",
 // ─── Inputs ────────────────────────────────────────────────────────────────
 
 /** The home screen's single question: a large rounded field with a round send button. */
-export function PromptInput({ placeholder = "A pitch deck for a funding round...", value, defaultValue = "", onChange, onSubmit, label = "What are you making today?", id = "cr-prompt", className, sendLabel = "Start", disabled, leading, below, busy, inputRef, onKeyDown, onPaste, inputProps }: {
+export function PromptInput({ placeholder = "A pitch deck for a funding round...", value, defaultValue = "", onChange, onSubmit, label = "What are you making today?", id = "cr-prompt", className, sendLabel = "Start", disabled, leading, trailing, below, busy, inputRef, onKeyDown, onPaste, inputProps }: {
   placeholder?: string; value?: string; defaultValue?: string; onChange?: (v: string) => void; onSubmit?: (v: string) => void;
   label?: string; id?: string; className?: string; sendLabel?: string; disabled?: boolean;
   /** app: something before the field (an attach IconButton) */
   leading?: ReactNode;
+  /** app: something after the field, before the send (a shortcut's Key) */
+  trailing?: ReactNode;
   /** app: a second line under the field, inside the same shape */
   below?: ReactNode;
   /** app: the send button shows Busy instead of the arrow */
@@ -219,6 +222,7 @@ export function PromptInput({ placeholder = "A pitch deck for a funding round...
         <label htmlFor={id} className="cr-visually-hidden">{label}</label>
         <input {...inputProps} ref={inputRef} id={id} type="text" value={val} placeholder={placeholder} disabled={disabled} autoComplete="off" onKeyDown={onKeyDown} onPaste={onPaste}
           onChange={(e) => { if (value == null) setOwn(e.target.value); onChange?.(e.target.value); }} />
+        {trailing}
         <button type="submit" className={cx("cr-prompt-send", val.trim() && "is-ready")} aria-label={sendLabel} disabled={disabled || busy}>
           {busy ? <Busy label={sendLabel} /> : <Icon name="arrow-right" size={18} />}
         </button>
