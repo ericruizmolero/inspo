@@ -79,7 +79,8 @@ export default function Tino({
   useEffect(() => { api?.theme(dark); }, [api, dark]);
   useEffect(() => { api?.zoom(zoom); }, [api, zoom]);
   const yaw = look?.[0], pitch = look?.[1];
-  useEffect(() => { if (yaw != null) api?.look(yaw, pitch ?? 0); }, [api, yaw, pitch]);
+  // Without a look of its own, the pose's: a face that turns the head must not keep the last one's
+  useEffect(() => { api?.look(yaw ?? null, pitch ?? 0); }, [api, yaw, pitch]);
 
   const box: CSSProperties = size ? { width: size, height: size, ...style } : { ...style };
   return (

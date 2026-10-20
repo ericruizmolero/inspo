@@ -39,7 +39,8 @@ import ZoomPill from "./ZoomPill";
 import { cue } from "@/lib/ui-sounds";
 import { TinoCorner, useLine } from "./HomeTino";
 import ThemeToggle from "./ThemeToggle";
-import type { TinoApi, TinoState } from "./tino/engine";
+import type { TinoApi } from "./tino/engine";
+import type { TinoMood } from "./tino/moods";
 import "./PolishView.css";
 
 // How it stops and goes
@@ -216,13 +217,13 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
   const p = t.tino.polish;
   const tino = useRef<TinoApi>(null);
   /** A line said after an answer, for a moment, before the next card's question */
-  const [line, setLine] = useState<{ key: string; pool: readonly string[]; text?: string; gesture: TinoState } | null>(null);
+  const [line, setLine] = useState<{ key: string; pool: readonly string[]; text?: string; mood: TinoMood } | null>(null);
   /** Forgetting a card with comments or one's own idea: he asks first */
   const [sure, setSure] = useState<{ key: string; champ: boolean; text: string } | null>(null);
   const [lean, setLean] = useState<number | null>(null);
   const said_ = useRef(0), answers = useRef(0);
-  const react = (pool: readonly string[], gesture: TinoState, text?: string) => {
-    setLine({ key: `${pool[0]}:${++said_.current}`, pool, text, gesture });
+  const react = (pool: readonly string[], mood: TinoMood, text?: string) => {
+    setLine({ key: `${pool[0]}:${++said_.current}`, pool, text, mood });
     tino.current?.jump(0.5);
   };
   useEffect(() => {
@@ -527,21 +528,21 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
     const confirmed = !!asking;
     setSure(null);
     forget();
-    if (confirmed) react(p.afterForget, "descarta");
-    else if (reviewing && sideB) react([p.sideForget(sideB)], "aprueba");
-    else if (++answers.current % SILENT_EVERY) react(p.reactForget, "descarta");
+    if (confirmed) react(p.afterForget, "judge");
+    else if (reviewing && sideB) react([p.sideForget(sideB)], "admirer");
+    else if (++answers.current % SILENT_EVERY) react(p.reactForget, "admirer");
   };
   const answerKeep = () => {
     if (!current || done) return;
     const confirmed = !!asking;
     setSure(null);
     keep();
-    if (confirmed) react(p.afterKeep, "aprueba");
-    else if (reviewing && sideA) react([p.sideKeep(sideA)], "aprueba");
-    else if (++answers.current % SILENT_EVERY) react(p.reactKeep, "aprueba");
+    if (confirmed) react(p.afterKeep, "judge");
+    else if (reviewing && sideA) react([p.sideKeep(sideA)], "admirer");
+    else if (++answers.current % SILENT_EVERY) react(p.reactKeep, "admirer");
   };
-  const later = () => { glideTo(frontAt() + 1); react(p.saved, "reposo"); };
-  const takeBack = () => { if (!history.length) return; undo(); react(p.undone, "senala"); };
+  const later = () => { glideTo(frontAt() + 1); react(p.saved, "watching"); };
+  const takeBack = () => { if (!history.length) return; undo(); react(p.undone, "accomplice"); };
   const forget = () => {
     if (!current || done) return;
     const at = frontAt(), item = list[mod(at, ln)];
@@ -824,7 +825,7 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
       {staying.length > 0 && (
         <TinoCorner className="polish-tino" tinoRef={tino} bodyLabel={t.tino.talk} onBody={() => tino.current?.jump(1)}
           look={lean != null ? [lean, 0] : undefined}
-          state={line ? line.gesture : asking || reviewing ? "curiosa" : done ? "aprueba" : "reposo"}
+          mood={line ? line.mood : asking ? "skeptic" : reviewing ? "suspect" : done ? "admirer" : "watching"}
           say={done ? {
             key: "round", title: question, text: p.roundText(team ? tally.stay : staying.length, team ? tally.out : forgot, team),
           } : current && {

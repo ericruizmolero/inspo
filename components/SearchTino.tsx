@@ -5,7 +5,8 @@
 // the search reads he thinks, and the bar says how much he is going through.
 import { useEffect, useRef, useState } from "react";
 import Tino from "./Tino";
-import type { TinoApi, TinoState } from "./tino/engine";
+import type { TinoApi } from "./tino/engine";
+import { moodProps, type TinoMood } from "./tino/moods";
 import { Balloon, Button, Icon } from "@/components/criterio";
 import { useDark, useLine } from "./HomeTino";
 import { filterKey, type Filter } from "@/lib/search-query";
@@ -75,7 +76,8 @@ export default function SearchTino({ report, busy, typing, onClose, onAct }: {
   const settled = useAfter(!!report && !busy, SETTLE_MS, report?.key);
   const shown = settled ? report : null;
   const title = useLine(shown?.key, shown?.title);
-  const state: TinoState = busy ? "pensando" : shown ? (shown.found ? "aprueba" : "curiosa") : typing || report ? "leyendo" : "reposo";
+  // The copy sheet's faces: resting while the bar is untouched, following the words, searching, then how it went
+  const mood: TinoMood = busy ? "searching" : shown ? (shown.found > 1 ? "smug" : shown.found ? "admirer" : "suspect") : typing || report ? "following" : "asleep";
   // A find gets a small hop, never a party
   useEffect(() => { if (shown?.found) tino.current?.jump(0.6); }, [shown?.key, shown?.found]);
   return (
@@ -91,7 +93,7 @@ export default function SearchTino({ report, busy, typing, onClose, onAct }: {
         </Balloon>
       )}
       <span className="sb-tino__body" aria-hidden>
-        <Tino ref={tino} state={state} dark={dark} look={[110, 0]} petting={false} />
+        <Tino ref={tino} dark={dark} petting={false} {...moodProps(mood)} />
       </span>
     </div>
   );

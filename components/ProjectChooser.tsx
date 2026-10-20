@@ -1,13 +1,14 @@
 "use client";
 // The first screen inside a workspace: what are you making? One box to name a project and land on its
 // system, empty and waiting; under it, the ones the team already has, each shown by its own board.
-import { useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Clouds from "@/components/Clouds";
 import { saveProjectBrief } from "@/app/actions/brief";
 import type { InspoItem, Project, ProjectLinks } from "@/types/inspo";
 import { SYSTEM_AREAS, filledOf, unreadOf, type SystemSummary } from "@/types/system";
 import { useT } from "./I18nProvider";
-import { BoardCard, PromptInput, type BoardTile } from "@/components/criterio";
+import { BoardCard, Chip, Icon, MenuItem, PromptInput, type BoardTile } from "@/components/criterio";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cachedCardImage } from "./InspoCard";
 import { DEFAULT_RATIO, keyOf } from "@/lib/board";
 import { newestFirst, parseDate } from "@/lib/search-query";
@@ -109,13 +110,16 @@ export function useBoardStatus() {
 }
 
 const NONE: InspoItem[] = [];
+type BoardSort = "recent" | "name" | "size";
+const SORTS: BoardSort[] = ["recent", "name", "size"];
+const SORT_KEY = "criterio:boards-sort";
 /** The inbox is piling up from this many, once one of them has waited this long */
 const INBOX_PILE = 15;
 const STALE_MS = 7 * 24 * 3600 * 1000;
 /** A board passing one of these is said once, per board and level */
 const MILESTONES = [10, 25, 50];
 
-export default function ProjectChooser({ projects, systems, items, links, ratioOf, imageOf, onMeasure, onPick, onCreate, inbox, onInbox, steps, onStep, onConnect }: {
+export default function ProjectChooser({ projects, systems, items, links, ratioOf, imageOf, onMeasure, onPick, onCreate, inbox, onInbox, steps, onStep, onConnect, onAdd }: {
   projects: Project[];
   systems: Record<string, SystemSummary>;
   items: InspoItem[];
@@ -137,6 +141,8 @@ export default function ProjectChooser({ projects, systems, items, links, ratioO
   onStep: (href: string) => void;
   /** The last step's way out: connecting an AI client */
   onConnect: () => void;
+  /** Saving a link: the add dialog */
+  onAdd: () => void;
 }) {
   const { t } = useT();
   const statusOf = useBoardStatus();
@@ -161,13 +167,13 @@ export default function ProjectChooser({ projects, systems, items, links, ratioO
       // Naming a project is done here, in the box above: the step puts the cursor in it
       const go = (href: string) => { if (href === "/?in=home") document.getElementById("chooser-name")?.focus(); else onStep(href); };
       list.push({
-        key: `step:${now.key}`, who: `${s.title}, ${s.count(done, STEPS.length)}`, gesture: "senala",
+        key: `step:${now.key}`, who: `${s.title}, ${s.count(done, STEPS.length)}`, mood: "accomplice",
         title: t.tino.stepsTitle, text: <FirstStepsPath steps={steps} onGo={go} />,
         act: t.tino.stepActs[now.key], go: now.key === "out" ? onConnect : () => go(now.href(steps)),
       });
     }
     if (inbox.length >= INBOX_PILE && inbox.some((i) => { const d = parseDate(i.date); return d > 0 && openedAt - d > STALE_MS; })) {
-      list.push({ key: "inbox", title: t.tino.inboxTitle, text: t.tino.inboxText(inbox.length), act: t.tino.inboxAct, gesture: "curiosa", go: onInbox });
+      list.push({ key: "inbox", title: t.tino.inboxTitle, text: t.tino.inboxText(inbox.length), act: t.tino.inboxAct, mood: "skeptic", go: onInbox });
     }
     const counts = projects.map((p) => ({ p, n: byProject[p.id]?.length ?? 0 }));
     // Coming back after days away: the board whose last pass is the newest, once
@@ -175,21 +181,34 @@ export default function ProjectChooser({ projects, systems, items, links, ratioO
       const ran = systems[p.id]?.read?.at;
       return ran && (!a || ran > a.ran) ? { p, ran } : a;
     }, null);
-    if (latest) list.push({ key: `back:${latest.p.id}`, happened: latest.ran, title: t.tino.backTitle, text: t.tino.backText(latest.p.name), act: t.tino.backAct, gesture: "aprueba", go: () => onPick(latest.p.id) });
+    if (latest) list.push({ key: `back:${latest.p.id}`, happened: latest.ran, title: t.tino.backTitle, text: t.tino.backText(latest.p.name), act: t.tino.backAct, mood: "smug", go: () => onPick(latest.p.id) });
     for (const { p, n } of counts) {
       const level = MILESTONES.findLast((m) => n >= m);
-      if (level) list.push({ key: `milestone:${p.id}:${level}`, once: true, title: t.tino.milestoneTitle, text: t.tino.milestoneText(p.name, level), gesture: "aprueba" });
+      if (level) list.push({ key: `milestone:${p.id}:${level}`, once: true, title: t.tino.milestoneTitle, text: t.tino.milestoneText(p.name, level), mood: "admirer" });
     }
     const fullest = counts.reduce<(typeof counts)[number] | null>((a, c) => (c.n > (a?.n ?? 0) ? c : a), null);
     for (const { p, n } of counts) {
-      if (!n && fullest) list.push({ key: `empty:${p.id}`, title: t.tino.emptyTitle, text: t.tino.emptyText(p.name, fullest.p.name, fullest.n), act: t.tino.emptyAct, gesture: "curiosa", go: () => onPick(fullest.p.id) });
+      if (!n && fullest) list.push({ key: `empty:${p.id}`, title: t.tino.emptyTitle, text: t.tino.emptyText(p.name, fullest.p.name, fullest.n), act: t.tino.emptyAct, mood: "suspect", go: () => onPick(fullest.p.id) });
     }
     return list;
   }, [steps, inbox, projects, systems, byProject, t, onStep, onConnect, onInbox, onPick, openedAt]);
   // Typing a name on the home: Tino says he is looking, over any nudge, until the box is empty again
   const typing = useMemo((): TinoNudge | undefined => (name.trim()
-    ? { key: "typing", title: t.tino.typingTitle, text: t.tino.typingText(projects.length), gesture: "pensando" }
+    ? { key: "typing", title: t.tino.typingTitle, text: t.tino.typingText(projects.length), mood: "thinking" }
     : undefined), [name, projects.length, t]);
+  // The boards in the order the person chose (kept in this browser): the one touched last, by name, or the fullest
+  const [sort, setSort] = useState<BoardSort>("recent");
+  const [sorting, setSorting] = useState(false);
+  useEffect(() => { try { const v = localStorage.getItem(SORT_KEY); if (SORTS.includes(v as BoardSort)) setSort(v as BoardSort); } catch { /* no storage */ } }, []);
+  const pickSort = (v: BoardSort) => { setSort(v); setSorting(false); try { localStorage.setItem(SORT_KEY, v); } catch { /* no storage */ } };
+  const newestOf = (id: string) => parseDate(byProject[id]?.[0]?.date ?? "");
+  const boards = useMemo(() => [...projects].sort((a, b) => sort === "name" ? a.name.localeCompare(b.name)
+    : sort === "size" ? (byProject[b.id]?.length ?? 0) - (byProject[a.id]?.length ?? 0)
+    : parseDate(byProject[b.id]?.[0]?.date ?? "") - parseDate(byProject[a.id]?.[0]?.date ?? "")), [projects, byProject, sort]);
+  const filedCount = projects.reduce((n, p) => n + (byProject[p.id]?.length ?? 0), 0);
+  // The board to go back to: the one a reference came into last
+  const latest = projects.reduce<Project | null>((a, p) => (byProject[p.id]?.length && (!a || newestOf(p.id) > newestOf(a.id)) ? p : a), null);
+  const focusName = () => document.getElementById("chooser-name")?.focus();
   const create = async () => {
     const n = name.trim(); if (!n || busy) return;
     setBusy(true);
@@ -221,16 +240,39 @@ export default function ProjectChooser({ projects, systems, items, links, ratioO
               </div>
             </div>
           } />
+        {/* What can be done right now, one click each: the inbox to sort, a link to save, the board touched last */}
+        <div className="chooser__chips">
+          {inbox.length > 0 && <Chip tone="chrome" onClick={onInbox}><Icon name="inbox" size={16} />{t.chooser.sortInbox}<span className="chooser__chip-n">{inbox.length}</span></Chip>}
+          <Chip tone="chrome" onClick={onAdd}><Icon name="link" size={16} />{t.chooser.saveLink}</Chip>
+          {latest && <Chip tone="chrome" onClick={() => onPick(latest.id)}><Icon name="arrow-right" size={16} /><span className="chooser__chip-label">{t.chooser.continueIn(latest.name)}</span></Chip>}
+        </div>
+        {projects.length > 0 && (
+          <div className="chooser__head">
+            <h2 className="t-title-s chooser__head-title">{t.chooser.yourBoards}</h2>
+            <span className="chooser__head-count">{t.chooser.summary(projects.length, filedCount)}</span>
+            <Popover open={sorting} onOpenChange={setSorting}>
+              <PopoverTrigger className="chooser__sort">{t.chooser.sorts[sort]}<Icon name="chevron-down" size={14} /></PopoverTrigger>
+              <PopoverContent align="end" className="cr-menu chooser__sorts">
+                {SORTS.map((v) => <MenuItem key={v} role="menuitemradio" aria-checked={v === sort} checked={v === sort} onClick={() => pickSort(v)}>{t.chooser.sorts[v]}</MenuItem>)}
+              </PopoverContent>
+            </Popover>
+          </div>
+        )}
         {projects.length > 0 && (
           <div className="chooser__grid" role="group" aria-label={t.chooser.existing}>
-            {projects.map((p) => {
+            {boards.map((p) => {
               const filed = byProject[p.id] ?? NONE;
               const status = statusOf(systems[p.id], filed);
               return (
                 <BoardCard key={p.id} className="chooser__card" name={p.name} count={filed.length} countLabel={t.chooser.refs(filed.length)}
-                  columns={boardColumns(filed, imageOf, ratioOf, onMeasure)} status={status.tone} progress={status.progress} statusLabel={status.label} onClick={() => onPick(p.id)} />
+                  columns={boardColumns(filed, imageOf, ratioOf, onMeasure)} status={status.tone} progress={status.progress} statusLabel={status.label} onClick={() => onPick(p.id)}
+                  empty={<><Icon name="plus" size={18} />{t.chooser.emptyBoard}</>} />
               );
             })}
+            {/* A new board is named in the box above: this card only puts the cursor there */}
+            <button type="button" className="chooser__new" onClick={focusName}>
+              <span className="chooser__new-box"><Icon name="plus" size={20} />{t.chooser.newBoard}</span>
+            </button>
           </div>
         )}
       </div>

@@ -7,7 +7,8 @@
 // click wakes him. The switch in the corner pill (TinoSwitch) mutes him too, and both are remembered.
 import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode, type Ref } from "react";
 import Tino from "./Tino";
-import type { TinoApi, TinoState } from "./tino/engine";
+import type { TinoApi } from "./tino/engine";
+import { moodProps, type TinoMood } from "./tino/moods";
 import { Balloon, Button, Icon } from "@/components/criterio";
 import { useT } from "./I18nProvider";
 import "./HomeTino.css";
@@ -18,7 +19,7 @@ import "./HomeTino.css";
  *  level). `happened` (ISO): something that happened while the person was away, said only on the first visit after
  *  some days away and only if it happened after the last one */
 export type TinoNudge = {
-  key: string; who?: string; title: string | readonly string[]; text: ReactNode; gesture: TinoState;
+  key: string; who?: string; title: string | readonly string[]; text: ReactNode; mood: TinoMood;
   act?: string; go?: () => void; once?: boolean; happened?: string;
 };
 
@@ -156,10 +157,10 @@ export default function HomeTino({ nudges, say }: {
     write(session, CLOSED_KEY, "0");
   };
 
-  const state: TinoState = !on ? "dormida" : shown ? shown.gesture : left.length ? "reposo" : "dormida";
+  const mood: TinoMood = !on ? "asleep" : shown ? shown.mood : left.length ? "watching" : "asleep";
   const paged = shown && !say && left.length > 1;
   return (
-    <TinoCorner tinoRef={tino} state={state} muted={!on} bodyLabel={on ? t.tino.talk : t.tino.wake} onBody={wake}
+    <TinoCorner tinoRef={tino} mood={mood} muted={!on} bodyLabel={on ? t.tino.talk : t.tino.wake} onBody={wake}
       say={shown && {
         key: shown.key, who: shown.who, title, text: shown.text,
         onClose: shown === say ? undefined : close,
@@ -182,12 +183,12 @@ export type CornerSay = { key: string; who?: string; title?: string; text?: Reac
 
 /** Tino in the bottom-right corner with his balloon over him, tail down to him: the home's, and Polish's, where the
  *  balloon holds Forget and Keep */
-export function TinoCorner({ say, tinoRef, state, muted = false, look, bodyLabel, onBody, className = "" }: {
+export function TinoCorner({ say, tinoRef, mood, muted = false, look, bodyLabel, onBody, className = "" }: {
   say: CornerSay | null | undefined | false;
   tinoRef: Ref<TinoApi>;
-  state: TinoState;
+  mood: TinoMood;
   muted?: boolean;
-  /** Where he looks, [yaw, pitch] in degrees; by default nearly at the screen */
+  /** Where he looks, [yaw, pitch] in degrees, over the face's own (Polish: towards the button under the pointer) */
   look?: [number, number];
   bodyLabel: string;
   onBody: () => void;
@@ -210,7 +211,7 @@ export function TinoCorner({ say, tinoRef, state, muted = false, look, bodyLabel
         </Balloon>
       )}
       <button type="button" className="tino-corner__body" aria-label={bodyLabel} onClick={onBody}>
-        <Tino ref={tinoRef} state={state} dark={dark} look={look ?? [110, 0]} />
+        <Tino ref={tinoRef} dark={dark} {...moodProps(mood, look)} />
       </button>
     </div>
   );

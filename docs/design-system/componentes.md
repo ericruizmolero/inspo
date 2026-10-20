@@ -636,6 +636,10 @@ El peluche en 3D: orejas con física, un visor que cambia con cada gesto, pelo p
 - Peso: three.js va en su propio paquete; cada modelo pesa unos 140 KB (uno por combinación de orejas y base; en la carga solo baja el que se usa).
 - `public/tino/` se sirve sin sesión (`tino/` en el `matcher` de `proxy.ts`), para que Tino también salga en las páginas públicas.
 
+### Caras de Tino
+`MOODS` · `moodProps` · `components/tino/moods.ts`
+Las caras de la hoja de copy (watching, following, thinking, searching, skeptic, suspect, smug, admirer, judge, accomplice, asleep, sad), cada una un gesto del motor (`state`: orejas, ojos y giro de cabeza), lo que pasa dentro del visor en reposo (`show`) y si mira de frente (`front`). Cada línea de Tino nombra su cara (`mood`); nunca se pasa `state` ni `look` a mano, salvo el giro hacia el botón en Pulido. Un gesto con giro propio no lleva `look`: si lo llevara, todas las caras mirarían igual. → [decisión](decisiones/2026-10-20-tino-entra-en-el-inicio-y-es-la-busqueda-del-tablon.md)
+
 ### Tino en el Inicio
 `HomeTino` · `TinoCorner` · `TinoSwitch` · `components/HomeTino.tsx` · `components/HomeTino.css` · `.tino-corner`, `.home-corner`
 `TinoCorner` es la esquina con su globo, la misma en el Inicio y en Pulido. Tino asoma abajo a la derecha (140 px, cortado por el borde, peluche blanco) y dice en un `Balloon` de 340 px, cola a la derecha, una cosa cada vez (`TinoNudge`: `who`, `title` como grupo de frases, `text`, `act`, `gesture`, `once`, `away`). Orden: el primer paso, la bandeja (15 o más y alguna de más de 7 días), un tablón movido tras 5 días fuera, un hito (10, 25, 50; sin botón), un tablón vacío. Como mucho cuatro, "1 / 4" para pasar. `say` sustituye a todo mientras la persona escribe el nombre de un proyecto. Un globo sin pedir por visita (`sessionStorage`); un clic en Tino lo abre otra vez. Silenciado (`TinoSwitch` en la pastilla, `localStorage`), se hunde 44 px y duerme sin globos; un clic lo despierta. En el Inicio el botón de tema va tras la pastilla (`.home-corner`). En teléfono no sale. → [decisión](decisiones/2026-10-20-tino-entra-en-el-inicio-y-es-la-busqueda-del-tablon.md)

@@ -747,6 +747,7 @@ export default function InspoClient({
             steps={firstSteps}
             onStep={(href) => router.push(href)}
             onConnect={() => setConnecting(true)}
+            onAdd={() => setShowAdd(true)}
           />
         ) : items.length === 0 ? (
           <EmptyStart

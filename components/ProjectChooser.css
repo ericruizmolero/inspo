@@ -40,3 +40,28 @@
   .chooser__box.cr-prompt { padding-left: 18px; }
 }
 @media (prefers-reduced-motion: reduce) { .chooser__more, .chooser__more-inner, .chooser__grid .cr-boardcard-mosaic { transition: none; } }
+
+/* Under the box, what can be done right now: chrome Chips with their icon, one click each */
+.chooser__chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: var(--space-4); }
+.chooser__chips .cr-chip { gap: 6px; height: 36px; padding: 0 14px; font-size: var(--fs-ui); }
+.chooser__chips .cr-chip { max-width: 100%; }
+.chooser__chip-label { min-width: 0; max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chooser__chip-n { color: var(--chrome-muted); font-variant-numeric: tabular-nums; }
+
+/* Over the boards: their name, how many there are and hold, and the order on the right */
+.chooser__head { width: 100%; display: flex; align-items: baseline; gap: 10px; margin-top: clamp(56px, 9vh, 96px); }
+.chooser__head-title { margin: 0; color: var(--text); }
+.chooser__head-count { flex: 1; font-size: var(--fs-small); color: var(--text-2); font-variant-numeric: tabular-nums; }
+.chooser__sort { display: inline-flex; align-items: center; gap: 4px; padding: 4px 6px; border: 0; border-radius: var(--radius-sm); background: none; color: var(--text); font: inherit; font-size: var(--fs-ui); cursor: pointer; }
+@media (hover: hover) and (pointer: fine) { .chooser__sort:hover { background: var(--surface-2); } }
+.chooser__sort:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.chooser__head + .chooser__grid { margin-top: var(--space-4); }
+
+/* An empty board says how to fill it, in its mosaic */
+.chooser__grid .cr-boardcard-mosaic { position: relative; }
+.cr-boardcard-empty { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: var(--text-2); font-size: var(--fs-small); }
+/* A new board: a card of the same size, its hairline solid (no dashed borders: principios 1), that puts the cursor in the box */
+.chooser__new { display: block; align-self: start; padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; text-align: center; }
+.chooser__new-box { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; aspect-ratio: 33 / 20; border: 1px solid var(--border); border-radius: var(--radius-lg); color: var(--text-2); font-size: var(--fs-ui); transition: border-color 0.15s, color 0.15s; }
+@media (hover: hover) and (pointer: fine) { .chooser__new:hover .chooser__new-box { border-color: var(--text-2); color: var(--text); } }
+.chooser__new:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: var(--radius-lg); }

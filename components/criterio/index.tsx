@@ -6,7 +6,7 @@
 // TipWindow and EmptyState take no drawing.
 
 import { useEffect, useId, useLayoutEffect, useRef, useState, type ButtonHTMLAttributes, type CSSProperties, type InputHTMLAttributes, type ReactNode, type Ref, type TextareaHTMLAttributes } from "react";
-import { ArrowDown, ArrowLeft, ArrowRight, ArrowUUpLeft, ArrowUp, ArrowUpRight, Bell, CalendarBlank, CaretDown, CaretLeft, CaretRight, Chat, ChatCircle, Check, Compass, Copy, CornersIn, CornersOut, DotsThree, DownloadSimple, EnvelopeSimple, FileText, FilmStrip, Folder, Gauge, Gear, House, Info, Lightbulb, MagnifyingGlass, Minus, MonitorPlay, Moon, PaperPlaneTilt, Pause, PencilSimple, Play, Plug, PlugsConnected, Plus, Pulse, Quotes, Shuffle, SidebarSimple, SlidersHorizontal, Smiley, Sparkle, SpeakerHigh, SpeakerSlash, SquaresFour, Sun, TextAlignLeft, Trash, Tray, UploadSimple, User, Users, X, Image as ImageIcon } from "@phosphor-icons/react/ssr";
+import { ArrowDown, ArrowLeft, ArrowRight, ArrowUUpLeft, ArrowUp, ArrowUpRight, Bell, CalendarBlank, CaretDown, CaretLeft, CaretRight, Chat, ChatCircle, Check, Compass, Copy, CornersIn, CornersOut, DotsThree, DownloadSimple, EnvelopeSimple, FileText, FilmStrip, Folder, Gauge, Gear, House, Info, Lightbulb, LinkSimple, MagnifyingGlass, Minus, MonitorPlay, Moon, PaperPlaneTilt, Pause, PencilSimple, Play, Plug, PlugsConnected, Plus, Pulse, Quotes, Shuffle, SidebarSimple, SlidersHorizontal, Smiley, Sparkle, SpeakerHigh, SpeakerSlash, SquaresFour, Sun, TextAlignLeft, Trash, Tray, UploadSimple, User, Users, X, Image as ImageIcon } from "@phosphor-icons/react/ssr";
 import type { Icon as PhosphorIcon, IconWeight } from "@phosphor-icons/react";
 import { Liquid } from "@/components/ui/liquid";
 import "./criterio.css";
@@ -37,6 +37,7 @@ const ICONS = {
   "chevron-left": CaretLeft,
   "chevron-right": CaretRight,
   "arrow-left": ArrowLeft,
+  link: LinkSimple,
   "arrow-right": ArrowRight,
   "arrow-up-right": ArrowUpRight,
   "arrow-up": ArrowUp,
@@ -484,8 +485,10 @@ export interface BoardTile { node: ReactNode; ratio: number }
 /** A board on home: its first references laid out as the board itself lays them (`columns`: the masonry, each
  *  tile keeping its shape, cropped at the mosaic's bottom), or a flat mosaic of up to 8 `tiles`. Then the name,
  *  the count and a status ring. */
-export function BoardCard({ name, count, countLabel, tiles = [], columns, status = "synced", progress, statusLabel, href, onClick, className }: {
+export function BoardCard({ name, count, countLabel, tiles = [], columns, status = "synced", progress, statusLabel, href, onClick, className, empty }: {
   name: string; count: number; countLabel?: string; tiles?: ReactNode[]; columns?: BoardTile[][]; status?: "synced" | "new" | "idle"; progress?: number; statusLabel?: string; href?: string; onClick?: () => void; className?: string;
+  /** app: what an empty board's mosaic says (how to fill it) */
+  empty?: ReactNode;
 }) {
   const body = (
     <>
@@ -497,6 +500,7 @@ export function BoardCard({ name, count, countLabel, tiles = [], columns, status
             </span>
           ))
           : tiles.slice(0, 8).map((t, i) => <span key={i} className="cr-boardcard-tile" style={typeof t === "string" ? { background: t } : undefined}>{typeof t === "string" ? null : t}</span>)}
+        {empty && !count ? <span className="cr-boardcard-empty">{empty}</span> : null}
       </span>
       <span className="cr-boardcard-meta">
         <span>
