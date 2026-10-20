@@ -4,12 +4,14 @@ import { llmEnabled } from "@/lib/llm";
 import { assertQuota, quotaBlock } from "@/lib/quota";
 import { getErrors } from "@/lib/i18n";
 import { buildResult, hasResult, listResults, boardPieces } from "@/lib/criterio-result";
+import { currentVersion } from "@/lib/criterio-versions";
 import { originOfHeaders } from "@/lib/mcp/auth";
 import { log } from "@/lib/log";
 
 export const maxDuration = 300;
 
-// GET ?projectId → the project's results (newest first) and what the board references, most first (the first is built first).
+// GET ?projectId → the project's results (newest first), what the board references, most first (the first is built
+// first), and the version the file carries now (lib/criterio-versions.ts currentVersion), to tell a result built from an older one.
 // POST { projectId, page, auto? } (page: a kind of page, "storyboard", or "ask:" and the team's words) → one page built from criterio.md as it is now (one frontier-model call, 40 to 60 s),
 // streamed as lines: { t: "read" | "write", text, refs? } while it is built, then { t: "done", result } or { t: "error", error }.
 // `auto` is the view building a project's first result on its own: it never counts nor waits on the quota, and only
@@ -19,8 +21,11 @@ export async function GET(req: NextRequest) {
   if (isResponse(ctx)) return ctx;
   const projectId = req.nextUrl.searchParams.get("projectId")?.trim() ?? "";
   if (!projectId) return Response.json({ error: (await getErrors()).badBody }, { status: 400 });
-  const [results, offered] = await Promise.all([listResults(ctx.workspace.id, projectId), boardPieces(ctx.workspace.id, projectId)]);
-  return Response.json({ results, offered });
+  const [results, offered, version] = await Promise.all([
+    listResults(ctx.workspace.id, projectId), boardPieces(ctx.workspace.id, projectId),
+    currentVersion({ organizationId: ctx.workspace.id, projectId, locale: ctx.user.language, origin: originOfHeaders(req.headers, req.nextUrl.origin) }),
+  ]);
+  return Response.json({ results, offered, version });
 }
 
 export async function POST(req: NextRequest) {

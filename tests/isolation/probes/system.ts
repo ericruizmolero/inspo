@@ -358,6 +358,18 @@ export const system: Record<string, Surface> = {
       } finally { await drop(); }
     },
   },
+  "action:app/actions/system.ts#criterioVersionNow": {
+    probe: async (fx) => {
+      const drop = await aVersionAndResult(fx);
+      try {
+        asB(fx);
+        const { criterioVersionNow } = await sys();
+        const r = await criterioVersionNow(fx.a.project);
+        expectNoSecret(fx, r, "the version of A's criterio.md");
+        if (r.ok) expect(r.data, "A's project carries no number for B").toBeNull();
+      } finally { await drop(); }
+    },
+  },
   "action:app/actions/system.ts#criterioVersionFile": {
     probe: async (fx) => {
       const drop = await aVersionAndResult(fx);

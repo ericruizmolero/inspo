@@ -43,6 +43,25 @@ function changedAreas(blocks: CriterioBlock[], md: string, before: string | null
   return blocks.flatMap((b) => (b.kind === "area" && now.get(b.heading) !== then.get(b.heading) ? [b.area] : []));
 }
 
+type FileView = { markdown: string; blocks: CriterioBlock[] };
+
+/** The file as it is now against the last version kept: that version's number when they are the same file, else
+ *  the next one. The one place that numbers the file, so the label on screen and what an exit records agree */
+async function standing(input: { organizationId: string; projectId: string; locale: Locale; origin: string; view?: FileView }) {
+  const view = input.view ?? await loadShareView(input.organizationId, input.projectId, "full", input.locale, null, input.origin);
+  if (!view) return null;
+  const hash = hashOf(view.markdown);
+  const [last] = await db.select({ n: V.n, hash: V.hash, markdown: V.markdown }).from(V)
+    .where(and(eq(V.organizationId, input.organizationId), eq(V.projectId, input.projectId))).orderBy(desc(V.n)).limit(1);
+  return { view, hash, last, n: last?.hash === hash ? last.n : (last?.n ?? 0) + 1 };
+}
+
+/** The number the file carries now: the last version's when nothing changed since, else the one the next exit keeps
+ *  it as (1 when none was kept). Null when the project is not this workspace's */
+export async function currentVersion(input: { organizationId: string; projectId: string; locale: Locale; origin: string }): Promise<number | null> {
+  return (await standing(input))?.n ?? null;
+}
+
 /**
  * Keeps the project's criterio.md as a new version when it changed since the last one. `view` is the file already
  * built (the MCP read builds it anyway); without it the file is built here, as a share link would hand it out.
@@ -50,16 +69,13 @@ function changedAreas(blocks: CriterioBlock[], md: string, before: string | null
  */
 export async function recordVersion(input: {
   organizationId: string; projectId: string; via: VersionVia; byName: string | null; viaName?: string;
-  locale: Locale; origin: string; view?: { markdown: string; blocks: CriterioBlock[] };
+  locale: Locale; origin: string; view?: FileView;
 }): Promise<number | null> {
   try {
-    const view = input.view ?? await loadShareView(input.organizationId, input.projectId, "full", input.locale, null, input.origin);
-    if (!view) return null;
-    const hash = hashOf(view.markdown);
-    const [last] = await db.select({ n: V.n, hash: V.hash, markdown: V.markdown }).from(V)
-      .where(and(eq(V.organizationId, input.organizationId), eq(V.projectId, input.projectId))).orderBy(desc(V.n)).limit(1);
-    if (last?.hash === hash) return last.n;
-    const n = (last?.n ?? 0) + 1;
+    const now = await standing(input);
+    if (!now) return null;
+    const { view, hash, last, n } = now;
+    if (last?.hash === hash) return n;
     // Two exits at the same moment race for the same number: the unique index lets one win, the other is the same file
     await db.insert(V).values({
       id: newId(), organizationId: input.organizationId, projectId: input.projectId, n, markdown: view.markdown, hash,
