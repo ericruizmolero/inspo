@@ -1,0 +1,23 @@
+---
+title: Tino entra en el Inicio y es la búsqueda del tablón
+date: 2026-10-20
+status: vigente
+kind: diseño
+supersedes: 2026-10-11-los-primeros-pasos-van-junto-al-plan-y-salen-de-los-datos (solo dónde se muestran)
+---
+**Contexto.** Tino, el peluche en 3D de la landing, estaba en la app como propuesta (`components/Tino.tsx`) sin usarse en ninguna pantalla. El equipo pasó tres maquetas (Inicio con Tino, Tablón con la búsqueda de Tino, Expresiones y voz) y la hoja de copy por estado ("What Tino says, and when"), y pidió meterlo en el Inicio y en el tablón.
+
+**Decisión.**
+- Inicio (`components/HomeTino.tsx`, `.home-tino`): Tino asoma en la esquina inferior derecha, cortado por el borde, en peluche blanco (sin `tint`). Encima, un `Balloon` de mantequilla con la cola hacia él dice una cosa cada vez: el primer paso que falta, la bandeja que se llena (15 o más y alguna de más de 7 días), un tablón que se movió mientras no estabas (primera visita tras 5 días), un hito de 10, 25 o 50 referencias (una vez por tablón y nivel, sin botón) y un tablón vacío con otro desde el que empezar. Como mucho cuatro, con "1 / 4" para pasar. Escribir el nombre de un proyecto lo sustituye por "A ver, a ver" mientras haya texto.
+- Un solo globo sin pedir por visita: "Luego" y la × lo cierran hasta la próxima, y un clic en Tino lo vuelve a abrir. Lo que empieza la persona (escribir) lo contesta siempre.
+- Silenciado ("Sin Tino" en la pastilla de abajo a la izquierda, `TinoSwitch`): se hunde hasta enseñar orejas y visor, duerme, sin globos; un clic lo despierta. En el Inicio el botón de tema pasa a la esquina izquierda, tras la pastilla (`.home-corner`), y deja la derecha a Tino. En teléfono no sale.
+- Los primeros pasos salen del menú de la Isla y pasan al globo de Tino, como primera cosa que dice: "Primeros pasos, 2 de 6", el título "Vamos a por tu primer criterio.md.", los seis pasos (`FirstStepsPath`, la misma lista) y un botón con la acción del paso de ahora ("Abrir un ejemplo", "Nombrar un proyecto"…). En el móvil siguen al pie de la barra lateral.
+- Tablón (`components/SearchTino.tsx`, `.sb-tino`): Tino es la búsqueda. Se sienta en el extremo izquierdo del dock con las orejas por encima del borde, y la barra de un proyecto es una sola fila: Tino, "Dile a Tino qué buscar", el "+" de añadir y "Tengo mis referencias" (`StartButton`). La fila de `GatherBar` con el recuento y las miniaturas se quita del tablón de un proyecto; el Inbox la conserva.
+- Cuando la búsqueda se queda quieta 700 ms, Tino informa en su globo: varias ("Ya decía yo." y "He encontrado 3 con tipografía retro: A, B y C."), una ("Solo una. Pero buena.") o ninguna ("Bueno, esto es nuevo." y cuántas hay en la bandeja, con "Mirar en la bandeja"). La × cierra y quita la búsqueda. Sin resultados el tablón se queda como estaba: ya no sale "Nada por aquí". Mientras lee, la barra de estado dice "Tino está repasando N referencias…" y a los 3 s "Hay mucho que mirar. Un segundo."
+- Las frases de cada estado son un grupo: se elige una al azar y nunca la misma dos veces seguidas (`useLine`). Todo el texto está en `t.tino` en los dos idiomas.
+- El botón "Pedírselo al agente" se quita de la barra: deja sitio a lo que se busca, y la búsqueda ya pasa al significado cuando las palabras no encuentran nada. Enter (sin sugerencia abierta) o ⌘Enter siguen mandando las palabras al agente.
+- La búsqueda no pide significado (`/api/search/semantic`) cuando las palabras ya encuentran algo y la consulta tiene menos de tres palabras (`needMeaning` en `hooks/use-board-search.ts`).
+
+**Por qué.** Alberto: "add tino in the home", "use the white tino", "onboarding part should be moved to tino", "but make the onboarding clear, this is zero clear of what we need to do", "make tino a bit smaller", "update overall copies to match tino voice" y, del tablón, "now we have tino implemented, add it and update the ui of the board inside". Sobre la barra: "search is not visible very well, ask tino should be remove it because already search AI when they don't find anything no?". Sobre la búsqueda: "linear looked fast for this but tino react after many seconds because the search didn't need AI… if the search no need AI, don't use it". Las reglas de frecuencia, rotación y lo que nunca dice salen de la hoja de copy.
+
+**Cómo aplicarlo.** Lo que diga Tino sale de la hoja de copy por estado y va en `t.tino`, nunca suelto en un componente. Solo habla de lo guardado (referencias, notas, quién las guardó), no se inventa gusto, y en un error no bromea. Un estado nuevo es una fila más de la hoja antes que una línea en el código.

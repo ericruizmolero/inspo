@@ -33,7 +33,7 @@ export type TinoProps = {
 };
 
 /** Tino, la mascota en 3D. Carga el motor (three.js) en un paquete aparte, solo en el navegador; si no hay WebGL2 o algo
- *  falla, enseña la marca plana. Propuesta: ver docs/design-system/componentes.md#mascota-propuesta. */
+ *  falla, enseña la marca plana. Dónde vive y qué dice: docs/design-system/componentes.md#mascota. */
 export default function Tino({
   state = "reposo", size, ears = "capsula", bottom = "redonda", material = "flocado", tint, visor = "banda", visorStyle = "cristal",
   show = "barrido", pet = "felices", dark = false, zoom = 1, look, still = false, petting = true, className = "", style, ref,

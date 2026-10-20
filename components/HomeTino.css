@@ -1,0 +1,44 @@
+/* Tino on the home (components/HomeTino.tsx): the plush peeks out of the bottom-right corner, cut by the window's
+   edge, and its balloon stands over it with the tail pointing down at it. The theme button moves to the opposite
+   corner on the home, after the pill (InspoClient). A phone has no room for it. */
+.home-tino { position: fixed; right: 24px; bottom: 0; z-index: 12; display: flex; flex-direction: column; align-items: flex-end; pointer-events: none; }
+.home-tino > * { pointer-events: auto; }
+.home-tino__body { display: block; width: 140px; height: 128px; margin-bottom: env(safe-area-inset-bottom); padding: 0; border: 0; background: none; overflow: hidden; cursor: pointer; border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
+/* Whole, Tino stands 140 high; the window's edge keeps its base */
+.home-tino__body .tino { width: 140px; height: 140px; }
+.home-tino__body .tino { transition: transform 400ms var(--ease-out); }
+/* Muted: he sinks until only the ears and the visor show, and sleeps */
+.home-tino.is-muted .home-tino__body .tino { transform: translateY(44px); }
+.home-tino__body:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+
+.home-tino__say.cr-balloon { width: 340px; max-width: calc(100vw - 48px); margin-bottom: 2px; margin-right: 28px; animation: home-tino-say 320ms var(--ease-out) both; }
+.home-tino__say .cr-balloon-body { padding: 12px 14px 14px; --ib-fg-strong: var(--on-butter); --ib-hover: color-mix(in srgb, var(--on-butter) 10%, transparent); }
+.home-tino__say .cr-balloon-title { font-size: var(--fs-ui); flex-direction: column; align-items: flex-start; gap: 2px; padding-right: 32px; }
+.home-tino__who { font-size: var(--fs-small); font-weight: var(--fw-medium); letter-spacing: 0.04em; text-transform: uppercase; opacity: 0.7; }
+.home-tino__say .cr-balloon-text { font-size: var(--fs-small); text-wrap: pretty; }
+/* The first steps in the balloon: the menu's list on the butter, its ink in place of the menu's text tokens */
+.home-tino__say .first-steps__list { margin: 4px -8px 0; --text: var(--on-butter); --text-2: color-mix(in srgb, var(--on-butter) 62%, transparent); --surface-2: color-mix(in srgb, var(--on-butter) 8%, transparent); }
+.home-tino__say .cr-actions { align-items: center; margin-top: 12px; }
+.home-tino__close { position: absolute; top: 10px; right: 10px; }
+/* Which of them, and the next: plain text on the butter, its own small pill */
+.home-tino__next {
+  display: inline-flex; align-items: center; gap: 2px; height: 34px; margin-left: auto; padding: 0 8px 0 12px;
+  border: 0; border-radius: var(--radius-pill); background: color-mix(in srgb, var(--on-butter) 8%, transparent);
+  color: var(--on-butter); font: inherit; font-size: var(--fs-small); font-variant-numeric: tabular-nums; cursor: pointer;
+  transition: background-color 150ms ease, transform 120ms var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) { .home-tino__next:hover { background: color-mix(in srgb, var(--on-butter) 14%, transparent); } }
+.home-tino__next:active { transform: scale(0.96); }
+.home-tino__next:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+@keyframes home-tino-say { from { opacity: 0; transform: translateY(8px) scale(0.98); transform-origin: 85% 100%; } }
+
+/* The switch, in the pill after the music: words, quiet until Tino is on */
+.zoom-pill .zoom-pill__tino { padding: 0 10px; color: var(--chrome-muted); }
+.zoom-pill .zoom-pill__tino.is-on { color: var(--chrome-ink); }
+
+/* On the home the theme button leaves the corner to Tino and sits after the pill */
+.board-zoom.home-corner { display: flex; align-items: center; gap: 8px; }
+.home-corner .theme-float { position: static; }
+
+@media (prefers-reduced-motion: reduce) { .home-tino__say.cr-balloon, .home-tino__body .tino { animation: none; transition: none; } .home-tino__next:active { transform: none; } }
+@media (max-width: 800px) { .home-tino { display: none; } }

@@ -96,7 +96,7 @@ function NewProject({ onCreate, onDone }: { onCreate: (name: string, about: stri
 }
 
 export default function Island({ user, workspace, workspaces, isAdmin, items, links, projects, systems = {}, members = [], space, onSpace, bellNews = "",
-  onCreateProject, onRenameProject, onDeleteProject, onDuplicateProject, onMoveProject, onPerson, quota, onMenuOpen, steps }: {
+  onCreateProject, onRenameProject, onDeleteProject, onDuplicateProject, onMoveProject, onPerson, quota, onMenuOpen }: {
   user: SessionUser; workspace: Workspace; workspaces: Workspace[]; isAdmin: boolean;
   items: InspoItem[]; links: ProjectLinks; projects: Project[];
   /** Each project's system: a ring on its tab says how much of it is decided */
@@ -118,8 +118,6 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
   /** To another of the person's workspaces (lib/project-move.ts) */
   onMoveProject: (project: Project, to: Workspace) => void;
   quota: QuotaView | null;
-  /** The first steps (components/FirstSteps.tsx), over the plan meter while there are steps to show */
-  steps?: React.ReactNode;
 }) {
   const { t, locale } = useT();
   const counts = useSpaceCounts(items, links);
@@ -297,8 +295,6 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
         trigger={<>
           {/* The workspace you are in (its logo, or your photo in the personal one), never the product mark: the bar says where you are */}
           <span className="island__logo"><WorkspaceFace workspace={workspace} user={user} size={26} /></span>
-          {/* The first steps live in this closed menu: the dot is how a new account finds them */}
-          {steps && <StatusRing className="island__steps" tone="new" label={t.firstSteps.title} />}
           <span className="island__chev" aria-hidden><Icon name="chevron-down" size={14} /></span>
         </>}
         extras={<>
@@ -326,7 +322,6 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
           <MenuItem icon={sectionIcon("feedback")} data-feedback-toolbar="true" data-tip={t.feedback.entryHint} onClick={() => enterFeedbackMode()}>
             {t.feedback.open}
           </MenuItem>
-          {steps}
           {quota && <div className="island__plan"><PlanMeter quota={quota} compact /></div>}
           <Separator />
         </>}

@@ -10,7 +10,10 @@ import { useT } from "./I18nProvider";
 import { BoardCard, PromptInput, type BoardTile } from "@/components/criterio";
 import { cachedCardImage } from "./InspoCard";
 import { DEFAULT_RATIO, keyOf } from "@/lib/board";
-import { newestFirst } from "@/lib/search-query";
+import { newestFirst, parseDate } from "@/lib/search-query";
+import HomeTino, { type TinoNudge } from "./HomeTino";
+import { STEPS, nextStep, type FirstSteps } from "@/lib/first-steps-core";
+import { FirstStepsPath } from "./FirstSteps";
 import { mediaKindOf, videoEmbedOf } from "@/lib/url";
 import "./ProjectChooser.css";
 
@@ -106,8 +109,13 @@ export function useBoardStatus() {
 }
 
 const NONE: InspoItem[] = [];
+/** The inbox is piling up from this many, once one of them has waited this long */
+const INBOX_PILE = 15;
+const STALE_MS = 7 * 24 * 3600 * 1000;
+/** A board passing one of these is said once, per board and level */
+const MILESTONES = [10, 25, 50];
 
-export default function ProjectChooser({ projects, systems, items, links, ratioOf, imageOf, onMeasure, onPick, onCreate }: {
+export default function ProjectChooser({ projects, systems, items, links, ratioOf, imageOf, onMeasure, onPick, onCreate, inbox, onInbox, steps, onStep, onConnect }: {
   projects: Project[];
   systems: Record<string, SystemSummary>;
   items: InspoItem[];
@@ -120,6 +128,15 @@ export default function ProjectChooser({ projects, systems, items, links, ratioO
   onMeasure?: (web: string, ratio: number) => void;
   onPick: (id: string) => void;
   onCreate: (name: string) => Promise<Project | null>;
+  /** What no project holds yet, and the way to it: Tino brings it up first */
+  inbox: InspoItem[];
+  onInbox: () => void;
+  /** The first steps, while there are some to show: Tino brings up the one to do before anything else */
+  steps: FirstSteps | null;
+  /** Goes where a step is done */
+  onStep: (href: string) => void;
+  /** The last step's way out: connecting an AI client */
+  onConnect: () => void;
 }) {
   const { t } = useT();
   const statusOf = useBoardStatus();
@@ -133,6 +150,44 @@ export default function ProjectChooser({ projects, systems, items, links, ratioO
     for (const list of Object.values(by)) list.sort(newestFirst);
     return by;
   }, [items, links]);
+  const [openedAt] = useState(() => Date.now());
+  // What Tino brings up, most pressing first (the copy sheet's Home): the first step, the inbox piling up, a board that
+  // moved while the person was away, a milestone, an empty board with another to start from
+  const nudges = useMemo((): TinoNudge[] => {
+    const list: TinoNudge[] = [];
+    const now = steps && STEPS.find((x) => x.key === nextStep(steps));
+    if (steps && now) {
+      const s = t.firstSteps, done = STEPS.filter((x) => x.done(steps)).length;
+      // Naming a project is done here, in the box above: the step puts the cursor in it
+      const go = (href: string) => { if (href === "/?in=home") document.getElementById("chooser-name")?.focus(); else onStep(href); };
+      list.push({
+        key: `step:${now.key}`, who: `${s.title}, ${s.count(done, STEPS.length)}`, gesture: "senala",
+        title: t.tino.stepsTitle, text: <FirstStepsPath steps={steps} onGo={go} />,
+        act: t.tino.stepActs[now.key], go: now.key === "out" ? onConnect : () => go(now.href(steps)),
+      });
+    }
+    if (inbox.length >= INBOX_PILE && inbox.some((i) => { const d = parseDate(i.date); return d > 0 && openedAt - d > STALE_MS; })) {
+      list.push({ key: "inbox", title: t.tino.inboxTitle, text: t.tino.inboxText(inbox.length), act: t.tino.inboxAct, gesture: "curiosa", go: onInbox });
+    }
+    const counts = projects.map((p) => ({ p, n: byProject[p.id]?.length ?? 0 }));
+    for (const { p } of counts) {
+      const unread = unreadOf(systems[p.id], (byProject[p.id] ?? NONE).flatMap((i) => (i.id ? [i.id] : [])));
+      if (unread > 0) list.push({ key: `back:${p.id}`, away: true, title: t.tino.backTitle, text: t.tino.backText(p.name), act: t.tino.backAct, gesture: "aprueba", go: () => onPick(p.id) });
+    }
+    for (const { p, n } of counts) {
+      const level = MILESTONES.findLast((m) => n >= m);
+      if (level) list.push({ key: `milestone:${p.id}:${level}`, once: true, title: t.tino.milestoneTitle, text: t.tino.milestoneText(p.name, level), gesture: "aprueba" });
+    }
+    const fullest = counts.reduce<(typeof counts)[number] | null>((a, c) => (c.n > (a?.n ?? 0) ? c : a), null);
+    for (const { p, n } of counts) {
+      if (!n && fullest) list.push({ key: `empty:${p.id}`, title: t.tino.emptyTitle, text: t.tino.emptyText(p.name, fullest.p.name, fullest.n), act: t.tino.emptyAct, gesture: "curiosa", go: () => onPick(fullest.p.id) });
+    }
+    return list;
+  }, [steps, inbox, projects, systems, byProject, t, onStep, onConnect, onInbox, onPick, openedAt]);
+  // Typing a name on the home: Tino says he is looking, over any nudge, until the box is empty again
+  const typing = useMemo((): TinoNudge | undefined => (name.trim()
+    ? { key: "typing", title: t.tino.typingTitle, text: t.tino.typingText(projects.length), gesture: "pensando" }
+    : undefined), [name, projects.length, t]);
   const create = async () => {
     const n = name.trim(); if (!n || busy) return;
     setBusy(true);
@@ -179,6 +234,7 @@ export default function ProjectChooser({ projects, systems, items, links, ratioO
       </div>
     </div>
     <Clouds />
+    <HomeTino nudges={nudges} say={typing} />
     </>
   );
 }
