@@ -85,7 +85,7 @@ export default function Tino({
   const box: CSSProperties = size ? { width: size, height: size, ...style } : { ...style };
   return (
     <span
-      className={`tino ${flat ? "is-flat" : ""} ${className}`}
+      className={`tino ${flat ? "is-flat" : ""} ${dark ? "is-dark" : ""} ${className}`}
       style={box}
       role="img"
       aria-label="Tino"

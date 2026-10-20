@@ -42,11 +42,12 @@ function langToSet(request: NextRequest): string | null {
 // 'strict-dynamic' lets those load the rest. An injected <script> or SVG has no nonce, so it never runs.
 // Styles and images are left open. This header replaces the one next.config.ts sets, so it carries the same
 // frame-ancestors: nobody frames a page, and the MCP consent not even we do.
-// Development needs 'unsafe-eval' (React rebuilds server error stacks with eval).
+// Development needs 'unsafe-eval' (React rebuilds server error stacks with eval). 'wasm-unsafe-eval' lets WebAssembly
+// compile and nothing else: Tino's 3D model is decoded by meshopt's WASM, and without it he falls back to the flat mark.
 function csp(nonce: string, pathname: string): string {
   const dev = process.env.NODE_ENV !== "production" ? " 'unsafe-eval'" : "";
   const frames = pathname === "/mcp/authorize" ? "'none'" : "'self'";
-  return `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${dev}; object-src 'none'; base-uri 'self'; frame-ancestors ${frames}`;
+  return `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' 'wasm-unsafe-eval'${dev}; object-src 'none'; base-uri 'self'; frame-ancestors ${frames}`;
 }
 
 export function proxy(request: NextRequest) {
