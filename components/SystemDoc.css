@@ -6,42 +6,30 @@
 .sdoc-toc button { display: flex; align-items: center; gap: var(--space-2); min-height: 32px; padding: 0 10px; border: 0; border-radius: var(--radius-md); background: none; color: var(--text-2); font: inherit; font-size: var(--fs-ui); font-weight: var(--fw-medium); text-align: left; cursor: pointer; }
 .sdoc-toc button:hover { background: var(--surface-raised); color: var(--text); box-shadow: inset 0 0 0 1px var(--border); }
 .sdoc-toc__gap { height: 10px; }
+/* Over the parts and over the skills, a quiet label, as Result's index has (.res-toc__label) */
+.sdoc-toc__label { margin: 0 0 4px; padding: 0 10px; font-size: var(--fs-label); color: var(--muted-2); }
 /* Where an area stands, by colour and by shape: backed by references (a moss disc), open and waiting for the team
    (an ember diamond, ink-edged so it holds on paper), decided by the team without references (a muted square), or
    proposed by the model (a muted ring) */
-.sdoc-toc button i { flex-shrink: 0; box-sizing: border-box; width: 8px; height: 8px; margin: 0 1px; border-radius: 50%; background: none; box-shadow: inset 0 0 0 1.5px var(--text-2); }
+/* The status sits at the row's right end, after the name and any count (Tino's System mockups, 20-10) */
+.sdoc-toc button i { flex-shrink: 0; box-sizing: border-box; width: 8px; height: 8px; margin: 0 1px 0 auto; border-radius: 50%; background: none; box-shadow: inset 0 0 0 1.5px var(--text-2); }
 .sdoc-toc button.is-backed i { background: var(--success); box-shadow: none; }
 .sdoc-toc button.is-open i { width: 8px; height: 8px; border-radius: 1.5px; transform: rotate(45deg); background: var(--ember); box-shadow: inset 0 0 0 1px var(--ink); }
 .sdoc-toc button.is-team i { border-radius: 2px; background: var(--text-2); box-shadow: none; }
 .sdoc-toc button.is-open { color: var(--text-2); }
 /* Proposals waiting under an area: an ember Chip with the count, set small for the list */
 .sdoc-toc__count { margin-left: auto; display: inline-flex; }
+.sdoc-toc__count + i { margin-left: 2px; }
 .sdoc-toc__count .cr-chip { justify-content: center; min-width: 22px; box-sizing: border-box; padding: 0 6px; height: 20px; font-size: var(--fs-label); font-weight: var(--fw-semibold); font-variant-numeric: tabular-nums; }
 .sdoc-toc button em { margin-left: auto; font-style: normal; font-size: var(--fs-small); color: var(--text-2); font-variant-numeric: tabular-nums; }
 .sdoc-toc button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 
 .sdoc-page { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 44px; padding-bottom: 40px; }
-/* What a proposal says: the decision, its why and what it never does */
-.sdoc-why b, .sdoc-never > b { font-weight: var(--fw-semibold); color: var(--text); margin-right: 4px; }
-.sdoc-never { font-size: var(--fs-ui); line-height: var(--lh-body); color: var(--text-2); }
-.sdoc-never ul { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
-.sdoc-never li { display: flex; gap: 10px; align-items: baseline; }
-.sdoc-never li::before { content: ""; flex-shrink: 0; width: 9px; height: 1.5px; border-radius: 1px; background: var(--muted); transform: translateY(-4px); }
-
-/* A proposal: what someone would write instead, waiting for the team */
-.sdoc-proposal { display: flex; flex-direction: column; gap: var(--space-2); padding: var(--space-4) 18px; border-radius: var(--radius-lg); background: var(--surface-raised); border: 1px solid var(--border); }
-.sdoc-proposal header { display: flex; align-items: center; gap: 8px; font-size: var(--fs-small); color: var(--text-2); flex-wrap: wrap; }
-/* Waiting for the team: the same ember diamond as the parts list */
-.sdoc-proposal header::before { content: ""; flex-shrink: 0; width: 8px; height: 8px; margin: 0 2px; border-radius: 1.5px; transform: rotate(45deg); background: var(--ember); box-shadow: inset 0 0 0 1px var(--ink); }
-.sdoc-proposal header b { font-weight: var(--fw-semibold); color: var(--text); }
-.sdoc-proposal time { font-size: var(--fs-label); color: var(--text-2); }
-.sdoc-proposal__tools { margin-left: auto; display: inline-flex; gap: 4px; }
-.sdoc-proposal p.sdoc-proposal__reason { font-size: var(--fs-small); color: var(--text-2); }
-/* Saying no: one line for why, then the no itself */
+/* Leaving a proposal: one line for why, then the no itself (under its TinoNote, components/SystemDoc.tsx) */
 .sdoc-proposal__refuse { display: flex; gap: 4px; align-items: center; }
 .sdoc-proposal__refuse .cr-input { flex: 1; min-width: 0; }
 
-@media (max-width: 900px) { .sdoc { flex-direction: column; gap: 16px; } .sdoc-toc { position: static; flex: none; flex-direction: row; flex-wrap: wrap; } .sdoc-toc__gap { display: none; } }
+@media (max-width: 900px) { .sdoc { flex-direction: column; gap: 16px; } .sdoc-toc { position: static; flex: none; flex-direction: row; flex-wrap: wrap; } .sdoc-toc__gap, .sdoc-toc__label { display: none; } }
 /* A narrow page: the file's bar goes onto two rows (its tools under its tabs) instead of pushing the panel wider than the page */
 @media (max-width: 900px) { .sdoc-page { width: 100%; } .sdoc .mdv-bar { flex-wrap: wrap; gap: 8px 12px; padding-top: 8px; padding-bottom: 8px; } .sdoc .mdv-bar__hint { flex: 1; } .sdoc .mdv-bar__tools { margin-left: 0; flex-wrap: wrap; flex-shrink: 1; } }
 /* A phone: the index is one row that scrolls sideways and the bar one row that scrolls too, so the file starts on
@@ -72,8 +60,6 @@
 /* What the team is doing with the area, under its block: the app's own voice, not the file's */
 .mdv-team { display: flex; flex-direction: column; gap: 10px; margin: 8px 0 14px; font-family: var(--font); }
 .mdv-team:empty { display: none; }
-.sdoc-proposal p { margin: 0; font-size: var(--fs-ui); line-height: var(--lh-body); color: var(--text); }
-.sdoc-proposal p.sdoc-why { color: var(--text-2); }
 
 /* ─── Working on the file. Writing is the default: the parts people write (what the project is, an area's
    decision, why and never) are typed in place, the caret where the text was pressed. Commenting is a tool:
