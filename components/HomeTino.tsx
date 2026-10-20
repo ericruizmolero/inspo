@@ -15,10 +15,11 @@ import "./HomeTino.css";
 /** One thing Tino can bring up. `title` is a pool of lines: one is picked at random, never the one said last time.
  *  `who` names where it comes from over the title (the first steps and how far along they are); without it, Tino.
  *  Without `act` there is no button (a milestone is only said). `once`: said once ever (a milestone per board and
- *  level). `away`: said only on the first visit after some days away */
+ *  level). `happened` (ISO): something that happened while the person was away, said only on the first visit after
+ *  some days away and only if it happened after the last one */
 export type TinoNudge = {
   key: string; who?: string; title: string | readonly string[]; text: ReactNode; gesture: TinoState;
-  act?: string; go?: () => void; once?: boolean; away?: boolean;
+  act?: string; go?: () => void; once?: boolean; happened?: string;
 };
 
 const ON_KEY = "criterio:tino";
@@ -46,6 +47,17 @@ const read = (store: () => Storage, key: string) => { try { return store().getIt
 const write = (store: () => Storage, key: string, value: string) => { try { store().setItem(key, value); } catch { /* no storage */ } };
 const session = () => sessionStorage, local = () => localStorage;
 
+/** The visit before this page load (ms; 0 the first time), read once and stamped with now: a second mount (React's
+ *  check in development, the home opened again) must not read the stamp the first one wrote */
+let lastVisit: number | undefined;
+function visitBefore(): number {
+  if (lastVisit === undefined) {
+    lastVisit = Number(read(local, VISIT_KEY)) || 0;
+    write(local, VISIT_KEY, String(Date.now()));
+  }
+  return lastVisit;
+}
+
 /** The theme on <html data-theme>, followed as it changes: Tino's light and fur follow it */
 export function useDark() {
   const [dark, setDark] = useState(true);
@@ -61,21 +73,21 @@ export function useDark() {
 }
 
 /** A line from a pool, picked in the browser at random and never the one this kind of nudge said last time (the
- *  kind is the key before its first ":"). Until the pick, the pool's first line */
+ *  kind is the key before its first ":"). Once picked, a key keeps its line for the page. Until the pick, the first */
 export function useLine(key: string | undefined, pool: string | readonly string[] | undefined): string | undefined {
   const list = pool == null ? [] : typeof pool === "string" ? [pool] : pool;
-  const [picked, setPicked] = useState<{ key: string; at: number } | null>(null);
+  const [picked, setPicked] = useState<Record<string, number>>({});
   const size = list.length;
   useLayoutEffect(() => {
-    if (key == null || !size || picked?.key === key) return;
+    if (key == null || !size || key in picked) return;
     const kind = LINE_KEY + key.split(":")[0];
     const last = Number(read(local, kind));
     let at = Math.floor(Math.random() * size);
     if (size > 1 && at === last) at = (at + 1) % size;
     write(local, kind, String(at));
-    setPicked({ key, at });
+    setPicked((p) => ({ ...p, [key]: at }));
   }, [key, size, picked]);
-  return size ? list[picked && picked.key === key ? picked.at % size : 0] : undefined;
+  return size ? list[key != null && key in picked ? picked[key] % size : 0] : undefined;
 }
 
 /** The switch in the bottom-left pill, after the music: Tino awake on the home, or muted */
@@ -89,8 +101,9 @@ export function TinoSwitch() {
   );
 }
 
-/** What the visit already knows, read once in the browser: put away, closed, seen, and whether it comes after days away */
-type Visit = { later: string[]; closed: boolean; seen: string[]; away: boolean };
+/** What the visit already knows, read once in the browser: put away, closed, seen, and the visit before it when it
+ *  was days ago (ms; 0 otherwise) */
+type Visit = { later: string[]; closed: boolean; seen: string[]; awaySince: number };
 
 export default function HomeTino({ nudges, say }: {
   nudges: TinoNudge[];
@@ -105,17 +118,16 @@ export default function HomeTino({ nudges, say }: {
   const [visit, setVisit] = useState<Visit | null>(null);
   const [at, setAt] = useState(0);
   useEffect(() => {
-    const last = Number(read(local, VISIT_KEY)) || 0;
-    write(local, VISIT_KEY, String(Date.now()));
+    const last = visitBefore();
     setVisit({
       later: JSON.parse(read(session, LATER_KEY) ?? "[]") as string[],
       closed: read(session, CLOSED_KEY) === "1",
       seen: JSON.parse(read(local, SEEN_KEY) ?? "[]") as string[],
-      away: last > 0 && Date.now() - last > AWAY_MS,
+      awaySince: last > 0 && Date.now() - last > AWAY_MS ? last : 0,
     });
   }, []);
 
-  const left = visit ? nudges.filter((n) => !visit.later.includes(n.key) && !(n.once && visit.seen.includes(n.key)) && !(n.away && !visit.away)).slice(0, MAX_NUDGES) : [];
+  const left = visit ? nudges.filter((n) => !visit.later.includes(n.key) && !(n.once && visit.seen.includes(n.key)) && !(n.happened && !(visit.awaySince && Date.parse(n.happened) > visit.awaySince))).slice(0, MAX_NUDGES) : [];
   const shown = on ? say ?? (visit && !visit.closed && left.length ? left[at % left.length] : undefined) : undefined;
 
   const title = useLine(shown?.key, shown?.title);

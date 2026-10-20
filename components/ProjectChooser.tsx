@@ -170,10 +170,12 @@ export default function ProjectChooser({ projects, systems, items, links, ratioO
       list.push({ key: "inbox", title: t.tino.inboxTitle, text: t.tino.inboxText(inbox.length), act: t.tino.inboxAct, gesture: "curiosa", go: onInbox });
     }
     const counts = projects.map((p) => ({ p, n: byProject[p.id]?.length ?? 0 }));
-    for (const { p } of counts) {
-      const unread = unreadOf(systems[p.id], (byProject[p.id] ?? NONE).flatMap((i) => (i.id ? [i.id] : [])));
-      if (unread > 0) list.push({ key: `back:${p.id}`, away: true, title: t.tino.backTitle, text: t.tino.backText(p.name), act: t.tino.backAct, gesture: "aprueba", go: () => onPick(p.id) });
-    }
+    // Coming back after days away: the board whose last pass is the newest, once
+    const latest = projects.reduce<{ p: Project; ran: string } | null>((a, p) => {
+      const ran = systems[p.id]?.read?.at;
+      return ran && (!a || ran > a.ran) ? { p, ran } : a;
+    }, null);
+    if (latest) list.push({ key: `back:${latest.p.id}`, happened: latest.ran, title: t.tino.backTitle, text: t.tino.backText(latest.p.name), act: t.tino.backAct, gesture: "aprueba", go: () => onPick(latest.p.id) });
     for (const { p, n } of counts) {
       const level = MILESTONES.findLast((m) => n >= m);
       if (level) list.push({ key: `milestone:${p.id}:${level}`, once: true, title: t.tino.milestoneTitle, text: t.tino.milestoneText(p.name, level), gesture: "aprueba" });
