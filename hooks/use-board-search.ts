@@ -16,7 +16,8 @@ const JEV_TOP = 20;
 // ─── Search ─────────────────────────────────────────────────────────────────
 // Three layers, each shown as soon as it is there (lib/search-query.ts):
 // 1. here, every keystroke: chips filter, words match each item's text (tags in both languages, notes, thread);
-// 2. /api/search/semantic, a fraction of a second later: nearness in meaning, any language;
+// 2. /api/search/semantic, a fraction of a second later, only when the words found nothing or the query describes:
+//    nearness in meaning, any language;
 // 3. /api/search, for descriptive queries: Jev reads the nearest 20 and reorders them.
 // The box answers every key at once; the ranking and the new layout follow when the browser has room
 export function useBoardSearch({ searchHere, query, filters, items, tagMap, commentMap, memberNames, spaceItems, aiEnabled, loadQuota, t }: {
@@ -46,10 +47,15 @@ export function useBoardSearch({ searchHere, query, filters, items, tagMap, comm
   }, [spaceItems, tagMap, chips]);
   const local = useMemo(() => localScores(base.map((i) => i.web), index, words), [base, index, words]);
 
+  // Meaning is asked for only when the words are not enough: nothing on the board has them, or the query reads as a
+  // description (three words or more). A name the board already holds ("linear") answers at once, with no AI
+  const needMeaning = text.length >= 3 && (local.size === 0 || words.length >= 3);
   const [semantic, setSemantic] = useState<{ q: string; scores: Record<string, number> } | null>(null);
   const [semanticBusy, setSemanticBusy] = useState(false);
+  /** The meaning layer could not answer this query (network or server): Tino says so, plainly */
+  const [failedFor, setFailedFor] = useState<string | null>(null);
   useEffect(() => {
-    if (text.length < 3) { setSemantic(null); setSemanticBusy(false); return; }
+    if (!needMeaning) { setSemantic(null); setSemanticBusy(false); return; }
     const ctrl = new AbortController();
     const id = setTimeout(async () => {
       setSemanticBusy(true);
@@ -57,11 +63,12 @@ export function useBoardSearch({ searchHere, query, filters, items, tagMap, comm
         const res = await fetch("/api/search/semantic", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ q: text }), signal: ctrl.signal });
         const data = res.ok ? await res.json() : null;
         if (data?.scores) setSemantic({ q: text, scores: data.scores });
-      } catch { /* the words layer stands alone */ }
+        else if (res.status >= 500) setFailedFor(text);
+      } catch { if (!ctrl.signal.aborted) setFailedFor(text); /* the words layer stands alone */ }
       finally { if (!ctrl.signal.aborted) setSemanticBusy(false); }
     }, SEMANTIC_WAIT_MS);
     return () => { clearTimeout(id); ctrl.abort(); };
-  }, [text]);
+  }, [text, needMeaning]);
   // Only this query's answer counts: an older one would reorder the wrong results
   const near = semantic?.q === text ? semantic.scores : null;
 
@@ -114,5 +121,6 @@ export function useBoardSearch({ searchHere, query, filters, items, tagMap, comm
     }
     return out;
   }, [filtered, words, tagMap, t]);
-  return { text, words, chips, filtered, jevScores, reasons, vocab, searchBusy, jevBusy };
+  const searchFailed = failedFor === text && !!text;
+  return { text, words, chips, filtered, jevScores, reasons, vocab, searchBusy, jevBusy, searchFailed };
 }

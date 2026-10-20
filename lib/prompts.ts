@@ -38,6 +38,9 @@ export const PROMPTS = {
   brief: { model: env("SYSTEM_MODEL", DEEPSEEK), fallback: FALLBACK_MODEL, effort: "low", maxTokens: 6000, version: 1, language: '"product.what" and every trait' },
   /** One area's never list written as rules with an id, a reason and a right and a wrong example (lib/system/rules.ts): it comes back as a proposal, never written by itself */
   rules: { model: env("RULES_MODEL", DEEPSEEK), fallback: FALLBACK_MODEL, effort: "low", maxTokens: 8000, version: 1, language: '"rule", "because", "correct" and "wrong"' },
+  /** The areas a change asked for in words touches, written again with it (lib/system/edit.ts): each
+   *  comes back as Tino's proposal, never written by itself */
+  edit: { model: env("EDIT_MODEL", DEEPSEEK), fallback: FALLBACK_MODEL, effort: "low", maxTokens: 6000, version: 1, language: '"decision", "why", every never line and "reason"' },
   /** The brand's values from the areas (lib/brand.ts) */
   brand: { model: env("BRAND_MODEL", DEEPSEEK), fallback: FALLBACK_MODEL, effort: "medium", maxTokens: 12000, version: 5, language: "every lede, paragraph, headline, role, notFor, note, rule, principle, sample, pair, tagline, bio and line" },
   /** The agent's plan for a request (lib/agent.ts) */

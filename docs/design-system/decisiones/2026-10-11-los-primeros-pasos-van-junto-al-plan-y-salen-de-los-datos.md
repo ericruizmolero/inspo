@@ -1,7 +1,7 @@
 ---
 title: Los primeros pasos van junto al medidor del plan y su progreso sale de los datos
 date: 2026-10-11
-status: vigente
+status: sustituida
 kind: producto
 ---
 **Contexto.** Una cuenta nueva no tenía camino del registro al primer criterio.md (#103). Los ejemplos ya están en cada espacio (`ensureBuiltinTemplates`) y no cuentan para el tope de referencias; faltaba que alguien los viera y supiera qué hacer después.

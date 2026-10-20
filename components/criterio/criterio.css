@@ -28,7 +28,7 @@
 .cr-balloon-body{background:var(--butter,#FBF1C7);color:var(--on-butter,#1B1B18);border:var(--stroke-control,1.5px) solid var(--control-border,#1B1B18);border-radius:var(--radius-lg,14px);padding:12px 14px;box-shadow:var(--bevel,inset 2px 2px 0 rgba(255,255,255,0.65),inset -2px -3px 0 rgba(27,27,24,0.22))}
 .cr-balloon-title{display:flex;align-items:center;gap:8px;font-family:var(--font-title,"Satoshi",sans-serif);font-weight:var(--fw-title-s,600);font-size:var(--fs-title-s,18px);line-height:var(--lh-title-s,1.3);margin-bottom:4px}
 .cr-balloon-text{font-family:var(--font-sans,"Satoshi",sans-serif);font-size:var(--fs-ui,15px);line-height:var(--lh-ui,1.4)}
-.cr-balloon-tail{position:absolute;bottom:-11px;width:18px;height:18px;background:var(--butter,#FBF1C7);border-right:var(--stroke-control,1.5px) solid var(--control-border,#1B1B18);border-bottom:var(--stroke-control,1.5px) solid var(--control-border,#1B1B18);transform:skewX(-28deg) rotate(45deg) scaleY(.75)}
+.cr-balloon-tail{position:absolute;z-index:1;bottom:-8px;width:14px;height:14px;background:var(--butter,#FBF1C7);border-right:var(--stroke-control,1.5px) solid var(--control-border,#1B1B18);border-bottom:var(--stroke-control,1.5px) solid var(--control-border,#1B1B18);transform:rotate(45deg);box-shadow:2px 2px 0 rgba(27,27,24,.12)}
 .cr-balloon-tail-left .cr-balloon-tail{left:34px}
 .cr-balloon-tail-right .cr-balloon-tail{right:34px}
 

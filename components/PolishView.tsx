@@ -26,7 +26,7 @@ import { fmtDate } from "@/lib/i18n/format";
 import { keyOf } from "@/lib/board";
 import { MORPH_MS, peekHandoff, takeHandoff } from "./view-morph";
 import { mediaKindOf } from "@/lib/url";
-import { Busy, Button, EmptyState, IconButton, Key } from "@/components/criterio";
+import { Busy, Button, EmptyState, Icon, IconButton, Key } from "@/components/criterio";
 import type { NoteCaption } from "./InspoCard";
 import { AUTO_SPEED, ANGLE, CARD_H, EASE_OUT, EDGE_OFFSET, EDGE_SCALE, ORBIT, SCROLL_EASE, Y_SPACING, clamp, mod, nearest, paint, settleFromBoard, stillMotion, type Engine } from "./polish-tornado";
 import { Face, Picture, postFromName, postHasMedia } from "./PolishFace";
@@ -37,6 +37,10 @@ import { useT } from "./I18nProvider";
 import SoundControl from "./SoundControl";
 import ZoomPill from "./ZoomPill";
 import { cue } from "@/lib/ui-sounds";
+import { TinoCorner, useLine } from "./HomeTino";
+import ThemeToggle from "./ThemeToggle";
+import type { TinoApi } from "./tino/engine";
+import type { TinoMood } from "./tino/moods";
 import "./PolishView.css";
 
 // How it stops and goes
@@ -77,8 +81,21 @@ type Step = { kind: PolishChoice; item: InspoItem; prev?: PolishChoice | null; r
 const NOTE_MAX = 280; // characters of a note that reach the page: two lines show, and a long one is read on its sheet
 /** Cards this far from the one in front ask for their post; further round the orbit the name's words do */
 const POST_NEAR = 3;
+/** Tino after an answer: the line holds this long, and every third plain answer gets nothing (silence is his too) */
+const REACT_MS = 1400;
+const SILENT_EVERY = 3;
+/** "Champ" once a week per person, at most */
+const CHAMP_KEY = "criterio:tino-champ";
+/** Where he looks over a button: towards Forget, towards Keep */
+const LEAN_LEFT = 70, LEAN_RIGHT = 150;
+const thisWeek = () => String(Math.floor(Date.now() / (7 * 864e5)));
+/** An index into the list at random, never the one holding `not` when there is another */
+function randomBut(list: string[], not: string | undefined): number {
+  const at = Math.floor(Math.random() * list.length);
+  return list.length > 1 && list[at] === not ? (at + 1) % list.length : at;
+}
 
-export default function PolishView({ project, items, imageOf, largeImageOf, ratioOf, textOf, noteOf, active, votes, me, members, canClose, onVote, onClose, onRestore, onOpenItem, onBoard, onSystem }: {
+export default function PolishView({ project, items, imageOf, largeImageOf, ratioOf, textOf, noteOf, commentsOf, active, votes, me, myName, members, canClose, onVote, onClose, onRestore, onOpenItem, onBoard, onSystem }: {
   project: Project;
   /** The project's board, in the board's order */
   items: InspoItem[];
@@ -91,12 +108,16 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
   textOf: (item: InspoItem) => string;
   /** What was said about it, as under its tile on the board: the note of whoever saved it, else the first comment */
   noteOf: (item: InspoItem) => NoteCaption | null;
+  /** How many comments it has: forgetting one with comments, Tino asks first */
+  commentsOf: (item: InspoItem) => number;
   /** False while a sheet is open over the view: the keys rest */
   active: boolean;
   /** The project's votes by reference, everyone's, open and settled */
   votes: Map<string, PolishVote[]>;
   /** This person, and the workspace's members: more than one and Polish is a vote */
   me: string;
+  /** This person's name, as references carry who saved them: forgetting one's own idea, Tino asks first */
+  myName: string;
   members: { id: string; name: string; image: string | null }[];
   /** Whoever manages the workspace closes the polish and decides its doubts */
   canClose: boolean;
@@ -191,6 +212,39 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
   const said = reviewing && current?.id ? openVotes(votes.get(current.id)) : [];
   const voters = (choice: PolishChoice) => said.filter((v) => v.vote === choice).map((v) => members.find((m) => m.id === v.userId)).filter((m): m is NonNullable<typeof m> => !!m);
 
+  // ─── Tino, in the corner: he asks about the card in front and holds the answers in his balloon (desktop; a phone
+  // keeps the bar). The lines are the copy sheet's Polish, in t.tino.polish
+  const p = t.tino.polish;
+  const tino = useRef<TinoApi>(null);
+  /** A line said after an answer, for a moment, before the next card's question */
+  const [line, setLine] = useState<{ key: string; pool: readonly string[]; text?: string; mood: TinoMood } | null>(null);
+  /** Forgetting a card with comments or one's own idea: he asks first */
+  const [sure, setSure] = useState<{ key: string; champ: boolean; text: string } | null>(null);
+  const [lean, setLean] = useState<number | null>(null);
+  const said_ = useRef(0), answers = useRef(0);
+  const react = (pool: readonly string[], mood: TinoMood, text?: string) => {
+    setLine({ key: `${pool[0]}:${++said_.current}`, pool, text, mood });
+    tino.current?.jump(0.5);
+  };
+  useEffect(() => {
+    if (!line) return;
+    const timer = window.setTimeout(() => setLine(null), REACT_MS);
+    return () => window.clearTimeout(timer);
+  }, [line]);
+  /** Tino holds the answers only where his corner shows */
+  const tinoHere = () => window.matchMedia("(min-width: 801px)").matches;
+  // The card the view opened on: its question is the round's start
+  const [firstKey, setFirstKey] = useState<string | null>(null);
+  const currentKey = current ? keyOf(current) : null;
+  useEffect(() => { if (!firstKey && currentKey) setFirstKey(currentKey); }, [firstKey, currentKey]);
+  const others = team && !reviewing && current?.id ? openVotes(votes.get(current.id)).filter((v) => v.userId !== me) : [];
+  const other = others[0] ? { name: members.find((m) => m.id === others[0].userId)?.name, vote: others[0].vote } : null;
+  const sideA = reviewing ? voters("keep")[0]?.name : undefined, sideB = reviewing ? voters("forget")[0]?.name : undefined;
+  const asking = sure && current && sure.key === keyOf(current) ? sure : null;
+  const askKey = current ? (asking ? `sure:${asking.key}` : reviewing ? `split:${keyOf(current)}` : keyOf(current) === firstKey && !history.length ? `start:${keyOf(current)}` : `ask:${keyOf(current)}`) : undefined;
+  const askPool = asking ? (asking.champ ? p.sureChamp : p.sure) : reviewing ? p.split : askKey?.startsWith("start") ? p.start : p.ask;
+  const question = useLine(done ? "round:done" : line?.key ?? askKey, done ? p.round : line?.pool ?? askPool);
+
   const glideTo = (k: number) => {
     const e = eng.current;
     e.target = k; e.v = 0;
@@ -221,8 +275,7 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
     arriving.current = !!seen;
     const shown = seen ? open.filter((k) => seen.has(k)) : [];
     const pool = shown.length ? shown : open;
-    let pick = Math.floor(Math.random() * pool.length);
-    if (pool.length > 1 && pool[pick] === lastFront.get(project.id)) pick = (pick + 1) % pool.length;
+    const pick = randomBut(pool, lastFront.get(project.id));
     const at = pool.length ? open.indexOf(pool[pick]) : 0;
     if (open.length) lastFront.set(project.id, open[at]);
     e.v = 0;
@@ -457,6 +510,39 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
     void onVote([item], "keep");
     setHistory((h) => [...h, { kind: "keep", item }]);
   };
+  /** Forget, asking first where it costs something: comments that go with it, or the person's own idea */
+  const askForget = () => {
+    if (!current || done) return;
+    const item = list[mod(frontAt(), ln)];
+    if (!asking && !reviewing && tinoHere()) {
+      const n = commentsOf(item), own = !!myName && item.addedBy === myName;
+      if (n > 0 || own) {
+        const week = thisWeek();
+        let champ = false;
+        try { champ = own && localStorage.getItem(CHAMP_KEY) !== week; if (champ) localStorage.setItem(CHAMP_KEY, week); } catch { /* no storage: the plain line */ }
+        setSure({ key: keyOf(item), champ, text: own ? p.sureOwn(project.name, team) : p.sureComments(n, team) });
+        tino.current?.set("curiosa");
+        return;
+      }
+    }
+    const confirmed = !!asking;
+    setSure(null);
+    forget();
+    if (confirmed) react(p.afterForget, "judge");
+    else if (reviewing && sideB) react([p.sideForget(sideB)], "admirer");
+    else if (++answers.current % SILENT_EVERY) react(p.reactForget, "admirer");
+  };
+  const answerKeep = () => {
+    if (!current || done) return;
+    const confirmed = !!asking;
+    setSure(null);
+    keep();
+    if (confirmed) react(p.afterKeep, "judge");
+    else if (reviewing && sideA) react([p.sideKeep(sideA)], "admirer");
+    else if (++answers.current % SILENT_EVERY) react(p.reactKeep, "admirer");
+  };
+  const later = () => { glideTo(frontAt() + 1); react(p.saved, "watching"); };
+  const takeBack = () => { if (!history.length) return; undo(); react(p.undone, "accomplice"); };
   const forget = () => {
     if (!current || done) return;
     const at = frontAt(), item = list[mod(at, ln)];
@@ -507,6 +593,7 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
     setHistory([]);
     setRuled({});
     setMode("vote");
+    setFirstKey(null);
   };
   /** Whoever manages the workspace settles what was voted: what everyone forgot, and the doubts decided, leave for the Inbox */
   const close = async () => {
@@ -531,8 +618,8 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
   };
 
   // The keys: ← forgets, → keeps, Enter opens the card, ⌘Z takes the last one back. Never inside a field or under a dialog
-  const acts = useRef({ keep, forget, undo, open });
-  useEffect(() => { acts.current = { keep, forget, undo, open }; });
+  const acts = useRef({ keep: answerKeep, forget: askForget, undo: takeBack, open });
+  useEffect(() => { acts.current = { keep: answerKeep, forget: askForget, undo: takeBack, open }; });
   useEffect(() => {
     if (!active) return;
     const onKey = (ev: KeyboardEvent) => {
@@ -671,16 +758,16 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
           ) : null}
           {/* The two answers on one piece of chrome, each with the key that does the same (Key) and where the card goes */}
           <div className="polish__choice cr-on-chrome">
-            <button ref={forgetRef} type="button" className="polish__btn" onClick={forget}>
+            <button ref={forgetRef} type="button" className="polish__btn" onClick={askForget}>
               <Key className="polish__key">←</Key>
               <span className="polish__btn-text"><b className="t-ui">{s.forget}</b><small className="t-label">{!team ? s.forgetSub : reviewing && canClose ? s.ruleOut : s.voteOut}</small></span>
             </button>
             <span className="polish__sep" aria-hidden />
-            <button ref={keepRef} type="button" className="polish__btn polish__btn--keep" onClick={keep}>
+            <button ref={keepRef} type="button" className="polish__btn polish__btn--keep" onClick={answerKeep}>
               <Key className="polish__key">→</Key>
               <span className="polish__btn-text"><b className="t-ui">{s.keep}</b><small className="t-label">{!team ? s.keepSub : reviewing && canClose ? s.ruleStay : s.voteStay}</small></span>
             </button>
-            <IconButton className="polish__undo" icon="undo" label={s.undo} onClick={undo} disabled={history.length === 0} />
+            <IconButton className="polish__undo" icon="undo" label={s.undo} onClick={takeBack} disabled={history.length === 0} />
             {/* A team is told what its answer is here: a vote, settled among everyone */}
             {team && (
               <p className="t-label polish__team">
@@ -734,9 +821,40 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
         </EmptyState>
       )}
 
-      {/* The board's corner and its pill: the zoom where the board has it, and the music in the same piece */}
+      {/* Tino in the opposite corner: the question about the card in front, and the answers */}
+      {staying.length > 0 && (
+        <TinoCorner className="polish-tino" tinoRef={tino} bodyLabel={t.tino.talk} onBody={() => tino.current?.jump(1)}
+          look={lean != null ? [lean, 0] : undefined}
+          mood={line ? line.mood : asking ? "skeptic" : reviewing ? "suspect" : done ? "admirer" : "watching"}
+          say={done ? {
+            key: "round", title: question, text: p.roundText(team ? tally.stay : staying.length, team ? tally.out : forgot, team),
+          } : current && {
+            key: line?.key ?? askKey ?? "ask", title: question,
+            top: !reviewing && !asking && !line ? `${staying.length - pending.length + 1} / ${staying.length}` : undefined,
+            text: line ? line.text : asking ? asking.text : reviewing && sideA && sideB ? p.splitText(sideA, sideB) : other?.name ? (other.vote === "keep" ? p.keeps(other.name) : p.forgets(other.name)) : undefined,
+            actions: line ? null : <>
+              {/* Forget on the left and Keep on the right, as the arrow keys; asked first, keeping is the way out */}
+              <button type="button" className="cr-btn cr-btn-secondary cr-btn-s polish-tino__btn" onClick={askForget}
+                onPointerEnter={() => setLean(LEAN_LEFT)} onPointerLeave={() => setLean(null)}>
+                <Icon name="arrow-left" size={16} />{asking ? p.forgetAnyway : reviewing && sideB ? p.withSide(sideB) : s.forget}
+              </button>
+              <button type="button" className={`cr-btn cr-btn-${asking ? "primary" : "secondary"} cr-btn-s polish-tino__btn`} onClick={answerKeep}
+                onPointerEnter={() => setLean(LEAN_RIGHT)} onPointerLeave={() => setLean(null)}>
+                {asking ? p.keepIt : reviewing && sideA ? p.withSide(sideA) : s.keep}<Icon name="arrow-right" size={16} />
+              </button>
+              <p className="tino-corner__foot">
+                <span>{team ? p.foot : p.footSolo}</span>
+                {reviewing && <button type="button" className="tino-corner__link" onClick={later}>{p.later}</button>}
+                {history.length > 0 && <button type="button" className="tino-corner__link" onClick={takeBack}>{s.undo}</button>}
+              </p>
+            </>,
+          }} />
+      )}
+
+      {/* The board's corner and its pill: the zoom where the board has it, and the music in the same piece. The
+          theme button sits after it: the other corner is Tino's */}
+      <div className="polish__corner home-corner">
       <ZoomPill
-        className="polish__corner"
         zoom={current && !done ? {
           pct: pctOf(zoom),
           canOut: zoom > ZOOM_MIN,
@@ -748,6 +866,8 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
       >
         <SoundControl />
       </ZoomPill>
+      <ThemeToggle />
+      </div>
     </section>
   );
 }

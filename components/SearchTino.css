@@ -1,0 +1,26 @@
+/* Tino in the search dock (components/SearchTino.tsx): he stands in the bar's left end, cut by its bottom edge, with
+   his ears over its top; the field keeps his room (.sb__tino-room). His balloon stands over him, tail down to him. */
+.sb-tino { position: absolute; left: 10px; bottom: 0; z-index: 2; width: 60px; height: 0; }
+.sb-tino__body { position: absolute; left: -4px; bottom: 0; width: 68px; height: 96px; overflow: hidden; pointer-events: none; }
+.sb-tino__body .tino { position: absolute; left: -12px; bottom: -8px; width: 92px; height: 92px; }
+.sb__tino-room { flex: none; width: 56px; align-self: stretch; }
+
+.sb-tino__say.cr-balloon { position: absolute; left: -10px; bottom: 104px; width: 340px; max-width: calc(100vw - 48px); animation: sb-tino-say 320ms var(--ease-out) both; }
+.sb-tino__say .cr-balloon-body { padding: 12px 14px 14px; --ib-fg-strong: var(--on-butter); --ib-hover: color-mix(in srgb, var(--on-butter) 10%, transparent); }
+.sb-tino__say .cr-balloon-title { flex-direction: column; align-items: flex-start; gap: 2px; padding-right: 32px; font-size: var(--fs-ui); }
+.sb-tino__who { font-size: var(--fs-small); font-weight: var(--fw-medium); letter-spacing: 0.04em; text-transform: uppercase; opacity: 0.7; }
+.sb-tino__say .cr-balloon-text { font-size: var(--fs-small); text-wrap: pretty; }
+.sb-tino__say .cr-actions { margin-top: 12px; }
+.sb-tino__close { position: absolute; top: 10px; right: 10px; }
+.sb-tino__say .cr-balloon-tail { left: 30px; }
+@keyframes sb-tino-say { from { opacity: 0; transform: translateY(8px) scale(0.98); transform-origin: 12% 100%; } }
+@media (prefers-reduced-motion: reduce) { .sb-tino__say.cr-balloon { animation: none; } }
+/* While the suggestions are open the person is choosing: the balloon waits under them */
+.dock__bar:has(.sb.is-open) .sb-tino__say { display: none; }
+/* Nothing found: the board stays, dimmed under Tino's answer (Grid's data-missed), and comes back with the next search */
+.board__world { transition: opacity 200ms var(--ease-out); }
+.board[data-missed] .board__world { opacity: 0.25; }
+@media (prefers-reduced-motion: reduce) { .board__world { transition: none; } }
+/* "Ask me:" and what to ask, from the board's own tags: paper Chips in a row */
+.sb-tino__chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.sb-tino__chips .cr-chip { cursor: pointer; }

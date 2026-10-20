@@ -4,7 +4,7 @@
 // the rest of the text is searched by its words and by meaning. Suggestions follow the last words typed:
 // ↑↓ to move, Enter or Tab to take one, Backspace on an empty field drops the last chip, Esc closes the
 // list, then empties the field, then drops the chips. "/" focuses it from anywhere.
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { facetOf } from "@/lib/taxonomy";
 import { filterKey, suggest, type Filter, type Term2 } from "@/lib/search-query";
 import { useT } from "./I18nProvider";
@@ -46,7 +46,7 @@ function ChipMark({ f, swatches, faces }: { f: Filter; swatches: Record<string, 
   return null;
 }
 
-export default function SearchBar({ filters, text, onFilters, onText, vocab, busy, gathering, swatches, faces, className = "", onAsk, asking, target, onClearTarget, quick = [] }: {
+export default function SearchBar({ filters, text, onFilters, onText, vocab, busy, gathering, swatches, faces, className = "", onAsk, asking, target, onClearTarget, quick = [], lead, actions, onFocusChange }: {
   filters: Filter[];
   text: string;
   onFilters: (f: Filter[]) => void;
@@ -69,6 +69,12 @@ export default function SearchBar({ filters, text, onFilters, onText, vocab, bus
   onClearTarget?: () => void;
   /** What can be done with it in one click: each one an order for the agent */
   quick?: { label: string; order: string }[];
+  /** In place of the search icon: Tino, who is the search on the boards (SearchTino) */
+  lead?: ReactNode;
+  /** At the end of the field, after the clear: the board's own actions (add, the step to the system) */
+  actions?: ReactNode;
+  /** The field took or lost the focus (Tino offers what to ask while it is empty) */
+  onFocusChange?: (on: boolean) => void;
 }) {
   const { t } = useT();
   const ref = useRef<HTMLInputElement>(null);
@@ -130,7 +136,7 @@ export default function SearchBar({ filters, text, onFilters, onText, vocab, bus
   return (
     <div className={`sb cr-on-chrome ${className}${open ? " is-open" : ""}`}>
       <div className="sb__field" onClick={() => ref.current?.focus()}>
-        <span className="sb__icon" aria-hidden>{busy ? <Busy label={t.search.placeholderShort} /> : target ? Icons.spark : Icons.search}</span>
+        {lead ?? <span className="sb__icon" aria-hidden>{busy ? <Busy label={t.search.placeholderShort} /> : target ? Icons.spark : Icons.search}</span>}
         {/* What it understood, as the system's chrome Chips with their small x */}
         {target && (
           <Chip tone="chrome" className="sb__chip sb__chip--target" title={target.name} removeLabel={t.agent.dropTarget} onRemove={() => onClearTarget?.()}>
@@ -160,20 +166,16 @@ export default function SearchBar({ filters, text, onFilters, onText, vocab, bus
           placeholder={target ? t.agent.targetPlaceholder : filters.length ? "" : t.search.placeholder}
           onChange={(e) => { onText(e.target.value); setClosed(false); }}
           onKeyDown={onKeyDown}
-          onFocus={() => { setFocused(true); setClosed(false); }}
-          onBlur={() => setFocused(false)}
+          onFocus={() => { setFocused(true); setClosed(false); onFocusChange?.(true); }}
+          onBlur={() => { setFocused(false); onFocusChange?.(false); }}
         />
         <span className="sb__right">
           {/* Background work, not an option of the search: it only shows while the box is empty */}
           {gathering && empty ? <span className="sb__gathering" role="status">{Icons.spark} {t.sidebar.gathering(gathering)}</span> : null}
-          {onAsk && text.trim() && (
-            <Button variant="quiet" size="s" className="sb__ask" disabled={asking} aria-label={t.agent.ask} data-tip={t.agent.hint} onClick={(e) => { e.stopPropagation(); ask(); }}>
-              {asking ? <Busy label={t.agent.thinking} /> : Icons.spark}<span className="sb__ask-label">{asking ? t.agent.thinking : t.agent.ask}</span>
-            </Button>
-          )}
           {empty ? <Key className="search__kbd">/</Key> : (
             <IconButton icon="close" variant="quiet" size="s" className="sb__clear" label={t.search.clear} onClick={(e) => { e.stopPropagation(); onText(""); onFilters([]); }} />
           )}
+          {actions}
         </span>
       </div>
       {/* With a reference handed over and nothing typed: what can be done with it, one click each */}

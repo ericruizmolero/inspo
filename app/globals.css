@@ -556,7 +556,6 @@ select.cr-input { appearance: none; padding-right: 32px; cursor: pointer;
 .island__logo { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 8px; background: var(--chrome-raised); overflow: hidden; }
 .island__logo .cr-avatar.is-square { border-radius: 8px; }
 .island__chev { display: grid; place-items: center; }
-.island__steps { position: absolute; top: 2px; left: 24px; }
 .island__tabs { display: flex; align-items: center; gap: 4px; min-width: 0; }
 .island__tab {
   display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0; height: 34px; padding: 0 12px;
@@ -1592,7 +1591,8 @@ video.vp__media { object-fit: contain; }
 }
 .tile__score-why .cr-balloon-body { display: flex; flex-direction: column; padding: 10px 12px; }
 .tile__score-why .cr-balloon-text { font-size: var(--fs-small); }
-.tile__score-why .cr-balloon-tail { top: -9px; bottom: auto; left: 16px; transform: skewX(28deg) rotate(225deg) scaleY(.75); }
+/* The tail points up, at the percentage: the system's square turned the other way, over the top border */
+.tile__score-why .cr-balloon-tail { top: -8px; bottom: auto; left: 16px; transform: rotate(225deg); box-shadow: none; }
 .tile__score:hover .tile__score-why, .tile__score.is-open .tile__score-why { opacity: 1; transform: none; }
 @media (hover: none) {
   .tile__caption .tile__tags { margin-top: 6px; }
@@ -2516,8 +2516,6 @@ body:has(.fb-dock.has-notes) .theme-float { bottom: calc(72px + env(safe-area-in
 /* ─── The agent in the dock: the request, what it said, what it did, and the steps that wait for a yes.
    The system's TipWindow over the command bar: paper in both themes, the moss bar ("Agent") and the strong close;
    "Do it" is the ember button, the other one secondary ─── */
-/* Ask: a quiet Button, size s, with the sparkle (on the bar's --ib-* tokens) */
-@media (max-width: 560px) { .sb__ask-label { display: none; } }
 .dock__agent.cr-window {
   width: 100%; box-shadow: var(--bevel), var(--float);
   transition: opacity 180ms var(--ease-out), transform 180ms var(--ease-out);

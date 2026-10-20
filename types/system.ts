@@ -155,14 +155,14 @@ export interface SystemSummary {
   projectId: string;
   /** In SYSTEM_AREAS order: whether the area holds a decision, and the ids of the references behind it */
   areas: { area: SystemArea; decided: boolean; evidence: string[] }[];
-  /** What the last run read and what it left out on purpose; null before the first run */
-  read: { itemIds: string[]; omitted: number } | null;
+  /** What the last run read, what it left out on purpose and when it ran (ISO); null before the first run */
+  read: { itemIds: string[]; omitted: number; at: string | null } | null;
 }
 
 export const summaryOf = (s: ProjectSystem): SystemSummary => ({
   projectId: s.projectId,
   areas: s.areas.map((a) => ({ area: a.area, decided: !!a.decision, evidence: a.evidence.map((e) => e.itemId) })),
-  read: s.run ? { itemIds: s.run.itemIds, omitted: s.run.omitted ?? 0 } : null,
+  read: s.run ? { itemIds: s.run.itemIds, omitted: s.run.omitted ?? 0, at: s.run.at ?? null } : null,
 });
 
 export const filledOf = (s: SystemSummary | undefined) => s?.areas.filter((a) => a.decided).length ?? 0;

@@ -6,7 +6,7 @@
 // TipWindow and EmptyState take no drawing.
 
 import { useEffect, useId, useLayoutEffect, useRef, useState, type ButtonHTMLAttributes, type CSSProperties, type InputHTMLAttributes, type ReactNode, type Ref, type TextareaHTMLAttributes } from "react";
-import { ArrowDown, ArrowRight, ArrowUUpLeft, ArrowUp, ArrowUpRight, Bell, CalendarBlank, CaretDown, CaretLeft, CaretRight, Chat, ChatCircle, Check, Compass, Copy, CornersIn, CornersOut, DotsThree, DownloadSimple, EnvelopeSimple, FileText, FilmStrip, Folder, Gauge, Gear, House, Info, Lightbulb, LinkSimple, LockSimple, MagnifyingGlass, Minus, MonitorPlay, Moon, PaperPlaneTilt, Pause, PencilSimple, Play, Plug, PlugsConnected, Plus, Pulse, Quotes, Shuffle, SidebarSimple, SlidersHorizontal, Smiley, Sparkle, SpeakerHigh, SpeakerSlash, SquaresFour, Sun, TextAlignLeft, Trash, Tray, UploadSimple, User, Users, X, Image as ImageIcon } from "@phosphor-icons/react/ssr";
+import { ArrowDown, ArrowLeft, ArrowRight, ArrowUUpLeft, ArrowUp, ArrowUpRight, Bell, CalendarBlank, CaretDown, CaretLeft, CaretRight, Chat, ChatCircle, Check, Compass, Copy, CornersIn, CornersOut, DotsThree, DownloadSimple, EnvelopeSimple, FileText, FilmStrip, Folder, Gauge, Gear, House, Info, Lightbulb, LinkSimple, LockSimple, MagnifyingGlass, Minus, MonitorPlay, Moon, PaperPlaneTilt, Pause, PencilSimple, Play, Plug, PlugsConnected, Plus, Pulse, Quotes, Shuffle, SidebarSimple, SlidersHorizontal, Smiley, Sparkle, SpeakerHigh, SpeakerSlash, SquaresFour, Sun, TextAlignLeft, Trash, Tray, UploadSimple, User, Users, X, Image as ImageIcon } from "@phosphor-icons/react/ssr";
 import type { Icon as PhosphorIcon, IconWeight } from "@phosphor-icons/react";
 import { Liquid } from "@/components/ui/liquid";
 import "./criterio.css";
@@ -36,6 +36,7 @@ const ICONS = {
   "chevron-down": CaretDown,
   "chevron-left": CaretLeft,
   "chevron-right": CaretRight,
+  "arrow-left": ArrowLeft,
   "arrow-right": ArrowRight,
   "arrow-up-right": ArrowUpRight,
   "arrow-up": ArrowUp,

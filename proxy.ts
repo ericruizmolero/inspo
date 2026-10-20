@@ -118,8 +118,9 @@ export const config = {
   // showcase/: the fixed images beside /login, shown signed out
   // logo.png: the header logo, on the signed-out home and /login too
   // polish/: the tracks of Polish's sound control, plain static files
+  // tino/: the mascot's 3D models and its flat fallback (components/Tino.tsx), so it also renders signed out
   // icon.png: the page's <link rel="icon"> points at it; favicon services (Google's, which Claude uses for the
   // connector's logo) fetch it with no session
   // robots.txt, sitemap.xml and manifest.webmanifest: crawlers and browsers ask for them with no session
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon.png|apple-icon.png|icon-512.png|logo.png|opengraph-image|twitter-image|robots.txt|sitemap.xml|manifest.webmanifest|showcase/|polish/).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon.png|apple-icon.png|icon-512.png|logo.png|opengraph-image|twitter-image|robots.txt|sitemap.xml|manifest.webmanifest|showcase/|polish/|tino/).*)"],
 };
