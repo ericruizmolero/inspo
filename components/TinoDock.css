@@ -1,0 +1,5 @@
+/* Tino's composer on the System page (components/TinoDock.tsx): the board's dock as it is (.dock, .dock__bar, the
+   .sb--dock field, Tino seated with .sb-tino), a step taller so the ask reads as the page's one question. It stands
+   over the page's foot, outside the scroll, so the file runs under it */
+.tdock .sb--dock .sb__field { min-height: 64px; cursor: text; }
+.tdock .sb__input:disabled { opacity: 1; color: var(--chrome-muted); }

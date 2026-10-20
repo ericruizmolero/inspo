@@ -481,6 +481,9 @@ export const ui = {
     button: "System",
     improve: "Improve with AI",
     improveHint: "Choose what to improve before the AI starts.",
+    // The page's head, before Brief: the version criterio.md carries now, and how many areas say something
+    headVersion: (n: number): string => `System v${n}`,
+    headDecided: (n: number, of: number): string => `${n} of ${of} decided`,
     improveModal: {
       bar: "Improve",
       lead: "Tell the AI what you want from this pass. What you leave unmarked stays as it is.",
@@ -739,12 +742,12 @@ export const ui = {
       storyboard: "Storyboard",
       ask: "What shall we build?",
       suggested: "From your board",
-      history: "Built before",
+      history: "Built by Tino",
       fed: (n: number): string => `${n} ${n === 1 ? "reference" : "references"} given to the AI`,
       askPlaceholder: "The About page, a launch post…",
       buildingHint: "About a minute.",
       failed: "It could not be built. Try again.",
-      from: (n: number): string => `From criterio.md v${n}`,
+      from: (n: number): string => `from criterio.md v${n}`,
       open: "Open in a tab",
       download: "Download .html",
       cost: "Counts as one AI action. The first one is free.",
@@ -962,6 +965,25 @@ export const ui = {
     sameTitle: ["Same again. Fine."],
     sameText: (n: number, total: number): string => `Same result: ${n} of ${total}.`,
     failed: "I couldn\u2019t search just now. Try again in a moment.",
+    // The dock under the System page (TinoDock): what to build on Result, what to change in the file, in words, on Agent and Human
+    dock: {
+      build: "What should Tino build? The About page, a launch post\u2026",
+      edit: "Tell Tino what to change: no bold in running text\u2026",
+      send: "Send",
+    },
+    // A change the file already follows, or one about no area: nothing is proposed
+    nothingTitle: ["Already there.", "Nothing to do."],
+    nothingText: "Nothing in the file needs to change for that.",
+    editFailed: "I couldn\u2019t write that just now. Try again in a moment.",
+    // A proposal waiting under an area (TinoNote): his own reason, or who proposed it
+    said: ["I was just about to say that.", "Knew it.", "Not bad at all."],
+    proposes: (who: string): string => `${who} would write it like this.`,
+    by: (who: string, text: string): string => `${who}: ${text}`,
+    leaveIt: "Leave it",
+    // A result built from an older criterio.md than the one there is now
+    stale: ["I\u2019m not saying anything.", "Not that I\u2019m keeping count."],
+    staleText: (page: string, from: number, now: number): string => `${page} was built from v${from}. The system is on v${now} now.`,
+    staleAct: (n: number): string => `Build it again on v${n}`,
     polish: {
       start: ["Let\u2019s see. Keep this one?"],
       ask: ["Keep this one?", "And this one?", "Does it stay?"],
@@ -2047,6 +2069,9 @@ export const ui = {
     withdraw: "Withdraw",
     whyNot: "Why not, in a line (optional)",
     pending: (n: number): string => (n === 1 ? "1 proposal waiting" : `${n} proposals waiting`),
+    // The file's index: its label, and the skills switched on as a group of their own
+    tocFile: "In the file",
+    tocSkills: (n: number): string => `Skills \u00b7 ${n}`,
     talk: (n: number): string => (n === 1 ? "1 comment from the team" : `${n} comments from the team`),
     talkStart: "Comment on this area",
     proposal: "Proposal",
