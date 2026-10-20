@@ -27,12 +27,12 @@ async function cleanName(name: string): Promise<string> {
  */
 export async function loadProjects(organizationId: string): Promise<{ projects: Project[]; links: ProjectLinks }> {
   const [projects, rows] = await Promise.all([
-    db.select({ id: P.id, name: P.name, intent: sql<string | null>`${P.brief}->>'about'`, clientItemId: sql<string | null>`${P.brief}->>'clientItemId'`, brief: P.brief, hasRecipe: sql<boolean>`${P.recipe} <> ''`, started: sql<boolean>`${P.startedAt} is not null` }).from(P).where(and(eq(P.organizationId, organizationId), isNull(P.template))).orderBy(asc(P.createdAt)),
+    db.select({ id: P.id, name: P.name, intent: sql<string | null>`${P.brief}->>'about'`, clientItemId: sql<string | null>`${P.brief}->>'clientItemId'`, brief: P.brief, hasRecipe: sql<boolean>`${P.recipe} <> ''`, started: sql<boolean>`${P.startedAt} is not null`, createdAt: P.createdAt }).from(P).where(and(eq(P.organizationId, organizationId), isNull(P.template))).orderBy(asc(P.createdAt)),
     db.select({ projectId: PI.projectId, itemId: PI.itemId }).from(PI).where(eq(PI.organizationId, organizationId)),
   ]);
   const links: ProjectLinks = {};
   for (const r of rows) (links[r.itemId] ??= []).push(r.projectId);
-  return { projects, links };
+  return { projects: projects.map((p) => ({ ...p, createdAt: p.createdAt.toISOString() })), links };
 }
 
 export async function createProject(organizationId: string, name: string, userId: string): Promise<Project> {
@@ -40,7 +40,7 @@ export async function createProject(organizationId: string, name: string, userId
   const now = new Date();
   const row = { id: newId(), organizationId, name: await cleanName(name), createdBy: userId, createdAt: now, updatedAt: now };
   await db.insert(P).values(row);
-  return { id: row.id, name: row.name };
+  return { id: row.id, name: row.name, createdAt: now.toISOString() };
 }
 
 /** Where a board imported from Are.na, Pinterest or Cosmos lands: the project named after it, made the first time.
