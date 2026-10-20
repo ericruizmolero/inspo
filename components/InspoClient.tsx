@@ -237,6 +237,11 @@ export default function InspoClient({
     try { last = localStorage.getItem(lastProjectKey); } catch { /* private mode */ }
     return projects.find((p) => p.id === last)?.id ?? projects[0]?.id;
   };
+  // The home offers to continue the last project: read each time it opens, after hydration
+  const [lastProjectId, setLastProjectId] = useState<string | null>(null);
+  useEffect(() => {
+    if (space === "home") try { setLastProjectId(localStorage.getItem(lastProjectKey)); } catch { /* private mode: no last one */ }
+  }, [space, lastProjectKey]);
   const saveTargetRef = useRef(saveTarget);
   saveTargetRef.current = saveTarget;
   // There is no library to land on: the bare address (or an old ?in=library) opens the last project worked in.
@@ -322,7 +327,8 @@ export default function InspoClient({
     const id = window.requestIdleCallback(preload, { timeout: 4000 });
     return () => window.cancelIdleCallback(id);
   }, [workspace.id]);
-  const { paletteOpen, setPaletteOpen, paletteUsed } = useCommandPalette();
+  // On the home ⌘K is its box, never the palette (components/ProjectChooser.tsx)
+  const { paletteOpen, setPaletteOpen, paletteUsed } = useCommandPalette(space === "home" ? "#chooser-name" : null);
   const { showPanel, closePanel, openItem, pushedRef } = usePanelRoute({ items, filling, panelItem, setPanelItem, workspace, router });
 
   // "Who": only workspace members who added something. Legacy sheet labels
@@ -736,6 +742,18 @@ export default function InspoClient({
             onMeasure={measure}
             onPick={(id) => setSpace(id)}
             onCreate={createProject}
+            workspaceId={workspace.id}
+            inbox={unfiled.length}
+            last={projects.find((p) => p.id === lastProjectId) ?? null}
+            onInbox={() => setSpace("inbox")}
+            onSave={() => setShowAdd(true)}
+            onAddInto={async (projectId, dropped) => {
+              if (dropped.kind === "file") { await addByUpload({ web: "", file: dropped.file, type: "inspiration", note: "" }, projectId); return; }
+              // Already in the library: filed here instead of saved twice
+              const saved = items.find((i) => webKeyOf(i.web) === webKeyOf(dropped.web));
+              if (saved) await toggleFiled(saved, projectId, true);
+              else await addByUrl({ web: dropped.web, type: typeFromUrl(dropped.web), note: "" }, projectId);
+            }}
           />
         ) : items.length === 0 ? (
           <EmptyStart

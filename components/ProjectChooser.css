@@ -12,7 +12,7 @@
 .chooser__box .cr-prompt-send:disabled:not(.is-ready) { cursor: default; }
 .chooser__box .cr-prompt-below { padding: 0; font-size: inherit; color: inherit; }
 /* The examples taking turns where the placeholder would be, letter by letter (ProjectChooser's Examples) */
-.chooser__example { position: absolute; top: 0; left: 0; right: 56px; height: 100%; display: flex; align-items: center; overflow: hidden; white-space: nowrap; color: var(--chrome-muted); font-size: var(--fs-body); pointer-events: none; }
+.chooser__example { position: absolute; top: 0; left: 0; right: 104px; height: 100%; display: flex; align-items: center; overflow: hidden; white-space: nowrap; color: var(--chrome-muted); font-size: var(--fs-body); pointer-events: none; }
 .chooser__char { display: inline-block; will-change: transform, opacity; }
 .chooser__more { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.3s var(--ease-out); }
 .chooser__more.is-open { grid-template-rows: 1fr; }
@@ -20,9 +20,29 @@
 .chooser__more.is-open .chooser__more-inner { visibility: visible; opacity: 1; transition: opacity 0.25s 0.05s, visibility 0s; }
 .chooser__about { display: block; width: 100%; padding: 2px 56px 8px 0; border: 0; background: transparent; outline: none; resize: none; field-sizing: content; min-height: calc(1.5em + 12px); max-height: 30vh; box-sizing: border-box; color: var(--chrome-text); font: inherit; font-size: var(--fs-ui); line-height: var(--lh-body); }
 .chooser__about::placeholder { color: var(--chrome-muted); }
+/* ⌘K takes the box: the Key flat inside the field, as the board's search wears its "/" */
+.chooser__key.cr-key { flex: none; background: none; box-shadow: none; color: var(--chrome-muted); border-color: var(--chrome-border); }
+@media (hover: none) {
+  .chooser__key.cr-key { display: none; }
+  .chooser__example { right: 56px; }
+}
+
+/* A few ways back to work under the box: Chips on chrome, one row that wraps */
+.chooser__actions { margin-top: var(--space-5); display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-2); max-width: 640px; }
+.chooser__action.cr-chip { gap: var(--space-2); min-height: 34px; padding: 0 14px; font-size: var(--fs-ui); color: var(--chrome-ink); }
+.chooser__action .cr-icon { color: var(--chrome-text-muted); }
+.chooser__action-count { color: var(--chrome-muted); font-variant-numeric: tabular-nums; }
+.chooser__action-name { max-width: 28ch; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.chooser__action.cr-chip:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+/* The projects' heading: how many there are, and their order */
+.chooser__head { width: 100%; margin-top: clamp(56px, 9vh, 96px); display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-1) var(--space-3); }
+.chooser__yours { margin: 0; color: var(--text); }
+.chooser__tally { color: var(--text-muted); font-size: var(--fs-small); font-variant-numeric: tabular-nums; }
+.chooser__sort.cr-btn { margin-left: auto; align-self: center; gap: var(--space-1); }
 
 /* The projects: BoardCards, a mosaic of each board's first references */
-.chooser__grid { width: 100%; margin-top: clamp(56px, 9vh, 96px); display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: var(--space-6) 20px; }
+.chooser__grid { width: 100%; margin-top: var(--space-5); display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: var(--space-6) 20px; }
 .chooser__grid .cr-boardcard { width: auto; min-width: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
 /* The mosaic keeps the system's 33:20 at any width; the masonry inside is the board's own (BoardCard `columns`) */
 .chooser__grid .cr-boardcard-mosaic { height: auto; aspect-ratio: 33 / 20; transition: border-color 0.15s; }
@@ -33,10 +53,29 @@
 .chooser__grid .cr-ring { margin-top: 4px; }
 /* On the ground, not on chrome: the theme's focus ring */
 .chooser__grid .cr-boardcard:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+/* An empty project: its mosaic is one dashed place to drop a picture or a link (the dashed line marks a way in, as in
+   Add's .add__pick, never a card's edge). Over it while dragging, the line and the words come up to the text */
+.chooser__empty { min-width: 0; }
+.chooser__grid .chooser__empty .cr-boardcard { width: 100%; }
+.chooser__grid .chooser__empty .cr-boardcard-mosaic { display: flex; }
+.chooser__grid .chooser__empty .cr-boardcard-tile { flex: 1; display: flex; background: none; border: var(--stroke-control) dashed var(--border-strong); border-radius: var(--radius-md); transition: border-color 0.15s, color 0.15s; }
+.chooser__drop { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-2); padding: var(--space-3); color: var(--text-muted); font-size: var(--fs-small); text-align: center; transition: color 0.15s; }
+.chooser__empty:hover .cr-boardcard-tile { border-color: var(--text-muted); }
+.chooser__empty.is-over .cr-boardcard-tile { border-color: var(--text); }
+.chooser__empty.is-over .chooser__drop { color: var(--text); }
+/* The last card: a new project, named in the box above */
+.chooser__new { align-self: start; aspect-ratio: 33 / 20; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-2); padding: var(--space-3); border: var(--stroke-control) dashed var(--border-strong); border-radius: var(--radius-lg); background: none; color: var(--text); font: inherit; font-size: var(--fs-ui); font-weight: var(--fw-medium); cursor: pointer; transition: border-color 0.15s, transform 120ms var(--ease-out); }
+.chooser__new:hover { border-color: var(--text-muted); }
+.chooser__new:active { transform: scale(0.985); }
+.chooser__new:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 @media (max-width: 560px) {
   .chooser { padding-left: 16px; padding-right: 16px; }
   .chooser__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-5) 12px; }
   .chooser__grid .cr-boardcard-mosaic { padding: 6px; gap: 4px; }
   .chooser__box.cr-prompt { padding-left: 18px; }
 }
-@media (prefers-reduced-motion: reduce) { .chooser__more, .chooser__more-inner, .chooser__grid .cr-boardcard-mosaic { transition: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .chooser__more, .chooser__more-inner, .chooser__grid .cr-boardcard-mosaic, .chooser__grid .chooser__empty .cr-boardcard-tile, .chooser__drop { transition: none; }
+  .chooser__new { transition: border-color 0.15s; }
+  .chooser__new:active { transform: none; }
+}
