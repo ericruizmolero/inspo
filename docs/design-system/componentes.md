@@ -343,7 +343,7 @@ Caja fija abajo, con chips de filtro (persona, fecha, color, sección…) y suge
 - Solo sale sobre un tablón con referencias: un proyecto vacío empieza por su propia caja (`ProjectStart`) y no lleva buscador. → [decisión](decisiones/2026-10-06-el-buscador-solo-sale-sobre-un-tablon-con-referencias.md)
 - Muestra la tarjeta marcada con "/" como objetivo.
 - Con el foco no lleva anillo: basta el cursor parpadeando (`.sb--dock:focus-within .sb__field`). → [decisión](decisiones/2026-10-13-el-tablon-abre-en-tres-columnas-y-la-barra-se-pliega.md)
-- Una búsqueda sin resultados, donde Tino es la búsqueda: el tablón se queda como estaba y lo dice Tino en su globo. → [decisión](decisiones/2026-10-20-tino-entra-en-el-inicio-y-es-la-busqueda-del-tablon.md) Donde no está (la biblioteca entera), lo de siempre: mientras busca, solo los puntos de `Busy` y "Buscando…" pequeños y apagados en el centro (`.empty--busy`); cuando de verdad no hay nada, `EmptyState` con "Nada por aquí", una línea apagada y debajo, en su propia línea, "Ver todo" como `Button` quiet s con `undo` (`.empty--over`). Nunca "Nada por aquí" mientras aún busca, ni el botón pegado al texto. La barra de reunir apila las tres referencias más nuevas que tienen imagen, no las tres más nuevas.
+- Una búsqueda sin resultados, donde Tino es la búsqueda: el tablón se queda como estaba pero apagado (`.board[data-missed]`, opacidad 0,25), para que no parezcan resultados, y lo dice Tino en su globo. → [decisión](decisiones/2026-10-20-tino-entra-en-el-inicio-y-es-la-busqueda-del-tablon.md) Donde no está (la biblioteca entera), lo de siempre: mientras busca, solo los puntos de `Busy` y "Buscando…" pequeños y apagados en el centro (`.empty--busy`); cuando de verdad no hay nada, `EmptyState` con "Nada por aquí", una línea apagada y debajo, en su propia línea, "Ver todo" como `Button` quiet s con `undo` (`.empty--over`). Nunca "Nada por aquí" mientras aún busca, ni el botón pegado al texto. La barra de reunir apila las tres referencias más nuevas que tienen imagen, no las tres más nuevas.
 - Esc en cascada: cierra la lista, vacía, quita chips, quita objetivo, suelta el foco.
 - A la derecha, mientras se busca, solo la equis (y en un proyecto, el "+" y "Tengo mis referencias"). El aviso "Etiquetando N referencias" (trabajo en segundo plano) solo sale con la caja vacía. → [decisión](decisiones/2026-10-06-el-estado-de-etiquetado-no-acompana-a-la-busqueda.md)
 
@@ -639,6 +639,10 @@ El peluche en 3D: orejas con física, un visor que cambia con cada gesto, pelo p
 ### Caras de Tino
 `MOODS` · `moodProps` · `components/tino/moods.ts`
 Las caras de la hoja de copy (watching, following, thinking, searching, skeptic, suspect, smug, admirer, judge, accomplice, asleep, sad), cada una un gesto del motor (`state`: orejas, ojos y giro de cabeza), lo que pasa dentro del visor en reposo (`show`) y si mira de frente (`front`). Cada línea de Tino nombra su cara (`mood`); nunca se pasa `state` ni `look` a mano, salvo el giro hacia el botón en Pulido. Un gesto con giro propio no lleva `look`: si lo llevara, todas las caras mirarían igual. → [decisión](decisiones/2026-10-20-tino-entra-en-el-inicio-y-es-la-busqueda-del-tablon.md)
+
+### Tino escribe
+`Typed` · `components/Typed.tsx` · `components/Typed.css` · `.typed`
+Todo lo que dice Tino (título y línea de debajo, cuando son texto) entra letra a letra: 22 ms por letra y nunca más de 700 ms por pieza; la línea empieza cuando acaba el título. El texto entero ocupa su sitio desde el primer cuadro (lo que falta va transparente), así el globo no crece mientras escribe; un cursor fino sigue a la última letra. Los botones están desde el principio. El lector de pantalla recibe la línea entera; con movimiento reducido, sale entera.
 
 ### Tino en el Inicio
 `HomeTino` · `TinoCorner` · `TinoSwitch` · `components/HomeTino.tsx` · `components/HomeTino.css` · `.tino-corner`, `.home-corner`

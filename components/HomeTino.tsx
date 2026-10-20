@@ -7,6 +7,7 @@
 // click wakes him. The switch in the corner pill (TinoSwitch) mutes him too, and both are remembered.
 import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode, type Ref } from "react";
 import Tino from "./Tino";
+import Typed, { typedMs } from "./Typed";
 import type { TinoApi } from "./tino/engine";
 import { moodProps, type TinoMood } from "./tino/moods";
 import { Balloon, Button, Icon } from "@/components/criterio";
@@ -200,9 +201,9 @@ export function TinoCorner({ say, tinoRef, mood, muted = false, look, bodyLabel,
     <div className={`tino-corner${muted ? " is-muted" : ""} ${className}`}>
       {say && (
         <Balloon key={say.key} className="tino-corner__say" tail="right"
-          title={<><span className="tino-corner__who">{say.who ?? "Tino"}{say.top != null && <span className="tino-corner__top">{say.top}</span>}</span>{say.title && <span>{say.title}</span>}</>}
+          title={<><span className="tino-corner__who">{say.who ?? "Tino"}{say.top != null && <span className="tino-corner__top">{say.top}</span>}</span>{say.title && <span><Typed text={say.title} /></span>}</>}
           actions={say.actions}>
-          {say.text}
+          {typeof say.text === "string" ? <Typed text={say.text} delay={say.title ? typedMs(say.title) : 0} /> : say.text}
           {say.onClose && (
             <button type="button" className="cr-window-close tino-corner__close" aria-label={t.tino.close} onClick={say.onClose}>
               <Icon name="close" size={10} weight="bold" />

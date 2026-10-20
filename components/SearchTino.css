@@ -17,6 +17,10 @@
 @media (prefers-reduced-motion: reduce) { .sb-tino__say.cr-balloon { animation: none; } }
 /* While the suggestions are open the person is choosing: the balloon waits under them */
 .dock__bar:has(.sb.is-open) .sb-tino__say { display: none; }
+/* Nothing found: the board stays, dimmed under Tino's answer (Grid's data-missed), and comes back with the next search */
+.board__world { transition: opacity 200ms var(--ease-out); }
+.board[data-missed] .board__world { opacity: 0.25; }
+@media (prefers-reduced-motion: reduce) { .board__world { transition: none; } }
 /* "Ask me:" and what to ask, from the board's own tags: paper Chips in a row */
 .sb-tino__chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .sb-tino__chips .cr-chip { cursor: pointer; }

@@ -5,6 +5,7 @@
 // the search reads he thinks, and the bar says how much he is going through.
 import { useEffect, useRef, useState } from "react";
 import Tino from "./Tino";
+import Typed, { typedMs } from "./Typed";
 import type { TinoApi } from "./tino/engine";
 import { moodProps, type TinoMood } from "./tino/moods";
 import { Balloon, Button, Icon } from "@/components/criterio";
@@ -108,9 +109,9 @@ export default function SearchTino({ report, busy, typing, focused, failed, tota
     <div className="sb-tino">
       {say && title && (
         <Balloon key={say.key} className="sb-tino__say" tail="left"
-          title={<><span className="sb-tino__who">Tino</span><span>{title}</span></>}
+          title={<><span className="sb-tino__who">Tino</span><span><Typed text={title} /></span></>}
           actions={"act" in say && say.act && onAct ? <Button size="s" onClick={onAct}>{say.act}</Button> : null}>
-          {"text" in say && say.text}
+          {"text" in say && say.text && <Typed text={say.text} delay={typedMs(title)} />}
           {asking && say.key === "ask:me" && (
             <span className="sb-tino__chips">
               {/* Before the field's blur, so the click lands and the box keeps the focus */}

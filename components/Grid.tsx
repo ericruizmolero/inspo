@@ -94,9 +94,11 @@ function layoutBoard(items: InspoItem[], ratioOf: (item: InspoItem) => number, c
   return { slots, byKey, height: Math.max(padTop, ...bottoms) - GAP, col };
 }
 
-export default memo(function Grid({ under = false, items, ratioOf, hasNote, insets, zoom, onZoom, fitKey, focusKey, renderCard, handleRef }: {
+export default memo(function Grid({ under = false, missed = false, items, ratioOf, hasNote, insets, zoom, onZoom, fitKey, focusKey, renderCard, handleRef }: {
   /** Under Polish: kept laid out but inert, out of reach and without its corner */
   under?: boolean;
+  /** A search found nothing: the board stays as it was, dimmed, so it never reads as results */
+  missed?: boolean;
   /** The cards to lay out: the whole space, or the search's results in the order they rank */
   items: InspoItem[];
   /** Height/width of what each card shows, known before it loads (the page's height from the index, or a measurement) */
@@ -322,7 +324,7 @@ export default memo(function Grid({ under = false, items, ratioOf, hasNote, inse
 
   return (
     <>
-      <div ref={scrollRef} className="board" data-bare={bare ? "" : undefined} inert={under || undefined} aria-hidden={under || undefined}>
+      <div ref={scrollRef} className="board" data-bare={bare ? "" : undefined} data-missed={missed ? "" : undefined} inert={under || undefined} aria-hidden={under || undefined}>
         <div className="board__world" style={{ height: layout ? layout.height + padBottom : "100%" }}>
           {visible.map((s) => {
             const enter = seen.has(s.key) ? undefined : entrance.current?.get(s.key);

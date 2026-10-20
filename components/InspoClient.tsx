@@ -600,6 +600,7 @@ export default function InspoClient({
   const grid = (
     <Grid
       under={!!currentProject && projectView !== "board"}
+      missed={missed}
       items={boardItems}
       ratioOf={ratioOf}
       hasNote={hasNote}

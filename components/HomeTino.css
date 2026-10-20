@@ -48,3 +48,4 @@
 .tino-corner__foot { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; flex: 0 0 100%; margin: 4px 0 0; font-size: var(--fs-label); line-height: var(--lh-small); color: color-mix(in srgb, var(--on-butter) 68%, transparent); }
 .tino-corner__link { padding: 0; border: 0; background: none; color: var(--on-butter); font: inherit; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
 .tino-corner__link:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
