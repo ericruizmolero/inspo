@@ -255,6 +255,15 @@ export const system: Record<string, Surface> = {
       }));
     },
   },
+  "route:app/api/system/edit/route.ts#POST": {
+    probe: async (fx) => {
+      const { POST } = await import("@/app/api/system/edit/route");
+      asB(fx);
+      await withKeys(() => unchanged(fx, async () => {
+        await expectDenied(fx, await POST(request("/api/system/edit", { method: "POST", body: { projectId: fx.a.project, instruction: "make the palette warmer" } })), "an edit of A's file");
+      }));
+    },
+  },
   "route:app/api/system/curate/route.ts#POST": {
     probe: async (fx) => {
       const { POST } = await import("@/app/api/system/curate/route");
