@@ -308,9 +308,9 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
               </button>
             ))}
             {members.length > MAX_FACES && (
-              <Link className="island__face island__face--more" href="/settings/members" aria-label={t.ws.manageTeam}>+{members.length - MAX_FACES + 1}</Link>
+              <Link className="island__face island__face--more" href="/settings/members" prefetch={false} aria-label={t.ws.manageTeam}>+{members.length - MAX_FACES + 1}</Link>
             )}
-            <Link className="island__team-manage" href="/settings/members" aria-label={t.ws.manageTeam}>{t.ws.manage}</Link>
+            <Link className="island__team-manage" href="/settings/members" prefetch={false} aria-label={t.ws.manageTeam}>{t.ws.manage}</Link>
           </div>
           <Separator />
           {/* Discover is no tab of the bar (meeting of 13-10: it read as one more project, and the first, "lo primero que

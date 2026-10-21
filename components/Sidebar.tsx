@@ -198,7 +198,7 @@ export function PlanMeter({ quota, compact }: { quota: QuotaView; /** Head, bar 
   const refs = items.limit === null ? fmtCount(items.used, locale) : `${fmtCount(items.used, locale)}/${fmtCount(items.limit, locale)}`;
   const gb = storage.limit === null ? `${fmtGb(storage.used, locale)} GB` : `${fmtGb(storage.used, locale)}/${fmtGb(storage.limit, locale)} GB`;
   return (
-    <Link href="/settings/plan" className={`sidebar__plan${aiFull || libraryFull ? " is-full" : ""}`} title={t.sidebar.seePlans}>
+    <Link href="/settings/plan" prefetch={false} className={`sidebar__plan${aiFull || libraryFull ? " is-full" : ""}`} title={t.sidebar.seePlans}>
       <span className="sidebar__plan-head"><strong>{t.sidebar.plan(t.plans.items[quota.plan].name)}</strong><span>{limit === null ? `${fmtCount(used, locale)} ${t.sidebar.ai}` : `${fmtCount(used, locale)}/${fmtCount(limit, locale)} ${t.sidebar.ai}`}</span></span>
       {/* The system's Progress: segmented ember blocks in a sunken field */}
       {limit !== null && <Progress value={used} max={limit} segments={20} label={`${fmtCount(used, locale)}/${fmtCount(limit, locale)} ${t.sidebar.ai}`} className="sidebar__plan-progress" />}

@@ -145,10 +145,10 @@ export default function WorkspaceMenu({ user, workspace, workspaces, isAdmin = f
 
           <Separator />
           {extras && <div className="ws__extras" onClick={() => setOpen(false)}>{extras}</div>}
-          <Link className="cr-menu-item" role="menuitem" href="/settings" onClick={() => setOpen(false)}>
+          <Link className="cr-menu-item" role="menuitem" href="/settings" prefetch={false} onClick={() => setOpen(false)}>
             {I.gear}<span className="cr-menu-label">{t.ws.settings}</span>
           </Link>
-          <Link className="cr-menu-item" role="menuitem" href="/settings/invite" onClick={() => setOpen(false)}>
+          <Link className="cr-menu-item" role="menuitem" href="/settings/invite" prefetch={false} onClick={() => setOpen(false)}>
             {sectionIcon("invite")}<span className="cr-menu-label">{t.ws.invite}</span>
           </Link>
           {isAdmin && (

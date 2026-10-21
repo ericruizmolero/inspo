@@ -192,6 +192,7 @@ Las reglas de acceso, cabeceras, salida a la red, ficheros ajenos, datos y polí
 - Se revisa en **localhost** (la preview de Ship Studio). No subir tras cada cambio; a producción solo cuando se pide, directo.
 - Antes de fusionar a `main`: comprobar qué depende de datos que solo existen en local (scripts, filas por workspace).
 - Una sesión de agente por rama/checkout; varias sesiones sobre el mismo árbol sin commits se pisan.
+- Los enlaces a `/settings/*` llevan `prefetch={false}`: una precarga hecha con un espacio mostrado deja en la caché del router un `layout` con ese espacio, y Ajustes (y el logo, que se guarda con su `workspace.id`) acabarían en el espacio anterior tras un cambio instantáneo. Un enlace nuevo a una página que lee el espacio activo (`getCtx`) hace lo mismo.
 - Tras cambiar de rama o si la CSS parece vieja: `rm -rf .next`. Matar el dev server por puerto, nunca `pkill -f "next dev"`.
 - Commits con el estilo de la casa: una frase que describe lo que ahora hace la app ("A tab's × takes the ring's place instead of sitting on it"), en inglés, sin prefijos tipo `feat:`.
 - PRs: la fusión la hace una persona del equipo.
