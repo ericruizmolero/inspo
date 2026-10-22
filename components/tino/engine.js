@@ -12,31 +12,34 @@ const RAD = Math.PI / 180;
 // los estados son los del sombreador: orejas en grados desde la vertical (positivo = hacia atrás), visor y giro
 // (v50) las caras de la hoja de copy: ear cuenta desde el reposo de cada oreja ([26, 5], el hueso 0 es la de la derecha); tilt, cada oreja
 // hacia fuera en grados (negativo, hacia la otra); eyes, dos ojos dentro de la banda, [medio ancho, medio alto] en medios altos de la
-// banda. tilt y eyes van izquierda y derecha según los ve quien mira
+// banda. tilt y eyes van izquierda y derecha según los ve quien mira. Ningún gesto gira la cabeza: Tino mira siempre de frente.
+// move: cómo vive cada cara. track, cuántos grados sigue la cabeza al puntero (8 si no lo dice); osc, ondas [qué, lado, grados, Hz] con
+// lado 0 izquierda, 1 derecha, 2 las dos a la vez, 3 las dos a la contra; dart, los ojos miran a un lado y a otro [medios altos, Hz];
+// pulse, los ojos crecen y menguan [cuánto, Hz]; tick, una oreja salta con cada pitido del visor
 const POSES = {
-  reposo: { ear: [26, 5], open: 1, scan: 1 },   // (v39) en reposo el visor está revisando: el barrido de luz va y viene
-  dormida: { ear: [50, 29], tilt: [36, 36], open: 1, eyes: [[0.42, 0.05], [0.42, 0.05]] },
-  esceptica: { ear: [26, 5], tilt: [0, 30], open: 1, eyes: [[0.24, 0.2], [0.42, 0.42]] },
-  sospechosa: { ear: [22, 1], tilt: [0, 14], open: 1, eyes: [[0.42, 0.42], [0.42, 0.42]] },
-  satisfecha: { ear: [26, 5], tilt: [-8, -8], open: 1, eyes: [[0.4, 0.11], [0.4, 0.11]] },
-  admirada: { ear: [20, -1], tilt: [-32, -32], open: 1, eyes: [[0.36, 0.26], [0.36, 0.26]] },
-  curiosa: { ear: [9, -7], open: 1, split: 1, rot: [70, 0] },
+  reposo: { ear: [26, 5], open: 1, scan: 1, move: { track: 10 } },   // (v39) en reposo el visor está revisando: el barrido de luz va y viene
+  dormida: { ear: [50, 29], tilt: [36, 36], open: 1, eyes: [[0.42, 0.05], [0.42, 0.05]], move: { track: 0 } },
+  esceptica: { ear: [26, 5], tilt: [0, 30], open: 1, eyes: [[0.24, 0.2], [0.42, 0.42]], move: { osc: [["tilt", 1, 7, 0.4]] } },
+  sospechosa: { ear: [22, 1], tilt: [0, 14], open: 1, eyes: [[0.42, 0.42], [0.42, 0.42]], move: { dart: [0.55, 0.45], osc: [["ear", 2, -3, 0.9]] } },
+  satisfecha: { ear: [26, 5], tilt: [-8, -8], open: 1, eyes: [[0.4, 0.11], [0.4, 0.11]], move: { osc: [["tilt", 2, 5, 0.45]] } },
+  admirada: { ear: [20, -1], tilt: [-32, -32], open: 1, eyes: [[0.36, 0.26], [0.36, 0.26]], move: { pulse: [0.1, 1.1], osc: [["tilt", 3, 4, 0.8]] } },
+  curiosa: { ear: [9, -7], open: 1, split: 1 },
   leyendo: { ear: [22, 3], open: 1, scan: 1 },
   // (v50) screen: el visor enseña su contenido (show) como en reposo; cada una con sus orejas para que no se confundan
-  siguiendo: { ear: [12, -8], tilt: [-6, -6], open: 1, screen: 1 },
-  buscando: { ear: [8, -12], tilt: [12, -4], open: 1, screen: 1 },
-  complice: { ear: [24, 8], tilt: [-10, 10], open: 1, eyes: [[0.34, 0.3], [0.34, 0.3]], wink: 1 },   // guiña el ojo izquierdo, despacio, cada pocos segundos
-  aprueba: { ear: [24, -24], open: 0.78, smile: 1, rot: [62, -4] },
-  pensando: { ear: [30, 8], open: 1, seg: 1 },
-  descarta: { ear: [60, 50], open: 0.1, shake: 1 },
-  senala: { ear: [-14, -30], open: 1, rot: [24, 10] },
-  error: { ear: [78, -16], open: 1, seg: 1, flicker: 1 },
+  siguiendo: { ear: [12, -8], tilt: [-6, -6], open: 1, screen: 1, move: { track: 18, osc: [["ear", 2, 4, 0.9]] } },
+  buscando: { ear: [8, -12], tilt: [12, -4], open: 1, screen: 1, move: { track: 4, osc: [["ear", 3, 10, 0.7], ["tilt", 3, 6, 0.35]] } },
+  complice: { ear: [24, 8], tilt: [-10, 10], open: 1, eyes: [[0.34, 0.3], [0.34, 0.3]], wink: 1, move: { osc: [["tilt", 2, 5, 1 / 2.8]] } },   // guiña el ojo izquierdo, despacio, cada pocos segundos
+  aprueba: { ear: [24, -24], open: 0.78, smile: 1 },
+  pensando: { ear: [30, 8], open: 1, seg: 1, move: { track: 4, tick: 1 } },
+  descarta: { ear: [60, 50], open: 0.1, shake: 1, move: { track: 0 } },
+  senala: { ear: [-14, -30], open: 1 },
+  error: { ear: [78, -16], open: 1, seg: 1, flicker: 1, move: { track: 2, osc: [["ear", 2, 5, 0.3]] } },
   pulsa: { ear: [-8, -34], open: 0.8, smile: 0.7, sq: [1.08, 0.84] },
   caricia: { ear: [34, 14], open: 1 },   // (v40) sin sonrisa: la reacción va dentro del visor (petFx)
 };
 // capas de pelo: menos en móviles y equipos modestos (la tarjeta gráfica pinta cada capa entera)
 const LITE = matchMedia("(pointer: coarse)").matches || (navigator.hardwareConcurrency || 8) <= 4;
-const ONCE = { aprueba: 2.1, descarta: 2 }, REST = [26, 5], YAW = 36, N = LITE ? 22 : 32, CREAM = "#F7F5F0";   // blanco de peluche (antes crema #EADCC6)
+const ONCE = { aprueba: 2.1, descarta: 2 }, REST = [26, 5], YAW = 90, N = LITE ? 22 : 32, CREAM = "#F7F5F0";   // blanco de peluche (antes crema #EADCC6)
 const EARFX = 1.9;   // (v38) cuánto arrastra el movimiento del cuerpo a las orejas (antes 1)
 // (v43) la oreja se dobla a lo largo y no desde la base: la base hacía arrugas en la cabeza. __earMix/__earPhys solo los usa el banco de pruebas (prueba-peluche/medir.html)
 const EARMIX = [0.2, 0.45, 0.35], EARPHYS = [0.35, 1.25, 1.25];
@@ -184,7 +187,7 @@ const VISOR_V = /* glsl */`
 const VISOR_F = /* glsl */`
   // el visor de antes: una banda de cristal negro que rodea la cara. Cada gesto deforma la banda (se cierra en una raya, se curva
   // en sonrisa, se parte en tres lentes) y lo que queda fuera se pinta del pelo, como un párpado.
-  uniform float uTime, uOpen, uSplit, uSmile, uSeg, uScan, uScanOn, uBeam, uFur, uGaze, uStyle, uShow, uShowOn, uPet, uPetKind, uDark, uEyesOn; uniform vec3 uL, uLit, uTint; uniform vec4 uEyes; uniform sampler2D uText;
+  uniform float uTime, uOpen, uSplit, uSmile, uSeg, uScan, uScanOn, uBeam, uFur, uGaze, uStyle, uShow, uShowOn, uPet, uPetKind, uDark, uEyesOn, uDart; uniform vec3 uL, uLit, uTint; uniform vec4 uEyes; uniform sampler2D uText;
   varying vec3 vObj, vN, vV, vT, vU;
   float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
   float seg(vec2 p, vec2 a, vec2 b) { vec2 pa = p - a, ba = b - a; return length(pa - ba * clamp(dot(pa, ba) / dot(ba, ba), 0., 1.)); }
@@ -218,7 +221,7 @@ const VISOR_F = /* glsl */`
   }
   // (v50) los dos ojos de las caras: uEyes.xy el medio ancho y medio alto del de la izquierda, .zw el de la derecha
   float eyesFx(vec2 c) {
-    c.x -= uGaze * .35;                                   // miran un poco hacia el puntero
+    c.x -= uGaze * .35 + uDart;                           // miran un poco hacia el puntero (y a los lados, si la cara lo pide)
     vec2 e = c.x < 0. ? uEyes.xy : uEyes.zw;
     float d = rbox(c - vec2(sign(c.x) * 1.55, 0.), e, min(e.x, e.y) * .45);
     return smoothstep(.06, -.06, d) * (.85 + .15 * smoothstep(0., -.2, d)) + exp(-max(d, 0.) * 9.) * .18;   // núcleo y un halo corto
@@ -340,9 +343,9 @@ function create(canvas, opts = {}) {
   // (v42) en toda la web Tino es de peluche y blanco: ya no se leen las preferencias guardadas; solo cambia si una página lo pide
   let tintHex = opts.tint || CREAM,
     matName = opts.material || "flocado", visorKind = opts.visor || "banda", visorStyle = opts.visorStyle || "cristal", showKind = opts.show || "barrido", petKind = opts.pet || "felices", earKind = opts.ears || "corta", bottomKind = opts.bottom || "redonda";
-  const S = { pet: 0, showOn: 0, ear: [...REST], vEar: [0, 0], tilt: [0, 0], vTilt: [0, 0], eyes: [0, 0, 0, 0], eyesOn: 0, seat: 0, open: 1, split: 0, smile: 0, seg: 0, scan: 0, beam: 0, sx: 1, sy: 1, hop: 0, vHop: 0, yaw: YAW, vYaw: 0, pitch: 0, vPitch: 0 };
+  const S = { pet: 0, showOn: 0, ear: [...REST], vEar: [0, 0], tilt: [0, 0], vTilt: [0, 0], eyes: [0, 0, 0, 0], eyesOn: 0, dart: 0, seat: 0, open: 1, split: 0, smile: 0, seg: 0, scan: 0, beam: 0, sx: 1, sy: 1, hop: 0, vHop: 0, yaw: YAW, vYaw: 0, pitch: 0, vPitch: 0 };
   let pose = POSES.reposo, state = "reposo", basePose = "reposo", pressed = false, onceTimer = 0, blink = 0, t0 = performance.now(), last = 0, raf = 0;
-  let visible = true, faceLeft = false, lookAt = null, seatOn = 0, bodyOn = 1, beamOn = 0, petting = 0, lastBox = null, vel = [0, 0], lastDraw = 0, viewId = "";
+  let lastTick = -1, visible = true, faceLeft = false, lookAt = null, seatOn = 0, bodyOn = 1, beamOn = 0, petting = 0, lastBox = null, vel = [0, 0], lastDraw = 0, viewId = "";
   let T = null;   // three.js y la escena, cuando estén cargados
   let zoom = opts.zoom || 1;
   let dark = !!opts.dark;
@@ -428,7 +431,7 @@ function create(canvas, opts = {}) {
     const grav = new THREE.Vector3(), comb = new THREE.Vector3(), combAtV = new THREE.Vector3(9, 9, 9), glow = new THREE.Color(0, 0, 0);
     const furMat = (h, isBase, lid) => new THREE.ShaderMaterial({ vertexColors: HASAO, vertexShader: FUR_V, fragmentShader: FUR_F,
       uniforms: { uDark: visorU.uDark, uKind: visorU.uKind, uLid: { value: lid ? 1 : 0 }, uOpen: visorU.uOpen, uSplit: visorU.uSplit, uSmile: visorU.uSmile, uGlow: { value: glow }, uH: { value: h }, uBase: { value: isBase ? 1 : 0 }, uStr: { value: strands }, uTint: { value: tint }, uL: { value: L }, uLen: { value: 0.04 }, uD: { value: 270 }, uGrav: { value: grav }, uComb: { value: comb }, uCombAt: { value: combAtV } } });
-    const visorU = { uDark: { value: 0 }, uShow: { value: Math.max(0, SHOWS.indexOf(showKind)) }, uShowOn: { value: 0 }, uPet: { value: 0 }, uPetKind: { value: Math.max(0, PETS.indexOf(petKind)) }, uText: { value: textTex(THREE) }, uStyle: { value: Math.max(0, STYLES.indexOf(visorStyle)) }, uKind: { value: Math.max(0, KINDS.indexOf(visorKind)) }, uGaze: { value: 0 }, uFur: { value: 1 }, uTint: { value: tint }, uTime: { value: 0 }, uOpen: { value: 1 }, uSplit: { value: 0 }, uSmile: { value: 0 }, uSeg: { value: 0 }, uScan: { value: 0 }, uScanOn: { value: 0 }, uBeam: { value: 0 }, uEyes: { value: new THREE.Vector4() }, uEyesOn: { value: 0 }, uL: { value: L }, uLit: { value: new THREE.Vector3() } };
+    const visorU = { uDark: { value: 0 }, uShow: { value: Math.max(0, SHOWS.indexOf(showKind)) }, uShowOn: { value: 0 }, uPet: { value: 0 }, uPetKind: { value: Math.max(0, PETS.indexOf(petKind)) }, uText: { value: textTex(THREE) }, uStyle: { value: Math.max(0, STYLES.indexOf(visorStyle)) }, uKind: { value: Math.max(0, KINDS.indexOf(visorKind)) }, uGaze: { value: 0 }, uFur: { value: 1 }, uTint: { value: tint }, uTime: { value: 0 }, uOpen: { value: 1 }, uSplit: { value: 0 }, uSmile: { value: 0 }, uSeg: { value: 0 }, uScan: { value: 0 }, uScanOn: { value: 0 }, uBeam: { value: 0 }, uEyes: { value: new THREE.Vector4() }, uEyesOn: { value: 0 }, uDart: { value: 0 }, uL: { value: L }, uLit: { value: new THREE.Vector3() } };
     const visorMat = new THREE.ShaderMaterial({ vertexShader: VISOR_V, fragmentShader: VISOR_F, uniforms: visorU, alphaToCoverage: true, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -8 });   // a ras: el desfase de profundidad evita que asome la piel
 
     const modelUrl = () => base + `tino-${earKind}${bottomKind !== "redonda" ? "-" + bottomKind : ""}.glb`;   // (v48) todos con oclusión; tino.glb queda para las versiones congeladas   // (v45) la base: redonda, media o plana (como el isotipo)   // (v42) por defecto, cápsulas; tino.glb (hoja) se queda para las versiones congeladas
@@ -577,7 +580,8 @@ function create(canvas, opts = {}) {
   }
   const targets = (P) => {
     const rot = lookAt || P.rot || [YAW, 0], el = (performance.now() - t0) / 1000, shake = P.shake && el < 1.2 ? Math.sin(el * 16) * 14 * (1 - el / 1.2) : 0;
-    return { yaw: (faceLeft ? 180 - rot[0] : rot[0]) + shake, pitch: rot[1], shake };
+    const tr = reduced || opts.still ? 0 : (P.move && P.move.track != null ? P.move.track : 8);   // (v50) de frente, pero la cabeza sigue un poco al puntero
+    return { yaw: (faceLeft ? 180 - rot[0] : rot[0]) + shake - gaze * tr, pitch: rot[1] + gazeY * tr * 0.5, shake };
   };
   function render() {
     if (!T || canvas.width < 24) return;   // hasta que el lienzo tenga su tamaño, no se pinta
@@ -592,7 +596,8 @@ function create(canvas, opts = {}) {
     const U = T.visorU; U.uTime.value = now / 1000; U.uOpen.value = Math.max(0.02, S.open * (1 - blink * (1 - S.eyesOn))); U.uSplit.value = S.split; U.uSmile.value = S.smile; U.uSeg.value = S.seg; U.uScan.value = Math.sin(time * 2.4); U.uScanOn.value = S.scan; U.uBeam.value = S.beam;
     const lid = 1 - blink * S.eyesOn * 0.88;   // (v50) con ojos, parpadean los ojos y la banda se queda abierta
     const wk = time % 2.8, wink = P.wink ? 1 - 0.9 * Math.max(0, Math.min(1, (wk - 0.6) / 0.14, (1.25 - wk) / 0.2)) : 1;
-    U.uEyes.value.set(S.eyes[0], S.eyes[1] * lid * wink, S.eyes[2], S.eyes[3] * lid); U.uEyesOn.value = S.eyesOn;
+    const pu = P.move && P.move.pulse ? 1 + P.move.pulse[0] * Math.sin(time * 6.283 * P.move.pulse[1]) : 1;
+    U.uEyes.value.set(S.eyes[0] * pu, S.eyes[1] * lid * wink * pu, S.eyes[2] * pu, S.eyes[3] * lid * pu); U.uEyesOn.value = S.eyesOn; U.uDart.value = S.dart;
     const f = Math.floor(time / 0.3) % 5, lit = P.flicker ? [0, 1, 2].map((i) => (Math.floor(time / 0.11 + i * 1.7) % 3 ? 0 : 1)) : [f > 0 ? 1 : 0, f > 1 ? 1 : 0, f > 2 ? 1 : 0];
     U.uLit.value.set(...lit);
     // cuánto alumbra el visor según lo que hace
@@ -646,7 +651,16 @@ function create(canvas, opts = {}) {
     follow("open", P.open, 1 - Math.exp(-dt * 18)); follow("split", P.split || 0); follow("smile", P.smile || 0); follow("seg", P.seg || 0); follow("scan", (P.scan || 0) * ((P === POSES.reposo || P.screen) && showKind !== "barrido" ? 0 : 1)); follow("pet", stroked && !pressed ? 1 : 0, 1 - Math.exp(-dt * 8)); follow("showOn", (P === POSES.reposo || P.screen) && !pressed ? 1 : 0, 1 - Math.exp(-dt * 6)); follow("beam", beamOn);
     // (v50) orejas con muelle: llegan, se pasan un poco y se asientan (antes un acercamiento sin rebote). Dormido respiran con el cuerpo
     const spring = (key, vKey, to) => { S[key] = S[key].map((x, i) => { const v = S[vKey][i] + ((to[i] - x) * 95 - S[vKey][i] * 11.5) * dt; S[vKey][i] = v; if (Math.abs(to[i] - x) > 0.2 || Math.abs(v) > 0.5) moving = true; return x + v * dt; }); };
-    spring("ear", "vEar", P.ear.map((a) => a + breath * 2.5)); spring("tilt", "vTilt", P.tilt || [0, 0]);
+    // (v50) cada cara vive: ondas suaves en las orejas (lado según quien mira; en S.ear el índice 0 es la oreja de la derecha)
+    const tt = now / 1000, earTo = P.ear.map((a) => a + breath * 2.5), tiltTo = [...(P.tilt || [0, 0])];
+    if (P.move && P.move.osc && !reduced) for (const [key, side, amp, hz] of P.move.osc) {
+      const w = amp * Math.sin(tt * 6.283 * hz), add = [side === 1 ? 0 : w, side === 0 ? 0 : side === 3 ? -w : w];   // [izquierda, derecha]
+      if (key === "tilt") { tiltTo[0] += add[0]; tiltTo[1] += add[1]; } else { earTo[1] += add[0]; earTo[0] += add[1]; }
+    }
+    spring("ear", "vEar", earTo); spring("tilt", "vTilt", tiltTo);
+    follow("dart", P.move && P.move.dart ? P.move.dart[0] * Math.sign(Math.sin(tt * 6.283 * P.move.dart[1])) : 0, 1 - Math.exp(-dt * 10));
+    if (P.move && P.move.tick) { const f = Math.floor((now - t0) / 300) % 5; if (f !== lastTick && f > 0 && f < 4) { const e = ears[f % 2]; e.v[2] += 1.4 * (f % 2 ? -1 : 1); e.w[2] += 0.8; } lastTick = f; }
+    if (P.move && (P.move.osc || P.move.dart || P.move.pulse)) moving = true;
     const eyes = P.eyes ? P.eyes.flat() : S.eyes; follow("eyesOn", P.eyes ? 1 : 0);
     S.eyes = S.eyes.map((x, k) => { if (Math.abs(eyes[k] - x) > 0.002) moving = true; return x + (eyes[k] - x) * (1 - Math.exp(-dt * 16)); });
     follow("sx", sq[0]); follow("sy", sq[1]); follow("seat", seatOn, 1 - Math.exp(-dt * 7));
@@ -665,10 +679,11 @@ function create(canvas, opts = {}) {
     Object.assign(S, { pet: 0, showOn: P === POSES.reposo || P.screen ? 1 : 0, ear: [...P.ear], vEar: [0, 0], tilt: [...(P.tilt || [0, 0])], vTilt: [0, 0], eyes: P.eyes ? P.eyes.flat() : S.eyes, eyesOn: P.eyes ? 1 : 0, seat: seatOn, open: P.open, split: P.split || 0, smile: P.smile || 0, seg: P.seg || 0, scan: (P.scan || 0) * ((P === POSES.reposo || P.screen) && showKind !== "barrido" ? 0 : 1), beam: beamOn, sx: sq[0], sy: sq[1], yaw: tg.yaw, pitch: tg.pitch, vYaw: 0, vPitch: 0 });
     t0 = performance.now() - 1000; render();
   }
-  let gaze = 0, gazeTo = 0;
-  const onMove = (event) => { const r = canvas.getBoundingClientRect(); gazeTo = Math.max(-1, Math.min(1, (event.clientX - (r.left + r.width / 2)) / (innerWidth * 0.35))) * (faceLeft ? -1 : 1); wake(); };
+  let gaze = 0, gazeTo = 0, gazeY = 0, gazeYTo = 0;
+  const onMove = (event) => { const r = canvas.getBoundingClientRect(); gazeTo = Math.max(-1, Math.min(1, (event.clientX - (r.left + r.width / 2)) / (innerWidth * 0.35))) * (faceLeft ? -1 : 1);
+    gazeYTo = Math.max(-1, Math.min(1, (event.clientY - (r.top + r.height / 2)) / (innerHeight * 0.4))); wake(); };
   addEventListener("pointermove", onMove, { passive: true });
-  api.gazeStep = (dt) => { gaze += (gazeTo - gaze) * (1 - Math.exp(-dt * 6)); if (T) T.visorU.uGaze.value = gaze; return Math.abs(gazeTo - gaze) > 0.01; };
+  api.gazeStep = (dt) => { gaze += (gazeTo - gaze) * (1 - Math.exp(-dt * 6)); gazeY += (gazeYTo - gazeY) * (1 - Math.exp(-dt * 6)); if (T) T.visorU.uGaze.value = gaze; return Math.abs(gazeTo - gaze) > 0.01 || Math.abs(gazeYTo - gazeY) > 0.01; };
   const ro = new ResizeObserver(fit); ro.observe(canvas);
   const io = new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; if (visible) { last = 0; lastBox = null; wake(); } }); io.observe(canvas);
   const onVis = () => { if (!document.hidden) { last = 0; lastBox = null; wake(); } };
