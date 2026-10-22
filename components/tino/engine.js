@@ -25,7 +25,7 @@ const POSES = {
   // (v50) screen: el visor enseña su contenido (show) como en reposo; cada una con sus orejas para que no se confundan
   siguiendo: { ear: [12, -8], tilt: [-6, -6], open: 1, screen: 1 },
   buscando: { ear: [8, -12], tilt: [12, -4], open: 1, screen: 1 },
-  complice: { ear: [20, 12], tilt: [-26, 26], open: 1, smile: 0.7, eyes: [[0.5, 0.07], [0.42, 0.42]] },   // guiña un ojo y sonríe de medio lado
+  complice: { ear: [24, 8], tilt: [-10, 10], open: 1, eyes: [[0.34, 0.3], [0.34, 0.3]], wink: 1 },   // guiña el ojo izquierdo, despacio, cada pocos segundos
   aprueba: { ear: [24, -24], open: 0.78, smile: 1, rot: [62, -4] },
   pensando: { ear: [30, 8], open: 1, seg: 1 },
   descarta: { ear: [60, 50], open: 0.1, shake: 1 },
@@ -591,7 +591,8 @@ function create(canvas, opts = {}) {
     // el visor
     const U = T.visorU; U.uTime.value = now / 1000; U.uOpen.value = Math.max(0.02, S.open * (1 - blink * (1 - S.eyesOn))); U.uSplit.value = S.split; U.uSmile.value = S.smile; U.uSeg.value = S.seg; U.uScan.value = Math.sin(time * 2.4); U.uScanOn.value = S.scan; U.uBeam.value = S.beam;
     const lid = 1 - blink * S.eyesOn * 0.88;   // (v50) con ojos, parpadean los ojos y la banda se queda abierta
-    U.uEyes.value.set(S.eyes[0], S.eyes[1] * lid, S.eyes[2], S.eyes[3] * lid); U.uEyesOn.value = S.eyesOn;
+    const wk = time % 2.8, wink = P.wink ? 1 - 0.9 * Math.max(0, Math.min(1, (wk - 0.6) / 0.14, (1.25 - wk) / 0.2)) : 1;
+    U.uEyes.value.set(S.eyes[0], S.eyes[1] * lid * wink, S.eyes[2], S.eyes[3] * lid); U.uEyesOn.value = S.eyesOn;
     const f = Math.floor(time / 0.3) % 5, lit = P.flicker ? [0, 1, 2].map((i) => (Math.floor(time / 0.11 + i * 1.7) % 3 ? 0 : 1)) : [f > 0 ? 1 : 0, f > 1 ? 1 : 0, f > 2 ? 1 : 0];
     U.uLit.value.set(...lit);
     // cuánto alumbra el visor según lo que hace
