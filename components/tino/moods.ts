@@ -14,13 +14,13 @@ export const MOODS: Record<TinoMood, { state: TinoState; show?: TinoShow; front?
   following: { state: "leyendo", show: "mirada", front: true },
   thinking: { state: "pensando", front: true },
   searching: { state: "leyendo", show: "ecualizador", front: true },
-  skeptic: { state: "curiosa" },
-  suspect: { state: "senala" },
-  smug: { state: "aprueba" },
-  admirer: { state: "reposo", show: "latido", front: true },
+  skeptic: { state: "esceptica", front: true },
+  suspect: { state: "sospechosa", front: true },
+  smug: { state: "satisfecha", front: true },
+  admirer: { state: "admirada", front: true },
   judge: { state: "descarta" },
   accomplice: { state: "leyendo", show: "texto", front: true },
-  asleep: { state: "dormida" },
+  asleep: { state: "dormida", front: true },
   sad: { state: "error" },
 };
 

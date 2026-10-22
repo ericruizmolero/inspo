@@ -5,7 +5,7 @@ import type { TinoApi, TinoBottom, TinoEars, TinoMaterial, TinoPet, TinoShow, Ti
 import "./Tino.css";
 
 export type TinoProps = {
-  /** Gesto: reposo (revisando), pensando, aprueba, descarta, curiosa, leyendo, senala, dormida, error. */
+  /** Gesto: reposo (revisando), pensando, esceptica, sospechosa, satisfecha, admirada, aprueba, descarta, curiosa, leyendo, senala, dormida, error. */
   state?: TinoState;
   /** Lado en px. Sin él, Tino llena su contenedor (dale ancho y alto con className o style). */
   size?: number;
@@ -35,7 +35,7 @@ export type TinoProps = {
 /** Tino, la mascota en 3D. Carga el motor (three.js) en un paquete aparte, solo en el navegador; si no hay WebGL2 o algo
  *  falla, enseña la marca plana. Dónde vive y qué dice: docs/design-system/componentes.md#mascota. */
 export default function Tino({
-  state = "reposo", size, ears = "capsula", bottom = "redonda", material = "flocado", tint, visor = "banda", visorStyle = "cristal",
+  state = "reposo", size, ears = "corta", bottom = "redonda", material = "flocado", tint, visor = "banda", visorStyle = "cristal",
   show = "barrido", pet = "felices", dark = false, zoom = 1, look, still = false, petting = true, className = "", style, ref,
 }: TinoProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);

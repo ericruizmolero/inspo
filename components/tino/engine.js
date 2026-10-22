@@ -10,9 +10,16 @@ import * as SkeletonUtils from "three/addons/utils/SkeletonUtils.js";
 
 const RAD = Math.PI / 180;
 // los estados son los del sombreador: orejas en grados desde la vertical (positivo = hacia atrás), visor y giro
+// (v50) las caras de la hoja de copy: ear cuenta desde el reposo de cada oreja ([26, 5], el hueso 0 es la de la derecha); tilt, cada oreja
+// hacia fuera en grados (negativo, hacia la otra); eyes, dos ojos dentro de la banda, [medio ancho, medio alto] en medios altos de la
+// banda. tilt y eyes van izquierda y derecha según los ve quien mira
 const POSES = {
   reposo: { ear: [26, 5], open: 1, scan: 1 },   // (v39) en reposo el visor está revisando: el barrido de luz va y viene
-  dormida: { ear: [74, 64], open: 0.1, rot: [30, 0] },
+  dormida: { ear: [50, 29], tilt: [36, 36], open: 1, eyes: [[0.42, 0.05], [0.42, 0.05]] },
+  esceptica: { ear: [26, 5], tilt: [0, 30], open: 1, eyes: [[0.24, 0.2], [0.42, 0.42]] },
+  sospechosa: { ear: [22, 1], tilt: [0, 14], open: 1, eyes: [[0.42, 0.42], [0.42, 0.42]] },
+  satisfecha: { ear: [26, 5], tilt: [-8, -8], open: 1, eyes: [[0.4, 0.11], [0.4, 0.11]] },
+  admirada: { ear: [20, -1], tilt: [-32, -32], open: 1, eyes: [[0.36, 0.26], [0.36, 0.26]] },
   curiosa: { ear: [9, -7], open: 1, split: 1, rot: [70, 0] },
   leyendo: { ear: [22, 3], open: 1, scan: 1 },
   aprueba: { ear: [24, -24], open: 0.78, smile: 1, rot: [62, -4] },
@@ -173,7 +180,7 @@ const VISOR_V = /* glsl */`
 const VISOR_F = /* glsl */`
   // el visor de antes: una banda de cristal negro que rodea la cara. Cada gesto deforma la banda (se cierra en una raya, se curva
   // en sonrisa, se parte en tres lentes) y lo que queda fuera se pinta del pelo, como un párpado.
-  uniform float uTime, uOpen, uSplit, uSmile, uSeg, uScan, uScanOn, uBeam, uFur, uGaze, uStyle, uShow, uShowOn, uPet, uPetKind, uDark; uniform vec3 uL, uLit, uTint; uniform sampler2D uText;
+  uniform float uTime, uOpen, uSplit, uSmile, uSeg, uScan, uScanOn, uBeam, uFur, uGaze, uStyle, uShow, uShowOn, uPet, uPetKind, uDark, uEyesOn; uniform vec3 uL, uLit, uTint; uniform vec4 uEyes; uniform sampler2D uText;
   varying vec3 vObj, vN, vV, vT, vU;
   float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
   float seg(vec2 p, vec2 a, vec2 b) { vec2 pa = p - a, ba = b - a; return length(pa - ba * clamp(dot(pa, ba) / dot(ba, ba), 0., 1.)); }
@@ -205,6 +212,12 @@ const VISOR_F = /* glsl */`
       return st * tw * step(.3, h) * 2.; }
     return smoothstep(.17, .06, abs(length(a) - H * .5));
   }
+  // (v50) los dos ojos de las caras: uEyes.xy el medio ancho y medio alto del de la izquierda, .zw el de la derecha
+  float eyesFx(vec2 c) {
+    vec2 e = c.x < 0. ? uEyes.xy : uEyes.zw;
+    float d = rbox(c - vec2(sign(c.x) * 1.55, 0.), e, min(e.x, e.y) * .45);
+    return smoothstep(.06, -.06, d);
+  }
   void main() {
     vec3 N = normalize(vN), ember = vec3(1., .62, .20);
     float ang = atan(-vObj.z, vObj.x);
@@ -218,7 +231,7 @@ const VISOR_F = /* glsl */`
     float inside = smoothstep(.08, -.08, d);
     // la pantalla, bajo el cristal
     float vy = c.y / max(hh, .12);
-    float idle = (1. - uSplit) * (1. - uSeg) * (1. - uScanOn) * smoothstep(.5, .9, uOpen) * (1. - uShowOn * step(.5, uShow)) * (1. - uPet);   // (v40) con otro contenido elegido, las rayitas se apagan
+    float idle = (1. - uSplit) * (1. - uSeg) * (1. - uScanOn) * smoothstep(.5, .9, uOpen) * (1. - uShowOn * step(.5, uShow)) * (1. - uPet) * (1. - uEyesOn);   // (v40) con otro contenido elegido, las rayitas se apagan
     vec3 scr = vec3(.012, .012, .014);
     float run = (p.x + uTime * 1.4) / .55, cell = floor(run);
     scr += ember * step(.42, hash(vec2(cell, 3.))) * step(abs(fract(run) - .5), .30) * smoothstep(.5, .2, abs(vy)) * (.5 + .35 * sin(uTime * 3. + cell * .7)) * idle;
@@ -232,6 +245,7 @@ const VISOR_F = /* glsl */`
     scr += ember * 1.9 * exp(-abs(p.x - uScan * 3.2) * .9) * smoothstep(1., .2, abs(vy)) * uScanOn;
     scr += ember * uBeam * (.9 + .6 * smoothstep(1., 0., abs(vy)));
     scr += ember * 1.6 * showFx(c, hh, uTime, uShow) * uShowOn;
+    scr = mix(scr, vec3(.012, .012, .014) + mix(ember, vec3(1., .82, .5), .35) * 1.8 * eyesFx(c), uEyesOn * (1. - uPet));
     scr = mix(scr, vec3(.012, .012, .014) + ember * 1.8 * petFx(c, hh, uTime, uPetKind), uPet);
     scr *= .55 + .45 * smoothstep(1., .25, abs(vy));                 // más oscuro hacia el borde, como un tubo
     // (v39) estilos: la misma imagen de la pantalla, mostrada con otra tecnología
@@ -320,8 +334,8 @@ function create(canvas, opts = {}) {
   const base = opts.base || "/tino/";
   // (v42) en toda la web Tino es de peluche y blanco: ya no se leen las preferencias guardadas; solo cambia si una página lo pide
   let tintHex = opts.tint || CREAM,
-    matName = opts.material || "flocado", visorKind = opts.visor || "banda", visorStyle = opts.visorStyle || "cristal", showKind = opts.show || "barrido", petKind = opts.pet || "felices", earKind = opts.ears || "capsula", bottomKind = opts.bottom || "redonda";
-  const S = { pet: 0, showOn: 0, ear: [...REST], seat: 0, open: 1, split: 0, smile: 0, seg: 0, scan: 0, beam: 0, sx: 1, sy: 1, hop: 0, vHop: 0, yaw: YAW, vYaw: 0, pitch: 0, vPitch: 0 };
+    matName = opts.material || "flocado", visorKind = opts.visor || "banda", visorStyle = opts.visorStyle || "cristal", showKind = opts.show || "barrido", petKind = opts.pet || "felices", earKind = opts.ears || "corta", bottomKind = opts.bottom || "redonda";
+  const S = { pet: 0, showOn: 0, ear: [...REST], tilt: [0, 0], eyes: [0, 0, 0, 0], eyesOn: 0, seat: 0, open: 1, split: 0, smile: 0, seg: 0, scan: 0, beam: 0, sx: 1, sy: 1, hop: 0, vHop: 0, yaw: YAW, vYaw: 0, pitch: 0, vPitch: 0 };
   let pose = POSES.reposo, state = "reposo", basePose = "reposo", pressed = false, onceTimer = 0, blink = 0, t0 = performance.now(), last = 0, raf = 0;
   let visible = true, faceLeft = false, lookAt = null, seatOn = 0, bodyOn = 1, beamOn = 0, petting = 0, lastBox = null, vel = [0, 0], lastDraw = 0, viewId = "";
   let T = null;   // three.js y la escena, cuando estén cargados
@@ -408,7 +422,7 @@ function create(canvas, opts = {}) {
     const grav = new THREE.Vector3(), comb = new THREE.Vector3(), combAtV = new THREE.Vector3(9, 9, 9), glow = new THREE.Color(0, 0, 0);
     const furMat = (h, isBase, lid) => new THREE.ShaderMaterial({ vertexColors: HASAO, vertexShader: FUR_V, fragmentShader: FUR_F,
       uniforms: { uDark: visorU.uDark, uKind: visorU.uKind, uLid: { value: lid ? 1 : 0 }, uOpen: visorU.uOpen, uSplit: visorU.uSplit, uSmile: visorU.uSmile, uGlow: { value: glow }, uH: { value: h }, uBase: { value: isBase ? 1 : 0 }, uStr: { value: strands }, uTint: { value: tint }, uL: { value: L }, uLen: { value: 0.04 }, uD: { value: 270 }, uGrav: { value: grav }, uComb: { value: comb }, uCombAt: { value: combAtV } } });
-    const visorU = { uDark: { value: 0 }, uShow: { value: Math.max(0, SHOWS.indexOf(showKind)) }, uShowOn: { value: 0 }, uPet: { value: 0 }, uPetKind: { value: Math.max(0, PETS.indexOf(petKind)) }, uText: { value: textTex(THREE) }, uStyle: { value: Math.max(0, STYLES.indexOf(visorStyle)) }, uKind: { value: Math.max(0, KINDS.indexOf(visorKind)) }, uGaze: { value: 0 }, uFur: { value: 1 }, uTint: { value: tint }, uTime: { value: 0 }, uOpen: { value: 1 }, uSplit: { value: 0 }, uSmile: { value: 0 }, uSeg: { value: 0 }, uScan: { value: 0 }, uScanOn: { value: 0 }, uBeam: { value: 0 }, uL: { value: L }, uLit: { value: new THREE.Vector3() } };
+    const visorU = { uDark: { value: 0 }, uShow: { value: Math.max(0, SHOWS.indexOf(showKind)) }, uShowOn: { value: 0 }, uPet: { value: 0 }, uPetKind: { value: Math.max(0, PETS.indexOf(petKind)) }, uText: { value: textTex(THREE) }, uStyle: { value: Math.max(0, STYLES.indexOf(visorStyle)) }, uKind: { value: Math.max(0, KINDS.indexOf(visorKind)) }, uGaze: { value: 0 }, uFur: { value: 1 }, uTint: { value: tint }, uTime: { value: 0 }, uOpen: { value: 1 }, uSplit: { value: 0 }, uSmile: { value: 0 }, uSeg: { value: 0 }, uScan: { value: 0 }, uScanOn: { value: 0 }, uBeam: { value: 0 }, uEyes: { value: new THREE.Vector4() }, uEyesOn: { value: 0 }, uL: { value: L }, uLit: { value: new THREE.Vector3() } };
     const visorMat = new THREE.ShaderMaterial({ vertexShader: VISOR_V, fragmentShader: VISOR_F, uniforms: visorU, alphaToCoverage: true, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -8 });   // a ras: el desfase de profundidad evita que asome la piel
 
     const modelUrl = () => base + `tino-${earKind}${bottomKind !== "redonda" ? "-" + bottomKind : ""}.glb`;   // (v48) todos con oclusión; tino.glb queda para las versiones congeladas   // (v45) la base: redonda, media o plana (como el isotipo)   // (v42) por defecto, cápsulas; tino.glb (hoja) se queda para las versiones congeladas
@@ -570,11 +584,12 @@ function create(canvas, opts = {}) {
     const k = Math.max(0.001, S.seat * S.seat * (3 - 2 * S.seat)); T.chair.scale.setScalar(k); T.chair.visible = S.seat > 0.01;
     // el visor
     const U = T.visorU; U.uTime.value = now / 1000; U.uOpen.value = Math.max(0.02, S.open * (1 - blink)); U.uSplit.value = S.split; U.uSmile.value = S.smile; U.uSeg.value = S.seg; U.uScan.value = Math.sin(time * 2.4); U.uScanOn.value = S.scan; U.uBeam.value = S.beam;
+    U.uEyes.value.set(...S.eyes); U.uEyesOn.value = S.eyesOn;
     const f = Math.floor(time / 0.3) % 5, lit = P.flicker ? [0, 1, 2].map((i) => (Math.floor(time / 0.11 + i * 1.7) % 3 ? 0 : 1)) : [f > 0 ? 1 : 0, f > 1 ? 1 : 0, f > 2 ? 1 : 0];
     U.uLit.value.set(...lit);
     // cuánto alumbra el visor según lo que hace
     const litN = (lit[0] + lit[1] + lit[2]) / 3, op = Math.max(0.02, S.open * (1 - blink));
-    const em = 0.10 * op + 0.35 * S.scan + 0.9 * S.beam + 0.45 * S.seg * litN + (showKind === "barrido" ? 0 : 0.28 * S.showOn) + 0.3 * S.pet, cr = 0.32 * S.split + 0.28 * S.smile;
+    const em = 0.10 * op + 0.35 * S.scan + 0.9 * S.beam + 0.45 * S.seg * litN + (showKind === "barrido" ? 0 : 0.28 * S.showOn) + 0.3 * S.pet + 0.12 * S.eyesOn, cr = 0.32 * S.split + 0.28 * S.smile;
     U.uShowOn.value = S.showOn; U.uPet.value = S.pet;
     T.glow.setRGB((em + cr) * 1.0, em * 0.62 + cr * 0.94, em * 0.2 + cr * 0.8);
     if (T.visorLight) { T.visorLight.color.copy(T.glow); T.visorLight.intensity = T.solid ? (dark ? 3.5 : 1.1) : 0; }   // (v48) más corta y suave: en el plástico blanco dejaba una mancha naranja   // en los materiales lisos, una luz de verdad delante del visor
@@ -582,7 +597,8 @@ function create(canvas, opts = {}) {
     const qa = new THREE.Quaternion(), qb = new THREE.Quaternion();
     T.ears.forEach((list, i) => list.forEach((b, j) => {
       const e = ears[i], ax = T.axes[i][j], back = (S.ear[i] - REST[i]) * RAD * EARMIX[j] + e.b[j] * EARPHYS[j];   // postura del estado + física
-      b.quaternion.copy(T.rest[i][j]).multiply(qb.setFromAxisAngle(ax.back, back)).multiply(qa.setFromAxisAngle(ax.side, e.a[j] * EARPHYS[j]));
+      const side = S.tilt[1 - i] * (i ? -1 : 1) * RAD * EARMIX[j] + e.a[j] * EARPHYS[j];   // el hueso 0 es la oreja que se ve a la derecha
+      b.quaternion.copy(T.rest[i][j]).multiply(qb.setFromAxisAngle(ax.back, back)).multiply(qa.setFromAxisAngle(ax.side, side));
     }));
     // el pelo: gravedad hacia abajo (en ejes del objeto) y el peine
     const inv = new THREE.Matrix4().copy(T.content.matrixWorld).invert();
@@ -621,6 +637,9 @@ function create(canvas, opts = {}) {
     const follow = (key, to, rate = ease) => { if (Math.abs(to - S[key]) > 0.004) moving = true; S[key] += (to - S[key]) * rate; };
     follow("open", P.open, 1 - Math.exp(-dt * 18)); follow("split", P.split || 0); follow("smile", P.smile || 0); follow("seg", P.seg || 0); follow("scan", (P.scan || 0) * (P === POSES.reposo && showKind !== "barrido" ? 0 : 1)); follow("pet", stroked && !pressed ? 1 : 0, 1 - Math.exp(-dt * 8)); follow("showOn", P === POSES.reposo && !pressed ? 1 : 0, 1 - Math.exp(-dt * 6)); follow("beam", beamOn);
     S.ear = S.ear.map((x, i) => { const to = P.ear[i]; if (Math.abs(to - x) > 0.2) moving = true; return x + (to - x) * (1 - Math.exp(-dt * 9)); });
+    S.tilt = S.tilt.map((x, i) => { const to = (P.tilt || [0, 0])[i]; if (Math.abs(to - x) > 0.2) moving = true; return x + (to - x) * (1 - Math.exp(-dt * 9)); });
+    const eyes = P.eyes ? P.eyes.flat() : S.eyes; follow("eyesOn", P.eyes ? 1 : 0);
+    S.eyes = S.eyes.map((x, k) => { if (Math.abs(eyes[k] - x) > 0.002) moving = true; return x + (eyes[k] - x) * (1 - Math.exp(-dt * 16)); });
     follow("sx", sq[0]); follow("sy", sq[1]); follow("seat", seatOn, 1 - Math.exp(-dt * 7));
     combDir.forEach((c, k) => (combDir[k] = c * Math.exp(-dt * 3))); if (Math.hypot(...combDir) > 0.01) moving = true;
     if (api.gazeStep && api.gazeStep(dt)) moving = true;
@@ -634,7 +653,7 @@ function create(canvas, opts = {}) {
   function wake() { if (dead) return; if (reduced || opts.still) { settle(); if (!opts.still || reduced) return; } if (!raf && visible) raf = requestAnimationFrame(step); }
   function settle() {
     const P = pressed ? POSES.pulsa : pose, tg = targets(P), sq = P.sq || [1, 1];
-    Object.assign(S, { pet: 0, showOn: P === POSES.reposo ? 1 : 0, ear: [...P.ear], seat: seatOn, open: P.open, split: P.split || 0, smile: P.smile || 0, seg: P.seg || 0, scan: (P.scan || 0) * (P === POSES.reposo && showKind !== "barrido" ? 0 : 1), beam: beamOn, sx: sq[0], sy: sq[1], yaw: tg.yaw, pitch: tg.pitch, vYaw: 0, vPitch: 0 });
+    Object.assign(S, { pet: 0, showOn: P === POSES.reposo ? 1 : 0, ear: [...P.ear], tilt: [...(P.tilt || [0, 0])], eyes: P.eyes ? P.eyes.flat() : S.eyes, eyesOn: P.eyes ? 1 : 0, seat: seatOn, open: P.open, split: P.split || 0, smile: P.smile || 0, seg: P.seg || 0, scan: (P.scan || 0) * (P === POSES.reposo && showKind !== "barrido" ? 0 : 1), beam: beamOn, sx: sq[0], sy: sq[1], yaw: tg.yaw, pitch: tg.pitch, vYaw: 0, vPitch: 0 });
     t0 = performance.now() - 1000; render();
   }
   let gaze = 0, gazeTo = 0;
