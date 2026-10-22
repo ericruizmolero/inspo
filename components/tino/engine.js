@@ -25,7 +25,7 @@ const POSES = {
   // (v50) screen: el visor enseña su contenido (show) como en reposo; cada una con sus orejas para que no se confundan
   siguiendo: { ear: [12, -8], tilt: [-6, -6], open: 1, screen: 1 },
   buscando: { ear: [8, -12], tilt: [12, -4], open: 1, screen: 1 },
-  complice: { ear: [26, 5], tilt: [-16, 16], open: 1, eyes: [[0.4, 0.05], [0.36, 0.36]] },   // guiña un ojo
+  complice: { ear: [20, 12], tilt: [-26, 26], open: 1, smile: 0.7, eyes: [[0.5, 0.07], [0.42, 0.42]] },   // guiña un ojo y sonríe de medio lado
   aprueba: { ear: [24, -24], open: 0.78, smile: 1, rot: [62, -4] },
   pensando: { ear: [30, 8], open: 1, seg: 1 },
   descarta: { ear: [60, 50], open: 0.1, shake: 1 },
