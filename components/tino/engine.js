@@ -22,6 +22,10 @@ const POSES = {
   admirada: { ear: [20, -1], tilt: [-32, -32], open: 1, eyes: [[0.36, 0.26], [0.36, 0.26]] },
   curiosa: { ear: [9, -7], open: 1, split: 1, rot: [70, 0] },
   leyendo: { ear: [22, 3], open: 1, scan: 1 },
+  // (v50) screen: el visor enseña su contenido (show) como en reposo; cada una con sus orejas para que no se confundan
+  siguiendo: { ear: [12, -8], tilt: [-6, -6], open: 1, screen: 1 },
+  buscando: { ear: [8, -12], tilt: [12, -4], open: 1, screen: 1 },
+  complice: { ear: [26, 5], tilt: [-16, 16], open: 1, eyes: [[0.4, 0.05], [0.36, 0.36]] },   // guiña un ojo
   aprueba: { ear: [24, -24], open: 0.78, smile: 1, rot: [62, -4] },
   pensando: { ear: [30, 8], open: 1, seg: 1 },
   descarta: { ear: [60, 50], open: 0.1, shake: 1 },
@@ -638,7 +642,7 @@ function create(canvas, opts = {}) {
     });
     const ease = 1 - Math.exp(-dt * 13);
     const follow = (key, to, rate = ease) => { if (Math.abs(to - S[key]) > 0.004) moving = true; S[key] += (to - S[key]) * rate; };
-    follow("open", P.open, 1 - Math.exp(-dt * 18)); follow("split", P.split || 0); follow("smile", P.smile || 0); follow("seg", P.seg || 0); follow("scan", (P.scan || 0) * (P === POSES.reposo && showKind !== "barrido" ? 0 : 1)); follow("pet", stroked && !pressed ? 1 : 0, 1 - Math.exp(-dt * 8)); follow("showOn", P === POSES.reposo && !pressed ? 1 : 0, 1 - Math.exp(-dt * 6)); follow("beam", beamOn);
+    follow("open", P.open, 1 - Math.exp(-dt * 18)); follow("split", P.split || 0); follow("smile", P.smile || 0); follow("seg", P.seg || 0); follow("scan", (P.scan || 0) * ((P === POSES.reposo || P.screen) && showKind !== "barrido" ? 0 : 1)); follow("pet", stroked && !pressed ? 1 : 0, 1 - Math.exp(-dt * 8)); follow("showOn", (P === POSES.reposo || P.screen) && !pressed ? 1 : 0, 1 - Math.exp(-dt * 6)); follow("beam", beamOn);
     // (v50) orejas con muelle: llegan, se pasan un poco y se asientan (antes un acercamiento sin rebote). Dormido respiran con el cuerpo
     const spring = (key, vKey, to) => { S[key] = S[key].map((x, i) => { const v = S[vKey][i] + ((to[i] - x) * 95 - S[vKey][i] * 11.5) * dt; S[vKey][i] = v; if (Math.abs(to[i] - x) > 0.2 || Math.abs(v) > 0.5) moving = true; return x + v * dt; }); };
     spring("ear", "vEar", P.ear.map((a) => a + breath * 2.5)); spring("tilt", "vTilt", P.tilt || [0, 0]);
@@ -657,7 +661,7 @@ function create(canvas, opts = {}) {
   function wake() { if (dead) return; if (reduced || opts.still) { settle(); if (!opts.still || reduced) return; } if (!raf && visible) raf = requestAnimationFrame(step); }
   function settle() {
     const P = pressed ? POSES.pulsa : pose, tg = targets(P), sq = P.sq || [1, 1];
-    Object.assign(S, { pet: 0, showOn: P === POSES.reposo ? 1 : 0, ear: [...P.ear], vEar: [0, 0], tilt: [...(P.tilt || [0, 0])], vTilt: [0, 0], eyes: P.eyes ? P.eyes.flat() : S.eyes, eyesOn: P.eyes ? 1 : 0, seat: seatOn, open: P.open, split: P.split || 0, smile: P.smile || 0, seg: P.seg || 0, scan: (P.scan || 0) * (P === POSES.reposo && showKind !== "barrido" ? 0 : 1), beam: beamOn, sx: sq[0], sy: sq[1], yaw: tg.yaw, pitch: tg.pitch, vYaw: 0, vPitch: 0 });
+    Object.assign(S, { pet: 0, showOn: P === POSES.reposo || P.screen ? 1 : 0, ear: [...P.ear], vEar: [0, 0], tilt: [...(P.tilt || [0, 0])], vTilt: [0, 0], eyes: P.eyes ? P.eyes.flat() : S.eyes, eyesOn: P.eyes ? 1 : 0, seat: seatOn, open: P.open, split: P.split || 0, smile: P.smile || 0, seg: P.seg || 0, scan: (P.scan || 0) * ((P === POSES.reposo || P.screen) && showKind !== "barrido" ? 0 : 1), beam: beamOn, sx: sq[0], sy: sq[1], yaw: tg.yaw, pitch: tg.pitch, vYaw: 0, vPitch: 0 });
     t0 = performance.now() - 1000; render();
   }
   let gaze = 0, gazeTo = 0;
@@ -672,7 +676,7 @@ function create(canvas, opts = {}) {
   canvas.addEventListener("webglcontextlost", onLost);
   // vida en reposo: de vez en cuando parpadea o se le mueve una oreja
   const idle = !reduced && !opts.still && opts.idle !== false && setInterval(() => {
-    if (!visible || document.hidden || pressed || !(state === "reposo" || (pose.eyes && state !== "dormida"))) return;
+    if (!visible || document.hidden || pressed || !(state === "reposo" || pose.screen || (pose.eyes && state !== "dormida"))) return;
     if (Math.random() < 0.55) { blink = 0.9; wake(); setTimeout(() => { blink = 0; wake(); }, 120); } else { const e = ears[Math.random() < 0.5 ? 0 : 1]; e.v[2] += (Math.random() - 0.5) * 6; e.w[2] += Math.random() * 3; wake(); }
   }, 2600);
   // para React: al desmontar, se para todo y se suelta la tarjeta gráfica

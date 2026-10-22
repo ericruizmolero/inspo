@@ -11,15 +11,15 @@ export type TinoMood =
 
 export const MOODS: Record<TinoMood, { state: TinoState; show?: TinoShow; front?: boolean }> = {
   watching: { state: "reposo", show: "barrido", front: true },
-  following: { state: "leyendo", show: "mirada", front: true },
+  following: { state: "siguiendo", show: "mirada", front: true },
   thinking: { state: "pensando", front: true },
-  searching: { state: "leyendo", show: "ecualizador", front: true },
+  searching: { state: "buscando", show: "ecualizador", front: true },
   skeptic: { state: "esceptica", front: true },
   suspect: { state: "sospechosa", front: true },
   smug: { state: "satisfecha", front: true },
   admirer: { state: "admirada", front: true },
   judge: { state: "descarta", front: true },
-  accomplice: { state: "leyendo", show: "texto", front: true },
+  accomplice: { state: "complice", front: true },
   asleep: { state: "dormida", front: true },
   sad: { state: "error", front: true },
 };

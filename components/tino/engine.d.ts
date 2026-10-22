@@ -1,6 +1,6 @@
 /** Tipos del motor de Tino (engine.js). Lo usa <Tino />; no hace falta importarlo directamente. */
 
-export type TinoState = "reposo" | "dormida" | "esceptica" | "sospechosa" | "satisfecha" | "admirada" | "curiosa" | "leyendo" | "aprueba" | "pensando" | "descarta" | "senala" | "error" | "pulsa" | "caricia";
+export type TinoState = "reposo" | "dormida" | "esceptica" | "sospechosa" | "satisfecha" | "admirada" | "curiosa" | "leyendo" | "siguiendo" | "buscando" | "complice" | "aprueba" | "pensando" | "descarta" | "senala" | "error" | "pulsa" | "caricia";
 export type TinoEars = "capsula" | "hoja" | "punta" | "corta" | "caida" | "antena";
 export type TinoBottom = "redonda" | "media" | "plana";
 export type TinoMaterial = "flocado" | "arcilla" | "cromo" | "irisado" | "perla" | "cristal" | "plastico" | "casco";
