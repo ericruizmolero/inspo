@@ -18,10 +18,10 @@ export const MOODS: Record<TinoMood, { state: TinoState; show?: TinoShow; front?
   suspect: { state: "sospechosa", front: true },
   smug: { state: "satisfecha", front: true },
   admirer: { state: "admirada", front: true },
-  judge: { state: "descarta" },
+  judge: { state: "descarta", front: true },
   accomplice: { state: "leyendo", show: "texto", front: true },
   asleep: { state: "dormida", front: true },
-  sad: { state: "error" },
+  sad: { state: "error", front: true },
 };
 
 /** Nearly at the screen, a little to the side: where a face with no turn of its own looks */

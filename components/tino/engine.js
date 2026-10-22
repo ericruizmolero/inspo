@@ -214,9 +214,10 @@ const VISOR_F = /* glsl */`
   }
   // (v50) los dos ojos de las caras: uEyes.xy el medio ancho y medio alto del de la izquierda, .zw el de la derecha
   float eyesFx(vec2 c) {
+    c.x -= uGaze * .35;                                   // miran un poco hacia el puntero
     vec2 e = c.x < 0. ? uEyes.xy : uEyes.zw;
     float d = rbox(c - vec2(sign(c.x) * 1.55, 0.), e, min(e.x, e.y) * .45);
-    return smoothstep(.06, -.06, d);
+    return smoothstep(.06, -.06, d) * (.85 + .15 * smoothstep(0., -.2, d)) + exp(-max(d, 0.) * 9.) * .18;   // núcleo y un halo corto
   }
   void main() {
     vec3 N = normalize(vN), ember = vec3(1., .62, .20);
@@ -335,7 +336,7 @@ function create(canvas, opts = {}) {
   // (v42) en toda la web Tino es de peluche y blanco: ya no se leen las preferencias guardadas; solo cambia si una página lo pide
   let tintHex = opts.tint || CREAM,
     matName = opts.material || "flocado", visorKind = opts.visor || "banda", visorStyle = opts.visorStyle || "cristal", showKind = opts.show || "barrido", petKind = opts.pet || "felices", earKind = opts.ears || "corta", bottomKind = opts.bottom || "redonda";
-  const S = { pet: 0, showOn: 0, ear: [...REST], tilt: [0, 0], eyes: [0, 0, 0, 0], eyesOn: 0, seat: 0, open: 1, split: 0, smile: 0, seg: 0, scan: 0, beam: 0, sx: 1, sy: 1, hop: 0, vHop: 0, yaw: YAW, vYaw: 0, pitch: 0, vPitch: 0 };
+  const S = { pet: 0, showOn: 0, ear: [...REST], vEar: [0, 0], tilt: [0, 0], vTilt: [0, 0], eyes: [0, 0, 0, 0], eyesOn: 0, seat: 0, open: 1, split: 0, smile: 0, seg: 0, scan: 0, beam: 0, sx: 1, sy: 1, hop: 0, vHop: 0, yaw: YAW, vYaw: 0, pitch: 0, vPitch: 0 };
   let pose = POSES.reposo, state = "reposo", basePose = "reposo", pressed = false, onceTimer = 0, blink = 0, t0 = performance.now(), last = 0, raf = 0;
   let visible = true, faceLeft = false, lookAt = null, seatOn = 0, bodyOn = 1, beamOn = 0, petting = 0, lastBox = null, vel = [0, 0], lastDraw = 0, viewId = "";
   let T = null;   // three.js y la escena, cuando estén cargados
@@ -351,6 +352,7 @@ function create(canvas, opts = {}) {
       if (!POSES[name]) name = "reposo";
       clearTimeout(onceTimer);
       if (ONCE[name]) onceTimer = setTimeout(() => api.set(basePose), ONCE[name] * 1000); else if (name !== "pulsa") basePose = name;
+      if (name !== state && name !== "pulsa") ears.forEach((e, i) => { e.v[2] += (i ? -1 : 1) * 1.1; e.w[2] += 0.7; });   // (v50) al cambiar de cara, las orejas dan un respingo
       state = name; pose = POSES[name]; api.dir = options.dir || ""; canvas.dataset.state = name; t0 = performance.now(); wake();
     },
     view(id) { viewId = id; },
@@ -583,12 +585,13 @@ function create(canvas, opts = {}) {
     T.tino.visible = !!bodyOn;
     const k = Math.max(0.001, S.seat * S.seat * (3 - 2 * S.seat)); T.chair.scale.setScalar(k); T.chair.visible = S.seat > 0.01;
     // el visor
-    const U = T.visorU; U.uTime.value = now / 1000; U.uOpen.value = Math.max(0.02, S.open * (1 - blink)); U.uSplit.value = S.split; U.uSmile.value = S.smile; U.uSeg.value = S.seg; U.uScan.value = Math.sin(time * 2.4); U.uScanOn.value = S.scan; U.uBeam.value = S.beam;
-    U.uEyes.value.set(...S.eyes); U.uEyesOn.value = S.eyesOn;
+    const U = T.visorU; U.uTime.value = now / 1000; U.uOpen.value = Math.max(0.02, S.open * (1 - blink * (1 - S.eyesOn))); U.uSplit.value = S.split; U.uSmile.value = S.smile; U.uSeg.value = S.seg; U.uScan.value = Math.sin(time * 2.4); U.uScanOn.value = S.scan; U.uBeam.value = S.beam;
+    const lid = 1 - blink * S.eyesOn * 0.88;   // (v50) con ojos, parpadean los ojos y la banda se queda abierta
+    U.uEyes.value.set(S.eyes[0], S.eyes[1] * lid, S.eyes[2], S.eyes[3] * lid); U.uEyesOn.value = S.eyesOn;
     const f = Math.floor(time / 0.3) % 5, lit = P.flicker ? [0, 1, 2].map((i) => (Math.floor(time / 0.11 + i * 1.7) % 3 ? 0 : 1)) : [f > 0 ? 1 : 0, f > 1 ? 1 : 0, f > 2 ? 1 : 0];
     U.uLit.value.set(...lit);
     // cuánto alumbra el visor según lo que hace
-    const litN = (lit[0] + lit[1] + lit[2]) / 3, op = Math.max(0.02, S.open * (1 - blink));
+    const litN = (lit[0] + lit[1] + lit[2]) / 3, op = Math.max(0.02, S.open * (1 - blink * (1 - S.eyesOn)));
     const em = 0.10 * op + 0.35 * S.scan + 0.9 * S.beam + 0.45 * S.seg * litN + (showKind === "barrido" ? 0 : 0.28 * S.showOn) + 0.3 * S.pet + 0.12 * S.eyesOn, cr = 0.32 * S.split + 0.28 * S.smile;
     U.uShowOn.value = S.showOn; U.uPet.value = S.pet;
     T.glow.setRGB((em + cr) * 1.0, em * 0.62 + cr * 0.94, em * 0.2 + cr * 0.8);
@@ -636,8 +639,9 @@ function create(canvas, opts = {}) {
     const ease = 1 - Math.exp(-dt * 13);
     const follow = (key, to, rate = ease) => { if (Math.abs(to - S[key]) > 0.004) moving = true; S[key] += (to - S[key]) * rate; };
     follow("open", P.open, 1 - Math.exp(-dt * 18)); follow("split", P.split || 0); follow("smile", P.smile || 0); follow("seg", P.seg || 0); follow("scan", (P.scan || 0) * (P === POSES.reposo && showKind !== "barrido" ? 0 : 1)); follow("pet", stroked && !pressed ? 1 : 0, 1 - Math.exp(-dt * 8)); follow("showOn", P === POSES.reposo && !pressed ? 1 : 0, 1 - Math.exp(-dt * 6)); follow("beam", beamOn);
-    S.ear = S.ear.map((x, i) => { const to = P.ear[i]; if (Math.abs(to - x) > 0.2) moving = true; return x + (to - x) * (1 - Math.exp(-dt * 9)); });
-    S.tilt = S.tilt.map((x, i) => { const to = (P.tilt || [0, 0])[i]; if (Math.abs(to - x) > 0.2) moving = true; return x + (to - x) * (1 - Math.exp(-dt * 9)); });
+    // (v50) orejas con muelle: llegan, se pasan un poco y se asientan (antes un acercamiento sin rebote). Dormido respiran con el cuerpo
+    const spring = (key, vKey, to) => { S[key] = S[key].map((x, i) => { const v = S[vKey][i] + ((to[i] - x) * 95 - S[vKey][i] * 11.5) * dt; S[vKey][i] = v; if (Math.abs(to[i] - x) > 0.2 || Math.abs(v) > 0.5) moving = true; return x + v * dt; }); };
+    spring("ear", "vEar", P.ear.map((a) => a + breath * 2.5)); spring("tilt", "vTilt", P.tilt || [0, 0]);
     const eyes = P.eyes ? P.eyes.flat() : S.eyes; follow("eyesOn", P.eyes ? 1 : 0);
     S.eyes = S.eyes.map((x, k) => { if (Math.abs(eyes[k] - x) > 0.002) moving = true; return x + (eyes[k] - x) * (1 - Math.exp(-dt * 16)); });
     follow("sx", sq[0]); follow("sy", sq[1]); follow("seat", seatOn, 1 - Math.exp(-dt * 7));
@@ -653,7 +657,7 @@ function create(canvas, opts = {}) {
   function wake() { if (dead) return; if (reduced || opts.still) { settle(); if (!opts.still || reduced) return; } if (!raf && visible) raf = requestAnimationFrame(step); }
   function settle() {
     const P = pressed ? POSES.pulsa : pose, tg = targets(P), sq = P.sq || [1, 1];
-    Object.assign(S, { pet: 0, showOn: P === POSES.reposo ? 1 : 0, ear: [...P.ear], tilt: [...(P.tilt || [0, 0])], eyes: P.eyes ? P.eyes.flat() : S.eyes, eyesOn: P.eyes ? 1 : 0, seat: seatOn, open: P.open, split: P.split || 0, smile: P.smile || 0, seg: P.seg || 0, scan: (P.scan || 0) * (P === POSES.reposo && showKind !== "barrido" ? 0 : 1), beam: beamOn, sx: sq[0], sy: sq[1], yaw: tg.yaw, pitch: tg.pitch, vYaw: 0, vPitch: 0 });
+    Object.assign(S, { pet: 0, showOn: P === POSES.reposo ? 1 : 0, ear: [...P.ear], vEar: [0, 0], tilt: [...(P.tilt || [0, 0])], vTilt: [0, 0], eyes: P.eyes ? P.eyes.flat() : S.eyes, eyesOn: P.eyes ? 1 : 0, seat: seatOn, open: P.open, split: P.split || 0, smile: P.smile || 0, seg: P.seg || 0, scan: (P.scan || 0) * (P === POSES.reposo && showKind !== "barrido" ? 0 : 1), beam: beamOn, sx: sq[0], sy: sq[1], yaw: tg.yaw, pitch: tg.pitch, vYaw: 0, vPitch: 0 });
     t0 = performance.now() - 1000; render();
   }
   let gaze = 0, gazeTo = 0;
@@ -668,7 +672,7 @@ function create(canvas, opts = {}) {
   canvas.addEventListener("webglcontextlost", onLost);
   // vida en reposo: de vez en cuando parpadea o se le mueve una oreja
   const idle = !reduced && !opts.still && opts.idle !== false && setInterval(() => {
-    if (!visible || document.hidden || pressed || state !== "reposo") return;
+    if (!visible || document.hidden || pressed || !(state === "reposo" || (pose.eyes && state !== "dormida"))) return;
     if (Math.random() < 0.55) { blink = 0.9; wake(); setTimeout(() => { blink = 0; wake(); }, 120); } else { const e = ears[Math.random() < 0.5 ? 0 : 1]; e.v[2] += (Math.random() - 0.5) * 6; e.w[2] += Math.random() * 3; wake(); }
   }, 2600);
   // para React: al desmontar, se para todo y se suelta la tarjeta gráfica
