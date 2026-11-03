@@ -7,6 +7,7 @@ import { addText } from "@/app/actions/text";
 import { assignSystemArea } from "@/app/actions/system";
 import { boardOf } from "@/lib/boards/match";
 import { uploadMedia } from "@/lib/media-client";
+import { keepKey } from "@/lib/board";
 import { cue } from "@/lib/ui-sounds";
 import { webKeyOf, nameFromHost, typeFromUrl, mediaKindOf, nameFromFile } from "@/lib/url";
 import { messageOf } from "@/components/I18nProvider";
@@ -68,16 +69,18 @@ export function useAddReferences({ user, workspace, t, items, setItems, setLinks
       name: nameFromHost(input.web), web: input.web, type: input.type, note: input.note,
       date: `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`,
       addedBy: user.name || user.email,
+      pendingIn: into ?? saveTargetRef.current() ?? null,
     };
     setItems((prev) => [temp, ...prev]);
     try {
-      const projectId = into ?? saveTargetRef.current() ?? undefined;
+      const projectId = temp.pendingIn ?? undefined;
       const r = await addInspo({ web: input.web, type: input.type, note: input.note, projectId });
       if (!r.ok) throw new Error(r.error);
       const item = r.data;
       if (projectId && item.id) setLinks((prev) => ({ ...prev, [item.id!]: [projectId] }));
       if (projectId) refreshSystem(projectId);
       if (projectId) void fileUnderAreas(projectId, item, input.areas);
+      keepKey(temp, item);
       setItems((prev) => prev.map((i) => (i === temp ? item : i)));
       // Full experience from the start: tags and DESIGN.md without asking.
       // A post on X is imported first (its picture is what the tags look at).
@@ -104,11 +107,12 @@ export function useAddReferences({ user, workspace, t, items, setItems, setLinks
       name: nameFromFile(input.file.name) || t.card.image, web: local, type: input.type, note: input.note,
       date: `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`,
       addedBy: user.name || user.email,
+      pendingIn: into ?? saveTargetRef.current() ?? null,
     };
     setItems((prev) => [temp, ...prev]);
     try {
       const url = await uploadMedia(input.file);
-      const projectId = into ?? saveTargetRef.current() ?? undefined;
+      const projectId = temp.pendingIn ?? undefined;
       const r = await addImage({ url, fileName: input.file.name, type: input.type, note: input.note, projectId });
       if (!r.ok) throw new Error(r.error);
       const item = r.data;
@@ -116,6 +120,7 @@ export function useAddReferences({ user, workspace, t, items, setItems, setLinks
       if (projectId) refreshSystem(projectId);
       if (projectId) void fileUnderAreas(projectId, item, input.areas);
       setThumbMap((prev) => ({ ...prev, [item.web]: item.web }));
+      keepKey(temp, item);
       setItems((prev) => prev.map((i) => (i === temp ? item : i)));
       watch(item.web);
       void cardCopy(item.web, input.file);
@@ -140,15 +145,17 @@ export function useAddReferences({ user, workspace, t, items, setItems, setLinks
       name: input.text.title, web: `text:${d.getTime()}`, type: input.type, note: input.note,
       date: `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`,
       addedBy: user.name || user.email,
+      pendingIn: saveTargetRef.current() ?? null,
     };
     setItems((prev) => [temp, ...prev]);
     try {
-      const projectId = saveTargetRef.current() ?? undefined;
+      const projectId = temp.pendingIn ?? undefined;
       const r = await addText({ title: input.text.title, text: input.text.body, note: input.note, projectId });
       if (!r.ok) throw new Error(r.error);
       const item = r.data;
       if (projectId && item.id) setLinks((prev) => ({ ...prev, [item.id!]: [projectId] }));
       if (projectId) refreshSystem(projectId);
+      keepKey(temp, item);
       setItems((prev) => prev.map((i) => (i === temp ? item : i)));
       // Its "tags" (its first lines) are already written: one look brings them to the card
       watch(item.web);

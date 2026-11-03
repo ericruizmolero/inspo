@@ -458,9 +458,10 @@ export default function InspoCard({ item, text, tags, tagJob, score, reason, man
         .sort((a, b) => tags.tags[b.key] - tags.tags[a.key]).slice(0, 3)
     : [];
   const gathering = tagJob === "pending" || tagJob === "running";
-  const aiChips = gathering ? (
+  // Still being saved (no id yet): the same chip as gathering, saying so. Tino says it from the bar (SearchTino)
+  const aiChips = !item.id || gathering ? (
     <div className="tile__tags" role="status">
-      <span className="cr-chip cr-chip-paper tile__tag tile__tag--gathering">{t.card.gatheringTags}</span>
+      <span className="cr-chip cr-chip-paper tile__tag tile__tag--gathering">{!item.id ? (item.web.startsWith("blob:") ? t.card.uploading : t.card.saving) : t.card.gatheringTags}</span>
     </div>
   ) : tags && kind !== "text" && (
     <div className="tile__tags">

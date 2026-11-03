@@ -9,8 +9,13 @@ export const BOARD_MAX_RATIO = 1.3;
 /** Height/width of a card whose media is still unmeasured (the 16:10 cover) */
 export const DEFAULT_RATIO = 0.625;
 
+/** A card added in this visit keeps the key it was shown with while it was being saved: swapped for the saved one,
+ *  it stays the same card (no remount, no second entrance). By id, so a later copy of the item from the server keeps it */
+const addedAs = new Map<string, string>();
+export const keepKey = (temp: InspoItem, saved: InspoItem) => { if (saved.id) addedAs.set(saved.id, keyOf(temp)); };
+
 /** The key a card is laid out by: its id once saved, its address while it is still being added */
-export const keyOf = (item: InspoItem) => item.id ?? item.web;
+export const keyOf = (item: InspoItem): string => (item.id ? addedAs.get(item.id) ?? item.id : item.web);
 
 /** The board's copy of a stored picture: the same image CARD_WIDTH wide as WebP, next to it in the bucket. A card is
  *  at most 380px wide on a 2x screen, and the originals are photos and screenshots of up to 20 MB. GIFs keep their
