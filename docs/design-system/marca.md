@@ -4,7 +4,7 @@ Cómo se presenta Criterio en su propia interfaz: Tino como logotipo y favicon, 
 
 ## Logotipo
 
-Tino plano, el mismo dibujo que el favicon, es `Logo` (`components/Logo.tsx`, que pinta `TinoMark`): un SVG en línea en el color del texto (`--text`, y `--chrome-ink` sobre el cromo), blanco en oscuro y tinta en claro, con el visor recortado. Sin baldosa, radio ni sombra propios. Sustituye al nombre en la interfaz; el nombre va en la etiqueta ("criterio.design"). Por decidir si se queda plano o pasa a ser el peluche en 3D (como imagen fija): la librería enseña los dos. La criatura verde queda solo en los iconos de la extensión. → [decisión](decisiones/2026-11-03-el-logotipo-es-tino-como-el-favicon.md)
+Tino plano, el mismo dibujo que el favicon, es `Logo` (`components/Logo.tsx`, que pinta `TinoMark`): un SVG en línea en el color del texto (`--text`, y `--chrome-ink` sobre el cromo), blanco en oscuro y tinta en claro, con el visor recortado. Sin baldosa, radio ni sombra propios. Sustituye al nombre en la interfaz; el nombre va en la etiqueta ("criterio.design"). Por decidir si se queda plano o pasa a ser el peluche en 3D (como imagen fija): la librería enseña los dos. La criatura verde ya no sale en ningún sitio. → [decisión](decisiones/2026-11-03-el-logotipo-es-tino-como-el-favicon.md)
 
 | Dónde | Tamaño |
 | --- | --- |
@@ -17,7 +17,7 @@ Tino plano, el mismo dibujo que el favicon, es `Logo` (`components/Logo.tsx`, qu
 
 ## Favicon e iconos
 
-El favicon no es la criatura sino Tino, el mismo SVG que la landing (`marca/conejo-icono.svg`): de perfil, orejas cortas, sin baldosa, en tinta y en papel con el tema oscuro del sistema. `app/icon.svg`, y en su versión clara `app/favicon.ico` (16 a 64) e `app/icon.png` (256); `app/apple-icon.png` (180) y `public/app-icon-512.png` (el del manifiesto) sobre papel. Los iconos de la extensión de Chrome siguen siendo la criatura. En Claude, el logo del conector MCP sale del favicon. → [decisión](decisiones/2026-11-03-el-favicon-es-tino-el-mismo-de-la-landing.md)
+El favicon no es la criatura sino Tino, el mismo SVG que la landing (`marca/conejo-icono.svg`): de perfil, orejas cortas, sin baldosa, en tinta y en papel con el tema oscuro del sistema. `app/icon.svg`, y en su versión clara `app/favicon.ico` (16 a 64) e `app/icon.png` (256); `app/apple-icon.png` (180) y `public/app-icon-512.png` (el del manifiesto) sobre papel. Los iconos de la extensión de Chrome (`extension/chrome/icons`, 16 a 128, desde la versión 0.7.5) son Tino en tinta sobre una baldosa de papel con las esquinas redondeadas, para que se lea en la barra clara y en la oscura. En Claude, el logo del conector MCP sale del favicon. → [decisión](decisiones/2026-11-03-el-favicon-es-tino-el-mismo-de-la-landing.md)
 
 | Rasgo | Valor |
 | --- | --- |

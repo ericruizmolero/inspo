@@ -171,8 +171,9 @@ system themes, with beveled paper buttons and the ember Save; the area pills sta
 only a picked one fills with paper. Satoshi, the one typeface, is bundled in `chrome/fonts`, so nothing
 loads at runtime. The file is not in git (its licence, see that folder's README): run `npm run fonts`
 before loading the extension. The popup shows the tab as it will look in the library: the shot, the favicon, the title and the address. The
-icons in `chrome/icons` are `public/logo.png` with the mark's rounded corners; regenerate them from there
-when the mark changes.
+icons in `chrome/icons` are Tino, the favicon's drawing (`app/icon.svg`, its light version), in ink on a paper
+tile with rounded corners (radius 22% of the side), so he reads on light and dark toolbars; regenerate them from
+that file with sharp when the mark changes.
 
 ## Try it in Chrome (developer mode)
 

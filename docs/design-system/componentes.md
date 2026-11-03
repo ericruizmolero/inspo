@@ -170,7 +170,7 @@ Piezas compartidas de la app que no vienen del sistema: navegación, menús prop
 
 ### Logotipo
 `Logo` · `components/Logo.tsx` · `.logo` · muestra: logo
-La criatura en 3D (verde, antenas naranjas, tres ojos), transparente: sustituye al nombre en la interfaz (el nombre va en el `alt`). Sin baldosa, radio ni sombra propios. `public/logo.png` hasta 96 px y `public/icon-512.png` por encima. El mismo dibujo es el favicon, el icono de Apple y el de la extensión. → [decisión](decisiones/2026-10-07-la-criatura-es-el-logotipo-y-nada-mas.md)
+Tino plano, el dibujo del favicon (`TinoMark`, `components/TinoMark.tsx`): un SVG en línea en el color del texto, blanco en oscuro y tinta en claro, con el visor recortado. Sustituye al nombre en la interfaz (el nombre va en la etiqueta). Sin baldosa, radio ni sombra propios. El mismo dibujo es el favicon, el icono de Apple y el de la extensión (estos sobre papel). → [decisión](decisiones/2026-11-03-el-logotipo-es-tino-como-el-favicon.md)
 
 ### Asistente de proyecto nuevo
 `ProjectStart` · `components/ProjectStart.tsx`
