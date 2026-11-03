@@ -7,11 +7,10 @@ import { fileToSquareDataURL } from "@/lib/image-client";
 import type { SessionUser, Workspace } from "@/lib/workspace-core";
 import ThemeSwitch from "@/components/ThemeSwitch";
 import LangSwitch from "@/components/LangSwitch";
-import OutputLanguageSwitch from "@/components/OutputLanguageSwitch";
 import { setUiSounds, useUiSounds } from "@/lib/ui-sounds";
 import { setEmailPreference } from "@/app/actions/notifications";
 import { useT, messageOf } from "@/components/I18nProvider";
-import { Avatar, Button, FieldRow, SettingsWindow, Switch, toneFor } from "@/components/criterio";
+import { Avatar, Button, FieldRow, ReadOnlyField, SettingsWindow, Switch, toneFor } from "@/components/criterio";
 
 export default function AccountPanel({ user, personal, emails }: { user: SessionUser; personal: Workspace | null; emails: { digest: boolean; replies: boolean } }) {
   const personalId = personal?.id ?? null;
@@ -24,7 +23,6 @@ export default function AccountPanel({ user, personal, emails }: { user: Session
   // Each error sits under the control it is about
   const [nameError, setNameError] = useState("");
   const [photoError, setPhotoError] = useState("");
-  const [outError, setOutError] = useState("");
   const [saved, setSaved] = useState(false);
   // The team emails: switched at once on screen, put back if the save fails
   const [mail, setMail] = useState(emails);
@@ -88,7 +86,7 @@ export default function AccountPanel({ user, personal, emails }: { user: Session
         <form onSubmit={saveName}>
           <FieldRow label={t.settings.name} htmlFor="account-name" error={nameError}
             action={
-              <Button variant="primary" size="s" type="submit" disabled={busy || !name.trim() || name.trim() === user.name}>
+              <Button size="s" type="submit" disabled={busy || !name.trim() || name.trim() === user.name}>
                 {saved ? t.settings.saved : t.settings.save}
               </Button>
             }>
@@ -97,7 +95,7 @@ export default function AccountPanel({ user, personal, emails }: { user: Session
           </FieldRow>
         </form>
         <FieldRow label={t.settings.email} hint={t.settings.emailHint} htmlFor="account-email">
-          <input id="account-email" className="cr-input" value={user.email} readOnly />
+          <ReadOnlyField id="account-email" value={user.email} />
         </FieldRow>
       </SettingsWindow>
 
@@ -118,16 +116,11 @@ export default function AccountPanel({ user, personal, emails }: { user: Session
         </FieldRow>
       </SettingsWindow>
 
-      {personal && (
-        <SettingsWindow title={t.settings.outputLanguage} description={t.settings.outputLanguagePersonalHint}>
-          <FieldRow label={t.settings.language} error={outError}>
-            <OutputLanguageSwitch workspaceId={personal.id} value={personal.outputLanguage} onError={setOutError} />
-          </FieldRow>
-        </SettingsWindow>
-      )}
-
-      <SettingsWindow title={t.settings.session} note={t.settings.sessionHint}
-        actions={<Button size="s" onClick={signOut}>{t.ws.signOut}</Button>} />
+      <SettingsWindow title={t.settings.session}>
+        <FieldRow label={t.settings.thisBrowser}>
+          <span><Button size="s" onClick={signOut}>{t.ws.signOut}</Button></span>
+        </FieldRow>
+      </SettingsWindow>
     </div>
   );
 }

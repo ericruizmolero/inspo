@@ -295,6 +295,31 @@ function Written({ raw, placeholder, edit, pins, repliesOf, openId, onOpen, pics
   );
 }
 
+/** A proposal as the file shows it in its area: the text it would write and the note that answers it */
+export type ProposedText = { id: string; decision: string; why: string; never: string; note: ReactNode };
+
+/** A proposal in place: the decision there is now struck through and the proposed one after it (each on its own
+ *  lines when either takes more than one), then a why or never lines that would change, then its note */
+function Proposed({ now, p, whyLabel, neverLabel }: { now: string; p: ProposedText; whyLabel: string; neverLabel: string }) {
+  const was = now ? now.split("\n") : [];
+  const next = p.decision.split("\n");
+  const changed = p.decision !== now;
+  const label = (text: string) => <b className="mdv-b"><Mark>**</Mark>{text}:<Mark>**</Mark></b>;
+  return (
+    <div className="mdv-proposed">
+      {changed && (was.length <= 1 && next.length === 1
+        ? <div className="mdv-line">{now && <><del className="mdv-del">{now}</del> </>}<ins className="mdv-ins">{p.decision}</ins></div>
+        : <>{was.map((l, i) => <div key={`d${i}`} className="mdv-line"><del className="mdv-del">{l}</del></div>)}{next.map((l, i) => <div key={`i${i}`} className="mdv-line"><ins className="mdv-ins">{l}</ins></div>)}</>)}
+      {p.why && <div className="mdv-line"><ins className="mdv-ins">{label(whyLabel)} {p.why}</ins></div>}
+      {p.never && <>
+        <div className="mdv-line"><ins className="mdv-ins">{label(neverLabel)}</ins></div>
+        {p.never.split("\n").map((l, i) => <div key={`n${i}`} className="mdv-line mdv-li"><ins className="mdv-ins"><Mark>- </Mark>{l}</ins></div>)}
+      </>}
+      {p.note}
+    </div>
+  );
+}
+
 /** A comment the team pinned to a spot of the file */
 export interface DocPin {
   id: string; who: string; image: string | null; at: string; mine: boolean; text: string;
@@ -331,7 +356,7 @@ function PinsOver({ host, raw, pins, repliesOf, openId, onOpen }: {
   return <>{pins.map((n) => tops[n.id] === undefined ? null : <PinMark key={n.id} pin={n} replies={repliesOf(n.id)} active={openId === n.id} style={{ left: `${n.x * 100}%`, top: tops[n.id] }} onOpen={onOpen} />)}</>;
 }
 
-export default function SystemMarkdown({ fileTools, blocks, busy, onSave, onCopy, onDownload, copied, projectId, projectName, hasRecipe, onPropose, tools: areaTools, after, pins, onPin, onUnpin, onAbout, onSummary, onPart, onText, onTextTitle, readOnly = false, look = "md", pictures, markdown }: {
+export default function SystemMarkdown({ fileTools, blocks, busy, onSave, onCopy, onDownload, copied, projectId, projectName, hasRecipe, onPropose, tools: areaTools, after, proposals, pins, onPin, onUnpin, onAbout, onSummary, onPart, onText, onTextTitle, readOnly = false, look = "md", pictures, markdown }: {
   blocks: CriterioBlock[];
   busy: Set<SystemArea>;
   /** Writes the block as the area's decision (an empty decision opens the area again) */
@@ -365,6 +390,9 @@ export default function SystemMarkdown({ fileTools, blocks, busy, onSave, onCopy
   onTextTitle?: (itemId: string, title: string) => Promise<void>;
   /** What the team is doing with an area, under its block: the proposals waiting and its conversation */
   after?: (block: AreaBlock) => ReactNode;
+  /** The proposals waiting on an area, drawn where its decision stands: what each would write (why and never only
+   *  where they differ, else empty) and its note, with the answers */
+  proposals?: (block: AreaBlock) => ProposedText[];
   /** The pins the team left, by the part of the file they sit on (an area, or head, project, summary, refs) */
   pins?: Record<string, DocPin[]>;
   /** Leaves a pin at a spot of a line, or an answer to one (`to`); resolves true when it was left */
@@ -578,12 +606,22 @@ export default function SystemMarkdown({ fileTools, blocks, busy, onSave, onCopy
                 {areaTools && !readOnly && <span className="mdv-tools">{areaTools(b)}</span>}
               </div>
               <Line text="" />
-              {/* The words a person writes: the decision, its why and what it never does */}
-              {written(b.area, rawOf(b), `${t.system.md.open}. ${t.system.placeholder}`, whole, {
-                disabled: busy.has(b.area), over: areaOver(b),
-                onSave: async (text) => { await onSave?.(b.area, parse(text, b.whyLabel, b.neverLabel)); },
-                onPropose: onPropose ? (text, why) => onPropose(b.area, parse(text, b.whyLabel, b.neverLabel), why) : undefined,
-              })}
+              {/* The words a person writes: the decision, its why and what it never does. With a proposal waiting, the
+                  decision is struck where it stands with the proposed one after it and its note under them; what
+                  follows the decision is still typed in place */}
+              {(() => {
+                const open = proposals?.(b) ?? [];
+                const rest = open.length ? rawOf({ ...b, decision: "" }) : rawOf(b);
+                const full = (text: string) => (open.length ? [b.decision, text].filter(Boolean).join("\n\n") : text);
+                return <>
+                  {open.map((p) => <Proposed key={p.id} now={b.decision} p={p} whyLabel={b.whyLabel} neverLabel={b.neverLabel} />)}
+                  {(!open.length || rest) && <>{open.length > 0 && <Line text="" />}{written(b.area, rest, open.length ? "" : `${t.system.md.open}. ${t.system.placeholder}`, whole, {
+                    disabled: busy.has(b.area), over: (text) => areaOver(b)(full(text)),
+                    onSave: async (text) => { await onSave?.(b.area, parse(full(text), b.whyLabel, b.neverLabel)); },
+                    onPropose: onPropose ? (text, why) => onPropose(b.area, parse(full(text), b.whyLabel, b.neverLabel), why) : undefined,
+                  })}</>}
+                </>;
+              })()}
               {/* The brand's values for the area: the presentation writes them, the file only reads them */}
               {b.tokens?.length ? <><Line text="" />{lines(b.area, b.tokens, whole, false)}</> : null}
               {/* Its status and its references: the app's, or what the team wrote over them */}

@@ -42,11 +42,12 @@ function langToSet(request: NextRequest): string | null {
 // 'strict-dynamic' lets those load the rest. An injected <script> or SVG has no nonce, so it never runs.
 // Styles and images are left open. This header replaces the one next.config.ts sets, so it carries the same
 // frame-ancestors: nobody frames a page, and the MCP consent not even we do.
-// Development needs 'unsafe-eval' (React rebuilds server error stacks with eval).
+// Development needs 'unsafe-eval' (React rebuilds server error stacks with eval). 'wasm-unsafe-eval' lets WebAssembly
+// compile and nothing else: Tino's 3D model is decoded by meshopt's WASM, and without it he falls back to the flat mark.
 function csp(nonce: string, pathname: string): string {
   const dev = process.env.NODE_ENV !== "production" ? " 'unsafe-eval'" : "";
   const frames = pathname === "/mcp/authorize" ? "'none'" : "'self'";
-  return `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${dev}; object-src 'none'; base-uri 'self'; frame-ancestors ${frames}`;
+  return `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' 'wasm-unsafe-eval'${dev}; object-src 'none'; base-uri 'self'; frame-ancestors ${frames}`;
 }
 
 export function proxy(request: NextRequest) {
@@ -118,8 +119,9 @@ export const config = {
   // showcase/: the fixed images beside /login, shown signed out
   // logo.png: the header logo, on the signed-out home and /login too
   // polish/: the tracks of Polish's sound control, plain static files
-  // icon.png: the page's <link rel="icon"> points at it; favicon services (Google's, which Claude uses for the
+  // tino/: the mascot's 3D models and its flat fallback (components/Tino.tsx), so it also renders signed out
+  // icon.png, icon.svg, app-icon-512.png: the page's <link rel="icon"> and the manifest point at them; favicon services (Google's, which Claude uses for the
   // connector's logo) fetch it with no session
   // robots.txt, sitemap.xml and manifest.webmanifest: crawlers and browsers ask for them with no session
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon.png|apple-icon.png|icon-512.png|logo.png|opengraph-image|twitter-image|robots.txt|sitemap.xml|manifest.webmanifest|showcase/|polish/).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon.png|icon.svg|apple-icon.png|icon-512.png|app-icon-512.png|logo.png|opengraph-image|twitter-image|robots.txt|sitemap.xml|manifest.webmanifest|showcase/|polish/|tino/).*)"],
 };

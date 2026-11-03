@@ -15,7 +15,7 @@ import ImproveModal from "./ImproveModal";
 import ResultView from "./ResultView";
 import BriefPanel from "./BriefPanel";
 import { readBrief, type Brief } from "@/types/brief";
-import { loadSystem, decideSystemArea, setSystemNever, saveDocPart } from "@/app/actions/system";
+import { loadSystem, decideSystemArea, setSystemNever, saveDocPart, criterioVersionNow } from "@/app/actions/system";
 import { useT } from "./I18nProvider";
 import { Icons } from "./Sidebar";
 import SystemDoc from "./SystemDoc";
@@ -224,6 +224,14 @@ export default function SystemView({ project, system, onSystem, board, library, 
     skills: skillsOn, locale, brand: sys.brand, links: measures.links,
   }), [sys, project.name, project.intent, project.brief, library, boardIds, labels, t, clientItem, refInfo, activity, skillsOn, locale, measures]);
   const markdown = useMemo(() => blocksToMd(blocks), [blocks]);
+  // The version the file carries now (lib/criterio-versions.ts), for the head: read on opening, again once the file
+  // has been still for a moment after a change, and when a result is built (it hands back the number it recorded)
+  const [version, setVersion] = useState<number | null>(null);
+  const readVersion = useCallback(() => { void criterioVersionNow(project.id).then((r) => { if (r.ok && r.data !== null) setVersion(r.data); }); }, [project.id]);
+  useEffect(() => { readVersion(); }, [readVersion]);
+  useEffect(() => { const id = setTimeout(readVersion, 2000); return () => clearTimeout(id); }, [markdown, readVersion]);
+  // Tino's dock stands outside the page's scroll (beside .spage), so the views put it there
+  const [dock, setDock] = useState<HTMLDivElement | null>(null);
   // Bringing in a brand that exists: asked for here, or from the empty project's start (?bring=site)
   const [bringing, setBringing] = useState<"site" | "files" | "text" | null>(null);
   const [sharing, setSharing] = useState(false);
@@ -261,6 +269,7 @@ export default function SystemView({ project, system, onSystem, board, library, 
   const findFace = useCallback(async (family: string): Promise<FoundFace | null> => { const r = await findBrandFace(project.id, family); return r.ok ? r.data : null; }, [project.id]);
 
   const copy = async () => { try { await navigator.clipboard.writeText(markdown); setCopied(true); setTimeout(() => setCopied(false), 1500); void criterioExported(project.id); } catch { /* the download still works */ } };
+  const slug = project.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/gi, "-").replace(/^-+|-+$/g, "").toLowerCase();
   const download = () => {
     void criterioExported(project.id, "download");
     const blob = new Blob([markdown], { type: "text/markdown" });
@@ -275,20 +284,27 @@ export default function SystemView({ project, system, onSystem, board, library, 
     <SegmentedControl tone="paper" size="s" label={project.name} className="spage-views" active={VIEWS.indexOf(view)} onChange={(i) => setView(VIEWS[i])}
       items={VIEWS.map((v) => ({ label: v === "markdown" ? t.doc.markdown : v === "doc" ? t.doc.document : v === "result" ? t.system.result.tab : t.brand.views.presentation }))} />
   );
+  // "Improve with AI" is the first step while nothing is decided: the row's primary then. After, the "…" holds it
+  const firstStep = board.length > 0 && filled === 0;
+  const runningLabel = phase === "brand" ? t.brand.drawing : t.system.running;
+  const head = version === null ? "" : view === "result" ? t.system.headVersion(version) : `${t.system.headVersion(version)} \u00b7 ${t.system.headDecided(filled, sys.areas.length)}`;
   const actions = (
     <div className="spage-head__actions">
       {!filled && !running && <p className="spage-muted">{board.length ? t.system.runHint(board.length) : t.system.noBoard}</p>}
+      {running && !firstStep ? <p className="spage-muted spage-label" role="status"><Busy label={runningLabel} /> {runningLabel}</p>
+        : filled > 0 && head && <p className="spage-muted spage-label">{head}</p>}
       <Button size="s" icon="file" onClick={() => setBriefOpen(true)} data-tip={t.system.briefPanel.openHint}>{t.system.briefPanel.open}</Button>
-      {board.length > 0 ? (
+      {firstStep ? (
         <Button variant="primary" size="s" onClick={() => setImproving(true)} disabled={running} data-tip={t.system.improveHint}>
-          {running ? <><Busy label={phase === "brand" ? t.brand.drawing : t.system.running} /> {phase === "brand" ? t.brand.drawing : t.system.running}</> : <><Icon name="sparkle" size={16} /> {t.system.improve}</>}
+          {running ? <><Busy label={runningLabel} /> {runningLabel}</> : <><Icon name="sparkle" size={16} /> {t.system.improve}</>}
         </Button>
-      ) : <Button variant="primary" size="s" onClick={onOpenBoard}><Icon name="plus" size={16} /> {t.system.addRefs}</Button>}
+      ) : !board.length && <Button variant="primary" size="s" onClick={onOpenBoard}><Icon name="plus" size={16} /> {t.system.addRefs}</Button>}
       {view === "presentation" && filled > 0 && !sys.brand?.run && !running && <Button size="s" onClick={() => void fillBrand()} data-tip={t.brand.fillHint}>{t.brand.fill}</Button>}
-      {/* What is asked for now and then stays out of the row: bringing in a brand that exists, the share links */}
+      {/* What is asked for now and then stays out of the row: another pass, bringing in a brand that exists, the share links */}
       <Popover open={moreOpen} onOpenChange={setMoreOpen}>
         <PopoverTrigger className="cr-iconbtn cr-iconbtn-quiet cr-iconbtn-s spage-more" aria-label={t.card.more} data-tip={t.card.more}>{Icons.dots}</PopoverTrigger>
         <PopoverContent align="end" className="cr-menu spage-more__menu">
+          {board.length > 0 && !firstStep && <MenuItem disabled={running} onClick={() => { setMoreOpen(false); setImproving(true); }}>{t.system.improve}</MenuItem>}
           <MenuItem disabled={running} onClick={() => { setMoreOpen(false); setBringing("site"); }}>{t.brand.import.title}</MenuItem>
           <MenuItem onClick={() => { setMoreOpen(false); setSharing(true); }}>{t.brand.share.title}</MenuItem>
         </PopoverContent>
@@ -324,11 +340,11 @@ export default function SystemView({ project, system, onSystem, board, library, 
           </div>
         ) : view === "result" ? (
           <div className="spage-sheet">
-            <ResultView projectId={project.id} projectName={project.name} filled={filled > 0} refs={refs} />
+            <ResultView projectId={project.id} projectName={project.name} projectSlug={slug} filled={filled > 0} refs={refs} dock={dock} version={version} onVersion={setVersion} />
           </div>
         ) : (
           <SystemDoc look={view === "doc" ? "doc" : "md"} blocks={blocks} system={sys} labels={labels} boardIds={boardIds} itemOf={itemOf} imageOf={imageOf} refInfo={refInfo} activity={activity}
-            onSystem={setSystem} onTalk={() => setTalkN((n) => n + 1)}
+            onSystem={setSystem} onTalk={() => setTalkN((n) => n + 1)} dock={dock}
             onAbout={async (text) => { if (!(await onBrief({ about: text }))) throw new Error("brief not saved"); }} onOpenItem={onOpenItem} onText={onText} onTextTitle={onTextTitle}
             fileTools={<SkillsMenu on={skillsOn} onToggle={(id) => void toggleSkill(id)} />}
             busy={busy} onCopy={() => void copy()} onDownload={download} copied={copied} markdown={markdown} projectId={project.id} projectName={project.name} hasRecipe={!!project.hasRecipe}
@@ -340,6 +356,7 @@ export default function SystemView({ project, system, onSystem, board, library, 
         )}
       </div>
     </div>
+    <div className="spage-dock" ref={setDock} />
     <Clouds />
     </>
   );

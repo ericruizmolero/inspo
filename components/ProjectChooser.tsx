@@ -1,17 +1,24 @@
 "use client";
 // The first screen inside a workspace: what are you making? One box to name a project and land on its
-// system, empty and waiting; under it, the ones the team already has, each shown by its own board.
-import { useLayoutEffect, useMemo, useRef, useState } from "react";
+// system, empty and waiting; under it, a few ways back to work, and the projects the team already has, each shown
+// by its own board.
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type DragEvent } from "react";
 import Clouds from "@/components/Clouds";
 import { saveProjectBrief } from "@/app/actions/brief";
 import type { InspoItem, Project, ProjectLinks } from "@/types/inspo";
 import { SYSTEM_AREAS, filledOf, unreadOf, type SystemSummary } from "@/types/system";
 import { useT } from "./I18nProvider";
-import { BoardCard, PromptInput, type BoardTile } from "@/components/criterio";
+import { BoardCard, Busy, Chip, Icon, Key, MenuItem, PromptInput, type BoardTile, type IconName } from "@/components/criterio";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cachedCardImage } from "./InspoCard";
 import { DEFAULT_RATIO, keyOf } from "@/lib/board";
-import { newestFirst } from "@/lib/search-query";
-import { mediaKindOf, videoEmbedOf } from "@/lib/url";
+import { newestFirst, parseDate } from "@/lib/search-query";
+import HomeTino, { type TinoNudge } from "./HomeTino";
+import { STEPS, nextStep, type FirstSteps } from "@/lib/first-steps-core";
+import { FirstStepsPath } from "./FirstSteps";
+import { mediaKindOf, normalizeWebUrl, videoEmbedOf } from "@/lib/url";
+import { mediaFileFrom } from "@/lib/media-client";
+import { homeActions, isProjectSort, PROJECT_SORTS, sortProjects, type HomeAction, type ProjectSort } from "@/lib/home";
 import "./ProjectChooser.css";
 
 /** The empty box's placeholder, taking turns between what a project can be: word by word, each one rises a little
@@ -65,7 +72,9 @@ function Shot({ item, image, onMeasure }: { item: InspoItem; image: string | nul
     const { naturalWidth: w, naturalHeight: h } = e.currentTarget;
     if (w && h) onMeasure?.(h / w);
   };
-  return src ? <img key={src} src={src} alt="" loading="lazy" decoding="async" onLoad={measure} onError={() => setAt((i) => i + 1)} /> : null;
+  // A picture that failed before hydration never calls onError: the ref finds it already complete and empty
+  const failedEarly = (img: HTMLImageElement | null) => { if (img?.complete && !img.naturalWidth) setAt((i) => i + 1); };
+  return src ? <img key={src} ref={failedEarly} src={src} alt="" loading="lazy" decoding="async" onLoad={measure} onError={() => setAt((i) => i + 1)} /> : null;
 }
 
 /** The mini masonry: five columns, the mosaic's 6px gap as a share of a column (a 330px card) and its height in
@@ -106,8 +115,65 @@ export function useBoardStatus() {
 }
 
 const NONE: InspoItem[] = [];
+/** The inbox is piling up from this many, once one of them has waited this long */
+const INBOX_PILE = 15;
+const STALE_MS = 7 * 24 * 3600 * 1000;
+/** A board passing one of these is said once, per board and level */
+const MILESTONES = [10, 25, 50];
 
-export default function ProjectChooser({ projects, systems, items, links, ratioOf, imageOf, onMeasure, onPick, onCreate }: {
+/** What lands on an empty project's card: a picture, or a link */
+export type Dropped = { kind: "file"; file: File } | { kind: "url"; web: string };
+
+/** A drop or a paste, read once at the edge: a picture first, then a single link; anything else is not for the card */
+function droppedFrom(data: DataTransfer | null): Dropped | null {
+  const file = mediaFileFrom(data);
+  if (file) return { kind: "file", file };
+  const line = (data?.getData("text/uri-list") || data?.getData("text/plain") || "").split("\n").map((l) => l.trim()).find((l) => l && !l.startsWith("#")) ?? "";
+  const web = /\s/.test(line) ? null : normalizeWebUrl(line);
+  return web ? { kind: "url", web } : null;
+}
+const carriesDrop = (e: DragEvent) => e.dataTransfer.types.some((t) => t === "Files" || t === "text/uri-list" || t === "text/plain");
+
+/** A project with nothing yet: its mosaic is a place to drop a picture or a link, or to paste one while the card has
+ *  the focus. The paste is caught on the document before the add dialog's own (hooks/use-add-dialog.ts) */
+function EmptyCard({ project, label, hint, status, onPick, onAdd }: {
+  project: Project; label: string; hint: string;
+  status: { tone: "synced" | "new" | "idle"; progress: number; label: string };
+  onPick: () => void; onAdd: (d: Dropped) => Promise<void>;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [over, setOver] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const add = async (d: Dropped | null) => {
+    if (!d || busy) return;
+    setBusy(true);
+    try { await onAdd(d); } finally { setBusy(false); }
+  };
+  useEffect(() => {
+    const onPaste = (e: ClipboardEvent) => {
+      if (!ref.current?.contains(document.activeElement)) return;
+      const d = droppedFrom(e.clipboardData);
+      if (!d) return;
+      e.preventDefault();
+      void add(d);
+    };
+    document.addEventListener("paste", onPaste, true);
+    return () => document.removeEventListener("paste", onPaste, true);
+  });
+  return (
+    <div ref={ref} className={`chooser__empty${over ? " is-over" : ""}`}
+      onDragOver={(e) => { if (!carriesDrop(e)) return; e.preventDefault(); e.dataTransfer.dropEffect = "copy"; setOver(true); }}
+      onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setOver(false); }}
+      onDrop={(e) => { setOver(false); const d = droppedFrom(e.dataTransfer); if (!d) return; e.preventDefault(); void add(d); }}>
+      <BoardCard className="chooser__card" name={project.name} count={0} countLabel={label} status={status.tone} progress={status.progress} statusLabel={status.label} onClick={onPick}
+        tiles={[<span key="drop" className="chooser__drop">{busy ? <Busy /> : <Icon name="plus" size={20} />}<span>{hint}</span></span>]} />
+    </div>
+  );
+}
+
+const ACTION_ICON: Record<HomeAction["kind"], IconName> = { inbox: "inbox", save: "link", continue: "arrow-right" };
+
+export default function ProjectChooser({ projects, systems, items, links, ratioOf, imageOf, onMeasure, onPick, onCreate, workspaceId, inbox, last, onInbox, onSave, onAddInto, steps, onStep, onConnect }: {
   projects: Project[];
   systems: Record<string, SystemSummary>;
   items: InspoItem[];
@@ -120,8 +186,24 @@ export default function ProjectChooser({ projects, systems, items, links, ratioO
   onMeasure?: (web: string, ratio: number) => void;
   onPick: (id: string) => void;
   onCreate: (name: string) => Promise<Project | null>;
+  /** The order of the projects is kept per workspace, on this machine */
+  workspaceId: string;
+  /** References in no project yet: the quick action counts them, Tino looks at how long they have waited */
+  inbox: InspoItem[];
+  /** The project last worked in, while it still exists */
+  last: Project | null;
+  onInbox: () => void;
+  onSave: () => void;
+  /** A picture or a link dropped on an empty project's card, filed in that project */
+  onAddInto: (projectId: string, dropped: Dropped) => Promise<void>;
+  /** The first steps, while there are some to show: Tino brings up the one to do before anything else */
+  steps: FirstSteps | null;
+  /** Goes where a step is done */
+  onStep: (href: string) => void;
+  /** The last step's way out: connecting an AI client */
+  onConnect: () => void;
 }) {
-  const { t } = useT();
+  const { t, locale } = useT();
   const statusOf = useBoardStatus();
   const [name, setName] = useState("");
   const [about, setAbout] = useState("");
@@ -133,6 +215,70 @@ export default function ProjectChooser({ projects, systems, items, links, ratioO
     for (const list of Object.values(by)) list.sort(newestFirst);
     return by;
   }, [items, links]);
+  const filedCount = useMemo(() => items.filter((i) => i.id && links[i.id]?.length).length, [items, links]);
+  const sortKey = `criterio:home-sort:${workspaceId}`;
+  const [sort, setSort] = useState<ProjectSort>("recent");
+  const [sortOpen, setSortOpen] = useState(false);
+  // ⌘K on a Mac, Ctrl K elsewhere; both read after hydration, the server can't know this machine
+  const [modKey, setModKey] = useState("⌘K");
+  useEffect(() => {
+    if (!/Mac|iPhone|iPad/.test(navigator.userAgent)) setModKey("Ctrl K");
+    try { const kept = localStorage.getItem(sortKey); if (isProjectSort(kept)) setSort(kept); } catch { /* private mode: recent */ }
+  }, [sortKey]);
+  const pickSort = (s: ProjectSort) => {
+    setSort(s); setSortOpen(false);
+    try { localStorage.setItem(sortKey, s); } catch { /* it lasts the visit */ }
+  };
+  const shown = useMemo(() => sortProjects(projects, byProject, sort, locale), [projects, byProject, sort, locale]);
+  const boxRef = useRef<HTMLInputElement>(null);
+  // The last card asks for a new project: the box above is where one is named
+  const toBox = () => {
+    const box = boxRef.current;
+    if (!box) return;
+    box.focus({ preventScroll: true });
+    box.scrollIntoView({ block: "center", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+  };
+  const run = (a: HomeAction) => (a.kind === "inbox" ? onInbox() : a.kind === "save" ? onSave() : onPick(a.project.id));
+  const [openedAt] = useState(() => Date.now());
+  // What Tino brings up, most pressing first (the copy sheet's Home): the first step, the inbox piling up, a board that
+  // moved while the person was away, a milestone, an empty board with another to start from
+  const nudges = useMemo((): TinoNudge[] => {
+    const list: TinoNudge[] = [];
+    const now = steps && STEPS.find((x) => x.key === nextStep(steps));
+    if (steps && now) {
+      const s = t.firstSteps, done = STEPS.filter((x) => x.done(steps)).length;
+      // Naming a project is done here, in the box above: the step puts the cursor in it
+      const go = (href: string) => { if (href === "/?in=home") document.getElementById("chooser-name")?.focus(); else onStep(href); };
+      list.push({
+        key: `step:${now.key}`, who: `${s.title}, ${s.count(done, STEPS.length)}`, mood: "accomplice",
+        title: t.tino.stepsTitle, text: <FirstStepsPath steps={steps} onGo={go} />,
+        act: t.tino.stepActs[now.key], go: now.key === "out" ? onConnect : () => go(now.href(steps)),
+      });
+    }
+    if (inbox.length >= INBOX_PILE && inbox.some((i) => { const d = parseDate(i.date); return d > 0 && openedAt - d > STALE_MS; })) {
+      list.push({ key: "inbox", title: t.tino.inboxTitle, text: t.tino.inboxText(inbox.length), act: t.tino.inboxAct, mood: "skeptic", go: onInbox });
+    }
+    const counts = projects.map((p) => ({ p, n: byProject[p.id]?.length ?? 0 }));
+    // Coming back after days away: the board whose last pass is the newest, once
+    const latest = projects.reduce<{ p: Project; ran: string } | null>((a, p) => {
+      const ran = systems[p.id]?.read?.at;
+      return ran && (!a || ran > a.ran) ? { p, ran } : a;
+    }, null);
+    if (latest) list.push({ key: `back:${latest.p.id}`, happened: latest.ran, title: t.tino.backTitle, text: t.tino.backText(latest.p.name), act: t.tino.backAct, mood: "smug", go: () => onPick(latest.p.id) });
+    for (const { p, n } of counts) {
+      const level = MILESTONES.findLast((m) => n >= m);
+      if (level) list.push({ key: `milestone:${p.id}:${level}`, once: true, title: t.tino.milestoneTitle, text: t.tino.milestoneText(p.name, level), mood: "admirer" });
+    }
+    const fullest = counts.reduce<(typeof counts)[number] | null>((a, c) => (c.n > (a?.n ?? 0) ? c : a), null);
+    for (const { p, n } of counts) {
+      if (!n && fullest) list.push({ key: `empty:${p.id}`, title: t.tino.emptyTitle, text: t.tino.emptyText(p.name, fullest.p.name, fullest.n), act: t.tino.emptyAct, mood: "suspect", go: () => onPick(fullest.p.id) });
+    }
+    return list;
+  }, [steps, inbox, projects, systems, byProject, t, onStep, onConnect, onInbox, onPick, openedAt]);
+  // Typing a name on the home: Tino says he is looking, over any nudge, until the box is empty again
+  const typing = useMemo((): TinoNudge | undefined => (name.trim()
+    ? { key: "typing", title: t.tino.typingTitle, text: t.tino.typingText(projects.length), mood: "thinking" }
+    : undefined), [name, projects.length, t]);
   const create = async () => {
     const n = name.trim(); if (!n || busy) return;
     setBusy(true);
@@ -151,10 +297,11 @@ export default function ProjectChooser({ projects, systems, items, links, ratioO
       <div className="chooser__inner">
         <h1 className="cr-hello chooser__title">{projects.length ? t.chooser.titleSome : t.chooser.titleNone}</h1>
         {/* The system's PromptInput, with the app's two lines: the name, and under it (once there is one) the sentence */}
-        <PromptInput className="chooser__box" id="chooser-name" value={name} onChange={setName} onSubmit={() => void create()}
+        <PromptInput className="chooser__box" id="chooser-name" inputRef={boxRef} value={name} onChange={setName} onSubmit={() => void create()}
           label={t.chooser.placeholder} placeholder="" sendLabel={t.chooser.start} disabled={busy} busy={busy}
           inputProps={{ className: "chooser__name", maxLength: 60 }}
           leading={!name ? <Examples list={t.chooser.examples} /> : null}
+          trailing={<Key className="chooser__key">{modKey}</Key>}
           below={
             // The second line only shows once there is a name: until then the box is one question
             <div className={`chooser__more${named ? " is-open" : ""}`}>
@@ -164,21 +311,54 @@ export default function ProjectChooser({ projects, systems, items, links, ratioO
               </div>
             </div>
           } />
+        <div className="chooser__actions">
+          {homeActions(inbox.length, last).map((a) => (
+            <Chip key={a.kind} tone="chrome" className="chooser__action" onClick={() => run(a)}>
+              <Icon name={ACTION_ICON[a.kind]} size={16} />
+              {a.kind === "inbox" ? <>{t.chooser.sortInbox}<span className="chooser__action-count">{a.count}</span></>
+                : a.kind === "save" ? t.chooser.saveLink
+                : <span className="chooser__action-name">{t.chooser.continueWith(a.project.name)}</span>}
+            </Chip>
+          ))}
+        </div>
         {projects.length > 0 && (
-          <div className="chooser__grid" role="group" aria-label={t.chooser.existing}>
-            {projects.map((p) => {
+          <>
+          <div className="chooser__head">
+            <h2 id="chooser-yours" className="t-title-s chooser__yours">{t.chooser.yours}</h2>
+            <span className="chooser__tally">{t.chooser.tally(projects.length, filedCount)}</span>
+            <Popover open={sortOpen} onOpenChange={setSortOpen}>
+              <PopoverTrigger className="cr-btn cr-btn-quiet cr-btn-s chooser__sort" aria-label={`${t.chooser.sortBy}: ${t.chooser.sorts[sort]}`}>
+                {t.chooser.sorts[sort]} <Icon name="chevron-down" size={16} />
+              </PopoverTrigger>
+              <PopoverContent align="end" className="cr-menu">
+                {PROJECT_SORTS.map((s) => <MenuItem key={s} checked={s === sort} onClick={() => pickSort(s)}>{t.chooser.sorts[s]}</MenuItem>)}
+              </PopoverContent>
+            </Popover>
+          </div>
+          <div className="chooser__grid" role="group" aria-labelledby="chooser-yours">
+            {shown.map((p) => {
               const filed = byProject[p.id] ?? NONE;
               const status = statusOf(systems[p.id], filed);
+              if (!filed.length) return (
+                <EmptyCard key={p.id} project={p} label={t.chooser.refs(0)} hint={t.chooser.dropHint} status={status}
+                  onPick={() => onPick(p.id)} onAdd={(d) => onAddInto(p.id, d)} />
+              );
               return (
                 <BoardCard key={p.id} className="chooser__card" name={p.name} count={filed.length} countLabel={t.chooser.refs(filed.length)}
                   columns={boardColumns(filed, imageOf, ratioOf, onMeasure)} status={status.tone} progress={status.progress} statusLabel={status.label} onClick={() => onPick(p.id)} />
               );
             })}
+            <button type="button" className="chooser__new" onClick={toBox}>
+              <Icon name="plus" size={20} />
+              <span>{t.chooser.newProject}</span>
+            </button>
           </div>
+          </>
         )}
       </div>
     </div>
     <Clouds />
+    <HomeTino nudges={nudges} say={typing} />
     </>
   );
 }

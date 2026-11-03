@@ -10,6 +10,7 @@ El botón es la firma del sistema: grueso, con borde de tinta y bisel, el guiño
 | secondary (por defecto) | Papel, texto tinta | Todo lo demás, también Cancelar, Déjalo y Ahora no |
 | dark | Tinta, texto papel | Una segunda acción fuerte sobre papel |
 | quiet | Ninguno hasta el hover, sin borde ni bisel | Acciones pequeñas dentro de barras y paneles, casi siempre con icono |
+| outline | Ninguno, línea `--border-strong`, sin bisel | Lo destructivo en reposo (Salir de un equipo, Eliminar un espacio), en la última sección de Ajustes; nunca ember → [decisión](decisiones/2026-10-20-cada-pagina-de-ajustes-es-cabecera-secciones-y-filas-del-catalogo.md) |
 | danger | `--danger-deep`, texto papel | Solo para confirmar algo que destruye |
 
 ## Tallas

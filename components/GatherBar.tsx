@@ -21,8 +21,6 @@ export default function GatherBar({ count, thumbs, onAdd, onStart, title, lead }
 }) {
   const { t } = useT();
   const s = t.gather;
-  const [busy, setBusy] = useState(false);
-  const start = async () => { if (busy || !onStart) return; setBusy(true); try { await onStart(); } finally { setBusy(false); } };
   const shown = thumbs.filter((x): x is string => !!x).slice(0, 3);
   return (
     <aside className="gather" aria-label={title ?? s.title}>
@@ -40,11 +38,20 @@ export default function GatherBar({ count, thumbs, onAdd, onStart, title, lead }
       {onStart
         ? <Button variant="quiet" icon="plus" className="gather__add" onClick={onAdd}>{s.add}</Button>
         : <Button icon="plus" className="gather__add" onClick={onAdd}>{s.add}</Button>}
-      {onStart && (
-        <Button iconEnd="arrow-right" className="gather__go" onClick={() => void start()} disabled={busy}>
-          {busy && <Busy label={s.ready} />}{s.ready}
-        </Button>
-      )}
+      {onStart && <StartButton onStart={onStart} />}
     </aside>
+  );
+}
+
+/** "I have my references": the step out of gathering to the system. It also sits at the end of the search on a
+ *  project's board, where Tino is the bar */
+export function StartButton({ onStart, className = "" }: { onStart: () => Promise<void>; className?: string }) {
+  const { t } = useT();
+  const [busy, setBusy] = useState(false);
+  const start = async () => { if (busy) return; setBusy(true); try { await onStart(); } finally { setBusy(false); } };
+  return (
+    <Button iconEnd="arrow-right" className={`gather__go ${className}`} onClick={() => void start()} disabled={busy}>
+      {busy && <Busy label={t.gather.ready} />}{t.gather.ready}
+    </Button>
   );
 }

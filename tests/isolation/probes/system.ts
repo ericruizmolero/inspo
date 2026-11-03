@@ -255,6 +255,15 @@ export const system: Record<string, Surface> = {
       }));
     },
   },
+  "route:app/api/system/edit/route.ts#POST": {
+    probe: async (fx) => {
+      const { POST } = await import("@/app/api/system/edit/route");
+      asB(fx);
+      await withKeys(() => unchanged(fx, async () => {
+        await expectDenied(fx, await POST(request("/api/system/edit", { method: "POST", body: { projectId: fx.a.project, instruction: "make the palette warmer" } })), "an edit of A's file");
+      }));
+    },
+  },
   "route:app/api/system/curate/route.ts#POST": {
     probe: async (fx) => {
       const { POST } = await import("@/app/api/system/curate/route");
@@ -355,6 +364,18 @@ export const system: Record<string, Surface> = {
         const r = await criterioVersions(fx.a.project);
         expectNoSecret(fx, r, "the versions of A's criterio.md");
         if (r.ok) expect(r.data, "B lists none of A's versions").toEqual([]);
+      } finally { await drop(); }
+    },
+  },
+  "action:app/actions/system.ts#criterioVersionNow": {
+    probe: async (fx) => {
+      const drop = await aVersionAndResult(fx);
+      try {
+        asB(fx);
+        const { criterioVersionNow } = await sys();
+        const r = await criterioVersionNow(fx.a.project);
+        expectNoSecret(fx, r, "the version of A's criterio.md");
+        if (r.ok) expect(r.data, "A's project carries no number for B").toBeNull();
       } finally { await drop(); }
     },
   },

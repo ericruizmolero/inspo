@@ -3,6 +3,7 @@
 import type { Dispatch, SetStateAction } from "react";
 import dynamic from "next/dynamic";
 import PageView from "./PageView";
+import { cachedCardImage } from "./InspoCard";
 import TextPage from "./TextPage";
 import { mediaKindOf } from "@/lib/url";
 import type { InspoItem, PageShot } from "@/types/inspo";
@@ -33,6 +34,12 @@ export default function RefPage({ panelItem, textBodies, saveTextBody, renameTex
     ? panelItem.web
     : pageShots[panelItem.web]?.shotUrl ?? thumbMap[panelItem.web] ?? `/api/shot?url=${encodeURIComponent(panelItem.web)}&v=2`;
   return (
-    <PageView key={panelItem.web} src={src} alt={panelItem.name} fit={kind === "image"} />
+    <PageView
+      key={panelItem.web}
+      src={src}
+      alt={panelItem.name}
+      fit={kind === "image"}
+      posters={kind === "image" ? undefined : [`/api/og?url=${encodeURIComponent(panelItem.web)}`, cachedCardImage(panelItem.web), pageShots[panelItem.web]?.tileUrl].filter((x): x is string => !!x)}
+    />
   );
 }

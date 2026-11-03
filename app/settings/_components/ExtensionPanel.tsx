@@ -8,6 +8,7 @@ import { useT } from "@/components/I18nProvider";
 import { fmtDate } from "@/lib/i18n/format";
 import { Button, Chip, SettingsWindow } from "@/components/criterio";
 import { useConfirm } from "@/components/useConfirm";
+import { PuzzlePiece } from "@phosphor-icons/react";
 
 interface ExtKey { id: string; prefix: string; name: string; userId: string; userName: string; createdAt: string; lastUsedAt: string | null }
 
@@ -32,7 +33,7 @@ export default function ExtensionPanel({ me, canManage, extKeys }: { me: Session
   return (
     <div className="page__body">
       {confirmDialog}
-      <SettingsWindow title={t.settings.browsers} description={t.settings.connectHint}
+      <SettingsWindow title={t.settings.browsers} description={t.settings.connectHint} owner={<PuzzlePiece size={28} weight="duotone" />}
         note={error ? <span className="cr-field-hint is-error" role="alert">{error}</span> : undefined}
         actions={
           <>

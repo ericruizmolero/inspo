@@ -100,14 +100,14 @@ export async function loadSystemSummaries(organizationId: string): Promise<Recor
   const ids = (await db.select({ id: P.id }).from(P).where(and(eq(P.organizationId, organizationId), isNull(P.template)))).map((r) => r.id);
   if (!ids.length) return {};
   const [heads, rows] = await Promise.all([
-    db.select({ projectId: S.projectId, itemIds: sql<string[] | null>`${S.runJson}->'itemIds'`, omitted: sql<number | null>`(${S.runJson}->>'omitted')::int` })
+    db.select({ projectId: S.projectId, itemIds: sql<string[] | null>`${S.runJson}->'itemIds'`, omitted: sql<number | null>`(${S.runJson}->>'omitted')::int`, at: sql<string | null>`${S.runJson}->>'at'` })
       .from(S).where(and(eq(S.organizationId, organizationId), inArray(S.projectId, ids), sql`${S.runJson} is not null`)),
     db.select({ projectId: A.projectId, area: A.area, decided: sql<boolean>`${A.decision} <> ''`, evidence: sql<string[]>`coalesce(jsonb_path_query_array(${A.evidence}, '$[*].itemId'), '[]'::jsonb)` })
       .from(A).where(and(eq(A.organizationId, organizationId), inArray(A.projectId, ids))),
   ]);
   const out: Record<string, SystemSummary> = {};
   for (const id of ids) out[id] = { projectId: id, areas: SYSTEM_AREAS.map((area) => ({ area, decided: false, evidence: [] })), read: null };
-  for (const h of heads) out[h.projectId].read = { itemIds: Array.isArray(h.itemIds) ? h.itemIds : [], omitted: h.omitted ?? 0 };
+  for (const h of heads) out[h.projectId].read = { itemIds: Array.isArray(h.itemIds) ? h.itemIds : [], omitted: h.omitted ?? 0, at: h.at };
   for (const r of rows) {
     const i = SYSTEM_AREAS.indexOf(r.area as SystemArea);
     if (i >= 0) out[r.projectId].areas[i] = { area: r.area as SystemArea, decided: r.decided, evidence: r.evidence };

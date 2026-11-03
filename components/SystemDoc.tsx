@@ -11,11 +11,16 @@ import type { SystemActivity } from "@/lib/area-comments";
 import { answerAreaProposal, postAreaComment, removeAreaComment } from "@/app/actions/area-comments";
 import { decideSystemArea, releaseSystemArea, saveDocPart, setSystemEvidence, saveSystemSummary } from "@/app/actions/system";
 import { readAreaMeta } from "@/lib/criterio-md";
-import { timeAgo } from "@/lib/i18n/format";
-import SystemMarkdown from "./SystemMarkdown";
+import SystemMarkdown, { type ProposedText } from "./SystemMarkdown";
+import TinoDock, { type DockSay } from "./TinoDock";
+import TinoNote from "./TinoNote";
 import { useT } from "./I18nProvider";
-import { Avatar, Chip, Icon, IconButton, toneFor } from "@/components/criterio";
+import { Button, Chip, Icon, IconButton } from "@/components/criterio";
+import { createPortal } from "react-dom";
 import "./SystemDoc.css";
+
+/** The proposals Tino writes carry his name as where they come from (AreaProposal.via) */
+const TINO = "Tino";
 
 type AreaBlock = Extract<CriterioBlock, { kind: "area" }>;
 type Note = SystemActivity["notes"][string][number];
@@ -52,10 +57,12 @@ interface Props {
   fileTools?: React.ReactNode;
   /** The file as the Markdown it is, or set as a document: chosen in the page's tabs (components/SystemView.tsx) */
   look: "md" | "doc";
+  /** Where Tino's dock goes (SystemView's slot beside the page's scroll) */
+  dock?: HTMLElement | null;
 }
 
-export default function SystemDoc({ blocks, system, boardIds, itemOf, imageOf, refInfo, activity, busy, onSave, onSystem, onTalk, onAbout, onText, onTextTitle, onCopy, onDownload, copied, markdown, projectId, projectName, hasRecipe, fileTools, look }: Props) {
-  const { t, locale } = useT();
+export default function SystemDoc({ blocks, system, boardIds, itemOf, imageOf, refInfo, activity, busy, onSave, onSystem, onTalk, onAbout, onText, onTextTitle, onCopy, onDownload, copied, markdown, projectId, projectName, hasRecipe, fileTools, look, dock }: Props) {
+  const { t } = useT();
   const s = t.doc;
   const md = t.system.md;
   const [working, setWorking] = useState(false);
@@ -182,6 +189,7 @@ export default function SystemDoc({ blocks, system, boardIds, itemOf, imageOf, r
   // the green dot, however many there are
   const toc = (
     <nav className="sdoc-toc" aria-label="criterio.md">
+      <p className="sdoc-toc__label">{s.tocFile}</p>
       {project && <button type="button" onClick={() => go("sdoc-project")}>{md.project}</button>}
       {summary && <button type="button" onClick={() => go("sdoc-summary")}>{md.summary}</button>}
       <span className="sdoc-toc__gap" aria-hidden />
@@ -190,12 +198,12 @@ export default function SystemDoc({ blocks, system, boardIds, itemOf, imageOf, r
         const open = (activity?.notes[b.area] ?? []).filter((n) => n.proposal?.state === "open").length;
         return (
           <button key={b.area} type="button" onClick={() => go(`sdoc-${b.area}`)} className={a?.evidence.length ? "is-backed" : !b.decision ? "is-open" : a?.source === "team" ? "is-team" : ""}>
-            <i aria-hidden />{b.heading}{open > 0 && <span className="sdoc-toc__count" data-tip={s.pending(open)}><Chip tone="ember">{open}</Chip></span>}
+            {b.heading}{open > 0 && <span className="sdoc-toc__count" data-tip={s.pending(open)}><Chip tone="ember">{open}</Chip></span>}<i aria-hidden />
           </button>
         );
       })}
       {/* A skill switched on is a part of the file too: it shows here the moment it is on */}
-      {skillBlocks.length > 0 && <span className="sdoc-toc__gap" aria-hidden />}
+      {skillBlocks.length > 0 && <><span className="sdoc-toc__gap" aria-hidden /><p className="sdoc-toc__label">{s.tocSkills(skillBlocks.length)}</p></>}
       {skillBlocks.map((b) => (
         <button key={b.id} type="button" className="is-skill" onClick={() => go(`sdoc-${b.id}`)} title={b.heading}>
           <span className="sdoc-toc__spark" aria-hidden><Icon name="sparkle" size={14} /></span><span className="sdoc-toc__name">{skillName(b.id.slice(6))}</span>
@@ -206,34 +214,56 @@ export default function SystemDoc({ blocks, system, boardIds, itemOf, imageOf, r
     </nav>
   );
   const notesOf = (area: SystemArea) => activity?.notes[area] ?? [];
-  /** What someone proposes instead of what is written: it waits under the area for a yes or a no */
-  const proposalsOf = (b: AreaBlock) => notesOf(b.area).filter((n) => n.proposal?.state === "open").map((n) => (
-    <div key={n.id} className="sdoc-proposal">
-      <header>
-        <Avatar initials={n.who.slice(0, 1).toUpperCase()} name={n.who} tone={toneFor(n.who)} src={n.image} size={20} />
-        <span><b>{n.who}</b> {n.proposal!.via ? t.mcp.proposesVia(n.proposal!.via) : s.proposes}</span>
-        <time dateTime={n.at}>{timeAgo(n.at, locale, t)}</time>
-        <span className="sdoc-proposal__tools">
-          <button type="button" className="cr-btn cr-btn-secondary cr-btn-s" disabled={working} onClick={() => void answer(n, true)}><Icon name="check" size={16} /> {s.accept}</button>
-          <button type="button" className="cr-btn cr-btn-secondary cr-btn-s" disabled={working} aria-expanded={refusing?.id === n.id} onClick={() => setRefusing(refusing?.id === n.id ? null : { id: n.id, reason: "" })}>{n.mine ? s.withdraw : s.reject}</button>
-        </span>
-      </header>
-      <p className="sdoc-decision">{n.proposal!.decision}</p>
-      {n.proposal!.why && n.proposal!.why !== b.why && <p className="sdoc-why"><b>{b.whyLabel}</b> {n.proposal!.why}</p>}
-      {n.proposal!.never && n.proposal!.never !== b.never && (
-        <div className="sdoc-never"><b>{b.neverLabel}</b><ul>{n.proposal!.never.split("\n").filter(Boolean).map((x) => <li key={x}>{x}</li>)}</ul></div>
-      )}
-      {n.text && n.text !== n.proposal!.decision && <p className="sdoc-proposal__reason">{n.text}</p>}
-      {refusing?.id === n.id && (
-        <form className="sdoc-proposal__refuse" onSubmit={(e) => { e.preventDefault(); void answer(n, false, refusing.reason); }}>
-          <input className="cr-input cr-input-s" autoFocus maxLength={200} value={refusing.reason} placeholder={s.whyNot} aria-label={s.whyNot} disabled={working}
-            onChange={(e) => setRefusing({ id: n.id, reason: e.target.value })} onKeyDown={(e) => { if (e.key === "Escape") { e.stopPropagation(); setRefusing(null); } }} />
-          <button type="submit" className="cr-btn cr-btn-secondary cr-btn-s" disabled={working}>{n.mine ? s.withdraw : s.reject}</button>
-          <button type="button" className="cr-btn cr-btn-quiet cr-btn-s" disabled={working} onClick={() => setRefusing(null)}>{t.common.cancel}</button>
-        </form>
-      )}
-    </div>
-  ));
+  /** What someone proposes instead of what is written: it waits in the area, the decision struck where it stands and
+   *  the proposed one after it, with a note from Tino under them (TinoNote): his own reason, or who proposed it and
+   *  theirs. Accept writes it; "Leave it" opens the line for why not (optional) */
+  const proposedOf = (b: AreaBlock): ProposedText[] => notesOf(b.area).filter((n) => n.proposal?.state === "open").map((n) => {
+    const p = n.proposal!;
+    const who = p.via === TINO ? null : p.via ?? n.who;
+    const reason = n.text && n.text !== p.decision ? n.text : "";
+    const text = who === null ? reason : reason ? t.tino.by(who, reason) : t.tino.proposes(who);
+    return {
+      id: n.id, decision: p.decision, why: p.why !== b.why ? p.why : "", never: p.never !== b.never ? p.never : "",
+      note: <>
+        <TinoNote lineKey={`said:${n.id}`} title={t.tino.said} mood="smug" text={text}
+          actions={<>
+            <Button size="s" disabled={working} onClick={() => void answer(n, true)}>{s.accept}</Button>
+            <button type="button" className="tino-corner__link" disabled={working} aria-expanded={refusing?.id === n.id} onClick={() => setRefusing(refusing?.id === n.id ? null : { id: n.id, reason: "" })}>{t.tino.leaveIt}</button>
+          </>} />
+        {refusing?.id === n.id && (
+          <form className="sdoc-proposal__refuse" onSubmit={(e) => { e.preventDefault(); void answer(n, false, refusing.reason); }}>
+            <input className="cr-input cr-input-s" autoFocus maxLength={200} value={refusing.reason} placeholder={s.whyNot} aria-label={s.whyNot} disabled={working}
+              onChange={(e) => setRefusing({ id: n.id, reason: e.target.value })} onKeyDown={(e) => { if (e.key === "Escape") { e.stopPropagation(); setRefusing(null); } }} />
+            <button type="submit" className="cr-btn cr-btn-secondary cr-btn-s" disabled={working}>{t.tino.leaveIt}</button>
+            <button type="button" className="cr-btn cr-btn-quiet cr-btn-s" disabled={working} onClick={() => setRefusing(null)}>{t.common.cancel}</button>
+          </form>
+        )}
+      </>,
+    };
+  });
+  const [ask, setAsk] = useState("");
+  const [editing, setEditing] = useState(false);
+  const [say, setSay] = useState<DockSay | null>(null);
+  // "Tell Tino what to change", in words, for the whole file: one model call returns the areas it touches, each posted
+  // as Tino's proposal under its area. Never written into an area. None: he says the file needs no change for that
+  const tell = async (instruction: string) => {
+    if (editing) return;
+    setEditing(true); setSay(null);
+    const fail = (why?: string) => setSay({ key: `failed:${Date.now()}`, title: [t.tino.editFailed], text: why, mood: "sad" });
+    try {
+      const res = await fetch("/api/system/edit", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ projectId, instruction }) });
+      const data = (await res.json().catch(() => ({}))) as { edits?: { area: SystemArea; decision: string; why: string; never: string; reason: string }[]; error?: string };
+      if (!res.ok || !data.edits) { fail(res.status < 500 ? data.error : undefined); return; }
+      if (!data.edits.length) { setSay({ key: `nothing:${Date.now()}`, title: t.tino.nothingTitle, text: t.tino.nothingText, mood: "skeptic" }); setAsk(""); return; }
+      for (const e of data.edits) {
+        const r = await postAreaComment(projectId, e.area, e.reason, { proposal: { decision: e.decision, why: e.why, never: e.never, state: "open", via: TINO } });
+        if (!r.ok) { fail(r.error); return; }
+      }
+      setAsk("");
+      onTalk();
+      go(`sdoc-${data.edits[0].area}`);
+    } catch { fail(); } finally { setEditing(false); }
+  };
   // An area's status and references typed over in the file go back to the board: the references it cites (by code)
   // are the area's, with their takes, and "decided" or "proposed" confirms or hands it back. What the app writes there
   // is written again from that, so the part never stays frozen by hand
@@ -255,13 +285,18 @@ export default function SystemDoc({ blocks, system, boardIds, itemOf, imageOf, r
       <div className="sdoc-page sdoc-page--md">
         {error && <p className="sysv-error" role="alert">{error}</p>}
         <SystemMarkdown fileTools={fileTools} look={look} pictures={pictures} blocks={blocks} busy={busy} onSave={onSave} onCopy={onCopy} onDownload={onDownload} copied={copied} markdown={markdown} projectId={projectId} projectName={projectName} hasRecipe={hasRecipe}
-          onPropose={proposeArea} tools={(b) => (b.decision ? <IconButton icon="sparkle" label={sharpening === b.area ? s.sharpening : s.sharpen} variant="quiet" size="xs" disabled={!!sharpening || working} onClick={() => void sharpen(b)} /> : null)} after={(b) => <>{proposalsOf(b)}</>} onAbout={onAbout}
+          onPropose={proposeArea} tools={(b) => (b.decision ? <IconButton icon="sparkle" label={sharpening === b.area ? s.sharpening : s.sharpen} variant="quiet" size="xs" disabled={!!sharpening || working} onClick={() => void sharpen(b)} /> : null)} proposals={proposedOf} onAbout={onAbout}
           onText={onText && (async (id, text) => { try { await onText(id, text); setError(""); } catch (e) { setError(e instanceof Error ? e.message : String(e)); throw e; } })}
           onTextTitle={onTextTitle && (async (id, title) => { try { await onTextTitle(id, title); setError(""); } catch (e) { setError(e instanceof Error ? e.message : String(e)); throw e; } })}
           onSummary={async (text) => { const r = await saveSystemSummary(projectId, text); if (r.ok) onSystem(r.data); else setError(r.error); }}
           onPart={async (part, text) => { const r = part.startsWith("meta:") && text !== null ? await saveMeta(part.slice(5), text) : await saveDocPart(projectId, part, text); if (r.ok) onSystem(r.data); else setError(r.error); }}
           pins={pins} onPin={pin} onUnpin={unpin} />
       </div>
+      {dock && createPortal(
+        <TinoDock label={t.tino.dock.edit} placeholder={t.tino.dock.edit} value={ask} onChange={(v) => { setAsk(v); setSay(null); }} onSubmit={(v) => void tell(v)} busy={editing}
+          say={say} onSayClose={() => setSay(null)} />,
+        dock,
+      )}
     </div>
   );
 }

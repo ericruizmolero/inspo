@@ -87,3 +87,9 @@
 :root[data-theme="light"] .mdv { --md-head: var(--moss); --md-head-2: var(--warning); --md-danger: var(--danger-deep); }
 /* Paper: the raw file is a white sheet, the field's white with the soft line, its bar on the same white */
 :root[data-theme="light"] .mdv:not(.mdv--doc) { --md-bg: var(--field); --md-bar: var(--field); --md-line: var(--field-border); --md-ink: var(--chrome-text); --md-strong: var(--text); --md-fill: color-mix(in srgb, var(--text) 6%, transparent); --md-fill-2: color-mix(in srgb, var(--text) 11%, transparent); }
+/* A proposal waiting in its area: what there is now struck through in a muted red, what would be written lit after
+   it, both on a soft fill like an editor's diff; its note (TinoNote) under them, in the interface's own type */
+.mdv-del { color: var(--md-danger); text-decoration: line-through; background: color-mix(in srgb, var(--md-danger) 16%, transparent); border-radius: 3px; }
+.mdv-ins { color: var(--md-strong); text-decoration: none; background: color-mix(in srgb, var(--md-strong) 13%, transparent); border-radius: 3px; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+.mdv-proposed .tino-note { margin: 10px 0 6px; }
+.mdv-proposed .sdoc-proposal__refuse { margin: 0 0 6px; font-family: var(--font-sans); }

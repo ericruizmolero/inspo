@@ -5,7 +5,7 @@
 | Familia | Cómo se ve | Ejemplos |
 | --- | --- | --- |
 | **App** | Isla arriba a la izquierda, dock sobre el cromo, tablero o documento a pantalla completa | `/`, `/i/[id]`, proyecto |
-| **Sección** | `SectionShell`: sidebar shadcn con secciones, migas, contenido a 800 px (1040 con `wide`) | `/settings`, `/admin`, `/library` |
+| **Sección** | `SectionShell`: sidebar shadcn con secciones, migas, contenido a 880 px (1040 con `wide`); en Ajustes, cabecera, secciones y filas del catálogo → [modelo](../decisiones/2026-10-20-cada-pagina-de-ajustes-es-cabecera-secciones-y-filas-del-catalogo.md) | `/settings`, `/admin`, `/library` |
 | **Pública** | Sin sesión, carga instantánea, sin trabajo pesado | `/login`, `/invite/[id]`, `/unsubscribe`. Una página que no necesita la app (legal, recursos, skills, precios, la extensión, contenido) va a la web de marketing (`marketing-site/`), con su entrada en `PAGES`, no aquí. → [decisión](../decisiones/2026-10-11-las-paginas-legales-y-los-recursos-viven-en-la-web-de-marketing.md) |
 
 ## Lista de lo que hace falta

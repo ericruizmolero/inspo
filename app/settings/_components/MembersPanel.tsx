@@ -107,51 +107,61 @@ export default function MembersPanel({ workspace, me, canManage, members, invita
           actions={<Button variant="primary" size="s" onClick={() => setCreating(true)}>{t.ws.createTeam}</Button>} />
       )}
 
+      {workspace.kind === "team" && canManage && (
+        <SettingsWindow title={t.team.invite} note={note}>
+          <form onSubmit={invite}>
+            <FieldRow label={t.team.emailLabel} htmlFor="invite-email"
+              action={<Button variant="primary" size="s" type="submit" disabled={busy || !email.trim()}>{t.team.invite}</Button>}>
+              <span className="setting-invite">
+                <input id="invite-email" type="email" className="cr-input" placeholder={t.team.emailPlaceholder}
+                  value={email} onChange={(e) => setEmail(e.target.value)} required />
+                <SegmentedControl tone="paper" size="s" choice className="theme-seg" label={t.team.role}
+                  active={ROLES.indexOf(role)} onChange={(i) => setRole(ROLES[i])}
+                  items={ROLES.map((r) => ({ label: t.team.roles[r] }))} />
+              </span>
+            </FieldRow>
+          </form>
+        </SettingsWindow>
+      )}
+
       {workspace.kind === "team" && (
-        <SettingsWindow title={t.team.members} figure={seatLimit == null ? members.length : t.team.membersOf(members.length, seatLimit)} note={note}>
+        <SettingsWindow title={t.settings.people} figure={seatLimit == null ? members.length : t.team.membersOf(members.length, seatLimit)}
+          note={!canManage ? note : undefined}>
           {overCapacity && (
             <p className="cr-field-hint is-error setting-alert">
               {t.team.overSeatsBefore(overCapacity.members, t.plans.items[overCapacity.plan].name, overCapacity.limit)}
               <Link href="/settings/plan">{t.team.overSeatsLink}</Link>.
             </p>
           )}
-          <ul className="list">
-            {members.map((m) => (
-              <li key={m.id} className="list__row">
-                <PersonAvatar name={m.name} image={m.image} size={32} />
-                <span className="list__main">
-                  <span className="list__name t-ui"><span className="list__text">{m.name}</span>{m.userId === me.id && <Chip className="list__you t-label">{t.team.you}</Chip>}</span>
-                  <span className="list__sub t-small">{m.email}</span>
-                </span>
-                {canManage && m.userId !== me.id && !m.role.split(",").includes("owner") ? (
-                  <SegmentedControl tone="paper" size="s" choice className="list__pick" label={t.team.roleOf(m.name)}
-                    active={m.role.split(",").includes("admin") ? 1 : 0}
-                    onChange={(i) => { if (!busy && ROLES[i] !== (m.role.split(",").includes("admin") ? "admin" : "member")) void setMemberRole(m, ROLES[i]); }}
+          {/* One row per person: who they are in the label column, their role in the control column */}
+          {members.map((m) => {
+            const admin = m.role.split(",").includes("admin");
+            const editable = canManage && m.userId !== me.id && !m.role.split(",").includes("owner");
+            return (
+              <FieldRow key={m.id} className="setting-person"
+                label={
+                  <span className="setting-person__who">
+                    <PersonAvatar name={m.name} image={m.image} size={32} />
+                    <span className="list__main">
+                      <span className="list__name t-ui"><span className="list__text">{m.name}</span>{m.userId === me.id && <Chip className="list__you t-label">{t.team.you}</Chip>}</span>
+                      <span className="list__sub t-small">{m.email}</span>
+                    </span>
+                  </span>
+                }
+                action={canManage && m.userId !== me.id && (
+                  <Button variant="quiet" size="s" onClick={() => removeMember(m)} disabled={busy}>{t.team.remove}</Button>
+                )}>
+                {editable ? (
+                  <SegmentedControl tone="paper" size="s" choice className="theme-seg" label={t.team.roleOf(m.name)}
+                    active={admin ? 1 : 0}
+                    onChange={(i) => { if (!busy && ROLES[i] !== (admin ? "admin" : "member")) void setMemberRole(m, ROLES[i]); }}
                     items={ROLES.map((r) => ({ label: t.team.roles[r] }))} />
                 ) : (
-                  <span className="list__meta t-small">{roleOf(m.role)}</span>
+                  <span className="setting-person__role t-ui">{roleOf(m.role)}</span>
                 )}
-                {canManage && m.userId !== me.id && (
-                  <Button variant="quiet" size="s" onClick={() => removeMember(m)} disabled={busy}>{t.team.remove}</Button>
-                )}
-              </li>
-            ))}
-          </ul>
-
-          {canManage && (
-            <form onSubmit={invite}>
-              <FieldRow label={t.team.emailLabel} htmlFor="invite-email"
-                action={<Button variant="primary" size="s" type="submit" disabled={busy || !email.trim()}>{t.team.invite}</Button>}>
-                <span className="setting-invite">
-                  <input id="invite-email" type="email" className="cr-input" placeholder={t.team.emailPlaceholder}
-                    value={email} onChange={(e) => setEmail(e.target.value)} required />
-                  <SegmentedControl tone="paper" size="s" choice className="theme-seg" label={t.team.role}
-                    active={ROLES.indexOf(role)} onChange={(i) => setRole(ROLES[i])}
-                    items={ROLES.map((r) => ({ label: t.team.roles[r] }))} />
-                </span>
               </FieldRow>
-            </form>
-          )}
+            );
+          })}
         </SettingsWindow>
       )}
 

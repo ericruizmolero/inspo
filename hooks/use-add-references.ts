@@ -18,7 +18,8 @@ import type { SessionUser, Workspace } from "@/lib/workspace-core";
 import type { InspoItem, ProjectLinks } from "@/types/inspo";
 import type { ProjectSystem, SystemArea } from "@/types/system";
 
-/** A new reference by link, image or text: on the board at once, saved behind it, gone again with a notice if it fails */
+/** A new reference by link, image or text: on the board at once, saved behind it, gone again with a notice if it fails.
+ *  It lands where saveTargetRef says, or in `into` when the caller names the project (a card on the home) */
 export function useAddReferences({ user, workspace, t, items, setItems, setLinks, setThumbMap, saveTargetRef, refreshSystem, setSystem, watch, cardCopy, projectFailed, importBoard, router, setToast }: {
   user: SessionUser;
   workspace: Workspace;
@@ -61,7 +62,7 @@ export function useAddReferences({ user, workspace, t, items, setItems, setLinks
       setSystem(projectId, r.data);
     }
   };
-  const addByUrl = useCallback(async (input: NewInspoInput): Promise<InspoItem | null> => {
+  const addByUrl = useCallback(async (input: NewInspoInput, into?: string): Promise<InspoItem | null> => {
     const d = new Date();
     const temp: InspoItem = {
       name: nameFromHost(input.web), web: input.web, type: input.type, note: input.note,
@@ -70,7 +71,7 @@ export function useAddReferences({ user, workspace, t, items, setItems, setLinks
     };
     setItems((prev) => [temp, ...prev]);
     try {
-      const projectId = saveTargetRef.current() ?? undefined;
+      const projectId = into ?? saveTargetRef.current() ?? undefined;
       const r = await addInspo({ web: input.web, type: input.type, note: input.note, projectId });
       if (!r.ok) throw new Error(r.error);
       const item = r.data;
@@ -96,7 +97,7 @@ export function useAddReferences({ user, workspace, t, items, setItems, setLinks
   // ─── Add an image ────────────────────────────────────────────────────────────
   // Same optimistic card, showing the local file while it uploads; the uploaded
   // file's URL becomes the item's address and its thumbnail.
-  const addByUpload = useCallback(async (input: NewInspoInput & { file: File }): Promise<InspoItem | null> => {
+  const addByUpload = useCallback(async (input: NewInspoInput & { file: File }, into?: string): Promise<InspoItem | null> => {
     const d = new Date();
     const local = URL.createObjectURL(input.file);
     const temp: InspoItem = {
@@ -107,7 +108,7 @@ export function useAddReferences({ user, workspace, t, items, setItems, setLinks
     setItems((prev) => [temp, ...prev]);
     try {
       const url = await uploadMedia(input.file);
-      const projectId = saveTargetRef.current() ?? undefined;
+      const projectId = into ?? saveTargetRef.current() ?? undefined;
       const r = await addImage({ url, fileName: input.file.name, type: input.type, note: input.note, projectId });
       if (!r.ok) throw new Error(r.error);
       const item = r.data;

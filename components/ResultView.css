@@ -1,24 +1,29 @@
 /* The Result view (components/ResultView.tsx), in the same column as the other views (criterio.md's .sdoc, the
- * presentation's .brand): an index of 188 on the left, here what was built before, a 40 gap, 1080 in all. In the
- * column, one question with the board's shortcuts inside it, the result's line and actions, then the result in a frame.
- * The frame is the page itself at the width of the column; no card around it, one line of border */
+ * presentation's .brand): an index of 188 on the left, here what Tino built, a 40 gap, 1080 in all. In the column,
+ * Tino's note when the result is older than the file, the result's line and actions, then the result in a browser
+ * window: a top with three dots and its address, the page itself under it. What to build is asked in Tino's dock */
 .res { display: grid; grid-template-columns: 188px minmax(0, 1fr); gap: 40px; width: 100%; max-width: 1080px; margin: 8px auto 0; }
 .res__main { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
-/* The index: the presentation's (.brand-toc), with a quiet label over it */
+/* The index: the presentation's (.brand-toc), with a quiet label over it; each row with its version, quiet, on the right */
 .res-toc { position: sticky; top: 0; align-self: start; display: flex; flex-direction: column; gap: 6px; padding-top: 4px; }
 .res-toc__label { margin: 0; padding: 0 10px; font-size: var(--fs-label); color: var(--muted-2); }
 .res-toc ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1px; }
-.res-toc li button { display: block; width: 100%; min-height: 30px; padding: 0 10px; border: 0; border-radius: var(--radius-s); background: none; color: var(--text-2); font: inherit; font-size: var(--fs-small); text-align: left; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; transition: background 0.15s, color 0.15s; }
+.res-toc li button { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 30px; padding: 0 10px; border: 0; border-radius: var(--radius-s); background: none; color: var(--text-2); font: inherit; font-size: var(--fs-small); text-align: left; cursor: pointer; transition: background 0.15s, color 0.15s; }
+.res-toc__name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.res-toc li button em { flex: none; font-style: normal; font-size: var(--fs-label); color: var(--muted-2); font-variant-numeric: tabular-nums; }
 .res-toc li button:hover:not(:disabled), .res-toc li button.is-on { background: var(--surface); color: var(--text); }
 .res-toc li button:disabled { cursor: default; }
-.res__prompt { width: 100%; max-width: none; }
-.res__below { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-.res__shortcuts { display: flex; flex-wrap: wrap; gap: 6px; }
 .res__bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .res__actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
 .res__meta { margin: 0; font-size: var(--fs-small); color: var(--muted); }
 .res__error { margin: 0; font-size: var(--fs-small); color: var(--warning); }
-.res__frame { width: 100%; height: min(78vh, 900px); border: 1px solid var(--border); border-radius: var(--radius-md); }
+/* The window: one line of border round the top and the page, no card, no shadow */
+.res__window { display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden; }
+.res__chrome { display: flex; align-items: center; gap: 6px; height: 36px; padding: 0 14px; background: var(--surface); border-bottom: 1px solid var(--border); }
+.res__chrome i { width: 9px; height: 9px; border-radius: 50%; background: var(--muted-2); opacity: 0.6; }
+.res__chrome span { margin-left: 12px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-label); color: var(--muted); }
+.res__frame { display: block; width: 100%; height: min(78vh, 900px); border: 0; }
+.res__frame--empty { height: 240px; border: 1px solid var(--border); border-radius: var(--radius-md); }
 .res__frame--busy, .res__frame--empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; background: var(--surface-2); color: var(--text); text-align: center; padding: 24px; box-sizing: border-box; }
 .res__frame--busy p, .res__frame--empty p { margin: 0; font-size: var(--fs-ui); }
 .res__frame .res__hint { color: var(--muted); font-size: var(--fs-small); }

@@ -1,0 +1,14 @@
+/* Tino's note (components/TinoNote.tsx): the balloon's body (.cr-balloon-body: butter, ink border, bevel) as one row,
+   no tail. His face, then the line and the sentence: the sentence stays on the title's line while it fits there and
+   drops under it whole when it does not. The answers sit on the right, centred on the row */
+.tino-note { display: flex; align-items: center; gap: 12px; padding: 10px 14px 10px 10px; font-family: var(--font-sans); --ib-fg-strong: var(--on-butter); }
+.tino-note__say { flex: 1; min-width: 0; margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 6px; row-gap: 2px; font-family: var(--font-sans); }
+.tino-note__title { font-family: var(--font-title); font-size: var(--fs-title-s); line-height: var(--lh-title-s); font-weight: var(--fw-title-s); }
+.tino-note__text { font-size: var(--fs-ui); line-height: var(--lh-ui); text-wrap: pretty; }
+.tino-note__actions { flex: none; display: flex; align-items: center; gap: 12px; font-size: var(--fs-small); }
+@media (max-width: 640px) { .tino-note { flex-wrap: wrap; } .tino-note__actions { flex-basis: 100%; justify-content: flex-end; } }
+
+/* Tino on an ink tile, the same in both themes: the plush larger than the tile and set low in it, as the dock's
+   .sb-tino__body cuts him, so his head, visor and ears fill it and the tile's bottom edge cuts his base */
+.tino-note__face { position: relative; flex: none; display: block; width: 40px; height: 40px; border-radius: var(--radius-s); background: var(--ink); overflow: hidden; }
+.tino-note__face .tino { position: absolute; left: -9px; bottom: -19px; width: 58px; height: 58px; }

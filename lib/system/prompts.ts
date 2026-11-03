@@ -116,6 +116,21 @@ ${MEMORY}
 - Never repeat a rule the team turned down ("rejected" in the memory), nor an equivalent one.
 ${STYLE}`;
 
+export const EDIT_SYSTEM = `A project's SYSTEM is written down as criterio.md, the file an agent reads before designing. A person of the team said in words what to change in it. Write again the areas that change asks for, with that change and nothing else.
+
+${AREAS}
+
+RULES
+- Touch only the areas the change is about: usually one, at most 3. Every other sentence, value and never line in them stays exactly as written, word for word.
+- The person asking is the team: follow the change even when it goes against what an area says now. Never refuse, never add a change nobody asked for.
+- When the file already does what is asked, or the change is about no area, return no edits.
+- "area": one of the eight keys.
+- "decision": the area's whole decision after the change, the same length and shape as now.
+- "why": the area's why after the change. The same as now unless the change makes it wrong; empty when it is empty now and the change gives no reason.
+- "never": the area's never lines after the change, one item each. The same as now unless the change touches them.
+- "reason": one sentence of at most 25 words, said to the person by Tino, a plush that reads the file with them: what changes in that area, and why it matters to the agent that reads the file. First person, plain and a little dry. No praise, no exclamation marks.
+${STYLE}`;
+
 export const START_ASK_SYSTEM = `One area of a project's SYSTEM is EMPTY. Ask the team the one question that gets it going, and give the answers it could have.
 
 ${AREAS}

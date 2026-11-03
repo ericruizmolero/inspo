@@ -48,6 +48,7 @@ Cada acción de la app existe como botón **y** como acción del agente (`lib/ag
 - Texto editable en el sitio, sin botón Editar ni recuadro; autoguardado. En criterio.md lo es todo, títulos incluidos. → [decisión](decisiones/2026-10-05-todo-el-md-editable.md)
 - Lo que se escribe en un proyecto es siempre una pieza del tablero (una referencia o la decisión de un área), nunca un documento suelto: así hay una sola fuente de verdad y el MD se deriva de ella. → [decisión](decisiones/2026-10-05-resultados-en-vez-de-presentacion.md)
 - Lo mismo para un cliente de IA conectado por MCP: lee el MD, escribe piezas, y una decisión suya es una propuesta que espera al equipo. Lo que viene de fuera dice de dónde viene ("Eric vía Claude"). Los valores de una marca (paleta, fuentes, logo) entran por `bring_brand` como secciones de la Presentación que el equipo edita o devuelve, con su fuente a la vista; nunca como decisión. → [decisión](decisiones/2026-10-06-conector-mcp-lee-el-md-y-escribe-piezas.md), [la marca por el conector](decisiones/2026-10-13-el-conector-trae-la-marca-a-la-presentacion.md)
+- Pedirle a Tino un cambio con palabras (el dock de Agent y Human) deja propuestas en las áreas que toca, nunca las escribe; cada propuesta se ve en su área tachada y encendida con su `TinoNote`. → [decisión](decisiones/2026-10-20-tino-en-el-sistema-dock-notas-y-version-del-fichero.md)
 - Comentar es una herramienta aparte (tecla C) que deja pines tipo Figma con respuestas, en el documento. No hay anotaciones posicionales sobre las páginas de referencia.
 
 ## Orden del tablón

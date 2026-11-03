@@ -6,7 +6,7 @@ Todos los que maneja la app. Al añadir uno: que no choque con estos, que no sal
 
 | Tecla | Qué hace |
 | --- | --- |
-| ⌘K / Ctrl+K | En un tablón con buscador abajo: lleva al buscador (despliega la barra si está plegada) y, pulsado otra vez, lo suelta; nunca abre la paleta ahí. En el resto de vistas, abre o cierra la paleta de comandos |
+| ⌘K / Ctrl+K | En un tablón con buscador abajo: lleva al buscador (despliega la barra si está plegada) y, pulsado otra vez, lo suelta; nunca abre la paleta ahí. En la casa ("What are you making today?"): enfoca la caja de proyecto nuevo y, pulsado otra vez en ella, la suelta; tampoco abre la paleta. En el resto de vistas, abre o cierra la paleta de comandos |
 | ⌘K → "Abrir el brief" | Con un proyecto abierto, lleva a su Sistema y abre el panel Brief (desde el tablero también) |
 | N | Añadir referencia (fuera de campos y sin diálogos abiertos) |
 | / | Lleva al buscador (si la barra del tablón está plegada, la despliega antes) |

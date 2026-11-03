@@ -17,7 +17,7 @@ La criatura en 3D (verde, antenas naranjas, tres ojos) es `Logo` (`components/Lo
 
 ## Favicon e iconos
 
-El mismo dibujo es el favicon (`app/favicon.ico`, `app/icon.png`), el icono de Apple (`app/apple-icon.png`, sobre papel porque iOS rellena la transparencia de negro) y los iconos de la extensión de Chrome. En Claude, el logo del conector MCP sale del favicon.
+El favicon no es la criatura sino Tino, el mismo SVG que la landing (`marca/conejo-icono.svg`): de perfil, orejas cortas, sin baldosa, en tinta y en papel con el tema oscuro del sistema. `app/icon.svg`, y en su versión clara `app/favicon.ico` (16 a 64) e `app/icon.png` (256); `app/apple-icon.png` (180) y `public/app-icon-512.png` (el del manifiesto) sobre papel. Los iconos de la extensión de Chrome siguen siendo la criatura. En Claude, el logo del conector MCP sale del favicon. → [decisión](decisiones/2026-11-03-el-favicon-es-tino-el-mismo-de-la-landing.md)
 
 ## Nombre
 
@@ -37,5 +37,6 @@ La marca es la misma en Board y en Paper. → [Color](fundamentos/color.md)
 ## Reglas
 
 - Donde haga falta la marca, `Logo` con su `size`. No dibujar la criatura en otros sitios ni darle estados sin decisión nueva.
+- Tino, el peluche de la landing, vive en el Inicio y es la búsqueda del tablón ([Componentes](componentes.md#tino-en-el-inicio), [decisión](decisiones/2026-10-20-tino-entra-en-el-inicio-y-es-la-busqueda-del-tablon.md)). No sustituye a la criatura del logotipo. Lo que dice sale de la hoja de copy por estado y va en `t.tino`: solo habla de lo guardado, no se inventa gusto y en un error no bromea.
 - El tile de la Isla muestra el espacio, no la mascota. → [decisión](decisiones/2026-10-07-el-tile-de-la-isla-muestra-el-espacio-no-la-mascota.md)
 - Nada de "savvia.studio" ni de los nombres anteriores en la interfaz ni en los correos. Los correos salen de `hola@criterio.design` (Resend, dominio verificado), van en texto plano y firman "Eric, Andoni y Alberto" ([decisión](decisiones/2026-10-10-correos-solo-texto.md)), y la imagen al compartir dice solo "criterio.design".

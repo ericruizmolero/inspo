@@ -7,7 +7,9 @@ import { boardStamp, boardVisuals } from "@/lib/system/board";
 import { setVerdict } from "@/lib/system/curate";
 import { brandStale } from "@/lib/brand";
 import type { SystemEvidence } from "@/types/system";
-import { listVersions, versionMarkdown } from "@/lib/criterio-versions";
+import { currentVersion, listVersions, versionMarkdown } from "@/lib/criterio-versions";
+import { headers } from "next/headers";
+import { originOfHeaders } from "@/lib/mcp/auth";
 
 export async function loadSystem(projectId: string) {
   return withCtx(async (ctx) => {
@@ -74,6 +76,12 @@ export async function saveDocPart(projectId: string, part: string, text: string 
 /** criterio.md's versions, newest first (lib/criterio-versions.ts) */
 export async function criterioVersions(projectId: string) {
   return withCtx(async (ctx) => listVersions(ctx.workspace.id, String(projectId)));
+}
+
+/** The version criterio.md carries now, for the page's head: what the next copy, export or result is kept as */
+export async function criterioVersionNow(projectId: string) {
+  const origin = originOfHeaders(await headers());
+  return withCtx(async (ctx) => currentVersion({ organizationId: ctx.workspace.id, projectId: String(projectId), locale: ctx.user.language, origin }));
 }
 
 /** One version's file */

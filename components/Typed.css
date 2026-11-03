@@ -1,0 +1,4 @@
+/* Tino writing (components/Typed.tsx): what is still to come keeps its place, transparent, so the balloon never
+   grows; a thin caret follows the last letter while he writes */
+.typed__rest { color: transparent; }
+.typed__on.is-writing::after { content: ""; display: inline-block; width: 1.5px; height: 1em; margin: 0 -1.5px -0.12em 0; background: currentColor; opacity: 0.6; }

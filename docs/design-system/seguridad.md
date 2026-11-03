@@ -34,7 +34,7 @@ Todo lo que protege la app y lo que prometemos en público, en un sitio. Cada re
 
 ## Cabeceras
 
-- **CSP con nonce en cada página** (`proxy.ts`): `script-src 'self' 'nonce-…' 'strict-dynamic'; object-src 'none'; base-uri 'self'`. Un script inyectado no tiene nonce y no corre. Nuestro único script inline (el tema, en `app/layout.tsx`) lleva el nonce que llega en `x-nonce`. Nunca `onerror=` ni manejadores en HTML, tampoco dentro de un `srcDoc`. Esta cabecera sustituye a la de `next.config.ts`, así que lleva también `frame-ancestors`.
+- **CSP con nonce en cada página** (`proxy.ts`): `script-src 'self' 'nonce-…' 'strict-dynamic' 'wasm-unsafe-eval'; object-src 'none'; base-uri 'self'`. Un script inyectado no tiene nonce y no corre. Nuestro único script inline (el tema, en `app/layout.tsx`) lleva el nonce que llega en `x-nonce`. Nunca `onerror=` ni manejadores en HTML, tampoco dentro de un `srcDoc`. Esta cabecera sustituye a la de `next.config.ts`, así que lleva también `frame-ancestors`. `'wasm-unsafe-eval'` deja compilar WebAssembly y nada más (no abre `eval`): el modelo 3D de Tino se descomprime con el WASM de meshopt, y sin él Tino cae a la marca plana.
 - **Nadie puede enmarcar la app** (`frame-ancestors 'self'`, `X-Frame-Options SAMEORIGIN`), y la pantalla de permiso del MCP (`/mcp/authorize`) ni siquiera nosotros (`'none'`, `DENY`): un clic en "Permitir" no se puede dirigir desde fuera.
 - En cada respuesta (`next.config.ts`): HSTS de dos años con `preload`, `nosniff`, `Referrer-Policy strict-origin-when-cross-origin`, `Permissions-Policy` sin cámara, micrófono, posición ni pago. Sin cabecera `X-Powered-By`.
 - En desarrollo la CSP admite `'unsafe-eval'` (React reconstruye los errores del servidor con eval). Solo ahí.
