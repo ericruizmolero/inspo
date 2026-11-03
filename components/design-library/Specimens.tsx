@@ -8,6 +8,8 @@ import { useT } from "@/components/I18nProvider";
 import { areaIcon } from "@/components/area-icons";
 import { sectionIcon, SECTION_ICON_NAMES } from "@/components/section-icons";
 import Logo from "@/components/Logo";
+import Tino from "@/components/Tino";
+import type { TinoState } from "@/components/tino/engine";
 import { setTheme as applyTheme } from "@/lib/theme";
 import { audition, gust } from "@/lib/ui-sounds";
 import { SYSTEM_AREAS } from "@/types/system";
@@ -535,12 +537,11 @@ function BrandSpecimen() {
           <div className="ds-logos ds-logos--chrome cr-on-chrome">{[24, 36].map((n) => <span key={n} className="ds-logos__one"><Logo size={n} /><span className="ds-val">{n}</span></span>)}</div>
         </div>
       </Block>
-      <Block title="Favicon e iconos">
-        <div className="ds-row ds-row--top">
-          <span className="ds-logos__one"><img src="/icon.png" alt="Favicon" width={32} height={32} /><span className="ds-val">favicon 32</span></span>
-          <span className="ds-logos__one"><img src="/apple-icon.png" alt="Icono de Apple" width={64} height={64} className="ds-apple" /><span className="ds-val">apple-icon</span></span>
-          <span className="ds-logos__one"><img src="/icon-512.png" alt="Icono grande" width={96} height={96} /><span className="ds-val">icon-512</span></span>
-        </div>
+      <Block title="Tino" aside={<a className="cr-btn cr-btn-quiet cr-btn-s" href={TINO_MANUAL} target="_blank" rel="noreferrer">Manual de Tino<Icon name="arrow-up-right" size={16} /></a>}>
+        <TinoLive />
+      </Block>
+      <Block title="Favicon: Tino plano">
+        <TinoFavicon />
       </Block>
       <Block title="Nombre">
         <div className="ds-row ds-row--top">
@@ -559,6 +560,106 @@ function BrandSpecimen() {
         </div>
       </Block>
     </div>
+  );
+}
+
+// Tino's favicon: the flat silhouette (two ears, the body, the visor as a paper bar). The drawing is app/icon.svg; the
+// PNG and ICO files are renders of it. The manual (Blender, engine, poses) is Alberto's artifact.
+const TINO_MANUAL = "https://claude.ai/artifact/DU8qWh2gkV1vWd6GMD8dBM";
+const TINO_GESTURES: TinoState[] = ["reposo", "curiosa", "leyendo", "pensando", "aprueba", "descarta", "senala", "satisfecha", "dormida", "error"];
+const TINO_3D_FILES = [
+  { href: "/tino/tino-corta.glb", name: "tino-corta.glb", label: "GLB", what: "El modelo de la app: orejas cortas, base redonda" },
+  { href: "/tino/tino-plano.svg", name: "tino-plano.svg", label: "SVG plano", what: "Lo que se ve sin WebGL" },
+  { href: "https://criterio-landing.vercel.app/mascota/peluche/tino-blender.zip", name: "tino-blender.zip", label: "Blender", what: "tino-corta.blend y tino.py (Blender 5.2, 0,9 MB)" },
+];
+
+/** The 3D plush as the app draws it (components/Tino.tsx), with its gestures to try, the theme it is on, and its files. */
+function TinoLive() {
+  const [state, setState] = useState<TinoState>("reposo");
+  const [dark, setDark] = useState(false);
+  useEffect(() => {
+    const el = document.documentElement;
+    const read = () => setDark(el.dataset.theme !== "light");
+    read();
+    const mo = new MutationObserver(read);
+    mo.observe(el, { attributes: true, attributeFilter: ["data-theme"] });
+    return () => mo.disconnect();
+  }, []);
+  return (
+    <>
+      <div className="ds-row ds-row--top">
+        <div className="ds-tino3d"><Tino state={state} dark={dark} size={220} /></div>
+        <div className="ds-tino3d__side">
+          <p className="ds-note">El peluche en 3D: vive en el Inicio, es la búsqueda del tablón, habla en el dock y en la página perdida. Pasa el puntero para peinarlo.</p>
+          <div className="ds-chips">
+            {TINO_GESTURES.map((g) => <Chip key={g} pressed={g === state} onClick={() => setState(g)}>{g}</Chip>)}
+          </div>
+        </div>
+      </div>
+      <FileList files={TINO_3D_FILES} />
+    </>
+  );
+}
+
+function FileList({ files }: { files: { href: string; name: string; label: string; what: string }[] }) {
+  return (
+    <ul className="ds-files">
+      {files.map((f) => (
+        <li key={f.href}>
+          <span className="ds-files__label">{f.label}</span>
+          <span className="ds-files__what">{f.what}</span>
+          <a className="cr-btn cr-btn-quiet cr-btn-s" href={f.href} download={f.name}><Icon name="import" size={16} />Descargar</a>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+const TINO_FILES = [
+  { href: "/icon.svg", name: "tino-favicon.svg", label: "SVG", what: "El dibujo, con su modo oscuro" },
+  { href: "/favicon.ico", name: "tino-favicon.ico", label: "ICO", what: "16, 32, 48 y 64" },
+  { href: "/icon.png", name: "tino-icon-256.png", label: "PNG 256", what: "Favicon y manifest" },
+  { href: "/apple-icon.png", name: "tino-apple-icon-180.png", label: "PNG 180", what: "Icono de Apple" },
+  { href: "/app-icon-512.png", name: "tino-app-icon-512.png", label: "PNG 512", what: "Icono de la app instalada" },
+];
+const TINO_TRAITS: [string, string][] = [
+  ["Forma", "Tino de perfil en silueta: dos orejas (la de atrás inclinada −12°), el cuerpo como una gota ancha y el visor, una raya que mira a la derecha"],
+  ["Tinta", "#1B1B18 sobre papel #EDE6D6; el visor en #F6F1E6"],
+  ["En oscuro", "El SVG se invierte solo: cuerpo #EDE6D6, visor #141412"],
+  ["Trazo", "Orejas con contorno de 2,4 y unión redonda; visor de 6,2 con extremos redondos"],
+  ["Lienzo", "63 × 63, centrado; los PNG llevan fondo de papel, el SVG va transparente"],
+];
+
+/** The live favicon: app/icon.svg read as served, drawn in both themes, with its traits and every file to download. */
+function TinoFavicon() {
+  const [svg, setSvg] = useState("");
+  useEffect(() => {
+    fetch("/icon.svg").then((r) => (r.ok ? r.text() : "")).then(setSvg, () => setSvg(""));
+  }, []);
+  // The file switches colours with prefers-color-scheme; here each tile forces one theme, so the media rule goes
+  const flat = svg.replace(/<style>[\s\S]*?<\/style>/, "");
+  const dark = flat.replace(/#1B1B18/g, "#EDE6D6").replace(/#F6F1E6/g, "#141412");
+  const tile = (markup: string, bg: string, label: string) => (
+    <span className="ds-logos__one">
+      <span className="ds-tino" style={{ background: bg }} dangerouslySetInnerHTML={{ __html: markup }} />
+      <span className="ds-val">{label}</span>
+    </span>
+  );
+  return (
+    <>
+      <div className="ds-row ds-row--top">
+        {svg && tile(flat, "#EDE6D6", "Claro")}
+        {svg && tile(dark, "#141412", "Oscuro")}
+        <div className="ds-logos">
+          {[16, 32, 64].map((n) => <span key={n} className="ds-logos__one"><img src="/icon.svg" alt="" width={n} height={n} /><span className="ds-val">{n}</span></span>)}
+          <span className="ds-logos__one"><img src="/apple-icon.png" alt="" width={64} height={64} className="ds-apple" /><span className="ds-val">apple</span></span>
+        </div>
+      </div>
+      <dl className="ds-traits">
+        {TINO_TRAITS.map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}
+      </dl>
+      <FileList files={TINO_FILES} />
+    </>
   );
 }
 

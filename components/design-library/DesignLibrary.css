@@ -239,5 +239,19 @@
 .ds-logos--chrome { background: var(--chrome); border-color: var(--chrome-border); }
 .ds-logos__one { display: inline-flex; flex-direction: column; align-items: center; gap: 8px; }
 .ds-apple { border-radius: 14px; }
+.ds-tino3d { width: 220px; height: 220px; flex: none; border-radius: var(--radius-lg); background: var(--surface-raised); border: 1px solid var(--border); overflow: hidden; }
+.ds-tino3d__side { flex: 1; min-width: 220px; display: grid; gap: 12px; align-content: start; }
+.ds-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.ds-tino { display: block; width: 112px; height: 112px; padding: 20px; border-radius: var(--radius-lg); }
+.ds-tino svg { display: block; width: 100%; height: 100%; }
+.ds-traits { display: grid; gap: 8px; margin: 20px 0 0; }
+.ds-traits > div { display: grid; grid-template-columns: 96px 1fr; gap: 12px; }
+.ds-traits dt { color: var(--text-muted); font-size: var(--fs-small); }
+.ds-traits dd { margin: 0; font-size: var(--fs-small); color: var(--text); }
+.ds-files { list-style: none; margin: 20px 0 0; padding: 0; }
+.ds-files li { display: flex; align-items: center; gap: 12px; padding: 6px 0; border-top: 1px solid var(--border); }
+.ds-files__label { width: 72px; flex: none; font-weight: var(--fw-semibold); font-size: var(--fs-small); }
+.ds-files__what { flex: 1; min-width: 0; color: var(--text-muted); font-size: var(--fs-small); }
+@media (max-width: 560px) { .ds-traits > div { grid-template-columns: 1fr; gap: 2px; } }
 
 
