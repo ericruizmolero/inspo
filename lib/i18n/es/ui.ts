@@ -1292,6 +1292,8 @@ export const ui: typeof EnUi = {
     deleteNote: "Borrar nota",
     thread: "Conversaci\u00f3n",
     noCapture: "A\u00fan no hay captura de esta p\u00e1gina",
+    tourPlay: "Reproducir la p\u00e1gina",
+    tourStop: "Parar y leer con scroll",
   },
   comments: {
     maxFiles: (n: number): string => `Como mucho ${n} capturas por comentario`,

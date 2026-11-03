@@ -1306,6 +1306,8 @@ export const ui = {
     deleteNote: "Delete note",
     thread: "Thread",
     noCapture: "No capture of this page yet",
+    tourPlay: "Play the page",
+    tourStop: "Stop and scroll",
   },
   comments: {
     maxFiles: (n: number): string => `At most ${n} screenshots per comment`,
