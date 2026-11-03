@@ -11,7 +11,7 @@ const TEXT = {
   es: { errorTitle: "Algo se ha roto", errorBody: "Esta página no ha cargado. Vuelve a intentarlo en un momento.", retry: "Volver a intentarlo" },
 };
 
-export default function GlobalError({ error, unstable_retry }: { error: Error & { digest?: string }; unstable_retry: () => void }) {
+export default function GlobalError({ error, retry }: { error: Error & { digest?: string }; retry: () => void }) {
   useEffect(() => { Sentry.captureException(error); }, [error]);
   const t = typeof navigator !== "undefined" && navigator.language.startsWith("es") ? TEXT.es : TEXT.en;
   return (
@@ -20,7 +20,7 @@ export default function GlobalError({ error, unstable_retry }: { error: Error & 
         <title>{t.errorTitle}</title>
         <h1>{t.errorTitle}</h1>
         <p>{t.errorBody}</p>
-        <button onClick={() => unstable_retry()}>{t.retry}</button>
+        <button onClick={() => retry()}>{t.retry}</button>
       </body>
     </html>
   );

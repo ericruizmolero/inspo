@@ -8,7 +8,7 @@ import { getT } from "@/lib/i18n";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getT();
-  return { title: { template: `%s · ${t.admin.title} · criterio.design`, default: t.admin.title } };
+  return { title: { template: `%s, ${t.admin.title}, criterio.design`, default: t.admin.title } };
 }
 
 // Activity panel for the whole app (all people and workspaces).
