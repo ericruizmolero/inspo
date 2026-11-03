@@ -6,12 +6,12 @@ Una familia y ocho pasos. Un solo sitio: el bloque "Type: the one place" de `app
 
 | Familia | Token | Para qué |
 | --- | --- | --- |
-| Satoshi | `--font-sans` (y `--font-title`, que apunta a ella) | Todo: títulos, texto corrido, interfaz, botones, campos, etiquetas |
+| Geist | `--font-sans` (y `--font-title`, que apunta a ella) | Todo: títulos, texto corrido, interfaz, botones, campos, etiquetas |
 | Monoespaciada del sistema | `--font-mono` | Solo datos literales: el fichero crudo, hex, código. Nunca títulos, etiquetas ni "eyebrows" |
 
-Sin segunda fuente. Los títulos tienen su propio token (`--font-title`) para que una segunda familia sea una sola línea. Bricolage Grotesque, Archivo, Inter, Family y Söhne se retiraron. → [Satoshi es la única familia](../decisiones/2026-10-08-satoshi-es-la-unica-familia.md), [sin mono, menos bordes](../decisiones/2026-10-03-sin-mono-menos-bordes.md)
+Sin segunda fuente. Los títulos tienen su propio token (`--font-title`) para que una segunda familia sea una sola línea. Bricolage Grotesque, Archivo, Inter, Family, Söhne y Satoshi se retiraron. → [Geist es la única familia](../decisiones/2026-11-03-geist-es-la-unica-familia.md), [sin mono, menos bordes](../decisiones/2026-10-03-sin-mono-menos-bordes.md)
 
-**Los ficheros de Satoshi no están en git.** Su licencia (ITF Free Font License) deja alojarla en nuestra web y meterla en nuestras apps, pero no compartirla en un repositorio público, y este lo es. `scripts/fetch-fonts.mjs` (`npm run fonts`, y solo antes de `dev` y `build`) descarga de Fontshare los ficheros oficiales: las variables normal e itálica para la app, las dos TTF estáticas para la imagen OG y la variable de la extensión. No se recortan ni se convierten, y Satoshi nunca se ofrece como fuente elegible a los usuarios (marca, DESIGN.md, plantillas).
+**Los ficheros de Geist están en git.** Su licencia (SIL Open Font License 1.1) lo permite. `app/fonts/geist/` guarda las variables normal e itálica para la app y las dos TTF estáticas para la imagen OG; la extensión y la web de marketing llevan su copia de la variable. Cada carpeta tiene su `OFL.txt`.
 
 ## Escala
 

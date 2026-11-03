@@ -32,7 +32,7 @@ const COLORS: { group: string; tokens: string[] }[] = [
   { group: "Cristal (solo las pastillas de la Isla y del selector)", tokens: ["--glass-hover", "--glass-on"] },
   { group: "Estados", tokens: ["--danger", "--success", "--warning"] },
 ];
-// The strict scale (fundamentos.md), all in Satoshi: titles 40 / 28 / 22 / 18, text 17 / 15 / 13 / 12. Nothing else.
+// The strict scale (fundamentos.md), all in Geist: titles 40 / 28 / 22 / 18, text 17 / 15 / 13 / 12. Nothing else.
 // Each row is drawn with its own .t-* class, and the size is read from its --fs-* token, so this is the live scale
 const TYPE = [
   { name: "display", weight: 700, el: "h1", label: "Título de página y titular" },
@@ -257,7 +257,7 @@ function ColorSpecimen() {
 }
 
 const FAMILIES = [
-  { name: "Satoshi", token: "--font-sans", cls: "ds-family__sample--sans", weights: "400 a 700", role: "La única familia: títulos, texto corrido, interfaz, botones, campos. Los títulos la toman por --font-title." },
+  { name: "Geist", token: "--font-sans", cls: "ds-family__sample--sans", weights: "400 a 700", role: "La única familia: títulos, texto corrido, interfaz, botones, campos. Los títulos la toman por --font-title." },
   { name: "Monoespaciada", token: "--font-mono", cls: "ds-family__sample--mono", weights: "400", role: "Solo datos literales: hex, código, el fichero crudo." },
 ];
 

@@ -224,7 +224,7 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
   measureRef.current = measure;
   // After every render (a project renamed, the view switcher changing beside the bar), on every resize of the bar or
   // of what else sits in it (the right-hand pill grows on its own: Connectors, the faces in Polish), and once the
-  // web fonts are in: the first layout measures with the fallback font, and Satoshi/Söhne set every tab wider
+  // web fonts are in: the first layout measures with the fallback font, and Geist set every tab wider
   // (2026-10-09: the switcher sat over the last project tab after the fonts swapped in)
   useLayoutEffect(() => measureRef.current());
   useLayoutEffect(() => {

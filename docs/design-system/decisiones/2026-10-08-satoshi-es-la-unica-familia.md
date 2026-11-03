@@ -1,10 +1,12 @@
 ---
 title: Satoshi es la única familia
 date: 2026-10-08
-status: vigente
+status: sustituida
 kind: diseño
 supersedes: Atkinson Hyperlegible Next para el texto y Archivo para los títulos (2026-10-08)
 ---
+*Sustituida el 2026-11-03: Geist es la única familia.* → [decisión](2026-11-03-geist-es-la-unica-familia.md)
+
 **Contexto.** El mismo día se probaron Archivo para todo, Archivo ensanchado para títulos, y seis fuentes de texto bajo títulos en Archivo (`design-explorations/body-font.html`). Se eligió la F (Source Sans 3) y luego la E (Atkinson Hyperlegible Next). Después Alberto pidió probar Satoshi como única familia (variante G).
 
 **Decisión.** Satoshi para títulos, texto e interfaz. `--font-sans` en `app/globals.css` apunta a Satoshi y `--font-title` apunta a `--font-sans`, así que una segunda familia sería una sola línea. Se carga con `next/font/local` en `app/fonts.ts` desde `app/fonts/satoshi/`. Los ficheros **no están en git**: `scripts/fetch-fonts.mjs` (`npm run fonts`, y antes de `dev` y `build`) descarga de Fontshare las variables normal e itálica, las dos TTF estáticas que usa la imagen OG y la variable de la extensión. La escala, los pesos `--fw-*` y los tokens no cambian. Se retiran Archivo y Atkinson de la app y de la extensión.

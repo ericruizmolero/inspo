@@ -58,7 +58,7 @@
     {
       "resources": [
         "icons/icon48.png",
-        "fonts/Satoshi-Variable.woff2"
+        "fonts/Geist-Variable.woff2"
       ],
       "matches": [
         "https://*.pinterest.com/*",
