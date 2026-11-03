@@ -1,7 +1,7 @@
 ---
 title: Resultado es un único espacio de construcción con lo que hay en el tablón como atajos, no una lista fija de páginas web
 date: 2026-10-13
-status: vigente
+status: retirada
 kind: producto
 ---
 **Contexto.** La vista Resultado ofrecía siempre los mismos siete tipos de página web (Home, About, Índice de trabajos, Caso de estudio, Artículo, Precios, Contacto). En el proyecto Video Promo, con siete posts de X con vídeo y una web, eso no tenía sentido.
