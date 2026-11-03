@@ -1,10 +1,10 @@
 # Marca
 
-Cómo se presenta Criterio en su propia interfaz: la criatura como logotipo, el nombre y los tres colores que la identifican.
+Cómo se presenta Criterio en su propia interfaz: Tino como logotipo y favicon, el nombre y los colores que la identifican.
 
 ## Logotipo
 
-La criatura en 3D (verde, antenas naranjas, tres ojos) es `Logo` (`components/Logo.tsx`): un dibujo transparente, sin baldosa, radio ni sombra propios. `public/logo.png` hasta 96 px y `public/icon-512.png` por encima. Sustituye al nombre en la interfaz; el nombre va en el `alt` ("criterio.design"). El resto del personaje (estados, `Sprite`, la o con ojos del wordmark) sigue fuera. → [decisión](decisiones/2026-10-07-la-criatura-es-el-logotipo-y-nada-mas.md)
+Tino plano, el mismo dibujo que el favicon, es `Logo` (`components/Logo.tsx`, que pinta `TinoMark`): un SVG en línea en el color del texto (`--text`, y `--chrome-ink` sobre el cromo), blanco en oscuro y tinta en claro, con el visor recortado. Sin baldosa, radio ni sombra propios. Sustituye al nombre en la interfaz; el nombre va en la etiqueta ("criterio.design"). Por decidir si se queda plano o pasa a ser el peluche en 3D (como imagen fija): la librería enseña los dos. La criatura verde queda solo en los iconos de la extensión. → [decisión](decisiones/2026-11-03-el-logotipo-es-tino-como-el-favicon.md)
 
 | Dónde | Tamaño |
 | --- | --- |
@@ -27,7 +27,7 @@ El favicon no es la criatura sino Tino, el mismo SVG que la landing (`marca/cone
 | Trazo | Orejas con contorno de 2,4 y unión redonda; visor de 6,2 con extremos redondos |
 | Lienzo | 63 × 63; los PNG llevan fondo de papel, el SVG va transparente |
 
-Dentro de la app, el mismo dibujo es `TinoMark` (`components/TinoMark.tsx`): el SVG en línea, el cuerpo en `currentColor` y el visor recortado del color de lo que tiene detrás (`--tino-mark-visor`, por defecto `--surface-page`), para que siga el tema de la app y no el del sistema. Hoy es la marca de la barra de la portada sin sesión (`GuestStart`, 32). → [decisión](decisiones/2026-11-03-la-portada-sin-sesion-lleva-a-tino-plano.md)
+Dentro de la app, el mismo dibujo es `TinoMark` (`components/TinoMark.tsx`): el SVG en línea, en `currentColor`, con el visor recortado por una máscara, para que siga el tema de la app y no el del sistema. `Logo` lo usa en todos sus sitios. → [decisión](decisiones/2026-11-03-el-logotipo-es-tino-como-el-favicon.md)
 
 ## Tino en la librería
 
@@ -55,7 +55,7 @@ La marca es la misma en Board y en Paper. → [Color](fundamentos/color.md)
 
 ## Reglas
 
-- Donde haga falta la marca, `Logo` con su `size`. No dibujar la criatura en otros sitios ni darle estados sin decisión nueva.
-- Tino, el peluche de la landing, vive en el Inicio y es la búsqueda del tablón ([Componentes](componentes.md#tino-en-el-inicio), [decisión](decisiones/2026-10-20-tino-entra-en-el-inicio-y-es-la-busqueda-del-tablon.md)). No sustituye a la criatura del logotipo. Lo que dice sale de la hoja de copy por estado y va en `t.tino`: solo habla de lo guardado, no se inventa gusto y en un error no bromea.
+- Donde haga falta la marca, `Logo` con su `size`. Nunca `<img src="/icon.svg">`: sigue el tema del sistema operativo, no el de la app.
+- Tino, el peluche de la landing, vive en el Inicio y es la búsqueda del tablón ([Componentes](componentes.md#tino-en-el-inicio), [decisión](decisiones/2026-10-20-tino-entra-en-el-inicio-y-es-la-busqueda-del-tablon.md)). Lo que dice sale de la hoja de copy por estado y va en `t.tino`: solo habla de lo guardado, no se inventa gusto y en un error no bromea.
 - El tile de la Isla muestra el espacio, no la mascota. → [decisión](decisiones/2026-10-07-el-tile-de-la-isla-muestra-el-espacio-no-la-mascota.md)
 - Nada de "savvia.studio" ni de los nombres anteriores en la interfaz ni en los correos. Los correos salen de `hola@criterio.design` (Resend, dominio verificado), van en texto plano y firman "Eric, Andoni y Alberto" ([decisión](decisiones/2026-10-10-correos-solo-texto.md)), y la imagen al compartir dice solo "criterio.design".

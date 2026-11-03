@@ -333,7 +333,8 @@ p { text-wrap: pretty; }
 
 /* Product mark: a dark tile that melts into the dark theme and reads as an app icon on the light one */
 /* The product mark is the creature (Alberto, 2026-10-07): a transparent drawing, so no tile, radius or shadow of its own */
-.logo { display: block; flex-shrink: 0; user-select: none; object-fit: contain; }
+.logo { display: block; flex-shrink: 0; user-select: none; color: var(--text); }
+.cr-on-chrome .logo { color: var(--chrome-ink); }
 
 /* ─── Type: the one place ────────────────────────────────────────────────────
    Every text in the app is one of these eight steps (fundamentos.md), all in Satoshi: titles through --font-title,
@@ -1735,8 +1736,6 @@ video.vp__media { object-fit: contain; }
   padding: 16px 24px; background: var(--bg); border-bottom: 1px solid var(--border);
 }
 @media (max-width: 560px) { .guest__bar { padding: 12px 16px; } }
-/* Tino flat as the mark: ink of the text, the visor cut out of the bar */
-.guest__bar .tino-mark { display: block; color: var(--text); --tino-mark-visor: var(--bg); }
 /* With the signup gate on, a quiet line beside Sign in (lib/access.ts) */
 .guest__note { margin: 0 12px 0 auto; color: var(--text-muted); }
 /* Under the paste field: what it costs, and a real criterio.md in a window, the width of the field */

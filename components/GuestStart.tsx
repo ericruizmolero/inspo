@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import EmptyStart from "./EmptyStart";
 import { useT } from "./I18nProvider";
 import { Button, TipWindow } from "@/components/criterio";
-import TinoMark from "@/components/TinoMark";
+import Logo from "@/components/Logo";
 import ThemeToggle from "./ThemeToggle";
 import { PLANS, isPaid, planOf } from "@/lib/plans";
 import { fmtCount, fmtPrice } from "@/lib/i18n/format";
@@ -27,7 +27,7 @@ export default function GuestStart({ inviteOnly, example }: { inviteOnly: boolea
   return (
     <div className="guest">
       <header className="guest__bar">
-        <TinoMark size={32} />
+        <Logo />
         {inviteOnly && <span className="guest__note t-small">{t.login.inviteOnlyShort}</span>}
         <Button size="s" href="/login">{t.common.signIn}</Button>
       </header>

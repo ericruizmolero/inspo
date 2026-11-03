@@ -20,7 +20,7 @@ const serverInfo = (origin: string) => ({
   ...SERVER,
   websiteUrl: origin,
   icons: [
-    { src: `${origin}/icon-512.png`, mimeType: "image/png", sizes: ["512x512"] },
+    { src: `${origin}/app-icon-512.png`, mimeType: "image/png", sizes: ["512x512"] },
     { src: `${origin}/apple-icon.png`, mimeType: "image/png", sizes: ["180x180"] },
   ],
 });

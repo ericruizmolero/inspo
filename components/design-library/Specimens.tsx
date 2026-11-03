@@ -531,10 +531,15 @@ function BrandSpecimen() {
   return (
     <div className="ds-specimen">
       <Block title="Logotipo">
-        <p className="ds-note">La criatura, transparente, a los tamaños que usa la app. Sobre la página y sobre el cromo.</p>
+        <p className="ds-note">Tino plano, el dibujo del favicon, a los tamaños que usa la app: en el color del texto, con el visor recortado. Sobre la página y sobre el cromo.</p>
         <div className="ds-row ds-row--top">
           <div className="ds-logos">{LOGO_SIZES.map((n) => <span key={n} className="ds-logos__one"><Logo size={n} /><span className="ds-val">{n}</span></span>)}</div>
           <div className="ds-logos ds-logos--chrome cr-on-chrome">{[24, 36].map((n) => <span key={n} className="ds-logos__one"><Logo size={n} /><span className="ds-val">{n}</span></span>)}</div>
+        </div>
+        {/* Por decidir (03-11): the logo as flat Tino or as the 3D plush. The 3D one here is drawn still, as a logo would be */}
+        <p className="ds-note">Por decidir: plano (arriba) o el peluche en 3D (abajo, quieto, como sería de logotipo).</p>
+        <div className="ds-row ds-row--top">
+          <div className="ds-logos">{[36, 48, 88].map((n) => <span key={n} className="ds-logos__one"><span style={{ width: n, height: n, display: "block" }}><Tino size={n} still look={[36, 0]} /></span><span className="ds-val">3D {n}</span></span>)}</div>
         </div>
       </Block>
       <Block title="Tino" aside={<a className="cr-btn cr-btn-quiet cr-btn-s" href={TINO_MANUAL} target="_blank" rel="noreferrer">Manual de Tino<Icon name="arrow-up-right" size={16} /></a>}>

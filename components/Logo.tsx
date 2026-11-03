@@ -1,13 +1,7 @@
-/** The product mark. It stands in for the name everywhere in the UI; the name lives in alt text. */
+import TinoMark from "@/components/TinoMark";
+
+/** The product mark: Tino flat, the same drawing as the favicon, in the text colour of where it sits. It stands in
+ *  for the name everywhere in the UI; the name lives in the label. */
 export default function Logo({ size = 32, className = "" }: { size?: number; className?: string }) {
-  return (
-    <img
-      src={size > 96 ? "/icon-512.png" : "/logo.png"}
-      alt="criterio.design"
-      width={size}
-      height={size}
-      className={`logo ${className}`}
-      draggable={false}
-    />
-  );
+  return <TinoMark size={size} className={`logo ${className}`} />;
 }
