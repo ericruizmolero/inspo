@@ -7,7 +7,7 @@ import { getT } from "@/lib/i18n";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getT();
-  return { title: { template: `%s · ${t.settings.title} · criterio.design`, default: t.settings.title } };
+  return { title: { template: `%s, ${t.settings.title}, criterio.design`, default: t.settings.title } };
 }
 
 export default async function SettingsLayout({ children }: { children: ReactNode }) {

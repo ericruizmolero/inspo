@@ -60,8 +60,10 @@ export function useSearchingLine(busy: boolean, total: number): string {
   return useAfter(busy, SLOW_MS) ? t.tino.searchSlow : t.tino.searching(total);
 }
 
-export default function SearchTino({ report, busy, typing, focused, failed, total, chips, onClose, onAct }: {
+export default function SearchTino({ report, busy, typing, focused, failed, total, chips, onClose, onAct, saving = null }: {
   report: SearchReport | null;
+  /** Something added is still on its way (a file uploading, a link or a text saving): he says so while it lasts */
+  saving?: "upload" | "save" | null;
   /** The search is still reading (meaning, Jev) */
   busy: boolean;
   /** The field has words in it */
@@ -94,14 +96,15 @@ export default function SearchTino({ report, busy, typing, focused, failed, tota
   }, [shown]);
   const again = shown && same === shown.key;
   const asking = !report && focused && chips.length > 0;
-  const say = failed && report ? { key: `failed:${report.key}`, title: [t.tino.failed] }
+  const say = saving ? { key: `saving:${saving}`, title: t.tino.savingTitle, text: saving === "upload" ? t.tino.uploading : t.tino.saving }
+    : failed && report ? { key: `failed:${report.key}`, title: [t.tino.failed] }
     : again ? { key: `same:${shown.key}`, title: t.tino.sameTitle, text: t.tino.sameText(shown.found, total) }
     : shown ? { key: shown.key, title: shown.title, text: shown.text, act: shown.act }
     : asking ? { key: "ask:me", title: [t.tino.askMe] }
     : null;
   const title = useLine(say?.key, say?.title);
   // The copy sheet's faces: resting while the bar is untouched, following the words, searching, then how it went
-  const mood: TinoMood = failed && report ? "sad" : busy ? "searching" : again ? "judge"
+  const mood: TinoMood = saving ? "thinking" : failed && report ? "sad" : busy ? "searching" : again ? "judge"
     : shown ? (shown.found > 1 ? "smug" : shown.found ? "admirer" : "suspect") : typing || report || asking ? "following" : "asleep";
   // A find gets a small hop, never a party
   useEffect(() => { if (shown?.found) tino.current?.jump(0.6); }, [shown?.key, shown?.found]);
@@ -118,7 +121,7 @@ export default function SearchTino({ report, busy, typing, focused, failed, tota
               {chips.map((c) => <button key={c.key} type="button" className="cr-chip cr-chip-paper cr-chip-button" onMouseDown={(e) => { e.preventDefault(); c.onPick(); }}>{c.label}</button>)}
             </span>
           )}
-          {!asking && (
+          {!asking && !saving && (
             <button type="button" className="cr-window-close sb-tino__close" aria-label={t.tino.closeSearch} onClick={onClose}>
               <Icon name="close" size={10} weight="bold" />
             </button>

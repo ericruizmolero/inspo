@@ -262,12 +262,17 @@ export default function InspoClient({
 
   // What no project has taken (nor archived): the library's second view
   // What no project holds: the system's inbox, kept as one array so the system view's memos hold across renders
-  const unfiled = useMemo(() => items.filter((i) => !(i.id && links[i.id]?.length)), [items, links]);
-  // The items in the current space (inbox, a project or everything), before any other filter
+  const unfiled = useMemo(() => items.filter((i) => i.id ? !links[i.id]?.length : !i.pendingIn), [items, links]);
+  // The items in the current space (inbox, a project or everything), before any other filter. One still being saved
+  // (no id yet) shows where it is going at once: the server's answer only swaps it for the saved one
   const spaceItems = useMemo(() => space === "all" || space === "home" ? items
-    : space === "inbox" ? items.filter((i) => !(i.id && links[i.id]?.length))
-    : items.filter((i) => !!i.id && !!links[i.id]?.includes(space)),
+    : space === "inbox" ? items.filter((i) => i.id ? !links[i.id]?.length : !i.pendingIn)
+    : items.filter((i) => i.id ? !!links[i.id]?.includes(space) : i.pendingIn === space),
   [items, links, space]);
+
+  // Something added here still on its way (no id yet): Tino says so from the bar. A file is a local blob: until it is up
+  const pending = spaceItems.find((i) => !i.id);
+  const saving = pending ? (pending.web.startsWith("blob:") ? "upload" as const : "save" as const) : null;
 
   const { watch, gathering } = useTagWatch({ items: spaceItems, tagJobs, setTagJobs, setTagMap });
   const { bellNews, beatRef, filling } = useLibrarySync({ first, stamp, since, bell, workspace, items, setMirror, setProjects, setLinks, setVotes, withVoteWrites, watch });
@@ -445,6 +450,8 @@ export default function InspoClient({
     void pourDock(el, "in").then(() => setFolded(true));
   }, [setFolded]);
   const unfoldDock = useCallback(() => { pourOut.current = true; setFolded(false); }, [setFolded]);
+  // Something added on its way: Tino says so from the bar, and folded he is not drawn. It opens, and stays open
+  useEffect(() => { if (saving && folded) unfoldDock(); }, [saving, folded, unfoldDock]);
   useLayoutEffect(() => {
     if (dockFolded || !pourOut.current) return;
     pourOut.current = false;
@@ -965,7 +972,7 @@ export default function InspoClient({
                 target={agentTargetItem ? { name: agentTargetItem.name, image: smallImageOf(agentTargetItem) } : null} onClearTarget={() => setAgentTarget(null)} quick={agentQuick} />
             )}
             {searchHere && spaceItems.length > 0 && (
-              <SearchTino report={agent ? null : searchReport(filters, query, filtered, space === "inbox" ? 0 : unfiled.length, t)}
+              <SearchTino report={agent ? null : searchReport(filters, query, filtered, space === "inbox" ? 0 : unfiled.length, t)} saving={saving}
                 busy={searchBusy || jevBusy || !!agent?.busy} typing={!!query.trim()} onClose={resetFilters}
                 focused={searchFocused} failed={searchFailed} total={spaceItems.length}
                 chips={askChips.map((k) => ({ key: k, label: k, onPick: () => setFilters([...filters, { kind: "tag", value: `k:${k}` }]) }))}

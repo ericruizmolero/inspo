@@ -1,7 +1,7 @@
 ---
 title: El Resultado es una cuarta vista del Sistema, una página que hace una IA desde el criterio.md
 date: 2026-10-13
-status: vigente
+status: retirada
 kind: producto
 ---
 **Contexto.** El feedback de Alex (13-10) fue que el resultado sale "muy normal" y que querría pedir "genérame la página About" con sus referencias. En el grupo, Andoni dijo que la clave para que la gente vuelva es que el resultado sea "mucho mejor que lo que me habría dado Claude de base", y Alberto, que el resultado aún no es lo bastante bueno para lanzar. El 06-10 se había retirado otra pestaña de resultados (un bento con Tiptap, ver [vuelve la Presentación](2026-10-06-vuelve-la-presentacion.md)); esta es distinta: no es un sitio donde el equipo deja lo que hizo, sino una página que genera la app desde el fichero.

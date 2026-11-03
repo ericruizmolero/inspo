@@ -30,7 +30,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const m = META[await getLocale()];
   return {
     metadataBase: new URL(SITE),
-    title: { default: "criterio.design", template: "%s · criterio.design" },
+    title: { default: "criterio.design", template: "%s, criterio.design" },
     description: m.description,
     applicationName: "criterio.design",
     openGraph: {

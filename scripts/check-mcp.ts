@@ -79,12 +79,14 @@ async function main() {
   const imagery = bring?.properties?.imagery as { properties?: Record<string, unknown> } | undefined;
   ok("bring_brand takes the imagery's pictures and a file as base64", !!imagery?.properties?.images && JSON.stringify(bring?.properties?.logo).includes('"data":{') && !JSON.stringify(bring).includes('"$ref"'));
   const prompts = ((await rpc("prompts/list")).result?.prompts as Json[]) ?? [];
-  ok("prompts/list", prompts.length === 4, prompts.map((p) => p.name).join(", "));
+  ok("prompts/list", prompts.length === 5, prompts.map((p) => p.name).join(", "));
   const projects = JSON.parse((await call("list_projects", {})).text) as Json[];
   ok("list_projects", Array.isArray(projects), `${projects.length} projects in ${workspaces.map((w) => w.name).join(", ")}`);
   if (projects[0]) {
     const md = await call("read_criterio", { project: projects[0].id, section: "decisions" });
     ok("read_criterio", !md.isError && md.text.startsWith("# "), `${projects[0].name}: ${md.text.length} chars`);
+    const guide = await call("read_criterio", { project: projects[0].id, section: "guide" });
+    ok("read_criterio guide", !guide.isError && /^## (Start here|Empieza aquí)$/m.test(guide.text), `${guide.text.length} chars`);
     const refs = await call("list_references", { project: projects[0].name });
     ok("list_references", !refs.isError, `${(JSON.parse(refs.text).references as unknown[]).length} references`);
     const res = await rpc("resources/read", { uri: `criterio://projects/${projects[0].id}/criterio.md` });

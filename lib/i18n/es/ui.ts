@@ -1,7 +1,7 @@
 // Spanish. Typed against lib/i18n/en/ui.ts: a missing key does not compile.
 import { fractionOf, type CompositionPattern } from "@/lib/composition-core";
 import { taxonomy } from "./taxonomy";
-import type { UseMdKeys } from "../../criterio-md";
+import type { UseMdKeys, GuideMdKeys } from "../../criterio-md";
 import type { ui as EnUi } from "../en/ui";
 
 export const ui: typeof EnUi = {
@@ -829,7 +829,7 @@ export const ui: typeof EnUi = {
       paragraphSample: "El criterio se entrena mirando. Cada referencia que guardas dice algo de lo que buscas: una ret\u00edcula, un tono, una forma de moverse. Aqu\u00ed se prueba c\u00f3mo suena todo eso con cada tipograf\u00eda, antes de decidir cu\u00e1l se queda.",
     },
     md: {
-      intro: "El sistema de dise\u00f1o de este proyecto tal y como est\u00e1 decidido. Sigue las \u00e1reas decididas; donde un \u00e1rea est\u00e9 abierta, pregunta antes de inventar.",
+      intro: "El criterio de dise\u00f1o de este proyecto tal y como est\u00e1 decidido: una gu\u00eda para llevar a la persona hasta lo que necesita, no un prompt que aplicar de golpe. Empieza por Empieza aqu\u00ed.",
       summary: "En un p\u00e1rrafo",
       decided: "Decidido por el equipo",
       proposed: "Propuesto desde el tabl\u00f3n, sin confirmar",
@@ -888,6 +888,50 @@ export const ui: typeof EnUi = {
           "4. **Abierto o sin cubrir.** Donde un área esté abierta, o el archivo no diga nada de lo que necesitas, para y di qué falta, y pregunta solo lo que el archivo no puede darte (un dato como un nombre o un límite). No rellenes el hueco con un valor por defecto ni inventes un color, un token, un componente o un patrón. Lo demás lo decides con estas reglas y dices qué has elegido.",
           `5. **Conflictos.** Primero las líneas de ${never}, luego los valores de la marca, luego una decisión del equipo, luego una propuesta, luego las referencias. Avisa a la persona del choque.`,
         ],
+      },
+      guide: {
+        heading: "Empieza aquí",
+        lines: (k: GuideMdKeys): string[] => {
+          const list = (xs: string[]) => xs.length < 2 ? xs.join("") : `${xs.slice(0, -1).join(", ")} y ${xs[xs.length - 1]}`;
+          const refs = (codes: string[]) => codes.length ? `; apuntan ${codes.join(", ")}` : "";
+          return [
+            `> No apliques este archivo de golpe. Úsalo para llevar a la persona, paso a paso, hasta lo que necesita de ${k.project}.`,
+            "",
+            "**Primero.** Si la persona no ha dicho qué quiere, ofrécele lo que este criterio ya puede sostener y deja que elija:",
+            k.pages.length ? `- Una página: ${k.pages.map((p) => `${p.name} (${p.n} ${p.n === 1 ? "referencia" : "referencias"})`).join(", ")}, u otra.` : "- Una página (la home, una About, un proyecto…).",
+            ...(k.open.length ? [`- Cerrar lo que falta: ${list(k.open.map((o) => o.label))}.`] : []),
+            "",
+            "Pregunta una cosa cada vez.",
+            "",
+            "### Para hacer una página",
+            "",
+            `1. ${k.pagesHeading ? `Mira qué tipo de página es y lee su grupo en **${k.pagesHeading}**` : `Mira qué tipo de página es y lee **${k.areas.layout}**`}${k.repeats ? `, y la **${k.repeats}** en ${k.areas.layout}` : ""}.`,
+            `2. Lee solo las áreas que toca: ${k.areas.layout}, ${k.areas.typography} y ${k.areas.color} siempre; ${k.areas.voice} si lleva texto${k.content ? `; **${k.content}** si usa los textos del proyecto (${k.contentCodes.join(", ")}), palabra por palabra` : ""}.`,
+            "3. Antes de construir, di en tres a cinco líneas qué vas a hacer y qué decisión sigue cada elección. Espera un sí.",
+            "4. Construye primero lo de arriba (lo que se ve en los primeros segundos), enséñalo y sigue.",
+            "5. Si toca un área abierta, ciérrala antes, como se dice abajo. Antes de entregar, pasa **Antes de entregar**.",
+            "",
+            "### Para cerrar lo que falta",
+            "",
+            k.open.length
+              ? `Abiertas o poco firmes: ${k.open.map((o) => `${o.label} (${o.state === "open" ? "abierta" : `propuesta${o.confidence !== undefined ? `, confianza ${o.confidence}` : ""}`}${refs(o.codes)})`).join(", ")}.`
+              : "Todas las áreas están decididas. Si una tarea necesita algo que el archivo no dice, ciérralo igual.",
+            "",
+            "1. Enseña qué dicen sus referencias, por su código, y la propuesta actual si la hay.",
+            "2. Pregunta con dos o tres opciones concretas sacadas de esas referencias, nunca en abierto.",
+            `3. Escribe lo elegido como el archivo escribe un área: la decisión, luego **${k.why}:**, luego **${k.never}:**, una regla por línea.`,
+            "4. Con el conector de Criterio, mándalo con propose_decision. Sin él, dáselo en un bloque para pegar en Criterio.",
+            "",
+            "### Antes de entregar",
+            "",
+            `- [ ] Ningún hex ni fuente fuera de ${k.tokens ? `**${k.tokens}**` : "los que nombran las áreas"}.`,
+            ...(k.rejects ? [`- [ ] Ninguna línea de **${k.rejects}** rota (${k.neverCount}).`] : []),
+            `- [ ] Nada copiado de una referencia: ni su maquetación, ni su texto, ni sus imágenes, ni sus logos.${k.client ? ` Solo la web de ${k.client} es la marca.` : ""}`,
+            "- [ ] Cada elección apunta a una decisión; lo que no, lo has preguntado.",
+            "",
+            `Qué obliga, qué solo orienta y qué gana cuando chocan: **${k.use}**, debajo.`,
+          ];
+        },
       },
       clientCopy: "Muestras de voz, de la web del cliente",
       measured: {
@@ -959,6 +1003,10 @@ export const ui: typeof EnUi = {
     sameTitle: ["Lo mismo otra vez. Vale."],
     sameText: (n: number, total: number): string => `Mismo resultado: ${n} de ${total}.`,
     failed: "No he podido buscar ahora. Prueba otra vez en un momento.",
+    // Mientras algo añadido va camino del tablón: la frase del pensador y lo que está haciendo
+    savingTitle: ["A ver, a ver."],
+    saving: "Lo estoy guardando. Ya está en el tablón.",
+    uploading: "Lo estoy subiendo. Ya está en el tablón.",
     dock: {
       build: "¿Qué construye Tino? La página About, un post de lanzamiento…",
       edit: "Dile a Tino qué cambiar: nada de negrita en el texto corrido…",
@@ -1078,6 +1126,8 @@ export const ui: typeof EnUi = {
     replies: (n: number) => (n === 1 ? "1 respuesta" : `${n} respuestas`),
     generatingDesignMd: "Generando DESIGN.md\u2026",
     gatheringTags: "Buscando etiquetas",
+    saving: "Guardando",
+    uploading: "Subiendo",
     seeDesignMd: "Ver DESIGN.md",
     generateWithAi: "Generar DESIGN.md con IA (30-90 s)",
     seeComments: "Ver comentarios",

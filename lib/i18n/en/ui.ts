@@ -5,7 +5,7 @@
 // Anything with variables inside is a function, not a template with placeholders.
 import { fractionOf, type CompositionPattern } from "@/lib/composition-core";
 import { taxonomy } from "./taxonomy";
-import type { UseMdKeys } from "../../criterio-md";
+import type { UseMdKeys, GuideMdKeys } from "../../criterio-md";
 export const ui = {
   settings: {
     language: "Language",
@@ -838,7 +838,7 @@ export const ui = {
       paragraphSample: "Taste is trained by looking. Every reference you save says something about what you are after: a grid, a tone, a way of moving. Here you try how all of that sounds in each typeface, before deciding which one stays.",
     },
     md: {
-      intro: "The design system of this project as decided so far. Follow the decided areas; where an area is open, ask before inventing.",
+      intro: "This project's design criterio, as decided so far: a guide to take the person to what they need, not a prompt to apply at once. Start at Start here.",
       summary: "In one paragraph",
       decided: "Decided by the team",
       proposed: "Proposed from the board, not confirmed",
@@ -897,6 +897,50 @@ export const ui = {
           "4. **Open or not covered.** Where an area is open, or the file says nothing about what you need, stop and say what is missing, and ask only for what the file cannot give (a fact such as a name or a limit). Never fill the gap with a default, and never invent a colour, a token, a component or a pattern. Decide everything else from these rules and say what you chose.",
           `5. **Conflicts.** ${never} lines, then the brand's values, then a decision the team made, then a proposed one, then the references. Tell the person about the clash.`,
         ],
+      },
+      guide: {
+        heading: "Start here",
+        lines: (k: GuideMdKeys): string[] => {
+          const list = (xs: string[]) => xs.length < 2 ? xs.join("") : `${xs.slice(0, -1).join(", ")} and ${xs[xs.length - 1]}`;
+          const refs = (codes: string[]) => codes.length ? `; ${codes.join(", ")} point somewhere` : "";
+          return [
+            `> Do not apply this file all at once. Use it to take the person, one step at a time, to what they need from ${k.project}.`,
+            "",
+            "**First.** If the person has not said what they want, offer what this criterio can already hold up, and let them pick:",
+            k.pages.length ? `- A page: ${k.pages.map((p) => `${p.name} (${p.n} ${p.n === 1 ? "reference" : "references"})`).join(", ")}, or any other.` : "- A page (the home, an About, a project…).",
+            ...(k.open.length ? [`- Settle what is still open: ${list(k.open.map((o) => o.label))}.`] : []),
+            "",
+            "Ask one thing at a time.",
+            "",
+            "### To make a page",
+            "",
+            `1. ${k.pagesHeading ? `Find which kind of page it is and read its group under **${k.pagesHeading}**` : `Find which kind of page it is and read **${k.areas.layout}**`}${k.repeats ? `, and the **${k.repeats}** under ${k.areas.layout}` : ""}.`,
+            `2. Read only the areas it touches: ${k.areas.layout}, ${k.areas.typography} and ${k.areas.color} always; ${k.areas.voice} when it carries copy${k.content ? `; **${k.content}** when it uses the project's own texts (${k.contentCodes.join(", ")}), word for word` : ""}.`,
+            "3. Before building, say in three to five lines what you will make and which decision each choice follows. Wait for a yes.",
+            "4. Build the top first (what is seen in the first seconds), show it, then go on.",
+            "5. If it touches an area still open, settle it first, as below. Before handing it over, go through **Before handing over**.",
+            "",
+            "### To settle what is open",
+            "",
+            k.open.length
+              ? `Open or loosely held: ${k.open.map((o) => `${o.label} (${o.state === "open" ? "open" : `proposed${o.confidence !== undefined ? `, confidence ${o.confidence}` : ""}`}${refs(o.codes)})`).join(", ")}.`
+              : "Every area is decided. When a task needs something the file does not say, settle it the same way.",
+            "",
+            "1. Show what its references say, by their codes, and the current proposal if there is one.",
+            "2. Ask with two or three concrete options drawn from those references, never an open question.",
+            `3. Write what is chosen as the file writes an area: the decision, then **${k.why}:**, then **${k.never}:**, one rule a line.`,
+            "4. With criterio's connector, send it with propose_decision. Without it, give it in a block the person can paste into criterio.",
+            "",
+            "### Before handing over",
+            "",
+            `- [ ] No hex code or typeface outside ${k.tokens ? `**${k.tokens}**` : "the ones the areas name"}.`,
+            ...(k.rejects ? [`- [ ] No line of **${k.rejects}** broken (${k.neverCount}).`] : []),
+            `- [ ] Nothing copied from a reference: not its layout, copy, images or logos.${k.client ? ` Only ${k.client}'s site is the brand.` : ""}`,
+            "- [ ] Every choice points to a decision; what does not, you asked about.",
+            "",
+            `What binds, what only guides and what wins when they clash: **${k.use}**, below.`,
+          ];
+        },
       },
       clientCopy: "Voice samples, from the client's site",
       measured: {
@@ -968,6 +1012,10 @@ export const ui = {
     sameTitle: ["Same again. Fine."],
     sameText: (n: number, total: number): string => `Same result: ${n} of ${total}.`,
     failed: "I couldn\u2019t search just now. Try again in a moment.",
+    // While something added is on its way to the board: the thinker's line, then what he is doing
+    savingTitle: ["Let\u2019s see."],
+    saving: "Saving it. It\u2019s already on the board.",
+    uploading: "Uploading it. It\u2019s already on the board.",
     // The dock under the System page (TinoDock): what to build on Result, what to change in the file, in words, on Agent and Human
     dock: {
       build: "What should Tino build? The About page, a launch post\u2026",
@@ -1091,6 +1139,8 @@ export const ui = {
     replies: (n: number): string => (n === 1 ? "1 reply" : `${n} replies`),
     generatingDesignMd: "Generating DESIGN.md\u2026",
     gatheringTags: "Gathering tags",
+    saving: "Saving",
+    uploading: "Uploading",
     seeDesignMd: "See DESIGN.md",
     generateWithAi: "Generate DESIGN.md with AI (30-90 s)",
     seeComments: "See comments",

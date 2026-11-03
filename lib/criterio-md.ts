@@ -91,6 +91,8 @@ export interface CriterioMdInput {
     version: (n: number) => string;
     required: string; guidance: string; must: string; should: string;
     use: { heading: string; lines: (k: UseMdKeys) => string[] };
+    /** "Start here": the walk the agent takes the person on, written from what the project has (lib/criterio-md.ts guideKeys) */
+    guide: { heading: string; lines: (k: GuideMdKeys) => string[] };
     /** Every area's never lines gathered in one place, for the reader who reads one list before building */
     rejects: { heading: string; intro: string };
     clientCopy: string;
@@ -106,6 +108,21 @@ export interface CriterioMdInput {
 
 /** The file's own labels, for the "use" section to name the marks as the file writes them */
 export interface UseMdKeys { never: string; evidence: string; tokens: string; refs: string; required: string; guidance: string; measured: string; client: string | null }
+
+/** What "Start here" is written from: what the board can already hold up, and what is still to decide */
+export interface GuideMdKeys {
+  project: string;
+  /** The kinds of page the board has references of, with how many ("By page") */
+  pages: { name: string; n: number }[];
+  /** The areas still to settle: open, or proposed with low confidence, with the references that point somewhere */
+  open: { label: string; state: "open" | "proposed"; confidence?: number; codes: string[] }[];
+  /** The areas' own headings, as the file writes them */
+  areas: Record<SystemArea, string>;
+  /** The other parts' headings, as the file writes them; null when the file has no such part */
+  pagesHeading: string | null; repeats: string | null; content: string | null; contentCodes: string[];
+  rejects: string | null; neverCount: number; tokens: string | null; use: string;
+  why: string; never: string; client: string | null;
+}
 
 export interface BriefMdStrings {
   heading: string; draft: string;
@@ -225,9 +242,40 @@ export function criterioBlocks({ project, system, items: allItems, labels, strin
   const headLines = [`# ${project}: criterio.md`, "", `> ${strings.intro}`, "", `**criterio.design** · ${date}${version}`, ...(client ? ["", `**${strings.client}:** [${client.name}](${abs(client.web)})`] : [])];
   const blocks: CriterioBlock[] = [{ kind: "head", lines: doc.head ? doc.head.split("\n") : headLines, edited: !!doc.head }];
   const useLines = strings.use.lines({ never: strings.never, evidence: strings.evidence, tokens: strings.brand.tokens, refs: strings.refs, required: strings.required, guidance: strings.guidance, measured: strings.measured.label, client: client?.name ?? null });
-  blocks.push({ kind: "section", id: "use", heading: title("use", strings.use.heading), ...byHandOr("use", useLines) });
   // Every area's never lines in one list, written by the app from the areas: it is a view of them, so it is never typed over
   const rejected = SYSTEM_AREAS.flatMap((key) => splitRules(system.areas.find((x) => x.area === key)?.never ?? "").never.map((l) => `- **${labels[key]}:** ${l}`));
+  // By page: what each kind of page looks like on this board, so "build the About" starts from the references of
+  // an About and how they are built. Only kinds of whole pages; a section, a picture or a logo is no page to ask for
+  const kinds = Object.keys(strings.composition.kinds);
+  const byKind = kinds.map((k) => ({ k, ids: board.filter((id) => items[id] && isPage(items[id].composition) && items[id].composition!.page === k) })).filter((x) => x.ids.length);
+  const at = (id: string) => (code.has(id) ? board.indexOf(id) : Infinity);
+  // The structures the team keeps saving, counted by the app: a fact about the board whatever layout decides
+  const patterns = compositionPatterns(board.filter((id) => items[id] && items[id].kind !== "text").map((id) => ({ id, composition: items[id].composition }))).filter((p) => !p.ordinary);
+  const texts = board.filter((id) => items[id]?.kind === "text");
+  const css = brand ? brandCssLines(brand, project) : [];
+  const derived = css.length ? [] : areaTokenLines(system, labels);
+  // Start here: the walk, before the rules it leans on. Written from the project as it stands, so it is never typed over
+  const open = SYSTEM_AREAS.flatMap((key) => {
+    const a = system.areas.find((x) => x.area === key);
+    const level = a ? confidenceOf(a) : "empty";
+    if (level === "high") return [];
+    // The references that point somewhere: what backs the proposal, or what the run read for the area
+    const ids = [...new Set([...(a?.support ?? []).flatMap((x) => x.itemIds), ...(a?.evidence ?? []).map((e) => e.itemId)])].filter((id) => code.has(id)).sort((p, q) => at(p) - at(q));
+    return [{ label: title(key, labels[key]), state: level === "empty" ? "open" as const : "proposed" as const, confidence: level === "low" ? a?.confidence : undefined, codes: ids.map((id) => code.get(id)!).slice(0, 6) }];
+  });
+  const guideLines = strings.guide.lines({
+    project, open,
+    pages: byKind.map(({ k, ids }) => ({ name: strings.composition.kinds[k], n: ids.length })),
+    areas: Object.fromEntries(SYSTEM_AREAS.map((k) => [k, title(k, labels[k])])) as Record<SystemArea, string>,
+    pagesHeading: byKind.length ? title("pages", strings.composition.pages) : null,
+    repeats: patterns.length ? strings.composition.repeats : null,
+    content: texts.length ? title("content", strings.content) : null, contentCodes: texts.map((id) => code.get(id)!).filter(Boolean),
+    rejects: rejected.length ? title("rejects", strings.rejects.heading) : null, neverCount: rejected.length,
+    tokens: css.length || derived.length ? strings.brand.tokens : null, use: title("use", strings.use.heading),
+    why: strings.why, never: strings.never, client: client?.name ?? null,
+  });
+  blocks.push({ kind: "section", id: "guide", heading: title("guide", strings.guide.heading), lines: guideLines });
+  blocks.push({ kind: "section", id: "use", heading: title("use", strings.use.heading), ...byHandOr("use", useLines) });
   if (rejected.length) blocks.push({ kind: "section", id: "rejects", heading: title("rejects", strings.rejects.heading), mark: strings.required, lines: [`> ${strings.rejects.intro}`, "", ...rejected] });
   if (about?.trim()) blocks.push({ kind: "section", id: "project", heading: title("project", strings.project), lines: [about.trim()] });
   // A brief with no copy pasted in borrows the client's own words, as its site says them
@@ -255,7 +303,6 @@ export function criterioBlocks({ project, system, items: allItems, labels, strin
   };
   // Only the texts whose words are in hand can be typed over: one still loading shows its first lines
   const typed = (parts: Part[]) => parts.map((p) => ({ ...p, itemId: p.itemId && items[p.itemId].text === undefined ? "" : p.itemId }));
-  const texts = board.filter((id) => items[id]?.kind === "text");
   if (texts.length) {
     const intro = doc["content-intro"] ? [...doc["content-intro"].split("\n"), ""] : [`> ${strings.contentIntro}`, ""];
     const parts = texts.map((id) => textPart(id, strings.savedBy));
@@ -267,11 +314,7 @@ export function criterioBlocks({ project, system, items: allItems, labels, strin
   // The brand in its own words: its statement and what it is, as the presentation opens with them
   const introLines = brand ? brandIntroLines(brand) : [];
   if (introLines.length) blocks.push({ kind: "section", id: "brand-intro", heading: title("brand-intro", strings.brand.intro), ...byHandOr("brand-intro", introLines) });
-  // The structures the team keeps saving, counted by the app: a fact about the board whatever layout decides
-  const at = (id: string) => (code.has(id) ? board.indexOf(id) : Infinity);
-  const repeated = compositionPatterns(board.filter((id) => items[id] && items[id].kind !== "text").map((id) => ({ id, composition: items[id].composition })))
-    .filter((p) => !p.ordinary)
-    .map((p) => {
+  const repeated = patterns.map((p) => {
       const ids = [...p.refs].sort((x, y) => at(x) - at(y));
       return { line: `- **${strings.composition.repeats}:** ${strings.composition.describe(p)}. ${strings.composition.of(p.refs.length, p.of)} (${ids.map((id) => code.get(id)).filter(Boolean).join(", ")})`, refs: ids.map((id) => `  - ${cite(id)}`) };
     });
@@ -345,10 +388,6 @@ export function criterioBlocks({ project, system, items: allItems, labels, strin
     out.push(...measuredLines(it.measured, strings.measured));
     return out;
   };
-  // By page: what each kind of page looks like on this board, so "build the About" starts from the references of
-  // an About and how they are built. Only kinds of whole pages; a section, a picture or a logo is no page to ask for
-  const kinds = Object.keys(strings.composition.kinds);
-  const byKind = kinds.map((k) => ({ k, ids: board.filter((id) => items[id] && isPage(items[id].composition) && items[id].composition!.page === k) })).filter((x) => x.ids.length);
   if (byKind.length) {
     const lines = [`> ${strings.composition.pagesIntro}`, ""];
     for (const { k, ids } of byKind) {
@@ -361,11 +400,9 @@ export function criterioBlocks({ project, system, items: allItems, labels, strin
   // Typed over by hand, a skill's section stays as the team left it until they bring the app's back
   for (const s of skillSections(system, skills, locale)) blocks.push({ kind: "section", ...s, heading: title(s.id, s.heading), lines: doc[s.id] ? doc[s.id].split("\n") : s.lines, edited: !!doc[s.id] });
   // The values as variables, ready to paste into a project
-  const css = brand ? brandCssLines(brand, project) : [];
   if (css.length) blocks.push({ kind: "section", id: "brand-tokens", heading: title("brand-tokens", strings.brand.tokens), mark: strings.required, ...byHandOr("brand-tokens", [`> ${strings.brand.tokensIntro}`, "", ...css]) });
   // No brand drawn: the values the areas already decided, gathered so an agent need not dig them out of the prose
   else {
-    const derived = areaTokenLines(system, labels);
     if (derived.length) blocks.push({ kind: "section", id: "area-tokens", heading: title("area-tokens", strings.brand.tokens), mark: strings.required, ...byHandOr("area-tokens", [`> ${strings.brand.areaTokensIntro}`, "", ...derived]) });
   }
   // Every reference once, with what it is, what was said of it and what it brings to each area
@@ -490,18 +527,23 @@ export function blocksToMd(blocks: CriterioBlock[]): string {
   return publicLinks(L.join("\n"));
 }
 
-/** The parts a reader can ask for: the whole file, the decisions (without the long lists at the end), or one area */
-export const CRITERIO_PARTS = ["all", "decisions", ...SYSTEM_AREAS] as const;
+/** The parts a reader can ask for: the whole file, the decisions (without the long lists at the end), the walk
+ *  ("guide": where to start, with the rules it leans on and every Never), or one area */
+export const CRITERIO_PARTS = ["all", "decisions", "guide", ...SYSTEM_AREAS] as const;
 export type CriterioPart = (typeof CRITERIO_PARTS)[number];
 export const isCriterioPart = (x: unknown): x is CriterioPart => (CRITERIO_PARTS as readonly unknown[]).includes(x);
 
-/** One part of the file as Markdown. "decisions" leaves out every reference's own entry and the texts, whole; an area's
- *  name gives that area under the file's head and its "How to use this file", so a single area still says what binds */
+/** One part of the file as Markdown. "decisions" leaves out every reference's own entry and the texts, whole; "guide"
+ *  is the head, Start here, How to use this file and every Never, the first read; an area's name gives that area
+ *  under the file's head and its "How to use this file", so a single area still says what binds */
 export function partMd(blocks: CriterioBlock[], part: CriterioPart = "all"): string {
   if (part === "all") return blocksToMd(blocks);
+  const section = (b: CriterioBlock, ...ids: string[]) => b.kind === "section" && ids.includes(b.id);
   return blocksToMd(blocks.filter((b) => part === "decisions"
     ? b.kind !== "section" || !["refs", "content"].includes(b.id)
-    : b.kind === "head" || (b.kind === "section" && b.id === "use") || (b.kind === "area" && b.area === part)));
+    : part === "guide"
+      ? b.kind === "head" || section(b, "guide", "use", "rejects")
+      : b.kind === "head" || section(b, "use") || (b.kind === "area" && b.area === part)));
 }
 
 export function renderCriterioMd(input: CriterioMdInput): string {

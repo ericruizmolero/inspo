@@ -3,6 +3,9 @@ import type { SystemArea } from "./system";
 export interface InspoItem {
   /** database id (missing only on transient objects) */
   id?: string;
+  /** Client only, while it is being saved (no id yet): the project it goes to, or null for the inbox. The board
+   *  shows it there at once, with Tino saying it is on its way, instead of waiting for the server */
+  pendingIn?: string | null;
   name: string;
   web: string;
   /** DD/MM/YYYY (legacy sheet format, the client parses it that way) */
