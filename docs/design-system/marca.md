@@ -17,7 +17,7 @@ La criatura en 3D (verde, antenas naranjas, tres ojos) es `Logo` (`components/Lo
 
 ## Favicon e iconos
 
-El mismo dibujo es el favicon (`app/favicon.ico`, `app/icon.png`), el icono de Apple (`app/apple-icon.png`, sobre papel porque iOS rellena la transparencia de negro) y los iconos de la extensión de Chrome. En Claude, el logo del conector MCP sale del favicon.
+El favicon no es la criatura sino Tino, el mismo SVG que la landing (`marca/conejo-icono.svg`): de perfil, orejas cortas, sin baldosa, en tinta y en papel con el tema oscuro del sistema. `app/icon.svg`, y en su versión clara `app/favicon.ico` (16 a 64) e `app/icon.png` (256); `app/apple-icon.png` (180) y `public/app-icon-512.png` (el del manifiesto) sobre papel. Los iconos de la extensión de Chrome siguen siendo la criatura. En Claude, el logo del conector MCP sale del favicon. → [decisión](decisiones/2026-11-03-el-favicon-es-tino-el-mismo-de-la-landing.md)
 
 ## Nombre
 

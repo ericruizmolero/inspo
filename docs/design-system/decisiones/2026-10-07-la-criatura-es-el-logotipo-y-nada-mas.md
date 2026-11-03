@@ -11,3 +11,5 @@ kind: diseño
 **Por qué.** Alberto pasó el dibujo para "logo for all the ui and favicon". Interpretación nuestra: el resto del personaje se queda fuera hasta que esté listo para vivir en el producto.
 
 **Cómo aplicarlo.** Donde haga falta la marca, `Logo` con su `size`. No dibujar la criatura en otros sitios ni hacerle estados sin decisión nueva.
+
+**Después.** El 2026-11-03 el favicon y los iconos de la app pasaron a ser Tino: [decisión](2026-11-03-el-favicon-es-tino-el-mismo-de-la-landing.md). Lo demás sigue vigente.
