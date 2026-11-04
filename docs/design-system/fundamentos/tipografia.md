@@ -18,7 +18,8 @@ Los títulos van en Geist Serif desde el 04-11, en su único peso (400), con `fo
 
 | Paso | Clase | Tamaño / peso / interlineado / tracking | Elemento |
 | --- | --- | --- | --- |
-| display | `.t-display` | 40 (32 en móvil) / 400 / 1,05 / −0,025 em | `h1` |
+| hero | `--fs-hero` | clamp(44, 7vw, 80) / 400 / 0,96 / −0,025 em | los titulares de portada: `.cr-hello` (el inicio) y el arranque sin sesión |
+| display | `.t-display` | 40 (32 en móvil) / 400 / 0,96 / −0,025 em | `h1` |
 | title-l | `.t-title-l` | 28 / 400 / 1,1 / −0,02 em | `h2` |
 | title-m | `.t-title-m` | 22 / 400 / 1,2 / −0,01 em | `h3` |
 | title-s | `.t-title-s` | 18 / 400 / 1,3 | `h4` a `h6` |
@@ -27,7 +28,7 @@ Los títulos van en Geist Serif desde el 04-11, en su único peso (400), con `fo
 | small | `.t-small` | 13 / 400 / 1,45 | |
 | label | `.t-label` | 12 / 500 / 1,3 | |
 
-title-s va por encima de body para que un título nunca se lea más pequeño que el texto de debajo, y display en móvil (32) sigue un paso por encima de title-l (28). → [escala](../decisiones/2026-10-08-archivo-es-la-unica-familia-y-la-escala-se-reajusta.md)
+La referencia de la tipografía es Design Zeitgeist: la serif en regular, grande y apretada (interlineado 0,96), y debajo una sans pequeña y gris. Un nombre en un comentario va en medium (500), no en semibold. title-s va por encima de body para que un título nunca se lea más pequeño que el texto de debajo, y display en móvil (32) sigue un paso por encima de title-l (28). → [escala](../decisiones/2026-10-08-archivo-es-la-unica-familia-y-la-escala-se-reajusta.md)
 
 ## Reglas
 
