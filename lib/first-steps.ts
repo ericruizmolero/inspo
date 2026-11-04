@@ -20,7 +20,7 @@ export async function firstSteps(userId: string, organizationId: string): Promis
   const [[project], [signals]] = await Promise.all([
     db.execute<{ id: string; refs: number; brief: boolean; system: boolean }>(sql`select p.id,
       (select count(*)::int from ${PI} pi join ${T} on ${T.id} = pi.item_id where pi.project_id = p.id and not ${isSampleItem()}) as refs,
-      coalesce(trim(p.brief->>'about'), '') <> '' as brief,
+      (coalesce(trim(p.brief->>'about'), '') <> '' or p.brief->'answers'->'goal' is not null) as brief,
       -- A project cloned from an example arrives with the example's run: that is not a pass of its own
       exists (select 1 from ${S} s where s.project_id = p.id and s.run_json is not null and s.run_json->>'model' is distinct from 'template') as system
       from ${P} p where p.organization_id = ${organizationId} and p.template is null

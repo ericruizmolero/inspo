@@ -59,8 +59,9 @@ export interface Brief {
   updatedBy?: string;
 }
 
-/** Where an answer comes from. "read": the agent read it on the site or in the repo, and the person has not confirmed it */
-export const ANSWER_SOURCES = ["person", "read"] as const;
+/** Where an answer comes from. "read": the agent read it on the site or in the repo, and the person has not confirmed it.
+ *  "client": the client wrote it through the link (lib/client-ask.ts) */
+export const ANSWER_SOURCES = ["person", "read", "client"] as const;
 export type AnswerSource = (typeof ANSWER_SOURCES)[number];
 export interface BriefAnswer { text: string; by?: string; via?: string; /** ISO */ at: string; /** Absent: the person said it */ source?: AnswerSource; /** The address or path a read answer came from */ from?: string }
 
@@ -87,7 +88,7 @@ function readAnswers(v: unknown): Record<string, BriefAnswer> | undefined {
     const t = text(a.text, BRIEF_LIMITS.answer), at = text(a.at, 40);
     if (!t || !at) continue;
     const by = text(a.by, 120), via = text(a.via, 80), from = text(a.from, BRIEF_LIMITS.url);
-    out[id] = { text: t, at, ...(by ? { by } : {}), ...(via ? { via } : {}), ...(a.source === "read" ? { source: "read" as const } : {}), ...(from ? { from } : {}) };
+    out[id] = { text: t, at, ...(by ? { by } : {}), ...(via ? { via } : {}), ...(a.source === "read" || a.source === "client" ? { source: a.source } : {}), ...(from ? { from } : {}) };
   }
   return Object.keys(out).length ? out : undefined;
 }

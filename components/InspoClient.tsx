@@ -837,6 +837,7 @@ export default function InspoClient({
           {grid}
           <SystemView
             key={currentProject.id}
+            onConnect={() => setConnecting(true)}
             project={currentProject}
             system={fullSystems[currentProject.id] ?? null}
             kept={polishKept}
@@ -888,6 +889,7 @@ export default function InspoClient({
             onFile={(picked) => fileMany(picked, currentProject.id)}
             onBringBrand={() => setParams({ view: "system", bring: "site" })}
             onExamples={() => setSpace("templates")}
+            onAgent={() => setConnecting(true)}
           />
         ) : spaceItems.length === 0 && space === "inbox" ? (
           <InboxZero

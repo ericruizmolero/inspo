@@ -12,6 +12,8 @@ import type { ProjectMeasures } from "@/lib/ref-measured";
 import SkillsMenu from "./SkillsMenu";
 import { NO_SKILLS, skillsOf, MD_SKILL_EXCLUSIVE, type MdSkill } from "@/lib/md-skill-ids";
 import ImproveModal from "./ImproveModal";
+import SetupQuestions from "./SetupQuestions";
+import { Dialog, DialogWindow } from "@/components/ui/dialog";
 import { VersionPicker, VersionView, useVersions } from "./VersionPicker";
 import { readBrief, type Brief } from "@/types/brief";
 import { loadSystem, decideSystemArea, setSystemNever, saveDocPart, criterioVersionNow } from "@/app/actions/system";
@@ -84,6 +86,7 @@ interface Props {
   onAddSite?: (web: string) => Promise<InspoItem | null>;
   /** Saves fields of the brief; the brief as saved, or null when it failed (the caller says why) */
   onBrief: (patch: Partial<Brief>) => Promise<Brief | null>;
+  onConnect?: () => void;
   /** The references the polish kept (closed with "keep"), for Tino on the file */
   kept?: string[];
 }
@@ -104,7 +107,7 @@ function ClientChip({ client, imageOf, onPick }: { client: InspoItem; imageOf: (
   );
 }
 
-export default function SystemView({ project, system, onSystem, board, library, imageOf, onOpenBoard, focusArea, focusRef, onOpenChange, onClient, onOpenItem, refInfo, onText, onTextTitle, onAddSite, onBrief, kept }: Props) {
+export default function SystemView({ onConnect, project, system, onSystem, board, library, imageOf, onOpenBoard, focusArea, focusRef, onOpenChange, onClient, onOpenItem, refInfo, onText, onTextTitle, onAddSite, onBrief, kept }: Props) {
   const { t, locale } = useT();
   const setSystem = onSystem;
   const [running, setRunning] = useState(false);
@@ -132,6 +135,7 @@ export default function SystemView({ project, system, onSystem, board, library, 
   useEffect(() => { if (open) document.getElementById(`sdoc-${open}`)?.scrollIntoView({ behavior: "smooth", block: "start" }); }, [open]);
   // A pass asked for from "Improve with AI" carries what the team wants from it (ImproveModal); the plain one reads everything
   const [improving, setImproving] = useState(false);
+  const [answering, setAnswering] = useState(false);
   const [phase, setPhase] = useState<"brand" | null>(null);
   const post = async (path: string, body: object) => {
     const res = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
@@ -299,6 +303,7 @@ export default function SystemView({ project, system, onSystem, board, library, 
         <PopoverTrigger className="cr-iconbtn cr-iconbtn-quiet cr-iconbtn-s spage-more" aria-label={t.card.more} data-tip={t.card.more}>{Icons.dots}</PopoverTrigger>
         <PopoverContent align="end" className="cr-menu spage-more__menu">
           {board.length > 0 && !firstStep && <MenuItem disabled={running} onClick={() => { setMoreOpen(false); setImproving(true); }}>{t.system.improve}</MenuItem>}
+          <MenuItem onClick={() => { setMoreOpen(false); setAnswering(true); }}>{t.setupQuestions.menu}</MenuItem>
           <MenuItem disabled={running} onClick={() => { setMoreOpen(false); setBringing("site"); }}>{t.brand.import.title}</MenuItem>
           <MenuItem onClick={() => { setMoreOpen(false); setSharing(true); }}>{t.brand.share.title}</MenuItem>
         </PopoverContent>
@@ -320,6 +325,13 @@ export default function SystemView({ project, system, onSystem, board, library, 
         </header>
         {error && <p className="sysv-error" role="alert">{error}</p>}
         {notice && <p className="spage-notice" role="status">{notice}</p>}
+        {answering && (
+          <Dialog open onOpenChange={(o) => { if (!o) setAnswering(false); }}>
+            <DialogWindow bar={t.setupQuestions.menu} heading={t.setupQuestions.menu} closeLabel={t.common.close}>
+              <SetupQuestions projectId={project.id} brief={project.brief} onError={setError} />
+            </DialogWindow>
+          </Dialog>
+        )}
         {improving && <ImproveModal system={sys} onRun={(focus) => void run(focus)} onClose={() => setImproving(false)} />}
         {sharing && <ShareDialog projectId={project.id} onClose={() => setSharing(false)} />}
         {bringing && <BrandImport projectId={project.id} brand={editor.brand} initial={bringing} onClose={() => setBringing(null)} onAddSite={onAddSite} onClient={onClient}
@@ -338,7 +350,7 @@ export default function SystemView({ project, system, onSystem, board, library, 
             onSystem={setSystem} onTalk={() => setTalkN((n) => n + 1)} dock={dock} kept={kept}
             onAbout={async (text) => { if (!(await onBrief({ about: text }))) throw new Error("brief not saved"); }} onOpenItem={onOpenItem} onText={onText} onTextTitle={onTextTitle}
             fileTools={<SkillsMenu on={skillsOn} onToggle={(id) => void toggleSkill(id)} />}
-            busy={busy} onCopy={() => void copy()} onDownload={download} copied={copied} markdown={markdown} projectId={project.id} projectName={project.name} hasRecipe={!!project.hasRecipe}
+            busy={busy} onConnect={onConnect} onCopy={() => void copy()} onDownload={download} copied={copied} markdown={markdown} projectId={project.id} projectName={project.name} hasRecipe={!!project.hasRecipe}
             onSave={async (area, next) => {
               const cur = sys.areas.find((x) => x.area === area)!;
               if (next.decision !== cur.decision.trim() || next.why !== cur.why.trim()) await withBusy(area, () => decideSystemArea(project.id, area, { decision: next.decision, why: next.why }));

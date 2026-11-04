@@ -8,7 +8,6 @@ import { SYSTEM_AREAS } from "@/types/system";
 import type { McpCtx } from "./auth";
 import { CRITERIO_SECTIONS, ProjectArg as Project, QUESTION_IDS, addPiece, answerQuestion, listProjects, listReferences, newProject, proposeDecision, readCriterio, readReference, measureSite, recordLearning, runPass, setOutline, startSetup } from "./pieces";
 import { OUTLINE_SECTIONS_MAX, OUTLINE_TEXT_MAX, SECTION_KINDS } from "@/types/landing";
-import { ANSWER_SOURCES } from "@/types/brief";
 import { SKIPPABLE } from "../setup-core";
 import { LEARNING_NOTE_MAX } from "@/types/system";
 import { BRIEF_LIMITS } from "@/types/brief";
@@ -35,7 +34,7 @@ export const TOOLS: Tool[] = [
   tool({
     name: "start_setup", title: "Start or continue the setup",
     description: "The way in when the person says \"set up criterio\", starts a project, or comes back to one. It says where the project stands and what to do next, in `do`. Follow it one step at a time, and call it again after each step. The same setup can start in the app or in any other client: nothing is repeated. Every step is optional except the project, the goal and the file. When `next` is direction or landing the setup is complete, and building is an offer, not a duty.",
-    input: z.object({ project: Project.optional(), skip: z.enum(SKIPPABLE as [string, ...string[]]).optional().describe("A step the person declined.") }),
+    input: z.object({ project: Project.optional(), skip: z.enum(SKIPPABLE as [string, ...string[]]).optional().describe("A step the person declined."), ask_client: z.boolean().optional().describe("True when the person does not know an answer and wants to ask their client: the answer has a link to send, which needs no account. When the client answers, the person gets one email.") }),
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     run: (i, ctx, origin) => startSetup(ctx, origin, i),
   }),
@@ -124,7 +123,7 @@ export const TOOLS: Tool[] = [
       project: Project,
       question: z.enum(QUESTION_IDS).describe("The question's id, as criterio.md writes it before the question (offer, goal, audience…)."),
       answer: z.string().min(1).max(BRIEF_LIMITS.answer).describe("The person's answer, in their words and language."),
-      source: z.enum(ANSWER_SOURCES).optional().describe('"person" (default) when they said it, "read" when you read it.'),
+      source: z.enum(["person", "read"]).optional().describe('"person" (default) when they said it, "read" when you read it.'),
       from: z.string().max(500).optional().describe("The address or path a read answer came from."),
     }),
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },

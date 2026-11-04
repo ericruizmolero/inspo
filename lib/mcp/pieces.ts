@@ -41,6 +41,7 @@ import { runSystem } from "../system/run";
 import { runBrand } from "../brand";
 import { log } from "../log";
 import { setupFacts } from "../setup";
+import { clientAskToken } from "../client-ask";
 import { TINO } from "./tino";
 import type { LandingSection } from "@/types/landing";
 import type { AnswerSource } from "@/types/brief";
@@ -399,7 +400,7 @@ export async function setupStep(org: string, projectId: string) {
 }
 
 /** Where a project stands along the setup, and what the agent does next. With `skip`, the person declined that step */
-export async function startSetup(ctx: McpCtx, origin: string, input: { project?: string; skip?: string }) {
+export async function startSetup(ctx: McpCtx, origin: string, input: { project?: string; skip?: string; ask_client?: boolean }) {
   if (!input.project) {
     const known = await listProjects(ctx, origin);
     return { next: "project", do: "If this repo's AGENTS.md or CLAUDE.md has a line \"criterio project: <name>\", that is the project. Otherwise pick the person's project from `projects`, or create_project. Then call start_setup again with it.", projects: known, tino: { print_once: "At the start of a setup, print this once, exactly, in a code block.", drawing: TINO } };
@@ -408,6 +409,7 @@ export async function startSetup(ctx: McpCtx, origin: string, input: { project?:
   if (input.skip) await skipSetupStep(project.workspace.id, project.id, input.skip, ctx.user.id);
   return {
     project: project.name, url: projectUrl(origin, project.id), ...(await setupStep(project.workspace.id, project.id)),
+    ...(input.ask_client ? { client_link: `${origin}/a/${await clientAskToken(project.workspace.id, project.id, ctx.user.id)}` } : {}),
     repo_line: { line: `criterio project: ${project.name}`, do: "In a repo that does not have this line, ask once, and after a yes add it to AGENTS.md or CLAUDE.md, so a later session here finds the project. Another repo can copy the line to share this criterio." },
   };
 }

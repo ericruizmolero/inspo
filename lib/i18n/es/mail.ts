@@ -75,6 +75,11 @@ export const mail: typeof EnMail = {
     text: (who: string, mine: string, theirs: string, url: string): string => `Escribiste: ${mine}\n\n${who} responde: ${theirs}\n\nMíralo aquí:\n${url}`,
   },
 
+  clientAnswers: {
+    subject: (project: string): string => `Tu cliente ha respondido sobre ${project}`,
+    text: (project: string, n: number, url: string): string => `Tu cliente ha respondido ${n === 1 ? "1 pregunta" : `${n} preguntas`} sobre ${project}. El archivo no ha cambiado: lanza una pasada cuando quieras que las lea.\n\nÁbrelo aquí:\n${url}`,
+  },
+
   proposal: {
     subject: (who: string, accepted: boolean, area: string): string => `${who} ha ${accepted ? "aceptado" : "descartado"} tu propuesta de ${area}`,
     text: (who: string, accepted: boolean, area: string, project: string, decision: string, url: string): string =>

@@ -392,6 +392,21 @@ export const actions: Record<string, Surface> = {
     },
   },
 
+  "action:app/actions/brief.ts#saveProjectAnswer": {
+    probe: async (fx) => {
+      asB(fx);
+      const { saveProjectAnswer } = await import("@/app/actions/brief");
+      expectRefused(fx, await saveProjectAnswer(fx.a.project, "goal", "x"), "B answering on A's project");
+    },
+  },
+  "action:app/actions/client-ask.ts#makeClientAsk": {
+    probe: async (fx) => {
+      asB(fx);
+      const { makeClientAsk } = await import("@/app/actions/client-ask");
+      expectRefused(fx, await makeClientAsk(fx.a.project), "B asking on A's project");
+    },
+  },
+  "action:app/actions/client-ask.ts#answerClientAsk": { exempt: "takes no session: the link's token is the proof, and it writes only to that token's project (tests/client-ask.test.ts)" },
   "action:app/actions/share.ts#loadShares": {
     probe: async (fx) => {
       const { loadShares } = await import("@/app/actions/share");

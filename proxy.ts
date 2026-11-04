@@ -16,12 +16,13 @@ import { SIGNED_IN_COOKIE, SIGNED_IN_COOKIE_MAX_AGE, signedInCookieDomain } from
 // /api/health: BetterStack's uptime checks, which say only ok and timings
 // /unsubscribe and /api/unsubscribe: the one-click link at the foot of a team email; the signature is the proof (lib/notify.ts)
 // /s/: a project's brand shared by link; the token in the path is the proof (lib/share.ts)
+// /a/: a project's open questions, sent to a client; the token in the path is the proof (lib/client-ask.ts)
 // /api/files/~<signature>/<key> (and the older <key>?t=): a stored file's public link in a criterio.md taken out of the app; the route checks the signature (lib/file-links.ts)
 // /extension/download: the extension's zip, which criterio.design/extension/ (the marketing site) offers to anyone.
 // It is the same code as the public repo and the store package, with no key in it
 // /mcp, /api/mcp/ and /.well-known/: the MCP connector and its OAuth endpoints; an AI client gets in with a bearer
 // token (lib/mcp/auth.ts), never a cookie. /mcp/authorize is not here: approving an app takes a session
-const PUBLIC = [/^\/$/, /^\/api\/access\/mode$/, /^\/login(\/|$)/, /^\/api\/auth(\/|$)/, /^\/api\/ext\//, /^\/api\/cron\//, /^\/api\/queue\//, /^\/api\/health(\/|$)/, /^\/api\/dev-login(\/|$)/, /^\/invite\//, /^\/unsubscribe(\/|$)/, /^\/api\/unsubscribe(\/|$)/, /^\/s\//, /^\/extension\/download$/, /^\/mcp$/, /^\/api\/mcp\//, /^\/\.well-known\//];
+const PUBLIC = [/^\/$/, /^\/api\/access\/mode$/, /^\/login(\/|$)/, /^\/api\/auth(\/|$)/, /^\/api\/ext\//, /^\/api\/cron\//, /^\/api\/queue\//, /^\/api\/health(\/|$)/, /^\/api\/dev-login(\/|$)/, /^\/invite\//, /^\/unsubscribe(\/|$)/, /^\/api\/unsubscribe(\/|$)/, /^\/s\//, /^\/a\//, /^\/extension\/download$/, /^\/mcp$/, /^\/api\/mcp\//, /^\/\.well-known\//];
 
 // Auto-login in development (see lib/auth.ts): with no cookie, /api/dev-login is used instead of /login
 const DEV_AUTO_LOGIN = process.env.NODE_ENV !== "production" && !!process.env.DEV_LOGIN_EMAIL;

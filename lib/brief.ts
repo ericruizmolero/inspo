@@ -43,7 +43,7 @@ export async function saveAnswer(organizationId: string, projectId: string, ques
   const current = readBrief(await stored(organizationId, projectId)) ?? cleanBrief({}, userId);
   const answers = { ...(current.answers ?? {}) };
   const text = String(input.text ?? "").trim().slice(0, BRIEF_LIMITS.answer);
-  if (text) answers[questionId] = { text, at: new Date().toISOString(), ...(input.by ? { by: input.by } : {}), ...(input.via ? { via: input.via } : {}), ...(input.source === "read" ? { source: "read" as const } : {}), ...(input.from ? { from: input.from } : {}) };
+  if (text) answers[questionId] = { text, at: new Date().toISOString(), ...(input.by ? { by: input.by } : {}), ...(input.via ? { via: input.via } : {}), ...(input.source && input.source !== "person" ? { source: input.source } : {}), ...(input.from ? { from: input.from } : {}) };
   else delete answers[questionId];
   const brief = readBrief({ ...current, answers, updatedAt: new Date().toISOString(), updatedBy: userId })!;
   await write(organizationId, projectId, brief);

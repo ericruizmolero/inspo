@@ -401,6 +401,7 @@ export const routes: Record<string, Surface> = {
       expectNoSecret(fx, await (await GET(request(`/s/${fx.a.shareToken}/fonts`), params({ token: fx.a.shareToken }))).json(), "the link's faces");
     },
   },
+  "page:app/a/[token]/page.tsx": { exempt: "takes no session: the token is the proof, and it shows only that link's project name and open questions (tests/client-ask.test.ts)" },
   "page:app/s/[token]/page.tsx": {
     probe: async (fx) => {
       const { default: Page } = await import("@/app/s/[token]/page");

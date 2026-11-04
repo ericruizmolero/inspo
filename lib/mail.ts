@@ -170,6 +170,12 @@ export function proposalMail(p: { who: string; accepted: boolean; area: string; 
   };
 }
 
+/** The client answered through the link (lib/client-ask.ts): one email to whoever sent it */
+export function clientAnswersMail(a: { project: string; n: number; url: string }, locale: Locale): Mail {
+  const t = mailDict(locale);
+  return { subject: t.clientAnswers.subject(a.project), text: signed(locale, t.clientAnswers.text(a.project, a.n, a.url)) };
+}
+
 // ─── First use (lib/first-use-mail.ts) ───────────────────────────────────────
 
 /** Once, when the account is made: the five steps to a first criterio.md, in order */

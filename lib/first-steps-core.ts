@@ -7,7 +7,7 @@ export interface FirstSteps {
   example: boolean;
   /** The project the next steps happen in: the one with the most references of its own; null with no project yet */
   project: string | null;
-  /** That project says what it is (brief.about) */
+  /** That project says what it is (brief.about), or what the page is for (the goal answer) */
   brief: boolean;
   /** References filed in that project, a template's left out */
   refs: number;
@@ -17,7 +17,7 @@ export interface FirstSteps {
   out: boolean;
 }
 
-export const REFS_GOAL = 10;
+export const REFS_GOAL = 3;
 
 export type StepKey = "example" | "project" | "brief" | "refs" | "system" | "out";
 

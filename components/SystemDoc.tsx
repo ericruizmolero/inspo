@@ -52,6 +52,8 @@ interface Props {
   onTextTitle?: (itemId: string, title: string) => Promise<void>;
   onOpenItem?: (item: InspoItem) => void;
   onCopy: () => void; onDownload: () => void; copied: boolean;
+  /** Connects the person's agent: the file's handoff */
+  onConnect?: () => void;
   /** The file as it is copied, to open it in an AI chat */
   markdown?: string;
   projectId: string; projectName: string; hasRecipe: boolean;
@@ -65,7 +67,7 @@ interface Props {
   kept?: string[];
 }
 
-export default function SystemDoc({ blocks, system, boardIds, itemOf, imageOf, refInfo, activity, busy, onSave, onSystem, onTalk, onAbout, onText, onTextTitle, onCopy, onDownload, copied, markdown, projectId, projectName, hasRecipe, fileTools, look, dock, kept = [] }: Props) {
+export default function SystemDoc({ onConnect, blocks, system, boardIds, itemOf, imageOf, refInfo, activity, busy, onSave, onSystem, onTalk, onAbout, onText, onTextTitle, onCopy, onDownload, copied, markdown, projectId, projectName, hasRecipe, fileTools, look, dock, kept = [] }: Props) {
   const { t } = useT();
   const s = t.doc;
   const md = t.system.md;
@@ -309,7 +311,7 @@ export default function SystemDoc({ blocks, system, boardIds, itemOf, imageOf, r
     stale: unread,
     onTry: () => fill(t.tino.system.askExample),
     onAsk: (area) => fill(t.tino.system.undecidedAsk(t.system.areas[area].toLowerCase())),
-    onCopy,
+    onConnect: onConnect ?? onCopy,
     onFirstProposal: () => { if (openProposals[0]) go(`sdoc-${openProposals[0].area}`); },
     areas: system.areas, boardIds, readIds: system.run?.itemIds ?? [], kept, seed: visitSeed, now: openedAt,
     onGo: (part) => go(`sdoc-${part}`),

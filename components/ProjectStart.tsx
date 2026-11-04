@@ -13,6 +13,8 @@ import { MEDIA_ACCEPT, isMediaFile, mediaFileFrom } from "@/lib/media-client";
 import { useT } from "./I18nProvider";
 import { Busy, Button, Icon, IconButton, PromptInput, SegmentedControl, Separator, TextArea } from "@/components/criterio";
 import { cachedCardImage } from "./InspoCard";
+import SetupQuestions from "./SetupQuestions";
+import { readBrief } from "@/types/brief";
 import p from "./ProjectStart.module.css";
 
 const PAGE = 12;
@@ -49,7 +51,7 @@ function sourceOf(web: string, kinds: Record<MediaKind, string>, gif: string): s
   try { return readableDomain(new URL(web).hostname.replace(/^www\./, "")); } catch { return kinds[kind]; }
 }
 
-export default function ProjectStart({ project, items, links, imageOf, onAddUrl, onUpload, onDescribe, onFile, onBringBrand, onExamples }: {
+export default function ProjectStart({ project, items, links, imageOf, onAddUrl, onUpload, onDescribe, onFile, onBringBrand, onExamples, onAgent }: {
   project: Project;
   /** The whole library, newest first */
   items: InspoItem[];
@@ -67,11 +69,13 @@ export default function ProjectStart({ project, items, links, imageOf, onAddUrl,
   onBringBrand?: () => void;
   /** Discover's examples: offered while the workspace has no references at all, as part of starting out (13-10) */
   onExamples?: () => void;
+  /** The same setup, from the person's own agent: connects it (ConnectDialog) */
+  onAgent?: () => void;
 }) {
   const { t } = useT();
   const w = t.projects;
   // A project that already says what it is starts on its references
-  const [step, setStep] = useState<1 | 2>(() => (project.intent?.trim() ? 2 : 1));
+  const [step, setStep] = useState<1 | 2 | 3>(() => (!project.intent?.trim() ? 1 : readBrief(project.brief)?.answers?.goal ? 3 : 2));
   const [raw, setRaw] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -84,7 +88,7 @@ export default function ProjectStart({ project, items, links, imageOf, onAddUrl,
   const aboutRef = useRef<HTMLTextAreaElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   // Each step starts in its field
-  useEffect(() => { (step === 1 ? aboutRef.current : inputRef.current)?.focus(); }, [step]);
+  useEffect(() => { if (step !== 2) (step === 1 ? aboutRef.current : inputRef.current)?.focus(); }, [step]);
 
   const inbox = useMemo(() => items.filter((i) => i.id && !links[i.id]?.length), [items, links]);
   const library = useMemo(() => items.filter((i) => i.id), [items]);
@@ -92,7 +96,7 @@ export default function ProjectStart({ project, items, links, imageOf, onAddUrl,
   const list = tab === "inbox" ? inbox : library;
   const saved = !!about.trim() && about.trim() === (project.intent ?? "").trim();
 
-  const go = (next: 1 | 2) => { setError(""); setStep(next); };
+  const go = (next: 1 | 2 | 3) => { setError(""); setStep(next); };
   const submit = async () => {
     const web = normalizeWebUrl(raw);
     if (!web) { setError(t.start.notUrl); return; }
@@ -147,7 +151,7 @@ export default function ProjectStart({ project, items, links, imageOf, onAddUrl,
     try { await onFile(chosen); } finally { setBusy(false); setBringing(false); }
   };
 
-  const steps = [w.startStepAbout, w.startStepRefs];
+  const steps = [w.startStepAbout, w.startStepQuestions, w.startStepRefs];
   const errorLine = error && <p id="project-start-error" className="cr-field-hint is-error t-small" role="alert">{error}</p>;
 
   return (
@@ -160,7 +164,7 @@ export default function ProjectStart({ project, items, links, imageOf, onAddUrl,
         {/* Where the wizard is: the current step is the glass pill, a done one carries the tick */}
         <ol className={p.steps} aria-label={w.startSteps}>
           {steps.map((label, i) => {
-            const n = (i + 1) as 1 | 2;
+            const n = (i + 1) as 1 | 2 | 3;
             const done = n < step;
             return (
               <li key={n} className={`${p.step} t-ui${n === step ? ` ${p.stepOn}` : ""}`} aria-current={n === step ? "step" : undefined}>
@@ -187,6 +191,11 @@ export default function ProjectStart({ project, items, links, imageOf, onAddUrl,
               onBlur={() => void describe()}
               onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); void next(); } }}
             />
+            {errorLine}
+          </div>
+        ) : step === 2 ? (
+          <div className={p.body}>
+            <SetupQuestions projectId={project.id} brief={project.brief} onError={setError} />
             {errorLine}
           </div>
         ) : (
@@ -247,13 +256,14 @@ export default function ProjectStart({ project, items, links, imageOf, onAddUrl,
         <Separator className={p.sep} />
         <div className={p.footer}>
           <div className={p.footStart}>
-            <p className={`t-small ${p.muted}`} role="status">{step === 1
+            {step !== 2 && <p className={`t-small ${p.muted}`} role="status">{step === 1
               ? (saved ? w.startDescribed : w.startOptional)
-              : (picked.size ? w.startPicked(picked.size) : w.startNothingPicked)}</p>
-            {step === 2 && onBringBrand && (
+              : (picked.size ? w.startPicked(picked.size) : w.startNothingPicked)}</p>}
+            {step === 1 && onBringBrand && (
               <Button variant="quiet" size="s" icon="folder" data-tip={w.startBrand} onClick={onBringBrand}>{w.startBrandShort}</Button>
             )}
-            {step === 2 && onExamples && library.length === 0 && (
+            {step === 1 && onAgent && <Button variant="quiet" size="s" icon="cable" onClick={onAgent}>{w.startAgent}</Button>}
+            {step === 3 && onExamples && library.length === 0 && (
               <Button variant="quiet" size="s" icon="compass" data-tip={t.start.examples} onClick={onExamples}>{t.ws.examples}</Button>
             )}
           </div>
@@ -261,8 +271,11 @@ export default function ProjectStart({ project, items, links, imageOf, onAddUrl,
             {step === 1 ? <>
               <Button onClick={() => go(2)}>{w.startSkip}</Button>
               <Button variant="primary" iconEnd="arrow-right" onClick={() => void next()}>{w.startNext}</Button>
+            </> : step === 2 ? <>
+              <Button onClick={() => go(1)}>{w.startBack}</Button>
+              <Button variant="primary" iconEnd="arrow-right" onClick={() => go(3)}>{w.startNext}</Button>
             </> : <>
-              <Button onClick={() => go(1)} disabled={bringing}>{w.startBack}</Button>
+              <Button onClick={() => go(2)} disabled={bringing}>{w.startBack}</Button>
               <Button variant="primary" icon={bringing ? undefined : "plus"} onClick={() => void bring()} disabled={!picked.size || busy}>
                 {bringing && <Busy label={w.startAdd(picked.size)} />}{w.startAdd(picked.size)}
               </Button>

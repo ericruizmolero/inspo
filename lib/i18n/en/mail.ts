@@ -85,6 +85,11 @@ export const mail = {
       `${who} ${accepted ? "accepted" : "turned down"} what you proposed for ${area} in ${project}: ${decision}\n\nOpen it here:\n${url}`,
   },
 
+  clientAnswers: {
+    subject: (project: string): string => `Your client answered about ${project}`,
+    text: (project: string, n: number, url: string): string => `Your client answered ${n === 1 ? "1 question" : `${n} questions`} about ${project}. The file has not changed: run a new pass when you want it to read them.\n\nOpen it here:\n${url}`,
+  },
+
   // ─── First use (lib/first-use-mail.ts) ─────────────────────────────────────
   welcome: {
     subject: "Where to start on Criterio",

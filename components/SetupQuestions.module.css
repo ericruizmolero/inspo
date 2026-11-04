@@ -1,0 +1,4 @@
+.list { display: flex; flex-direction: column; gap: var(--space-4); }
+.question { display: flex; flex-direction: column; gap: var(--space-2); }
+.foot { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }
+.muted { color: var(--text-2); }

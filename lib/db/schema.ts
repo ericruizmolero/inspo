@@ -847,6 +847,24 @@ export const systemAreaRevision = pgTable("system_area_revision", {
 /** A link that shows a project's brand to anyone who has it: the presentation, and criterio.md to copy. Unlisted, read
  *  only, revoked by any member. `mode` says which file it hands out: the whole one, or a clean one without the team's
  *  conversation and names */
+/** A link that asks a client a project's open questions, with no account. It holds answers only (lib/client-ask.ts) */
+export const clientAsk = pgTable("client_ask", {
+  id: text("id").primaryKey(),
+  /** The secret in the address (/a/<token>): 16 random bytes, base64url */
+  token: text("token").notNull(),
+  projectId: text("project_id").notNull().references(() => project.id, { onDelete: "cascade" }),
+  organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
+  /** Who sent it: they get the one email when the client presses Send */
+  createdBy: text("created_by").references(() => user.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
+  answeredAt: timestamp("answered_at", { withTimezone: true, mode: "date" }),
+  revokedAt: timestamp("revoked_at", { withTimezone: true, mode: "date" }),
+}, (t) => [
+  uniqueIndex("client_ask_token_idx").on(t.token),
+  index("client_ask_project_idx").on(t.projectId),
+  index("client_ask_org_idx").on(t.organizationId),
+]);
+
 export const systemShare = pgTable("system_share", {
   id: text("id").primaryKey(),
   /** The secret in the address (/s/<token>): 16 random bytes, base64url */
