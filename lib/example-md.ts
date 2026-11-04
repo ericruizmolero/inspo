@@ -4,6 +4,7 @@
 import "server-only";
 import { join } from "path";
 import { renderCriterioMd, type RefInfo } from "./criterio-md";
+import { DEFAULT_SKILLS } from "./md-skill-ids";
 import { readTemplateSpec } from "./template-seed";
 import { dictOf, type Locale } from "./i18n";
 import { emptySystem, type SystemArea, type SystemEvidence } from "@/types/system";
@@ -33,7 +34,7 @@ export function exampleCriterioMd(locale: Locale, template = "multiverse"): Exam
   };
   const md = renderCriterioMd({
     project: spec.name, system, items, labels: t.system.areas as Record<SystemArea, string>, strings: t.system.md,
-    about: spec.template.about, mode: "clean", locale,
+    about: spec.template.about, mode: "clean", locale, skills: [...DEFAULT_SKILLS],
   });
   return { name: spec.name, md };
 }

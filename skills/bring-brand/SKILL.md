@@ -1,6 +1,6 @@
 ---
 name: bring-brand
-description: Brings a team's existing brand into a criterio.design project through the criterio MCP. Measures the live site with headless Chrome (computed styles, not guesses), scans the codebase for its theme, components, logo and fonts, writes a DESIGN.md, and then fills the project's presentation (palette, faces and scale, logo, motion, voice, imagery, handles) with bring_brand, adds the site as a reference and proposes what belongs to an area. Use when the user says "bring our brand into criterio", "fill the project's presentation from this repo / this site", "extract our design system into criterio" or "put our tokens in criterio".
+description: Brings a team's existing brand into a criterio.design project through the criterio MCP. Measures the live site (computed styles, not guesses), scans the codebase for its theme, components, logo and fonts, then fills the project's brand values (palette, faces and scale, logo, motion, voice, imagery, handles) with bring_brand, adds the site as a reference and proposes what belongs to an area. Use when the user says "bring our brand into criterio", "fill the project's presentation from this repo / this site", "extract our design system into criterio" or "put our tokens in criterio".
 metadata:
   source: criterio.design
   area: all
@@ -8,14 +8,14 @@ metadata:
 
 # Bring in a brand
 
-Turns a site or a codebase into the brand's values on a criterio project, as the team would have typed them: real hex values, the faces that load, the logo's own SVG, the curves in the CSS. Then a DESIGN.md for what the presentation has no place for.
+Turns a site or a codebase into the brand's values on a criterio project, as the team would have typed them: real hex values, the faces that load, the logo's own SVG, the curves in the CSS. A `DESIGN.md` in the repo only if the person asks for one.
 
 `<skill-dir>` is the folder this file is in.
 
 ## When to use
 
-- "Bring our brand into criterio" / "fill the presentation from this repo" / "extract our design system into criterio"
-- A criterio project exists and its Sistema has no brand values yet, or the team wants them replaced from the source
+- "Bring our brand into criterio" / "fill the brand from this repo" / "extract our design system into criterio"
+- A criterio project exists and has no brand values yet, or the team wants them replaced from the source
 
 ## When not to use
 
@@ -27,7 +27,7 @@ Turns a site or a codebase into the brand's values on a criterio project, as the
 
 Look for tools from the server named `criterio` (`list_projects`, `read_criterio`, `add_reference`, `propose_decision`, `bring_brand`; Claude Code shows them as `mcp__criterio__*`).
 
-If they are missing, say so in one line and fall back: write `DESIGN.md` (steps 1 to 7) and tell the person to paste it in the app, from the project's "…" menu, Bring in an existing brand, as text.
+If they are missing, say so in one line and fall back: write `DESIGN.md` (steps 1 to 7, including step 7 this time) and tell the person to paste it in the app, from the project's "…" menu, Bring in an existing brand, as text.
 
 > The criterio MCP is not connected. Its address is the app's `/mcp`; in Claude Code: `claude mcp add --transport http criterio https://app.criterio.design/mcp` (other clients: the Connect MCP dialog in the app has the steps).
 
@@ -40,8 +40,8 @@ If they are missing, say so in one line and fall back: write `DESIGN.md` (steps 
 - [ ] 4. Name the tokens by role
 - [ ] 5. Components and sections
 - [ ] 6. Do and don't rules
-- [ ] 7. Write DESIGN.md
-- [ ] 8. Map DESIGN.md to criterio's sections
+- [ ] 7. Write DESIGN.md, only if asked
+- [ ] 8. Map the values to criterio's sections
 - [ ] 9. In criterio: read, show the plan, write after the yes
 - [ ] 10. Report
 ```
@@ -57,6 +57,10 @@ If they are missing, say so in one line and fall back: write `DESIGN.md` (steps 
 If a `DESIGN.md` already exists, read it and update it in place.
 
 ### 2. Measure the rendered page
+
+For a public site, call `measure_site`: it runs on the server, needs no local browser, and returns the colours, type, spacing, fonts, copy and logo. It works from any client.
+
+Use the script below only for localhost or a page behind a login, or when you need the screenshots, the lockup capture or the page's pictures:
 
 ```bash
 node <skill-dir>/scripts/extract-url.mjs --url <url> --out-dir .design-extract
@@ -99,15 +103,15 @@ From the screenshots and the component code: each button variant with its colour
 
 Five to ten rules, each checkable in a review and tied to a measured value ("Body is ink-muted #78716C at 15px/1.6; never pure black"). Don'ts come from what the system visibly avoids.
 
-### 7. Write DESIGN.md
+### 7. Write DESIGN.md, only if asked
 
-Copy `<skill-dir>/assets/DESIGN.template.md` to `DESIGN.md` at the project root and fill every section; delete rows that do not apply. Under 200 lines. Search the file for a leftover placeholder (two opening braces): there must be none.
+A setup does not add a file to the repo on its own. Skip this step unless the person wants the file; the do and don't rules and the components then go to the team as proposals in step 9. If they ask, copy `<skill-dir>/assets/DESIGN.template.md` to `DESIGN.md` at the project root and fill every section; delete rows that do not apply. Under 200 lines. Search the file for a leftover placeholder (two opening braces): there must be none.
 
-### 8. Map DESIGN.md to criterio's sections
+### 8. Map the values to criterio's sections
 
-`bring_brand` takes the presentation's sections. Pass only the ones you have values for; each replaces its section whole.
+`bring_brand` takes the brand's sections. Pass only the ones you have values for; each replaces its section whole.
 
-| DESIGN.md | bring_brand field | Shape |
+| Values | bring_brand field | Shape |
 | --- | --- | --- |
 | Brand in one line | `intro` | `headline`, up to 3 `paragraphs` |
 | Color table | `color` | `items[]` with your own `id`, `name`, six-digit `hex`, `role`, `group` (brand, accent, neutral, semantic) and `weight` 1 to 4 (the page ground 4, text 3, accent 2, rare 1); `accentId` names the accent by id |
@@ -119,7 +123,7 @@ Copy `<skill-dir>/assets/DESIGN.template.md` to `DESIGN.md` at the project root 
 | Voice, from the site's copy | `voice` | `principles[]` (`title`, `body`, `sample`) and `pairs[]` (`context`, `do`, `dont`) |
 | Imagery | `imagery` | `traits[]` (`label`, `value`), `avoid[]`, `itemIds[]` from `list_references` |
 | Domain, social handle, tagline | `applications` | `domain`, `handle` without @, `tagline`, `bio`, `postLine`, `heroItemId` or null |
-| The whole file | `guide` | `DESIGN.md` as one string |
+| The whole file, if written | `guide` | `DESIGN.md` as one string |
 
 Spacing, radius, elevation, component rules and the do and don't list have no section: they stay in `guide` and go to the team as proposals (step 9).
 
@@ -127,7 +131,7 @@ Spacing, radius, elevation, component rules and the do and don't list have no se
 
 1. `list_projects`, then `read_criterio` with section `decisions`: what is decided, what the brand already holds.
 2. Show the plan before writing: the sections you will bring with their key values, the references you will add, one proposal per area the source decides. Wait for the yes.
-3. `bring_brand` once, with `source` ("acme.com and the repo's app/globals.css"), every section from step 8 and `guide` set to DESIGN.md. The answer names what was written and what the team had set by hand and kept.
+3. `bring_brand` once, with `source` ("acme.com and the repo's app/globals.css"), every section from step 8, and `guide` set to DESIGN.md if there is one. The answer names what was written and what the team had set by hand and kept.
 4. `add_reference` for the live site, with a note and its areas.
 5. `propose_decision` for layout (spacing scale, content width, radius, elevation) and any other area the source decides, with `reason` saying where it was read. An area is never a brand value.
 

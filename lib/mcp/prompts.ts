@@ -20,6 +20,26 @@ const which = (locale: Locale, project: string | undefined) => project?.trim()
   : (locale === "es" ? "Si no sabes de qué proyecto de Criterio hablo, llama a list_projects y pregúntame cuál." : "If you do not know which criterio project I mean, call list_projects and ask me.");
 
 const PROMPTS: Record<string, PromptDef> = {
+  setup_project: {
+    en: {
+      title: "Set up criterio",
+      description: "Start a project in criterio, or continue one, from here: the agent reads what exists, asks what it cannot know, and writes the criterio.md.",
+      args: [projectArg("en")],
+      text: (a) => [
+        which("en", a.project),
+        "Set up this project in criterio with me. Call start_setup and follow it: its answer says what to do next, and every tool you use after it does too. One step at a time, and do not repeat what is already there.",
+      ].join("\n"),
+    },
+    es: {
+      title: "Poner en marcha Criterio",
+      description: "Empieza un proyecto en Criterio, o sigue uno, desde aquí: el agente lee lo que hay, pregunta lo que no puede saber y escribe el criterio.md.",
+      args: [projectArg("es")],
+      text: (a) => [
+        which("es", a.project),
+        "Pon en marcha este proyecto en Criterio conmigo. Llama a start_setup y síguelo: su respuesta dice qué hacer después, y también la de cada herramienta que uses tras ella. Un paso cada vez, sin repetir lo que ya esté.",
+      ].join("\n"),
+    },
+  },
   design_with_criterio: {
     en: {
       title: "Design with the criterio",
@@ -84,7 +104,7 @@ const PROMPTS: Record<string, PromptDef> = {
         "The goal: criterio should hold what this team already decided, so the next piece of work starts from it instead of from nothing.",
         "",
         "1. Read what is in criterio first: read_criterio and list_references. Do not bring in again what is there.",
-        "2. Go through the source and collect, area by area (typography, color, layout, motion, iconography, logo, imagery, voice), what is actually decided there: typefaces and their scale, the palette with its values and what each color is for, spacing and grid, easings and durations, icon set, logo rules, the kind of imagery, how the copy sounds. Take it from the real thing (tokens, CSS variables, component code, the guideline's own words), not from how it looks to you.",
+        "2. For a public site, call measure_site for its real values. Go through the source and collect, area by area (typography, color, layout, motion, iconography, logo, imagery, voice), what is actually decided there: typefaces and their scale, the palette with its values and what each color is for, spacing and grid, easings and durations, icon set, logo rules, the kind of imagery, how the copy sounds. Take it from the real thing (tokens, CSS variables, component code, the guideline's own words), not from how it looks to you.",
         "3. Show me a plan before writing anything, as three short lists: (a) the references you would add (the live site, key pages, the guideline as a text, the images that carry the look), each with a one-line note; (b) the brand's values you would bring with bring_brand, section by section (palette, faces and scale, logo, motion, voice, imagery, handles); (c) one proposal per area that has enough behind it, with the decision as you would write it.",
         "4. After my yes, add the references with add_reference (set their areas), call bring_brand once with every section you have values for and the guidelines as guide, and send each proposal with propose_decision, with a reason that says where it was read from. Leave out any area the source says nothing about. What an area decides (spacing, radius, elevation, a rule) is a proposal, never a brand value.",
         "5. Finish by telling me what is waiting for the team's answer in criterio and which areas are still open.",
@@ -103,7 +123,7 @@ const PROMPTS: Record<string, PromptDef> = {
         "El objetivo: que Criterio tenga lo que este equipo ya decidió, para que el siguiente trabajo empiece desde ahí y no desde cero.",
         "",
         "1. Lee primero lo que hay en Criterio: read_criterio y list_references. No traigas otra vez lo que ya está.",
-        "2. Recorre la fuente y recoge, área por área (tipografía, color, layout, movimiento, iconografía, logo, imagen, voz), lo que de verdad está decidido ahí: las fuentes y su escala, la paleta con sus valores y para qué sirve cada color, espaciado y retícula, curvas y duraciones, el set de iconos, las reglas del logo, el tipo de imagen, cómo suena el texto. Sácalo de lo real (tokens, variables CSS, código de componentes, las palabras de la propia guía), no de cómo te parece que se ve.",
+        "2. Para una web pública, llama a measure_site para tener sus valores reales. Recorre la fuente y recoge, área por área (tipografía, color, layout, movimiento, iconografía, logo, imagen, voz), lo que de verdad está decidido ahí: las fuentes y su escala, la paleta con sus valores y para qué sirve cada color, espaciado y retícula, curvas y duraciones, el set de iconos, las reglas del logo, el tipo de imagen, cómo suena el texto. Sácalo de lo real (tokens, variables CSS, código de componentes, las palabras de la propia guía), no de cómo te parece que se ve.",
         "3. Enséñame un plan antes de escribir nada, en tres listas cortas: (a) las referencias que añadirías (la web en producción, páginas clave, la guía como texto, las imágenes que llevan el estilo), cada una con una nota de una línea; (b) los valores de la marca que traerías con bring_brand, sección por sección (paleta, fuentes y escala, logo, movimiento, voz, imagen, perfiles); (c) una propuesta por cada área que tenga suficiente detrás, con la decisión tal como la escribirías.",
         "4. Cuando te diga que sí, añade las referencias con add_reference (con sus áreas), llama a bring_brand una vez con todas las secciones de las que tengas valores y la guía como guide, y manda cada propuesta con propose_decision, con un motivo que diga de dónde se ha leído. Deja fuera las áreas de las que la fuente no diga nada. Lo que decide un área (espaciado, radios, elevación, una regla) es una propuesta, nunca un valor de la marca.",
         "5. Termina diciéndome qué queda esperando la respuesta del equipo en Criterio y qué áreas siguen abiertas.",

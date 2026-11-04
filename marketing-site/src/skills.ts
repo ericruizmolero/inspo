@@ -54,7 +54,7 @@ export const OWN_SKILLS = [
 /** criterio.design's own skills that are not sections of criterio.md: they work through the MCP connector */
 const CONNECTOR_SKILLS: Skill[] = [
   { name: { en: "Bring in a brand", es: "Traer una marca" }, topic: "connect", url: `${SKILLS_REPO}/tree/main/skills/bring-brand`, install: `npx skills add ${SKILLS_REPO} --skill bring-brand`, added: "2026-10-13", author: "criterio.design",
-    text: { en: "Reads a site or a repo (tokens, components, logo, fonts) and fills the project's presentation through the criterio MCP.", es: "Lee una web o un repo (tokens, componentes, logo, fuentes) y rellena la presentación del proyecto por el MCP de Criterio." } },
+    text: { en: "Reads a site or a repo (tokens, components, logo, fonts) and fills the project's brand through the criterio MCP.", es: "Lee una web o un repo (tokens, componentes, logo, fuentes) y rellena la marca del proyecto por el MCP de Criterio." } },
 ];
 
 /** Other authors' skills. The GitHub owner in the install command is the author */

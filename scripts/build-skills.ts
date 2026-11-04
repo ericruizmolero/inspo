@@ -15,7 +15,7 @@ const names = ui.system.skillsList as Record<MdSkill, { name: string; what: stri
 
 /** The skills that work the MCP connector, kept as folders in skills/ (SKILL.md, scripts, references) */
 const CONNECTOR_SKILLS = [
-  { id: "bring-brand", name: "Bring in a brand", what: "Reads a site or a repo and fills the project's presentation through the criterio MCP" },
+  { id: "bring-brand", name: "Bring in a brand", what: "Reads a site or a repo and fills the project's brand through the criterio MCP" },
 ];
 
 /** What criterio.md is, for an agent that has never seen one */

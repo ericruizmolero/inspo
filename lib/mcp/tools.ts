@@ -172,7 +172,7 @@ export const TOOLS: Tool[] = [
   tool({
     name: "bring_brand", title: "Bring in a brand",
     description: [
-      "Brings a brand that already exists into a project's presentation: the palette, the faces and the type scale, the logo, the motion, the voice, the imagery and the handles it shows up with, as values the team then edits in the app. Read the values from the real thing (the theme file, the CSS variables, the component code, the logo's SVG, the site measured), never from how it looks to you.",
+      "Brings a brand that already exists into a project's brand: the palette, the faces and the type scale, the logo, the motion, the voice, the imagery and the handles it shows up with, as values the team then edits in the app. Read the values from the real thing (the theme file, the CSS variables, the component code, the logo's SVG, the site measured), never from how it looks to you.",
       "Each section you pass replaces that section whole; pass only the sections you have values for. A section the team set by hand is left alone and named in the answer. Give each item a short id of your own; a scale step names its face by that id. A logo comes as SVG markup, a public address or the file's bytes as base64 (a capture, a file on your disk), per light and dark ground, and is kept with the project; the imagery's own pictures (images) come the same way and become its examples. guide is the DESIGN.md you wrote, kept for the app's next passes.",
       "It changes no decision of the criterio: what belongs to an area (spacing, radius, elevation, a rule) goes through propose_decision. Show the person what you are about to bring before calling it.",
     ].join("\n"),
@@ -202,6 +202,7 @@ export const toolList = () => TOOLS.map((t) => {
 
 /** What the client is told once, on connecting: how to work with criterio */
 export const INSTRUCTIONS = [
+  "When the person says \"set up criterio\", starts a project or comes back to an unfinished one, call start_setup and follow what it says.",
   "criterio holds the design criteria of each of the person's projects as one file, criterio.md: what the team decided about typography, color, layout, motion, iconography, logo, imagery and voice, with the references behind each decision.",
   "Before designing, writing or reviewing anything for a project, call read_criterio and follow it. A decided area is a rule. Where an area is open, ask the person; do not invent.",
   "Work with the person as criterio.md's \"Start here\" says: read it first (read_criterio, section \"guide\") and follow its phases and checkpoints.",

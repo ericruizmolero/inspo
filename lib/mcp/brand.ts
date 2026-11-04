@@ -142,7 +142,7 @@ export async function bringBrand(ctx: McpCtx, origin: string, input: BringIn) {
     } : {}),
     guide_kept: !!key,
     setup: await setupStep(project.workspace.id, project.id),
-    status: "The values are on the project's presentation (Sistema, Presentación). The team edits them there; Improve with AI reads them with the board.",
+    status: "The values are on the project's brand, and criterio.md carries them. The team edits them there; Improve with AI reads them with the board.",
     url: projectUrl(origin, project.id),
   };
 }
