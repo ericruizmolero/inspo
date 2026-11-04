@@ -51,3 +51,12 @@ test("a wrong token sees nothing and writes nothing", async () => {
   expect(await clientAskView("a".repeat(22), "en")).toBeNull();
   expect(await submitClientAnswers("a".repeat(22), { goal: "x" })).toBe("gone");
 });
+
+test("an email's project link goes through /p/, keeping what it pointed at", async () => {
+  const { mailPath } = await import("@/lib/notify");
+  expect(mailPath("/?in=abc&view=system")).toBe("/p/abc");
+  expect(mailPath("/?in=abc")).toBe("/p/abc?view=board");
+  expect(mailPath("/?in=abc&view=system&focus=color")).toBe("/p/abc?view=system&focus=color");
+  expect(mailPath("/?in=library")).toBe("/?in=library");
+  expect(mailPath("/i/item")).toBe("/i/item");
+});

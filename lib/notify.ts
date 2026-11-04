@@ -60,6 +60,13 @@ const itemPath = (id: string) => `/i/${encodeURIComponent(id)}`;
 const projectPath = (id: string) => `/?in=${encodeURIComponent(id)}`;
 const systemPath = (id: string) => `/?in=${encodeURIComponent(id)}&view=system`;
 const libraryPath = "/?in=library";
+/** An address for an email: it opens away from the app, maybe in another workspace, so a project's goes through /p/ */
+export function mailPath(path: string): string {
+  const m = /^\/\?in=([^&]+)(?:&(.*))?$/.exec(path);
+  if (!m || path === libraryPath) return path;
+  const rest = m[2] ?? "view=board";
+  return `/p/${m[1]}${rest === "view=system" ? "" : `?${rest}`}`;
+}
 
 function secret(): string {
   const s = process.env.BETTER_AUTH_SECRET;
@@ -128,7 +135,7 @@ export async function notifyReply(organizationId: string, input: { toUserId: str
   const [to, from, team] = await Promise.all([person(input.toUserId), person(input.fromUserId), teamName(organizationId)]);
   if (!to || !to.replies) return false;
   const foot = footOf(to.id, "replies", team);
-  const m = replyMail({ who: input.fromName, mine: clip(input.mine), theirs: clip(input.theirs, 600), url: `${baseUrl()}${input.path}` }, foot, to.language);
+  const m = replyMail({ who: input.fromName, mine: clip(input.mine), theirs: clip(input.theirs, 600), url: `${baseUrl()}${mailPath(input.path)}` }, foot, to.language);
   await sendMail(to.email, m, { replyTo: from?.email, headers: unsubscribeHeaders(foot.stopUrl) });
   return true;
 }
@@ -139,7 +146,7 @@ export async function notifyProposalResolved(organizationId: string, input: { to
   const [to, from, team] = await Promise.all([person(input.toUserId), person(input.fromUserId), teamName(organizationId)]);
   if (!to || !to.replies) return false;
   const foot = footOf(to.id, "replies", team);
-  const m = proposalMail({ who: input.fromName, accepted: input.accepted, area: areaName(to.language, input.area), project: input.projectName, decision: clip(input.decision, 300), url: `${baseUrl()}${systemPath(input.projectId)}` }, foot, to.language);
+  const m = proposalMail({ who: input.fromName, accepted: input.accepted, area: areaName(to.language, input.area), project: input.projectName, decision: clip(input.decision, 300), url: `${baseUrl()}${mailPath(systemPath(input.projectId))}` }, foot, to.language);
   await sendMail(to.email, m, { replyTo: from?.email, headers: unsubscribeHeaders(foot.stopUrl) });
   return true;
 }
@@ -368,10 +375,10 @@ export function digestGroups(events: TeamEvent[], locale: Locale, projectNames: 
   for (const l of activityLines(events, locale)) (byProject.get(l.projectId) ?? byProject.set(l.projectId, []).get(l.projectId)!).push(l);
   const groups: DigestGroup[] = [];
   for (const [projectId, lines] of byProject) {
-    const shown: DigestLine[] = lines.slice(0, LINES_PER_GROUP).map((l) => ({ text: l.text, url: `${baseUrl()}${l.path}`, ...(l.quote ? { quote: l.quote } : {}) }));
+    const shown: DigestLine[] = lines.slice(0, LINES_PER_GROUP).map((l) => ({ text: l.text, url: `${baseUrl()}${mailPath(l.path)}`, ...(l.quote ? { quote: l.quote } : {}) }));
     groups.push({
       title: projectId ? projectNames.get(projectId) ?? "" : library,
-      url: `${baseUrl()}${projectId ? projectPath(projectId) : libraryPath}`,
+      url: `${baseUrl()}${projectId ? mailPath(projectPath(projectId)) : libraryPath}`,
       lines: shown,
       more: Math.max(0, lines.length - LINES_PER_GROUP),
     });

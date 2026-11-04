@@ -3,7 +3,7 @@
 // as a document (the page's tabs choose): the same text either way (components/SystemMarkdown.tsx), typed in place and
 // saved as it is typed, with the pins the team leaves on it. Here: the parts to jump between, the proposals
 // waiting under each area (anyone says yes or no).
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import type { InspoItem } from "@/types/inspo";
 import type { ProjectSystem, SystemArea } from "@/types/system";
 import type { CriterioBlock, RefInfo } from "@/lib/criterio-md";
@@ -64,6 +64,35 @@ interface Props {
   kept?: string[];
 }
 
+/** Scrolls the page to a part of the file (see `go`). Outside the component: it only ever runs from a click */
+function travelTo(id: string, endTravel: RefObject<() => void>) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  let page = el.parentElement;
+  while (page && !(/auto|scroll/.test(getComputedStyle(page).overflowY) && page.scrollHeight > page.clientHeight + 1)) page = page.parentElement;
+  if (!page || window.matchMedia("(prefers-reduced-motion: reduce)").matches) { el.scrollIntoView({ block: "start" }); return; }
+  endTravel.current();
+  const box = page;
+  const margin = parseFloat(getComputedStyle(el).scrollMarginTop) || 0;
+  const from = box.scrollTop, start = performance.now(), ms = 520, hold = 1500;
+  let frame = 0, wheeled = start;
+  const wheel = (e: WheelEvent) => {
+    const now = performance.now(), fresh = now - wheeled > 120;
+    wheeled = now;
+    if (now - start > ms && fresh) stop(); else e.preventDefault();
+  };
+  const stop = () => { cancelAnimationFrame(frame); box.removeEventListener("wheel", wheel); box.removeEventListener("touchstart", stop); };
+  const step = (now: number) => {
+    const k = Math.min(1, (now - start) / ms);
+    const to = Math.min(box.scrollHeight - box.clientHeight, box.scrollTop + el.getBoundingClientRect().top - box.getBoundingClientRect().top - margin);
+    box.scrollTop = from + (to - from) * (1 - Math.pow(1 - k, 4));
+    if (now - start < hold) frame = requestAnimationFrame(step); else stop();
+  };
+  box.addEventListener("wheel", wheel, { passive: false }); box.addEventListener("touchstart", stop, { passive: true });
+  endTravel.current = stop;
+  frame = requestAnimationFrame(step);
+}
+
 export default function SystemDoc({ onConnect, blocks, system, boardIds, itemOf, imageOf, refInfo, activity, busy, onSave, onSystem, onTalk, onAbout, onText, onTextTitle, onCopy, onDownload, copied, markdown, projectId, projectName, hasRecipe, fileTools, look, kept = [] }: Props) {
   const { t } = useT();
   const s = t.doc;
@@ -74,7 +103,6 @@ export default function SystemDoc({ onConnect, blocks, system, boardIds, itemOf,
   const project = blocks.find((b) => b.kind === "section" && b.id === "project");
   const summary = blocks.find((b) => b.kind === "summary");
   // A skill's short name, as its menu says it (the section's own heading is a whole sentence)
-  const skillName = (id: string) => (t.system as unknown as { skillsList?: Record<string, { name?: string }> }).skillsList?.[id]?.name ?? id.toUpperCase();
   // The sections the skills add (lib/md-skills.ts), in the order the file has them
   const skillBlocks = blocks.filter((b): b is Extract<CriterioBlock, { kind: "section" }> => b.kind === "section" && b.id.startsWith("skill:"));
   // To a part of the file, at one pace whatever the distance. Where it lands is read again on every frame, and for
@@ -83,33 +111,7 @@ export default function SystemDoc({ onConnect, blocks, system, boardIds, itemOf,
   // still running. The wheel is held until that fling ends; a new scroll or a finger takes the page back
   const endTravel = useRef(() => {});
   useEffect(() => () => endTravel.current(), []);
-  const go = (id: string) => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    let page = el.parentElement;
-    while (page && !(/auto|scroll/.test(getComputedStyle(page).overflowY) && page.scrollHeight > page.clientHeight + 1)) page = page.parentElement;
-    if (!page || window.matchMedia("(prefers-reduced-motion: reduce)").matches) { el.scrollIntoView({ block: "start" }); return; }
-    endTravel.current();
-    const box = page;
-    const margin = parseFloat(getComputedStyle(el).scrollMarginTop) || 0;
-    const from = box.scrollTop, start = performance.now(), ms = 520, hold = 1500;
-    let frame = 0, wheeled = start;
-    const wheel = (e: WheelEvent) => {
-      const now = performance.now(), fresh = now - wheeled > 120;
-      wheeled = now;
-      if (now - start > ms && fresh) stop(); else e.preventDefault();
-    };
-    const stop = () => { cancelAnimationFrame(frame); box.removeEventListener("wheel", wheel); box.removeEventListener("touchstart", stop); };
-    const step = (now: number) => {
-      const k = Math.min(1, (now - start) / ms);
-      const to = Math.min(box.scrollHeight - box.clientHeight, box.scrollTop + el.getBoundingClientRect().top - box.getBoundingClientRect().top - margin);
-      box.scrollTop = from + (to - from) * (1 - Math.pow(1 - k, 4));
-      if (now - start < hold) frame = requestAnimationFrame(step); else stop();
-    };
-    box.addEventListener("wheel", wheel, { passive: false }); box.addEventListener("touchstart", stop, { passive: true });
-    endTravel.current = stop;
-    frame = requestAnimationFrame(step);
-  };
+  const go = (id: string) => travelTo(id, endTravel);
 
   const proposeArea = async (area: SystemArea, p: { decision: string; why: string; never: string }, why: string): Promise<boolean> => {
     if (working || !p.decision) return false;

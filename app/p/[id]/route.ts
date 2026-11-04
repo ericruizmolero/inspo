@@ -17,7 +17,13 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   const ctx = await getCtxOrLogin(`/p/${encodeURIComponent(id)}`);
   const [project] = await db.select({ organizationId: P.organizationId }).from(P).where(and(eq(P.id, id), inArray(P.organizationId, ctx.workspaces.map((w) => w.id)))).limit(1);
   if (!project) redirect("/");
-  const home = NextResponse.redirect(new URL(`/?in=${encodeURIComponent(id)}&view=system`, req.url));
+  // An agent's link opens the file; an email can ask for another view, or a part of the project
+  const asked = new URL(req.url).searchParams;
+  const to = new URL("/", req.url);
+  to.searchParams.set("in", id);
+  if (!asked.has("view")) to.searchParams.set("view", "system");
+  for (const [k, v] of asked) if (k !== "in" && !(k === "view" && v === "board")) to.searchParams.set(k, v);
+  const home = NextResponse.redirect(to);
   if (project.organizationId === ctx.workspace.id) return home;
   // The session sits in a cached cookie for minutes, so the change has to reach the browser in this answer
   const changed = await auth.api.setActiveOrganization({ headers: await headers(), body: { organizationId: project.organizationId }, asResponse: true }).catch((err) => { log.warn("workspace.active_not_saved", { err }); return null; });

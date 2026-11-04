@@ -1173,10 +1173,6 @@ export const ui = {
       keptAct: "See the references",
       fileTitle: ["This is your criterio.md."],
       fileText: (project: string): string => `What the team has decided for ${project}, area by area. Click any text and type: it saves itself.`,
-      askTitle: ["Or tell me."],
-      askText: "Say down there what to change, in words, and I'll propose it under each area. You say yes or no.",
-      askAct: "Try it",
-      askExample: "No bold in running text",
       takeTitle: ["Now build the landing."],
       takeText: "Connect your agent and it carries on from here, with everything saved. Prefer not to? Copy the file from the bar above, though a copy saves nothing.",
       takeAct: "Connect",
@@ -1185,8 +1181,6 @@ export const ui = {
       proposalsAct: "Show me",
       undecidedTitle: ["Something's missing here."],
       undecidedText: (areas: string, n: number): string => `${n === 1 ? "One area is" : `${n} areas are`} still undecided: ${areas}.`,
-      undecidedAct: (area: string): string => `Propose ${area}`,
-      undecidedAsk: (area: string): string => `Propose a decision for ${area} from the references`,
       and: "and",
       staleText: (n: number): string => `${n === 1 ? "1 reference" : `${n} references`} on the board I haven't read yet. This file doesn't know about them.`,
     },
@@ -1201,14 +1195,9 @@ export const ui = {
     // The dock under the System page (TinoDock): what to build on Result, what to change in the file, in words, on Agent and Human
     dock: {
       build: "What should Tino build? The About page, a launch post\u2026",
-      edit: "Tell Tino what to change: no bold in running text\u2026",
       send: "Send",
     },
     // A change the file already follows, or one about no area: nothing is proposed
-    nothingTitle: ["Already there.", "Nothing to do."],
-    nothingText: "Nothing in the file needs to change for that.",
-    editFailed: "I couldn\u2019t write that just now. Try again in a moment.",
-    whichPicked: (label: string, area: string): string => `${label}. This is how ${area} would read.`,
     // A proposal waiting under an area (TinoNote): his own reason, or who proposed it
     said: ["I was just about to say that.", "Knew it.", "Not bad at all."],
     proposes: (who: string): string => `${who} would write it like this.`,
