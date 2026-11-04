@@ -74,4 +74,13 @@ const ACTIONS: Record<SetupKey | BuildKey, string> = {
   landing: "Call set_outline with the landing's goal and its sections in order. Each section's job says what it does for the goal: a section that does nothing for it is cut. Build section by section. When the landing exists, call set_outline again with built.",
 };
 
-export const nextAction = (s: SetupState): string | null => s.next && ACTIONS[s.next];
+/** A landing built without pictures of what the person likes comes out generic, whatever the model. The setup does not need
+ *  them, since someone can only keep a brand, but building does */
+const REFERENCES_FIRST = "The setup is complete. Offer to build a landing. On a no, stop here: nothing is unfinished. On a yes, ask first for 2 or 3 landing pages the person likes, what to take from each, and save them with add_reference: without references the result will be generic. If they still want to go on, say so once and continue.";
+const MATERIAL_FIRST = "Before writing a line, gather the real material: call read_reference for each reference to see its picture, read the project's texts, and use the brand's own pictures, from measure_site or the repo. Real pictures and real words change the result more than anything else. ";
+
+export function nextAction(s: SetupState, refs: number): string | null {
+  if (!s.next) return null;
+  if (s.next === "direction") return refs ? MATERIAL_FIRST + ACTIONS.direction : REFERENCES_FIRST;
+  return s.next === "landing" ? MATERIAL_FIRST + ACTIONS.landing : ACTIONS[s.next];
+}

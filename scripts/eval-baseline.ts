@@ -7,7 +7,11 @@ import { config as loadEnv } from "dotenv";
 loadEnv({ path: ".env.local" }); loadEnv();
 import { promises as fs } from "fs";
 import path from "path";
+import { execFile } from "child_process";
+import { promisify } from "util";
+import sharp from "sharp";
 
+const CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 const MODEL = process.env.EVAL_MODEL || "anthropic/claude-sonnet-5.5";
 const ROOT = ".data/evals/baseline";
 const RESULTS = "scripts/evals/baseline.jsonl";
@@ -16,14 +20,17 @@ const NO_TOOLS = "You are a coding agent in the person's editor. In this run you
 
 /** `project`: a real project of the team's own workspace, read from the database as read_criterio hands it out, so its
  *  file is what a system pass wrote. Without it, a template: a file the team finished by hand */
-interface Task { id: string; /** What the person answers to goal, audience, why-us and proof: the same on both sides */ answers: string; template?: string; project?: string; brief: string; task: string }
+/** Round 4: what Criterio hands the agent besides the file. `texts` are the project's own words, so both sides get them.
+ *  `look` are the references' pictures: files, or addresses captured here. `photos` are the brand's own, as addresses */
+interface Material { texts?: string[]; look?: string[]; sites?: string[]; photos?: string[] }
+interface Task { id: string; material: Material; /** What the person answers to goal, audience, why-us and proof: the same on both sides */ answers: string; template?: string; project?: string; brief: string; task: string }
 const HOME = "Una landing de una sola página, en un único archivo HTML con su CSS dentro.";
 const TASKS: Task[] = [
-  { id: "multiverse", answers: "Qué quiero que haga quien la vea: pedir una demo. A quién me dirijo: equipos de tecnología y dirección de grandes empresas que evalúan computación cuántica e IA. Por qué nosotros: unimos computación cuántica e IA en software para empresas. Pruebas: no tengo cifras publicables, no inventes ninguna.", template: "multiverse", brief: "Multiverse Computing es una empresa española de software de computación cuántica e IA para empresas.", task: HOME },
-  { id: "zernio", answers: "Qué quiero que haga quien la vea: obtener una API key. A quién me dirijo: ingenieros que integran redes sociales en su producto. Por qué nosotros: una sola API para 23 canales, sin planes ni asientos, pagas por lo que usas. Pruebas: 23 canales, más de 300 tools en el MCP, y Late pasó a ser Zernio sin cambios que rompan nada.", template: "zernio", brief: "Zernio, antes Late, es una API para publicar en redes sociales desde un solo sitio, pensada para ingenieros.", task: HOME },
-  { id: "xabier", answers: "Qué quiero que haga quien la vea: empezar una primera conversación por WhatsApp. A quién me dirijo: personas de Pamplona con un problema legal. Por qué nosotros: cercanía, seguridad, certeza. Pruebas: desde 2011, y reseñas de Google, sin cifras que no tenga.", template: "xabier-jareno", brief: "Xabier Jareño Abogados es un despacho de abogados de Pamplona, abierto desde 2011.", task: HOME },
-  { id: "criterio-landing", answers: "Qué quiero que haga quien la vea: apuntarse a la lista de espera. A quién me dirijo: agencias, estudios, diseñadores y equipos de marketing. Por qué nosotros: tus ideas se convierten en un sistema que la IA puede seguir. Pruebas: ninguna todavía, no inventes ninguna.", project: "08e2c8f15cc546948428b68c", brief: "Criterio es un espacio donde dar estructura a tus ideas y que se conviertan en un sistema de diseño que tu IA pueda seguir.", task: HOME },
-  { id: "criterio-libreria", answers: "Qué quiero que haga quien la vea: entrar a explorar la librería. A quién me dirijo: diseñadores y equipos que buscan referencias. Por qué nosotros: es una biblioteca curada a mano. Pruebas: ninguna todavía, no inventes ninguna.", project: "f3c3113a262e4cc3b9b28850", brief: "Criterio es un espacio donde dar estructura a tus ideas y que se conviertan en un sistema de diseño que tu IA pueda seguir. Esta landing presenta su librería.", task: HOME },
+  { id: "multiverse", material: { look: ["docs/templates/multiverse/board"], sites: ["https://multiversecomputing.com"] }, answers: "Qué quiero que haga quien la vea: pedir una demo. A quién me dirijo: equipos de tecnología y dirección de grandes empresas que evalúan computación cuántica e IA. Por qué nosotros: unimos computación cuántica e IA en software para empresas. Pruebas: no tengo cifras publicables, no inventes ninguna.", template: "multiverse", brief: "Multiverse Computing es una empresa española de software de computación cuántica e IA para empresas.", task: HOME },
+  { id: "zernio", material: { texts: ["docs/templates/zernio/board/titulares.md"], sites: ["https://zernio.com"] }, answers: "Qué quiero que haga quien la vea: obtener una API key. A quién me dirijo: ingenieros que integran redes sociales en su producto. Por qué nosotros: una sola API para 23 canales, sin planes ni asientos, pagas por lo que usas. Pruebas: 23 canales, más de 300 tools en el MCP, y Late pasó a ser Zernio sin cambios que rompan nada.", template: "zernio", brief: "Zernio, antes Late, es una API para publicar en redes sociales desde un solo sitio, pensada para ingenieros.", task: HOME },
+  { id: "xabier", material: { texts: ["el-equipo", "el-espacio", "footer", "servicios", "valores"].map((f) => `docs/templates/xabier-jareno/board/${f}.md`), look: ["hero-logo-centrado", "servicios-tabs", "seccion-retrato-firma", "equipo-fichas", "footer-logo"].map((f) => `docs/templates/xabier-jareno/board/${f}.jpg`), photos: ["despacho-arco", "despacho-entre-arcos", "detalle-mesa-silla", "equipo-1", "equipo-2", "equipo-3", "equipo-trabajando"].map((f) => `https://xn--xabierjareoabogados-43b.com/images/opt/${f}-2048.webp`) }, answers: "Qué quiero que haga quien la vea: empezar una primera conversación por WhatsApp. A quién me dirijo: personas de Pamplona con un problema legal. Por qué nosotros: cercanía, seguridad, certeza. Pruebas: desde 2011, y reseñas de Google, sin cifras que no tenga.", template: "xabier-jareno", brief: "Xabier Jareño Abogados es un despacho de abogados de Pamplona, abierto desde 2011.", task: HOME },
+  { id: "criterio-landing", material: { sites: ["https://tinycomputer.co", "https://www.cosmos.so", "https://gumroad.com", "https://sublime.app"] }, answers: "Qué quiero que haga quien la vea: apuntarse a la lista de espera. A quién me dirijo: agencias, estudios, diseñadores y equipos de marketing. Por qué nosotros: tus ideas se convierten en un sistema que la IA puede seguir. Pruebas: ninguna todavía, no inventes ninguna.", project: "08e2c8f15cc546948428b68c", brief: "Criterio es un espacio donde dar estructura a tus ideas y que se conviertan en un sistema de diseño que tu IA pueda seguir.", task: HOME },
+  { id: "criterio-libreria", material: { sites: ["https://www.are.na", "https://www.cosmos.so"] }, answers: "Qué quiero que haga quien la vea: entrar a explorar la librería. A quién me dirijo: diseñadores y equipos que buscan referencias. Por qué nosotros: es una biblioteca curada a mano. Pruebas: ninguna todavía, no inventes ninguna.", project: "f3c3113a262e4cc3b9b28850", brief: "Criterio es un espacio donde dar estructura a tus ideas y que se conviertan en un sistema de diseño que tu IA pueda seguir. Esta landing presenta su librería.", task: HOME },
 ];
 type Side = "none" | "file";
 
@@ -41,18 +48,32 @@ async function fileOf(t: Task): Promise<{ name: string; md: string }> {
   return { name: p.name, md: view.markdown };
 }
 
+/** The references as an agent sees them with read_reference */
+async function pictures(t: Task, dir: string): Promise<Buffer[]> {
+  const files = (await Promise.all((t.material.look ?? []).map(async (f) => (await fs.stat(f)).isDirectory() ? (await fs.readdir(f)).filter((x) => /\.jpe?g$/.test(x)).map((x) => path.join(f, x)) : [f]))).flat();
+  for (const [i, site] of (t.material.sites ?? []).entries()) {
+    const png = path.resolve(dir, `${t.id}.site-${i}.png`);
+    await promisify(execFile)(CHROME, ["--headless=new", "--disable-gpu", "--hide-scrollbars", "--window-size=1440,2200", "--virtual-time-budget=7000", `--screenshot=${png}`, site], { timeout: 60_000 }).catch(() => {});
+    if (await fs.stat(png).catch(() => null)) files.push(png);
+  }
+  return Promise.all(files.slice(0, 6).map((f) => sharp(f).resize({ width: 1280, height: 2400, fit: "inside", withoutEnlargement: true }).jpeg({ quality: 80 }).toBuffer()));
+}
+
 async function build(t: Task, side: Side, dir: string) {
   const { llm } = await import("../lib/llm");
   const said = `${t.brief} ${t.answers}`;
-  let system = NO_TOOLS, text = `${said}\n\n${t.task}\n\n${DELIVER}`;
+  const texts = (await Promise.all((t.material.texts ?? []).map((f) => fs.readFile(f, "utf8")))).join("\n\n");
+  const words = texts ? `The project's real texts, to use literally:\n\n${texts}\n\n` : "";
+  const images = side === "file" ? await pictures(t, dir) : [];
+  let system = NO_TOOLS, text = `${said}\n\n${t.task}\n\n${words}${DELIVER}`;
   if (side === "file") {
     const { promptGet } = await import("../lib/mcp/prompts");
     const { name, md } = await fileOf(t);
     const prompt = promptGet("design_with_criterio", { project: name, task: `${said} ${t.task}` }, "es")!.messages[0].content.text;
     system = "You are a coding agent in the person's editor, connected to criterio.design over MCP. In this run you cannot call tools or wait for an answer: the tool results you would ask for are given below.";
-    text = `${prompt}\n\n---\nread_criterio answered (the whole file; read the parts the prompt says to read):\n\n${md}\n---\n\n${DELIVER}`;
+    text = `${prompt}\n\n---\nread_criterio answered (the whole file; read the parts the prompt says to read):\n\n${md}\n---\n\n${words}${t.material.photos?.length ? `The brand's own pictures, public addresses to use in real <img> tags:\n${t.material.photos.join("\n")}\n\n` : ""}The pictures attached are the project's references. Study them; take what the file says to take, and copy none.\n\n${DELIVER}`;
   }
-  const res = await llm({ model: MODEL, fallback: null, system, text, effort: "medium", maxTokens: 64000 });
+  const res = await llm({ model: MODEL, fallback: null, system, text, images, effort: "medium", maxTokens: 64000 });
   const html = htmlOf(res.text);
   await fs.writeFile(path.join(dir, `${t.id}.${side}.html`), html);
   const row = { at: new Date().toISOString(), task: t.id, kind: t.template ? "finished" : "generated", side, model: MODEL, costUsd: res.costUsd ?? 0, ms: res.ms, bytes: html.length };

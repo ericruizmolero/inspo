@@ -36,7 +36,6 @@ import { nextAction, setupState } from "../setup-core";
 import { allow } from "../rate-limit";
 import { assertQuota } from "../quota";
 import { extractDesign } from "../design-extract";
-import { getDesignMd } from "../design-store";
 import { keptCopy } from "../ref-measured";
 import { runSystem } from "../system/run";
 import { runBrand } from "../brand";
@@ -368,10 +367,8 @@ export async function measureSite(ctx: McpCtx, input: { url: string }) {
   const url = normalizeWebUrl(input.url);
   if (!url) throw new HttpError(400, "That is not a public address.");
   if (!(await allow(`measure:${ctx.user.id}`, MEASURES_PER_HOUR, 3_600_000))) throw new HttpError(429, "Too many sites measured in an hour. Wait and go on.");
-  const stored = await getDesignMd(url);
-  if (stored) return { url, measured: "stored", at: stored.generatedAt, spec: stored.spec, copy: stored.copy, logo: { png: stored.logoUrl, svg: stored.logoSvgUrl }, fonts: stored.fontFiles };
   const { tokens, logoSvg, fontFiles } = await extractDesign(url);
-  return { url, measured: "now", title: tokens.title, colors: tokens.colors, typography: { ...tokens.typography, paragraphs: undefined }, fonts: tokens.fonts, spacing: tokens.spacing, copy: keptCopy(tokens.copy), logo: { svg: logoSvg }, fontFiles };
+  return { url, title: tokens.title, colors: tokens.colors, typography: { ...tokens.typography, paragraphs: undefined }, fonts: tokens.fonts, spacing: tokens.spacing, copy: keptCopy(tokens.copy), pictures: tokens.media.pictures, logo: { svg: logoSvg }, fontFiles };
 }
 
 /**
@@ -396,8 +393,9 @@ export async function runPass(ctx: McpCtx, origin: string, input: { project: str
 
 /** The path as the agent reads it: where the project stands and what to do next */
 export async function setupStep(org: string, projectId: string) {
-  const state = setupState(await setupFacts(org, projectId));
-  return { next: state.next, do: nextAction(state), complete: state.complete, ask: state.ask, confirm: state.confirm, steps: state.steps };
+  const facts = await setupFacts(org, projectId);
+  const state = setupState(facts);
+  return { next: state.next, do: nextAction(state, facts.refs), complete: state.complete, ask: state.ask, confirm: state.confirm, steps: state.steps };
 }
 
 /** Where a project stands along the setup, and what the agent does next. With `skip`, the person declined that step */

@@ -41,7 +41,7 @@ export const TOOLS: Tool[] = [
   }),
   tool({
     name: "measure_site", title: "Measure a site",
-    description: "Measures a public site on the server and returns its colours, type, spacing, fonts, logo and copy, as values. Use it for the person's own site, on any client: it needs no local browser. It writes nothing: show the person the values, then call bring_brand after their yes. Can take a minute. It cannot reach localhost or a page behind a login: ask for a screenshot and mark what you read from it as inferred. Do not bring another company's brand into a project.",
+    description: "Measures a public site on the server and returns its colours, type, spacing, fonts, logo, copy and the addresses of its own pictures, as values. Use those pictures on the brand's landing. Use it for the person's own site, on any client: it needs no local browser. It writes nothing: show the person the values, then call bring_brand after their yes. Can take a minute. It cannot reach localhost or a page behind a login: ask for a screenshot and mark what you read from it as inferred. Do not bring another company's brand into a project.",
     input: z.object({ url: z.string().min(1).max(2000).describe("The site's public address.") }),
     annotations: { readOnlyHint: true, openWorldHint: true },
     run: (i, ctx) => measureSite(ctx, i),

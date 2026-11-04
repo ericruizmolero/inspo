@@ -945,7 +945,7 @@ export const ui = {
             "   - Show what its references say, by their codes, and the current proposal if there is one.",
             "   - Ask with two or three concrete options drawn from those references, never an open question.",
             `   - Write what is chosen as the file writes an area: the decision, then **${k.why}:**, then **${k.never}:**, one rule a line. With the connector, send it with propose_decision; without it, give it in a block to paste into criterio.`,
-            "4. For a landing, start from its one goal and list the sections in order, each with what it does for that goal: name the problem, remove a doubt, prove the claim, ask for the action. A section with no job goes. With the connector, save it with set_outline.",
+            "4. For a landing, gather the real material first: the picture of each reference, the project's texts, the brand's own photos. With none of these the page comes out generic, so ask for them. Then start from its one goal and list the sections in order, each with what it does for that goal: name the problem, remove a doubt, prove the claim, ask for the action. A section with no job goes. With the connector, save it with set_outline.",
             "5. Write the plan in three to five lines: what you will make and which decision each choice follows.",
             "",
             "**Checkpoint:** wait for a yes to the plan.",

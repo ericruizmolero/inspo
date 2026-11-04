@@ -75,7 +75,7 @@ export interface DesignTokens {
   logo: { kind: "svg" | "img" | "text"; width: number; height: number; label: string; text: string; font: string; color: string; src: string } | null;
   icons: { count: number; outline: number; filled: number; strokeWidths: Tally[]; sizes: Tally[]; libraries: string[] };
   copy: { h1: string; headings: string[]; ctas: string[]; nav: string[] };
-  media: { images: number; large: number; videos: number; canvases: number; svgIllustrations: number; backgroundImages: number };
+  media: { pictures: { src: string; alt: string; width: number; height: number }[]; images: number; large: number; videos: number; canvases: number; svgIllustrations: number; backgroundImages: number };
 }
 
 export interface ExtractResult {
@@ -391,7 +391,10 @@ const COLLECT = `(() => {
     ctas: uniq([...document.querySelectorAll("button, [role=button], a[class*=btn i], a[class*=button i], a[class*=cta i]")].map(txt).filter((s) => s.length <= 32), 8, 32),
     nav: uniq([...document.querySelectorAll("header a, nav a")].map(txt), 8, 30),
   };
+  // The page's own pictures, largest first: what an agent can put on the brand's landing
+  const pictures = [...document.images].map((i) => ({ src: i.currentSrc || i.src, alt: (i.alt || "").slice(0, 120), width: i.naturalWidth, height: i.naturalHeight })).filter((i) => /^https?:/.test(i.src) && i.width >= 320).sort((a, b) => b.width * b.height - a.width * a.height).filter((i, n, all) => all.findIndex((x) => x.src === i.src) === n).slice(0, 12);
   const media = {
+    pictures,
     images: document.images.length,
     large: [...document.images].filter((i) => i.getBoundingClientRect().width >= 300).length,
     videos: document.querySelectorAll("video").length,

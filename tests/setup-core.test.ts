@@ -52,7 +52,9 @@ test("the criterio completes the setup, and the landing is only offered", () => 
   const s = setupState(base);
   expect(s.complete).toBe(true);
   expect(s.next).toBe("direction");
-  expect(nextAction(s)).toContain("nothing is unfinished");
+  expect(nextAction(s, 1)).toContain("nothing is unfinished");
+  expect(nextAction(s, 1)).toContain("read_reference");
+  expect(nextAction({ ...s }, 0), "building asks for references, the setup does not").toContain("ask first for 2 or 3 landing pages");
   expect(setupState({ ...base, picked: true }).next).toBe("landing");
   expect(setupState({ ...base, picked: true, built: true }).next).toBeNull();
 });
