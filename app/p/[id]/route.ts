@@ -25,6 +25,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   for (const [k, v] of asked) if (k !== "in" && !(k === "view" && v === "board")) to.searchParams.set(k, v);
   const home = NextResponse.redirect(to);
   if (project.organizationId === ctx.workspace.id) return home;
+  home.headers.set("Location", `${to.toString()}&moved=1`);
   // The session sits in a cached cookie for minutes, so the change has to reach the browser in this answer
   const changed = await auth.api.setActiveOrganization({ headers: await headers(), body: { organizationId: project.organizationId }, asResponse: true }).catch((err) => { log.warn("workspace.active_not_saved", { err }); return null; });
   for (const cookie of changed?.headers.getSetCookie() ?? []) home.headers.append("Set-Cookie", cookie);
