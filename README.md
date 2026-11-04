@@ -13,6 +13,8 @@ Next.js 16, Postgres, Better Auth.
 
 Other clients connect the MCP at `https://app.criterio.design/mcp` and say "set up criterio".
 
+Testing it? Follow [docs/testing-agent-setup.md](docs/testing-agent-setup.md).
+
 ## How it runs
 
 No server to look after. Each part is a managed service:
