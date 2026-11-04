@@ -3,9 +3,9 @@ import { readFile } from "fs/promises";
 import { join } from "path";
 
 // Card shown when sharing a link (WhatsApp, Slack, X, iMessage…). 1200×630.
-// The Criterio system: board ground, paper text, Satoshi 700 for the title and 400 for the rest, and one
+// The Criterio system: board ground, paper text, Geist 700 for the title and 400 for the rest, and one
 // ember thing (one card in the collage). Satori reads TTF and not variable fonts, so it gets the two static
-// files scripts/fetch-fonts.mjs downloads next to the app's variable ones.
+// files in app/fonts/geist next to the app's variable ones.
 //
 // Always in English, the default language: the image is static and whoever requests it
 // (WhatsApp, Slack, a search engine) does not send the language cookie.
@@ -31,15 +31,15 @@ const EMBER_TILE = "2-1";
 
 export default async function Image() {
   const [display, body, mark] = await Promise.all([
-    readFile(join(process.cwd(), "app/fonts/satoshi/Satoshi-Bold.ttf")),
-    readFile(join(process.cwd(), "app/fonts/satoshi/Satoshi-Regular.ttf")),
+    readFile(join(process.cwd(), "app/fonts/geist/Geist-Bold.ttf")),
+    readFile(join(process.cwd(), "app/fonts/geist/Geist-Regular.ttf")),
     readFile(join(process.cwd(), "app/icon.png")),
   ]);
   const logo = `data:image/png;base64,${mark.toString("base64")}`;
 
   return new ImageResponse(
     (
-      <div style={{ width: "100%", height: "100%", display: "flex", background: BOARD, color: PAPER, position: "relative", overflow: "hidden", fontFamily: "Satoshi" }}>
+      <div style={{ width: "100%", height: "100%", display: "flex", background: BOARD, color: PAPER, position: "relative", overflow: "hidden", fontFamily: "Geist" }}>
         {/* The collage on the right: flat cards with a hairline, no shadow */}
         <div style={{ position: "absolute", left: 640, top: -40, display: "flex", gap: 18 }}>
           {COLS.map((c, i) => (
@@ -67,8 +67,8 @@ export default async function Image() {
     {
       ...size,
       fonts: [
-        { name: "Satoshi", data: display, weight: 700, style: "normal" },
-        { name: "Satoshi", data: body, weight: 400, style: "normal" },
+        { name: "Geist", data: display, weight: 700, style: "normal" },
+        { name: "Geist", data: body, weight: 400, style: "normal" },
       ],
     },
   );

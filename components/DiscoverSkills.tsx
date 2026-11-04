@@ -13,7 +13,7 @@ import { useT } from "./I18nProvider";
 import { Avatar, Card, Chip, toneFor } from "@/components/criterio";
 
 const OWN = "criterio.design";
-const avatarOf = (s: Skill) => (s.author === OWN ? "/icon-512.png" : `https://github.com/${s.author}.png?size=64`);
+const avatarOf = (s: Skill) => (s.author === OWN ? "/app-icon-512.png" : `https://github.com/${s.author}.png?size=64`);
 
 export default function DiscoverSkills({ topic, shelf, query, head }: { topic: SkillTopic | null; shelf: "all" | "new" | "featured"; query: string; head: React.ReactNode }) {
   const { t, locale } = useT();

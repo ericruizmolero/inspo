@@ -11,7 +11,7 @@ vi.mock("@/lib/llm", async (importOriginal) => ({
   llm: async (i: LlmInput) => {
     if (!i.prompt?.startsWith("edit@")) throw new Error(`model called for ${i.prompt}`);
     model.text = String(i.text);
-    return { text: JSON.stringify({ edits: model.edits }), model: i.model, provider: null, id: null, usage: { input: 1, output: 1, cacheRead: 0, reasoning: 0 }, costUsd: 0, ms: 1, fallbackFrom: null, prompt: i.prompt };
+    return { text: JSON.stringify({ edits: model.edits, ask: null }), model: i.model, provider: null, id: null, usage: { input: 1, output: 1, cacheRead: 0, reasoning: 0 }, costUsd: 0, ms: 1, fallbackFrom: null, prompt: i.prompt };
   },
 }));
 
@@ -39,7 +39,7 @@ test("the areas the change touches come back rewritten with Tino's reason, once 
     { area: "typography", decision: "A second take on the same area", why: "", never: [], reason: "Again." },
     { area: "color", decision: "", why: "", never: [], reason: "Nothing to say." },
   ];
-  const out = await ask("text at 500, no bold");
+  const out = (await ask("text at 500, no bold")).edits;
   expect(out).toEqual([{ area: "typography", decision: "Text in Geist 500,\nno bold in running text.", why: "Set by the team.", never: "Bold in body copy\nWeights under 400", reason: "You set text to 500. This file still says 400." }]);
   expect(model.text, "the model reads the instruction").toContain('"text at 500, no bold"');
   expect(model.text, "and the areas as written").toContain("Text in Geist 400.");
@@ -50,7 +50,7 @@ test("the areas the change touches come back rewritten with Tino's reason, once 
 
 test("a change the file already follows proposes nothing", async () => {
   model.edits = [{ area: "typography", decision: "Text in Geist 400.", why: "", never: [], reason: "Same as now." }];
-  expect(await ask("text in Geist 400")).toEqual([]);
+  expect((await ask("text in Geist 400")).edits).toEqual([]);
 });
 
 test("no instruction is a bad request, and another workspace's project is not found", async () => {

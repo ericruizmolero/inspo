@@ -94,7 +94,7 @@
   /* "popover" in the system; renamed because shadcn owns --popover. Menus that open from a button */
   --shadow-popover: 0 18px 40px rgba(27,27,24,0.16);
 
-  /* Type scale: one family, Satoshi. Titles 40 / 28 / 22 / 18, text 17 / 15 / 13 / 12. Nothing in between.
+  /* Type scale: one family, Geist. Titles 40 / 28 / 22 / 18, text 17 / 15 / 13 / 12. Nothing in between.
      title-s sits above body so a heading never reads smaller than the text under it */
   --fs-display: 40px;
   --fs-title-l: 28px;
@@ -104,7 +104,7 @@
   --fs-ui: 15px;
   --fs-small: 13px;
   --fs-label: 12px;
-  /* The four weights Satoshi is used at. Nothing heavier: titles stop at 700 */
+  /* The four weights Geist is used at. Nothing heavier: titles stop at 700 */
   --fw-regular: 400; --fw-medium: 500; --fw-semibold: 600; --fw-bold: 700;
   /* …and the rest of each step: weight, line-height and tracking. The .t-* classes below use them; component CSS
      picks a step's tokens or a weight above, never a raw number. Tracking is in em so it follows the size */
@@ -140,9 +140,9 @@
   --radius-m: 10px;
   --radius-l: 14px;
 
-  /* One family: Satoshi for titles, text and UI. Titles keep their own token so a second face is one line */
-  --font-sans: var(--font-satoshi), "Satoshi", system-ui, sans-serif;
-  --font-title: var(--font-satoshi), "Satoshi", system-ui, sans-serif;
+  /* One family: Geist for titles, text and UI. Titles keep their own token so a second face is one line */
+  --font-sans: var(--font-geist), "Geist", system-ui, sans-serif;
+  --font-title: var(--font-geist), "Geist", system-ui, sans-serif;
   --font: var(--font-sans);
   --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
   /* shadcn/ui: its variables point at the tokens above, so both themes follow data-theme */
@@ -194,8 +194,8 @@
   --color-moss: var(--moss);
   --color-ember: var(--ember);
   --color-butter: var(--butter);
-  --font-sans: var(--font-satoshi), "Satoshi", system-ui, sans-serif;
-  --font-title: var(--font-satoshi), "Satoshi", system-ui, sans-serif;
+  --font-sans: var(--font-geist), "Geist", system-ui, sans-serif;
+  --font-title: var(--font-geist), "Geist", system-ui, sans-serif;
   --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
@@ -333,10 +333,11 @@ p { text-wrap: pretty; }
 
 /* Product mark: a dark tile that melts into the dark theme and reads as an app icon on the light one */
 /* The product mark is the creature (Alberto, 2026-10-07): a transparent drawing, so no tile, radius or shadow of its own */
-.logo { display: block; flex-shrink: 0; user-select: none; object-fit: contain; }
+.logo { display: block; flex-shrink: 0; user-select: none; color: var(--text); }
+.cr-on-chrome .logo { color: var(--chrome-ink); }
 
 /* ─── Type: the one place ────────────────────────────────────────────────────
-   Every text in the app is one of these eight steps (fundamentos.md), all in Satoshi: titles through --font-title,
+   Every text in the app is one of these eight steps (fundamentos.md), all in Geist: titles through --font-title,
    text through --font-sans. The heading elements carry their step (h1 display, h2 title-l, h3 title-m, h4 to h6 title-s) so a heading is the same size in every view; a
    .t-* class sets the step when the look must differ from the level (a dialog title is an h2 at title-m). Component
    CSS never sets font-size, weight, line-height or tracking: it picks a step. Brand content (components/brand,

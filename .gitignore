@@ -63,10 +63,6 @@ extension/dist/
 # Session scratch (dev logs, probes)
 /scratchpad/
 
-# Satoshi (ITF Free Font License): downloaded by scripts/fetch-fonts.mjs, never committed, because the
-# licence forbids sharing the files through a public repository
-/app/fonts/satoshi/
-/extension/chrome/fonts/Satoshi-*.woff2
 /extension/dist/
 
 # Söhne test fonts (Klim Test Font Licence: internal evaluation only, never shipped, never shared)

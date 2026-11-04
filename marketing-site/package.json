@@ -4,10 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "fonts": "node scripts/fetch-fonts.mjs",
-    "predev": "node scripts/fetch-fonts.mjs",
     "dev": "astro dev",
-    "prebuild": "node scripts/fetch-fonts.mjs",
     "build": "astro build",
     "preview": "astro preview",
     "check": "astro check",

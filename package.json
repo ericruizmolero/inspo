@@ -7,10 +7,7 @@
     "marketing-site"
   ],
   "scripts": {
-    "fonts": "node scripts/fetch-fonts.mjs",
-    "predev": "node scripts/fetch-fonts.mjs",
     "dev": "next dev",
-    "prebuild": "node scripts/fetch-fonts.mjs",
     "build": "next build",
     "start": "next start",
     "test": "vitest run",

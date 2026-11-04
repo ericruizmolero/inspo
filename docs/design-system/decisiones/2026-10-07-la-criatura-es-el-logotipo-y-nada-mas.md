@@ -1,7 +1,7 @@
 ---
 title: La criatura es el logotipo y el favicon, y nada más por ahora
 date: 2026-10-07
-status: vigente
+status: sustituida
 kind: diseño
 ---
 **Contexto.** El sistema trae una criatura de tres ojos como personaje (Creature, Profile, Sprite, la o con ojos del wordmark). Al adoptar el sistema se dejó fuera entera: el logotipo era texto.

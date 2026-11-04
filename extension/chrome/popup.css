@@ -1,14 +1,13 @@
 /* Tokens from the Criterio design system. They must match app/globals.css: change them there first,
    then here. The popup is product chrome, so it stays dark whatever the system prefers (like the app's
    tab bar and command bar): chrome ground, paper text, 1px chrome hairlines, beveled paper and ember
-   controls with ink borders. Satoshi is bundled in fonts/ so nothing loads at runtime; the file is not in git
-   (its licence, public repo): `npm run fonts` downloads it before loading or packing the extension. */
+   controls with ink borders. Geist is bundled in fonts/ so nothing loads at runtime. */
 @font-face {
-  font-family: "Satoshi";
+  font-family: "Geist";
   font-style: normal;
-  font-weight: 300 900;
+  font-weight: 100 900;
   font-display: swap;
-  src: url("fonts/Satoshi-Variable.woff2") format("woff2");
+  src: url("fonts/Geist-Variable.woff2") format("woff2");
 }
 
 :root {
@@ -53,7 +52,7 @@
   --radius-xl: 20px;
   --radius-pill: 999px;
 
-  --font-sans: "Satoshi", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-sans: "Geist", ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-title: var(--font-sans);
   /* Type: the app's scale (app/globals.css, "Type scale"), only the steps the popup uses */
   --fs-title-l: 28px; --fs-title-m: 22px; --fs-ui: 15px; --fs-chrome: 14px; --fs-small: 13px; --fs-label: 12px;

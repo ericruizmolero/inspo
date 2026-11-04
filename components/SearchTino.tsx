@@ -7,7 +7,7 @@
 import { useEffect, useRef, useState } from "react";
 import Typed, { typedMs } from "./Typed";
 import type { TinoApi } from "./tino/engine";
-import { moodProps, type TinoMood } from "./tino/moods";
+import type { TinoMood } from "./tino/moods";
 import { Button } from "@/components/criterio";
 import HomeTino, { useLine, type CornerSay, type TinoNudge } from "./HomeTino";
 import { filterKey, type Filter } from "@/lib/search-query";
