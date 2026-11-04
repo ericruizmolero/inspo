@@ -32,7 +32,10 @@ import { log } from "../log";
 import { assertRoom } from "../quota";
 import { cleanText, readText, TEXT_TITLE_MAX } from "../text-refs";
 import { addAreaComment, systemActivity } from "../area-comments";
-import { saveAnswer, saveBrief } from "../brief";
+import { saveAnswer, saveBrief, skipSetupStep } from "../brief";
+import { nextAction, setupState } from "../setup-core";
+import { setupFacts } from "../setup";
+import type { AnswerSource } from "@/types/brief";
 import { addLearning } from "../system/areas";
 import { PLAYBOOK_QUESTIONS, openQuestions, questionById, questionText } from "../playbook-questions";
 import { SYSTEM_AREAS, cleanDecision, NEVER_MAX, LEARNING_NOTE_MAX, type SystemArea } from "@/types/system";
@@ -101,7 +104,7 @@ export async function newProject(ctx: McpCtx, origin: string, input: { name: str
   const workspace = resolveWorkspace(ctx, input.workspace);
   const project = await createProject(workspace.id, input.name, ctx.user.id);
   if (input.about?.trim()) await saveBrief(workspace.id, project.id, { about: input.about.trim() }, ctx.user.id);
-  return { id: project.id, name: project.name, workspace: workspace.name, url: projectUrl(origin, project.id) };
+  return { id: project.id, name: project.name, workspace: workspace.name, url: projectUrl(origin, project.id), setup: await setupStep(workspace.id, project.id) };
 }
 
 // ─── Reading ─────────────────────────────────────────────────────────────────
@@ -256,6 +259,7 @@ export async function addPiece(ctx: McpCtx, origin: string, input: NewPiece) {
   // Already in the library, with someone's note on it: why it is here now goes in its thread
   if (existed && note) await addComment(org, { itemId, authorId: author.id, authorName: author.name, body: note });
   return {
+    setup: await setupStep(org, project.id),
     id: itemId, name: item.name, project: project.name,
     ...(existed ? { already_in_library: true } : {}),
     ...(areas.length ? { areas } : {}),
@@ -326,13 +330,13 @@ async function stillOpen(org: string, projectId: string, lang: "en" | "es") {
  * The person's answer to one of criterio.md's starting questions, kept in the project's brief under the question's
  * id: the file lists it as answered and no agent asks it again. Straight in, no approval: it is what the person said.
  */
-export async function answerQuestion(ctx: McpCtx, origin: string, input: { project: string; question: string; answer: string }) {
+export async function answerQuestion(ctx: McpCtx, origin: string, input: { project: string; question: string; answer: string; source?: AnswerSource; from?: string }) {
   const project = await resolveProject(ctx, input.project);
   const q = questionById(String(input.question ?? ""));
   if (!q) throw new HttpError(400, `"${input.question}" is not a starting question. Their ids are in criterio.md, under the starting questions: ${QUESTION_IDS.join(", ")}.`);
   const text = String(input.answer ?? "").trim().slice(0, BRIEF_LIMITS.answer);
   if (!text) throw new HttpError(400, "The answer is empty.");
-  await saveAnswer(project.workspace.id, project.id, q.id, { text, by: ctx.user.name || ctx.user.email, via: ctx.via }, ctx.user.id);
+  await saveAnswer(project.workspace.id, project.id, q.id, { text, by: ctx.user.name || ctx.user.email, via: ctx.via, source: input.source, from: input.from }, ctx.user.id);
   versionAfterWrite(ctx, origin, project);
   const open = await stillOpen(project.workspace.id, project.id, ctx.user.language === "es" ? "es" : "en");
   return {
@@ -340,7 +344,25 @@ export async function answerQuestion(ctx: McpCtx, origin: string, input: { proje
     still_open: open,
     status: open.length ? `${open.length} starting questions still open. Ask the next one, one at a time.` : "Every starting question is answered.",
     url: projectUrl(origin, project.id),
+    setup: await setupStep(project.workspace.id, project.id),
   };
+}
+
+/** The path as the agent reads it: where the project stands and what to do next */
+export async function setupStep(org: string, projectId: string) {
+  const state = setupState(await setupFacts(org, projectId));
+  return { next: state.next, do: nextAction(state), complete: state.complete, ask: state.ask, confirm: state.confirm, steps: state.steps };
+}
+
+/** Where a project stands along the setup, and what the agent does next. With `skip`, the person declined that step */
+export async function startSetup(ctx: McpCtx, origin: string, input: { project?: string; skip?: string }) {
+  if (!input.project) {
+    const known = await listProjects(ctx, origin);
+    return { next: "project", do: "Pick the person's project from `projects`, or create_project. Then call start_setup again with it.", projects: known };
+  }
+  const project = await resolveProject(ctx, input.project);
+  if (input.skip) await skipSetupStep(project.workspace.id, project.id, input.skip, ctx.user.id);
+  return { project: project.name, url: projectUrl(origin, project.id), ...(await setupStep(project.workspace.id, project.id)) };
 }
 
 /**

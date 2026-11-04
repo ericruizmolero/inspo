@@ -17,7 +17,7 @@ import {
   MotionSchema, TypographySchema, VoiceSchema, runMayWrite, type BrandFile, type BrandSections, type BrandSpec,
 } from "@/types/brand";
 import type { McpCtx } from "./auth";
-import { ProjectArg, projectUrl, resolveProject, versionAfterWrite } from "./pieces";
+import { setupStep, ProjectArg, projectUrl, resolveProject, versionAfterWrite } from "./pieces";
 
 /** A file as an agent can hand it over: markup it read, an address it knows, or bytes it has on disk */
 const FileIn = z.object({
@@ -141,6 +141,7 @@ export async function bringBrand(ctx: McpCtx, origin: string, input: BringIn) {
       kept_by_team_note: "The team set these sections by hand, so they were left as they are. They can hand a section back in the app (Sistema, Presentación), and the next call writes it.",
     } : {}),
     guide_kept: !!key,
+    setup: await setupStep(project.workspace.id, project.id),
     status: "The values are on the project's presentation (Sistema, Presentación). The team edits them there; Improve with AI reads them with the board.",
     url: projectUrl(origin, project.id),
   };

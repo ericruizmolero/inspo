@@ -1,0 +1,69 @@
+// The path from nothing to a criterio.md, and on to a landing, as data: what is done comes from rows the app already
+// writes (lib/setup.ts), never from a checklist of its own. Every surface asks this one function what comes next: the
+// connector, the file's Start here and the app. Pure, so the browser can use it too.
+import { PLAYBOOK_QUESTIONS, SETUP_ROLES, openQuestions } from "./playbook-questions";
+import type { Brief } from "@/types/brief";
+
+export const SETUP_KEYS = ["project", "source", "questions", "references", "criterio"] as const;
+export type SetupKey = (typeof SETUP_KEYS)[number];
+/** Offered once the setup is complete, and never required: someone can keep a brand for the team and stop there */
+export const BUILD_KEYS = ["direction", "landing"] as const;
+export type BuildKey = (typeof BUILD_KEYS)[number];
+/** The steps a person may decline */
+export const SKIPPABLE: readonly SetupKey[] = ["source", "references"];
+
+export interface SetupFacts {
+  project: boolean;
+  brief: Brief | null;
+  /** The project holds brand values, or a reference marked as the client's site */
+  brand: boolean;
+  refs: number;
+  /** A pass wrote the project's criterio.md */
+  pass: boolean;
+  picked: boolean;
+  built: boolean;
+}
+
+export interface SetupState {
+  steps: { key: SetupKey | BuildKey; state: "done" | "open" | "skipped" }[];
+  /** The next step; a build step only as an offer, once `complete` */
+  next: SetupKey | BuildKey | null;
+  /** The setup's own steps are done: the project has its criterio.md */
+  complete: boolean;
+  /** Questions to ask now, the one that stops first */
+  ask: string[];
+  /** Answers the agent read and the person has not confirmed */
+  confirm: string[];
+}
+
+const answered = (brief: Brief | null, id: string) => {
+  const a = brief?.answers?.[id];
+  if (a) return a.source !== "read";
+  return !openQuestions(brief, new Set()).some((q) => q.id === id);
+};
+
+export function setupState(f: SetupFacts): SetupState {
+  const skipped = new Set(f.brief?.skipped ?? []);
+  const asked = PLAYBOOK_QUESTIONS.filter((q) => SETUP_ROLES[q.id] === "stops" || SETUP_ROLES[q.id] === "core");
+  const stopsDone = asked.every((q) => SETUP_ROLES[q.id] !== "stops" || answered(f.brief, q.id));
+  const done: Record<SetupKey, boolean> = { project: f.project, source: f.brand, questions: stopsDone, references: f.refs > 0, criterio: f.pass };
+  const steps: SetupState["steps"] = SETUP_KEYS.map((key) => ({ key, state: done[key] ? "done" : skipped.has(key) && SKIPPABLE.includes(key) ? "skipped" : "open" }));
+  const complete = steps.every((s) => s.state !== "open");
+  steps.push({ key: "direction", state: f.picked ? "done" : "open" }, { key: "landing", state: f.built ? "done" : "open" });
+  const ask = asked.filter((q) => !answered(f.brief, q.id)).sort((a, b) => Number(SETUP_ROLES[b.id] === "stops") - Number(SETUP_ROLES[a.id] === "stops")).map((q) => q.id);
+  const confirm = Object.entries(f.brief?.answers ?? {}).filter(([, a]) => a.source === "read").map(([id]) => id);
+  return { steps, next: steps.find((s) => s.state === "open")?.key ?? null, complete, ask, confirm };
+}
+
+/** What the agent does at each step, written for the model on the other end, in English */
+const ACTIONS: Record<SetupKey | BuildKey, string> = {
+  project: "Call list_projects. Pick the person's project, or create_project with what you know.",
+  source: "Look for a live site, tokens, fonts, logos or a brand guide. Show what you found in one list and ask one question: bring this in? After the yes, call bring_brand. With nothing to bring, or on a no, call start_setup with skip: \"source\".",
+  questions: "Save what you read with answer_question and source \"read\". Show those answers once, as one list, and let the person correct them. Then ask the questions in `ask`, one at a time. Only `goal` stops the setup: an unknown answer can stay open.",
+  references: "Ask for landing pages the person likes, and what to take from each, in their words. Save each with add_reference and that note. References are optional: if the person only wants to keep the brand, call start_setup with skip: \"references\". For a new brand, say once that the file will be generic without them.",
+  criterio: "Tell the person the setup can write the file now. It is written from what is in the project.",
+  direction: "The setup is complete. Offer to build a landing. On a no, stop here: nothing is unfinished. On a yes, build 2 heroes with the same copy and a different direction, and ask which serves the goal better and why.",
+  landing: "Build the landing section by section, each one serving the goal.",
+};
+
+export const nextAction = (s: SetupState): string | null => s.next && ACTIONS[s.next];

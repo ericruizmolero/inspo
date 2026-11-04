@@ -6,7 +6,9 @@ import "server-only";
 import { z } from "zod";
 import { SYSTEM_AREAS } from "@/types/system";
 import type { McpCtx } from "./auth";
-import { CRITERIO_SECTIONS, ProjectArg as Project, QUESTION_IDS, addPiece, answerQuestion, listProjects, listReferences, newProject, proposeDecision, readCriterio, readReference, recordLearning } from "./pieces";
+import { CRITERIO_SECTIONS, ProjectArg as Project, QUESTION_IDS, addPiece, answerQuestion, listProjects, listReferences, newProject, proposeDecision, readCriterio, readReference, recordLearning, startSetup } from "./pieces";
+import { ANSWER_SOURCES } from "@/types/brief";
+import { SKIPPABLE } from "../setup-core";
 import { LEARNING_NOTE_MAX } from "@/types/system";
 import { BRIEF_LIMITS } from "@/types/brief";
 import { BringInput, bringBrand } from "./brand";
@@ -29,6 +31,13 @@ interface Tool<S extends z.ZodType = z.ZodType> {
 const tool = <S extends z.ZodType>(t: Tool<S>) => t as unknown as Tool;
 
 export const TOOLS: Tool[] = [
+  tool({
+    name: "start_setup", title: "Start or continue the setup",
+    description: "The way in when the person says \"set up criterio\", starts a project, or comes back to one. It says where the project stands and what to do next, in `do`. Follow it one step at a time, and call it again after each step. The same setup can start in the app or in any other client: nothing is repeated. Every step is optional except the project, the goal and the file. When `next` is direction or landing the setup is complete, and building is an offer, not a duty.",
+    input: z.object({ project: Project.optional(), skip: z.enum(SKIPPABLE as [string, ...string[]]).optional().describe("A step the person declined.") }),
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+    run: (i, ctx, origin) => startSetup(ctx, origin, i),
+  }),
   tool({
     name: "list_projects", title: "List projects",
     description: "The person's projects in criterio, across their workspaces: each with its id, what it is about, how many of its eight areas are decided, and how many references it has. Start here when you do not know which project the person means.",
@@ -94,12 +103,14 @@ export const TOOLS: Tool[] = [
     name: "answer_question", title: "Answer a starting question",
     description: [
       "Keeps the person's answer to one of the starting questions criterio.md lists (under its starting questions, each with its id). It is written straight in, with no approval: it is what the person said, and it changes no decision. criterio.md then lists the question as answered, so no agent asks it again.",
-      "Call it right after the person answers, with their answer in their words, condensed if long but never invented or completed by you. A second answer to the same question replaces the first. It returns the questions still open: ask the next one, one at a time.",
+      "Call it right after the person answers, with their answer in their words, condensed if long but never invented or completed by you. What you read on the site or in the repo goes with source \"read\" and from: it stays unconfirmed until the person says so, and you then save it again with source \"person\". A second answer to the same question replaces the first. It returns the questions still open: ask the next one, one at a time.",
     ].join("\n"),
     input: z.object({
       project: Project,
       question: z.enum(QUESTION_IDS).describe("The question's id, as criterio.md writes it before the question (offer, goal, audience…)."),
       answer: z.string().min(1).max(BRIEF_LIMITS.answer).describe("The person's answer, in their words and language."),
+      source: z.enum(ANSWER_SOURCES).optional().describe('"person" (default) when they said it, "read" when you read it.'),
+      from: z.string().max(500).optional().describe("The address or path a read answer came from."),
     }),
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     run: (i, ctx, origin) => answerQuestion(ctx, origin, i),
@@ -131,7 +142,7 @@ export const TOOLS: Tool[] = [
   }),
   tool({
     name: "create_project", title: "Create a project",
-    description: "Creates an empty project in criterio: a place for the references and the criterio of one piece of work (a brand, a site, an app). Only when the person asks for a new one; check list_projects first so it does not duplicate one that exists.",
+    description: "Creates an empty project in criterio: a place for the references and the criterio of one brand or client. When the person asks for one, or the setup needs one; check list_projects first so it does not duplicate one that exists.",
     input: z.object({
       name: z.string().min(1).max(60).describe("The project's name."),
       about: z.string().max(600).optional().describe("What the project is, in a sentence or two: who it is for and what is being made."),

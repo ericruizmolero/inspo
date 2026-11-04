@@ -6,7 +6,8 @@ import { db, schema } from "./db";
 import { HttpError } from "./workspace-core";
 import { getErrors } from "./i18n";
 import { SECTORS } from "./taxonomy";
-import { BRIEF_LIMITS, readBrief, type Brief } from "@/types/brief";
+import { SKIPPABLE, type SetupKey } from "./setup-core";
+import { BRIEF_LIMITS, readBrief, type AnswerSource, type Brief } from "@/types/brief";
 
 const P = schema.project;
 
@@ -38,15 +39,23 @@ export async function saveBrief(organizationId: string, projectId: string, input
 
 /** An answer to one of criterio.md's starting questions (lib/playbook-questions.ts), kept in the brief under its id. A
  *  second answer to the same question replaces the first. Empty text takes the answer back */
-export async function saveAnswer(organizationId: string, projectId: string, questionId: string, input: { text: string; by?: string; via?: string }, userId: string): Promise<Brief> {
+export async function saveAnswer(organizationId: string, projectId: string, questionId: string, input: { text: string; by?: string; via?: string; source?: AnswerSource; from?: string }, userId: string): Promise<Brief> {
   const current = readBrief(await stored(organizationId, projectId)) ?? cleanBrief({}, userId);
   const answers = { ...(current.answers ?? {}) };
   const text = String(input.text ?? "").trim().slice(0, BRIEF_LIMITS.answer);
-  if (text) answers[questionId] = { text, at: new Date().toISOString(), ...(input.by ? { by: input.by } : {}), ...(input.via ? { via: input.via } : {}) };
+  if (text) answers[questionId] = { text, at: new Date().toISOString(), ...(input.by ? { by: input.by } : {}), ...(input.via ? { via: input.via } : {}), ...(input.source === "read" ? { source: "read" as const } : {}), ...(input.from ? { from: input.from } : {}) };
   else delete answers[questionId];
   const brief = readBrief({ ...current, answers, updatedAt: new Date().toISOString(), updatedBy: userId })!;
   await write(organizationId, projectId, brief);
   return brief;
+}
+
+/** The person declined one of the setup's optional steps (lib/setup-core.ts) */
+export async function skipSetupStep(organizationId: string, projectId: string, step: string, userId: string): Promise<void> {
+  if (!SKIPPABLE.includes(step as SetupKey)) throw new HttpError(400, `Only ${SKIPPABLE.join(" and ")} can be skipped.`);
+  const current = readBrief(await stored(organizationId, projectId)) ?? cleanBrief({}, userId);
+  const skipped = [...new Set([...(current.skipped ?? []), step])];
+  await write(organizationId, projectId, readBrief({ ...current, skipped, updatedAt: new Date().toISOString(), updatedBy: userId })!);
 }
 
 /** Marks the reference that is the client's current site (a redesign), or clears it. Only a reference filed in the project */
@@ -63,7 +72,7 @@ export async function setClientBrand(organizationId: string, projectId: string, 
 
 // ─── What the models read ──────────────────────────────────────────────────
 
-const MODEL_KEYS: Record<Exclude<keyof Brief, "drafted" | "clientItemId" | "answers" | "updatedAt" | "updatedBy">, string> = {
+const MODEL_KEYS: Record<Exclude<keyof Brief, "drafted" | "clientItemId" | "answers" | "skipped" | "updatedAt" | "updatedBy">, string> = {
   about: "about", sector: "sector", product: "product", markets: "markets", competitors: "competitors",
   competitorsNote: "competitors_note", traits: "brand_traits", neverSay: "never_say", firstSeconds: "first_five_seconds",
   platforms: "platforms", stack: "build_stack", a11y: "accessibility", keep: "keep_from_client_brand", voiceSamples: "voice_samples",

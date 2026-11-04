@@ -90,6 +90,14 @@ export const PLAYBOOK_QUESTIONS: readonly PlaybookQuestion[] = [
     text: { en: "Which accessibility level: AA, the usual one and what applies if nobody chooses, or AAA, more contrast and larger type for public services or an older audience?", es: "¿Qué nivel de accesibilidad: AA, el habitual y el que vale si nadie elige, o AAA, más contraste y letra más grande para servicios públicos o un público mayor?" } },
 ];
 
+/** What the setup does with a question (lib/setup-core.ts). "stops": the setup waits for it, because it decides the
+ *  page's structure. "core": asked, and it can stay open as a marked gap. "read": the agent looks for it on the site or
+ *  in the repo and the person confirms it. The rest are never asked in the setup: the file lists them to go deeper */
+export const SETUP_ROLES: Readonly<Record<string, "stops" | "core" | "read">> = {
+  goal: "stops", audience: "core", "why-us": "core", proof: "core",
+  offer: "read", "current-site": "read", product: "read", markets: "read", "brand-material": "read", competitors: "read", "platforms-stack": "read",
+};
+
 /** The question as the agent should ask it: with references on the board, the board's version when there is one */
 export const questionText = (q: PlaybookQuestion, locale: "en" | "es", hasRefs: boolean) =>
   (hasRefs && q.withBoard ? q.withBoard : q.text)[locale];

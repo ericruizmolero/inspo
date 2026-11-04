@@ -293,6 +293,7 @@ export const routes: Record<string, Surface> = {
   },
   "route:app/mcp/route.ts#GET": { exempt: "answers 401 or 405 and reads nothing: the connector only takes POST" },
   "route:app/mcp/route.ts#DELETE": { exempt: "answers 401 or 405 and reads nothing: the connector keeps no session to end" },
+  "mcp:start_setup": { probe: async (fx) => { await refusedTool(fx, "start_setup", { project: fx.a.project }); } },
   "mcp:list_projects": {
     probe: async (fx) => {
       for (const r of await tool(fx, "list_projects", {})) expect(r.content?.[0].text, "B's list does not name A's projects").not.toContain(fx.a.project);
