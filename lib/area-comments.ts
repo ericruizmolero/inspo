@@ -21,10 +21,27 @@ export interface AreaProposal { decision: string; why: string; never: string; st
  *  or the change it proposes */
 export type AreaAbout = { choice: Record<string, string | number | boolean>; label: string } | { itemId: string } | { proposal: AreaProposal }
   /** A pin: the line of criterio.md the comment was left on, as it read then, how far across it (0 to 1), and the pin it answers */
-  | { pin: { quote: string; x: number; to?: string } };
+  | { pin: { quote: string; x: number; to?: string } }
+  /** Left on a running page, not on the file: the address, the element, and whether it was dealt with */
+  | { page: PageAnchor };
+
+export interface PageAnchor {
+  url: string;
+  /** Where on the page: the kind of section or the heading it sits under */
+  section?: string;
+  /** A CSS path to the element. It can go stale between builds; `text` and `section` keep the comment readable */
+  selector: string;
+  text?: string;
+  viewport?: string;
+  via?: string;
+  state: "open" | "resolved";
+  /** What was changed, in one line, from whoever resolved it */
+  resolution?: string;
+}
+export interface PageComment { id: string; who: string; body: string; at: string; page: PageAnchor }
 
 /** The parts of criterio.md a comment can sit on: an area, or one of the parts that are not one */
-const PARTS: readonly string[] = [...SYSTEM_AREAS, "head", "project", "summary", "refs"];
+const PARTS: readonly string[] = [...SYSTEM_AREAS, "head", "project", "summary", "refs", "page"];
 
 export interface AreaNote {
   id: string;
@@ -55,6 +72,13 @@ function cleanAbout(v: unknown): AreaAbout | null {
     if (!decision) return null;
     const state = p.state === "accepted" || p.state === "rejected" ? p.state : "open";
     return { proposal: { decision, why: String(p.why ?? "").trim().slice(0, 400), never: String(p.never ?? "").split("\n").map((l) => l.trim().replace(/^[-*·]\s*/, "")).filter(Boolean).join("\n").slice(0, NEVER_MAX), state, ...(typeof p.resolvedBy === "string" ? { resolvedBy: p.resolvedBy.slice(0, 80) } : {}), ...(typeof p.via === "string" && p.via.trim() ? { via: p.via.trim().slice(0, 40) } : {}), ...(state === "rejected" && oneLine(p.reason, REASON_MAX) ? { reason: oneLine(p.reason, REASON_MAX) } : {}) } };
+  }
+  if (o.page && typeof o.page === "object") {
+    const g = o.page as Record<string, unknown>;
+    const url = oneLine(g.url, 2000), selector = oneLine(g.selector, 600);
+    if (!/^https?:\/\//.test(url) || !selector) return null;
+    const opt = (k: string, max: number) => { const v = oneLine(g[k], max); return v ? { [k]: v } : {}; };
+    return { page: { url, selector, state: "open", ...opt("section", 120), ...opt("text", 300), ...opt("viewport", 20), ...opt("via", 40) } };
   }
   if (o.pin && typeof o.pin === "object") {
     const quote = String((o.pin as Record<string, unknown>).quote ?? "").replace(/\s+/g, " ").trim().slice(0, 160);
@@ -114,7 +138,7 @@ export async function addAreaComment(organizationId: string, projectId: string, 
   // A new proposal is always open: only resolving it (below) may mark it accepted or rejected, by whom and why
   const about = parsed && "proposal" in parsed ? { proposal: { ...parsed.proposal, state: "open" as const, resolvedBy: undefined, reason: undefined } } : parsed;
   // A pin can sit on any part of the file; the rest of the conversation is an area's
-  const key = about && "pin" in about ? await assertPart(area) : await assertArea(area);
+  const key = about && ("pin" in about || "page" in about) ? await assertPart(area) : await assertArea(area);
   const text = String(body ?? "").trim().slice(0, BODY_MAX);
   if (!text) throw new HttpError(400, (await getErrors()).badBody);
   const row = { id: newId(), projectId, organizationId, area: key, authorId: author.id, authorName: author.name, body: text, about, createdAt: new Date() };
@@ -126,6 +150,27 @@ export async function addAreaComment(organizationId: string, projectId: string, 
     if (pin) inBackground(async () => { await notifyReply(organizationId, { toUserId: pin.authorId, fromUserId: author.id, fromName: author.name, mine: pin.body, theirs: text, path: `/?in=${encodeURIComponent(projectId)}&view=system` }); });
   }
   return { id: row.id, kind: "area", authorId: author.id, authorName: author.name, authorImage: author.image ?? null, body: text, createdAt: row.createdAt.toISOString(), mine: true, ...(about ? { about } : {}) };
+}
+
+/** Comments left on running pages, newest first; open ones unless `all`. They stay out of criterio.md: an agent reads them here */
+export async function pageComments(organizationId: string, projectId: string, all = false): Promise<PageComment[]> {
+  await assertProject(organizationId, projectId);
+  const rows = await db.select({ id: A.id, who: A.authorName, body: A.body, about: A.about, createdAt: A.createdAt }).from(A)
+    .where(and(eq(A.organizationId, organizationId), eq(A.projectId, projectId), eq(A.area, "page"))).orderBy(desc(A.createdAt)).limit(200);
+  return rows.flatMap((r) => {
+    const page = (r.about as { page?: PageAnchor } | null)?.page;
+    return page && (all || page.state === "open") ? [{ id: r.id, who: r.who, body: r.body, at: r.createdAt.toISOString(), page }] : [];
+  });
+}
+
+/** Marks a page comment dealt with, saying what changed. Open again with `state: "open"` */
+export async function resolvePageComment(organizationId: string, id: string, resolution: string): Promise<PageComment> {
+  const [row] = await db.select({ id: A.id, who: A.authorName, body: A.body, about: A.about, createdAt: A.createdAt }).from(A).where(and(eq(A.organizationId, organizationId), eq(A.id, id), eq(A.area, "page"))).limit(1);
+  const page = (row?.about as { page?: PageAnchor } | null)?.page;
+  if (!row || !page) throw new HttpError(404, (await getErrors()).badBody);
+  const next: PageAnchor = { ...page, state: "resolved", resolution: oneLine(resolution, REASON_MAX) };
+  await db.update(A).set({ about: { page: next } }).where(and(eq(A.organizationId, organizationId), eq(A.id, id)));
+  return { id: row.id, who: row.who, body: row.body, at: row.createdAt.toISOString(), page: next };
 }
 
 /** Only whoever wrote it removes it */
@@ -191,7 +236,7 @@ export async function systemActivity(organizationId: string, projectId: string, 
     const about = cleanAbout(n.about);
     (said[n.area] ??= []).unshift({
       id: n.id, who: n.authorName, image: n.authorImage ?? null, at: n.createdAt.toISOString(), mine: !!userId && n.authorId === userId, text: n.body,
-      ...(!about ? {} : "proposal" in about ? { proposal: about.proposal } : "pin" in about ? { pin: about.pin, label: `\u00ab${about.pin.quote.length > 60 ? `${about.pin.quote.slice(0, 59)}\u2026` : about.pin.quote}\u00bb` } : "label" in about ? { label: about.label } : { itemId: about.itemId }),
+      ...(!about ? {} : "proposal" in about ? { proposal: about.proposal } : "pin" in about ? { pin: about.pin, label: `\u00ab${about.pin.quote.length > 60 ? `${about.pin.quote.slice(0, 59)}\u2026` : about.pin.quote}\u00bb` } : "page" in about ? { label: about.page.section ?? about.page.url } : "label" in about ? { label: about.label } : { itemId: about.itemId }),
     });
     lines.push({ id: n.id, kind: "comment", area: n.area as SystemArea, authorName: n.authorName, authorImage: n.authorImage ?? null, text: n.body, at: n.createdAt.toISOString() });
     const t = (talk[n.area] ??= { count: 0, people: [] });

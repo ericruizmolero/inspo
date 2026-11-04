@@ -1,7 +1,7 @@
 "use server";
 // The team's thread on one area of a project's system (lib/area-comments.ts).
 import { withCtx } from "@/lib/workspace";
-import { addAreaComment, areaThread, deleteAreaComment, resolveProposal, systemActivity } from "@/lib/area-comments";
+import { addAreaComment, areaThread, deleteAreaComment, pageComments, resolvePageComment, resolveProposal, systemActivity } from "@/lib/area-comments";
 import { versionAfterEdit } from "@/lib/criterio-versions";
 
 export async function loadAreaThread(projectId: string, area: string, itemIds: string[]) {
@@ -10,6 +10,14 @@ export async function loadAreaThread(projectId: string, area: string, itemIds: s
 
 export async function postAreaComment(projectId: string, area: string, body: string, about?: unknown) {
   return withCtx(async (ctx) => addAreaComment(ctx.workspace.id, String(projectId), String(area), String(body ?? ""), { id: ctx.user.id, name: ctx.user.name, image: ctx.user.image }, about));
+}
+
+export async function loadPageComments(projectId: string) {
+  return withCtx(async (ctx) => pageComments(ctx.workspace.id, String(projectId)));
+}
+
+export async function closePageComment(id: string) {
+  return withCtx(async (ctx) => resolvePageComment(ctx.workspace.id, String(id), "Resolved in the app"));
 }
 
 export async function removeAreaComment(id: string) {

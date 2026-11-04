@@ -261,6 +261,11 @@ export const ui: typeof EnUi = {
     notUrl: "Eso no parece una URL",
     alreadySaved: "Esa URL ya está guardada",
   },
+  pageComments: {
+    title: "Comentarios en la página",
+    none: "No hay comentarios abiertos. Usa la extensión del navegador para dejar uno en la página.",
+    done: "Resolver",
+  },
   clientAsk: {
     title: "Unas preguntas",
     lead: "Tus respuestas dan forma a la página. Escribe lo que sepas, como lo dirías. Puedes dejar cualquiera vacía.",

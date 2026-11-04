@@ -863,5 +863,29 @@
   },
   "signupOpen": {
     "message": "No account yet? Connecting creates one."
+  },
+  "commentPage": {
+    "message": "Comment on this page"
+  },
+  "commentHint": {
+    "message": "Click what you want to comment on. Esc to leave."
+  },
+  "commentPlaceholder": {
+    "message": "What should change here?"
+  },
+  "commentSend": {
+    "message": "Send"
+  },
+  "commentCancel": {
+    "message": "Cancel"
+  },
+  "commentSent": {
+    "message": "Sent"
+  },
+  "commentFailed": {
+    "message": "That did not work. Try again."
+  },
+  "commentBlocked": {
+    "message": "The browser does not let extensions run on this page."
   }
 }

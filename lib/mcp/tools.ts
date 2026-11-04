@@ -6,7 +6,7 @@ import "server-only";
 import { z } from "zod";
 import { SYSTEM_AREAS } from "@/types/system";
 import type { McpCtx } from "./auth";
-import { CRITERIO_SECTIONS, ProjectArg as Project, QUESTION_IDS, addPiece, answerQuestion, listProjects, listReferences, newProject, proposeDecision, readCriterio, readReference, measureSite, recordLearning, runPass, setOutline, startSetup, checkLandingPage } from "./pieces";
+import { CRITERIO_SECTIONS, ProjectArg as Project, QUESTION_IDS, addPiece, answerQuestion, listProjects, listReferences, newProject, proposeDecision, readCriterio, readReference, measureSite, recordLearning, runPass, setOutline, startSetup, checkLandingPage, listComments, resolveComment } from "./pieces";
 import { OUTLINE_SECTIONS_MAX, OUTLINE_TEXT_MAX, SECTION_KINDS } from "@/types/landing";
 import { SKIPPABLE } from "../setup-core";
 import { LEARNING_NOTE_MAX } from "@/types/system";
@@ -151,6 +151,20 @@ export const TOOLS: Tool[] = [
     input: z.object({ project: Project, url: z.string().min(1).max(2000).describe("The landing's public address or preview.") }),
     annotations: { readOnlyHint: true, openWorldHint: true },
     run: (i, ctx, origin) => checkLandingPage(ctx, origin, i),
+  }),
+  tool({
+    name: "list_comments", title: "Read the comments on the page",
+    description: "What people said about a running landing, left with the browser extension: the comment, the page, the element's selector, the text and the section it sits in. Open ones only, unless all. Comments never go into criterio.md: read them here. A selector can go stale after a build: find the element by its text and section then.",
+    input: z.object({ project: Project, all: z.boolean().optional().describe("Also the ones already resolved.") }),
+    annotations: { readOnlyHint: true },
+    run: (i, ctx) => listComments(ctx, i),
+  }),
+  tool({
+    name: "resolve_comment", title: "Resolve a comment",
+    description: "Marks a page comment dealt with, after you fixed it, with one line on what changed. A comment changes no decision, so this needs no approval. If it taught something that holds for the next landing, also call record_learning.",
+    input: z.object({ project: Project, id: z.string().min(1).max(60).describe("The comment's id, from list_comments."), change: z.string().min(1).max(200).describe("What changed, in one line.") }),
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+    run: (i, ctx) => resolveComment(ctx, i),
   }),
   tool({
     name: "set_outline", title: "Plan a landing",

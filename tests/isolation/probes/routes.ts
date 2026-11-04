@@ -297,6 +297,15 @@ export const routes: Record<string, Surface> = {
   "mcp:run_pass": { probe: async (fx) => { await refusedTool(fx, "run_pass", { project: fx.a.project }); } },
   "mcp:set_outline": { probe: async (fx) => { await refusedTool(fx, "set_outline", { project: fx.a.project, name: "x", goal: "x", sections: [{ kind: "hero", job: "x", refs: [] }] }); } },
   "mcp:check_landing": { probe: async (fx) => { await refusedTool(fx, "check_landing", { project: fx.a.project, url: "https://example.com" }); } },
+  "mcp:list_comments": { probe: async (fx) => { await refusedTool(fx, "list_comments", { project: fx.a.project }); } },
+  "mcp:resolve_comment": { probe: async (fx) => { await refusedTool(fx, "resolve_comment", { project: fx.a.project, id: "x", change: "x" }); } },
+  "route:app/api/ext/v1/comments/route.ts#POST": {
+    probe: async (fx) => {
+      const { POST } = await import("@/app/api/ext/v1/comments/route");
+      const body = { projectId: fx.a.project, url: "https://example.com", selector: "h1", comment: "x" };
+      expect((await POST(request("/api/ext/v1/comments", { method: "POST", headers: bearer(fx.b.extKey), body }))).status, "B commenting on A's project").toBeGreaterThanOrEqual(400);
+    },
+  },
   "mcp:start_setup": { probe: async (fx) => { await refusedTool(fx, "start_setup", { project: fx.a.project }); } },
   "mcp:list_projects": {
     probe: async (fx) => {

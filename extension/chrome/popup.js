@@ -43,7 +43,20 @@ const api = async (path, init = {}) => {
   return data;
 };
 
+// A comment on the running page: localhost, a preview or the live site. The picker runs in the tab only after this click
+// (activeTab). The key never reaches the page: background.js sends the comment.
+async function startComment() {
+  const projectId = $("project-select").value;
+  if (!tab?.id || !projectId) return;
+  await chrome.storage.session.set({ commentProject: projectId });
+  try {
+    await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ["comment-pick.js"] });
+    window.close();
+  } catch { note($("tab-msg"), t("commentBlocked"), "error"); }
+}
+
 async function load() {
+  $("btn-comment")?.addEventListener("click", () => void startComment());
   document.documentElement.lang = chrome.i18n.getUILanguage();
   if (inWindow) document.body.classList.add("is-window");
   for (const el of document.querySelectorAll("[data-i18n]")) el.textContent = t(el.dataset.i18n);

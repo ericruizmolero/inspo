@@ -800,7 +800,7 @@ export const systemArea = pgTable("system_area", {
 ]);
 
 /** The parts of criterio.md that are not an area (its head, what the project is, the paragraph, the references): a pin can sit on them too */
-export const DOC_PART_KEYS = ["head", "project", "summary", "refs"] as const;
+export const DOC_PART_KEYS = ["head", "project", "summary", "refs", "page"] as const;
 
 /** The team talking about one area of a project's system: what they think of the decision, what they would try.
  *  `area` is the area, or the part of criterio.md a pin was left on (DOC_PART_KEYS) */

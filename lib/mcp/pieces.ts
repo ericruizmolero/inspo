@@ -30,7 +30,7 @@ import { cardCopyOf } from "../board";
 import { pageShotsFor } from "../page-shots";
 import { assertRoom } from "../quota";
 import { cleanText, readText, TEXT_TITLE_MAX } from "../text-refs";
-import { addAreaComment, systemActivity } from "../area-comments";
+import { addAreaComment, pageComments, resolvePageComment, systemActivity } from "../area-comments";
 import { saveAnswer, saveBrief, skipSetupStep } from "../brief";
 import { nextAction, setupState } from "../setup-core";
 import { allow } from "../rate-limit";
@@ -428,12 +428,25 @@ export async function setupStep(org: string, projectId: string) {
   return { next: state.next, do: nextAction(state, facts.refs), complete: state.complete, ask: state.ask, confirm: state.confirm, steps: state.steps };
 }
 
+/** Comments people left on the running page, open ones by default */
+export async function listComments(ctx: McpCtx, input: { project: string; all?: boolean }) {
+  const project = await resolveProject(ctx, input.project);
+  const comments = await pageComments(project.workspace.id, project.id, !!input.all);
+  return { project: project.name, comments: comments.map((c) => ({ id: c.id, who: c.who, said: c.body, at: c.at, ...c.page })), do: comments.length ? "Find each element by its selector, or by its text and section if the build changed. Fix it, then call resolve_comment with what changed." : "No open comments." };
+}
+
+export async function resolveComment(ctx: McpCtx, input: { project: string; id: string; change: string }) {
+  const project = await resolveProject(ctx, input.project);
+  const c = await resolvePageComment(project.workspace.id, input.id, input.change);
+  return { resolved: true, id: c.id, project: project.name, do: "If this taught something for the next landing, keep it with record_learning." };
+}
+
 /** What is pending on a project, so each session starts from it: decisions to take, and answers that arrived */
 async function waiting(org: string, projectId: string) {
   const [activity, facts] = await Promise.all([systemActivity(org, projectId), setupFacts(org, projectId)]);
   const proposals = Object.values(activity.notes).flat().filter((n) => (n as { proposal?: { state?: string } }).proposal?.state === "open").length;
   const fromClient = Object.entries(facts.brief?.answers ?? {}).filter(([, a]) => a.source === "client").map(([id]) => id);
-  return { proposals_to_decide: proposals, client_answers: fromClient, open_questions: setupState(facts).ask, note: "Tell the person what is pending, in a line, before anything else." };
+  return { proposals_to_decide: proposals, client_answers: fromClient, open_questions: setupState(facts).ask, open_comments: (await pageComments(org, projectId)).length, note: "Tell the person what is pending, in a line, before anything else." };
 }
 
 /** Where a project stands along the setup, and what the agent does next. With `skip`, the person declined that step */

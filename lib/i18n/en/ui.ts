@@ -267,6 +267,11 @@ export const ui = {
     notUrl: "That does not look like a URL",
     alreadySaved: "That URL is already saved",
   },
+  pageComments: {
+    title: "Comments on the page",
+    none: "No open comments. Use the browser extension to leave one on a running page.",
+    done: "Resolve",
+  },
   clientAsk: {
     title: "A few questions",
     lead: "Your answers shape the page. Write what you know, as you would say it. Leave any question empty.",

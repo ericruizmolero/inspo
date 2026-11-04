@@ -13,9 +13,26 @@ const allowedBase = (base) => {
   } catch { return null; }
 };
 
+async function sendPageComment(comment) {
+  const { key, base, workspace } = await chrome.storage.local.get(["key", "base", "workspace"]);
+  const { commentProject } = await chrome.storage.session.get("commentProject");
+  if (!key || !commentProject) return { ok: false, error: "not connected" };
+  const res = await fetch(`${base || "https://app.criterio.design"}/api/ext/v1/comments`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json", ...(workspace?.id ? { "X-Workspace": workspace.id } : {}) },
+    body: JSON.stringify({ ...comment, projectId: commentProject }),
+  });
+  return res.ok ? { ok: true } : { ok: false, error: (await res.json().catch(() => ({}))).error || String(res.status) };
+}
+
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg?.type === "import-board") { openBoardImport(msg.url, sender); return false; }
   if (msg?.type === "open-import") { openImport(msg.what, sender); return false; }
+  // Sent by comment-pick.js from a tab. The key stays here: the page never sees it
+  if (msg?.type === "page-comment" && sender.id === chrome.runtime.id && sender.tab) {
+    sendPageComment(msg.comment).then(sendResponse, (e) => sendResponse({ ok: false, error: String(e.message || e) }));
+    return true; // async response
+  }
   const base = sender.id === chrome.runtime.id && sender.origin ? allowedBase(sender.origin) : null;
   if (msg?.type === "ext-key" && typeof msg.key === "string" && msg.key.startsWith("crit_") && base) {
     chrome.storage.local

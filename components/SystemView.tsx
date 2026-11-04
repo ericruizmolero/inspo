@@ -13,6 +13,7 @@ import SkillsMenu from "./SkillsMenu";
 import { NO_SKILLS, skillsOf, MD_SKILL_EXCLUSIVE, type MdSkill } from "@/lib/md-skill-ids";
 import ImproveModal from "./ImproveModal";
 import SetupQuestions from "./SetupQuestions";
+import PageComments from "./PageComments";
 import { Dialog, DialogWindow } from "@/components/ui/dialog";
 import { VersionPicker, VersionView, useVersions } from "./VersionPicker";
 import { readBrief, type Brief } from "@/types/brief";
@@ -136,6 +137,7 @@ export default function SystemView({ onConnect, project, system, onSystem, board
   // A pass asked for from "Improve with AI" carries what the team wants from it (ImproveModal); the plain one reads everything
   const [improving, setImproving] = useState(false);
   const [answering, setAnswering] = useState(false);
+  const [commentsOpen, setCommentsOpen] = useState(false);
   const [phase, setPhase] = useState<"brand" | null>(null);
   const post = async (path: string, body: object) => {
     const res = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
@@ -304,6 +306,7 @@ export default function SystemView({ onConnect, project, system, onSystem, board
         <PopoverContent align="end" className="cr-menu spage-more__menu">
           {board.length > 0 && !firstStep && <MenuItem disabled={running} onClick={() => { setMoreOpen(false); setImproving(true); }}>{t.system.improve}</MenuItem>}
           <MenuItem onClick={() => { setMoreOpen(false); setAnswering(true); }}>{t.setupQuestions.menu}</MenuItem>
+          <MenuItem onClick={() => { setMoreOpen(false); setCommentsOpen(true); }}>{t.pageComments.title}</MenuItem>
           <MenuItem disabled={running} onClick={() => { setMoreOpen(false); setBringing("site"); }}>{t.brand.import.title}</MenuItem>
           <MenuItem onClick={() => { setMoreOpen(false); setSharing(true); }}>{t.brand.share.title}</MenuItem>
         </PopoverContent>
@@ -325,6 +328,7 @@ export default function SystemView({ onConnect, project, system, onSystem, board
         </header>
         {error && <p className="sysv-error" role="alert">{error}</p>}
         {notice && <p className="spage-notice" role="status">{notice}</p>}
+        {commentsOpen && <PageComments projectId={project.id} onClose={() => setCommentsOpen(false)} />}
         {answering && (
           <Dialog open onOpenChange={(o) => { if (!o) setAnswering(false); }}>
             <DialogWindow bar={t.setupQuestions.menu} heading={t.setupQuestions.menu} closeLabel={t.common.close}>

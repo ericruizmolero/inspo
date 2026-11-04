@@ -36,6 +36,7 @@ call goes with `Authorization: Bearer crit_…` to the versioned routes under `/
 | `GET /items/lookup?url=` | Is this site already saved? |
 | `POST /items` | Saves `{ url, title, screenshot, note, projectId, areas }` |
 | `POST /items/batch` | Saves up to 25 `{ url, title }` at once, into `projectId` (the import page); with `image`, the item is that image |
+| `POST /comments` | Saves a comment on a running page: `{ projectId, url, selector, comment, section, text, viewport }` |
 | `POST /media` | Saves one image or video from the right-click menu |
 | `GET /projects` | The projects to save to, and the one picked first |
 | `POST /projects` | Creates `{ name }` and answers `{ project: { id, name } }`: the project a board lands in |
@@ -194,3 +195,7 @@ published.
 Zip the `extension/chrome` folder and upload it to the Chrome developer dashboard
 (one-time $5 fee). Before uploading, bump `version` in `manifest.json`.
 The store listing takes the name and description from `_locales` too, so it shows up translated.
+
+## Comment on a page
+
+"Comment on this page" in the popup injects `comment-pick.js` into the tab, only on that click (`activeTab`), so it works on localhost, previews and live sites. The picker's UI sits in a closed shadow root. It sends the comment to `background.js`, which holds the key: the page never sees it. Comments reach the agent through `list_comments`.

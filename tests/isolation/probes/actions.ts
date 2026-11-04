@@ -407,6 +407,20 @@ export const actions: Record<string, Surface> = {
     },
   },
   "action:app/actions/client-ask.ts#answerClientAsk": { exempt: "takes no session: the link's token is the proof, and it writes only to that token's project (tests/client-ask.test.ts)" },
+  "action:app/actions/area-comments.ts#loadPageComments": {
+    probe: async (fx) => {
+      asB(fx);
+      const { loadPageComments } = await import("@/app/actions/area-comments");
+      expectRefused(fx, await loadPageComments(fx.a.project), "B reading A's page comments");
+    },
+  },
+  "action:app/actions/area-comments.ts#closePageComment": {
+    probe: async (fx) => {
+      asB(fx);
+      const { closePageComment } = await import("@/app/actions/area-comments");
+      expectRefused(fx, await closePageComment("not-b-s"), "B closing a comment that is not in its workspace");
+    },
+  },
   "action:app/actions/share.ts#loadShares": {
     probe: async (fx) => {
       const { loadShares } = await import("@/app/actions/share");

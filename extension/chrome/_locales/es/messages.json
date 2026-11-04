@@ -863,5 +863,29 @@
   },
   "signupOpen": {
     "message": "¿Aún sin cuenta? Al conectar se crea."
+  },
+  "commentPage": {
+    "message": "Comentar esta página"
+  },
+  "commentHint": {
+    "message": "Pulsa lo que quieras comentar. Esc para salir."
+  },
+  "commentPlaceholder": {
+    "message": "¿Qué debería cambiar aquí?"
+  },
+  "commentSend": {
+    "message": "Enviar"
+  },
+  "commentCancel": {
+    "message": "Cancelar"
+  },
+  "commentSent": {
+    "message": "Enviado"
+  },
+  "commentFailed": {
+    "message": "No ha funcionado. Inténtalo de nuevo."
+  },
+  "commentBlocked": {
+    "message": "El navegador no deja usar extensiones en esta página."
   }
 }
