@@ -29,7 +29,7 @@ const PROMPTS: Record<string, PromptDef> = {
         which("en", a.project),
         a.task?.trim() ? `I want to make this: ${a.task.trim()}` : "If I have not said what we are making, offer me what the criterio's Start here lists and let me pick.",
         "",
-        "Call read_criterio with section \"guide\" first and follow its Start here: the session loop, phase by phase, stopping at each checkpoint. It says what to read next, what to ask, and what to write back to criterio as we go. Do not skip a phase or fill a gap with a default.",
+        "Call read_criterio with section \"guide\" first and follow its Start here: the session loop, phase by phase, stopping at each checkpoint. It says what to read next, what to ask, and what to write back to criterio as we go. Do not skip a phase. When nobody can answer, go on with what you know: write real draft copy in the project's voice, and mark only a fact you cannot back, such as a figure, a client or a quote. Never leave a headline or a section empty.",
       ].join("\n"),
     },
     es: {
@@ -40,7 +40,7 @@ const PROMPTS: Record<string, PromptDef> = {
         which("es", a.project),
         a.task?.trim() ? `Quiero hacer esto: ${a.task.trim()}` : "Si no he dicho qué vamos a hacer, ofréceme lo que lista el Empieza aquí del criterio y deja que elija.",
         "",
-        "Llama primero a read_criterio con la sección \"guide\" y sigue su Empieza aquí: el guion de la sesión, fase a fase, parando en cada punto de control. Ahí dice qué leer después, qué preguntarme y qué devolver a Criterio por el camino. No te saltes una fase ni rellenes un hueco con un valor por defecto.",
+        "Llama primero a read_criterio con la sección \"guide\" y sigue su Empieza aquí: el guion de la sesión, fase a fase, parando en cada punto de control. Ahí dice qué leer después, qué preguntarme y qué devolver a Criterio por el camino. No te saltes ninguna fase. Si nadie puede responder, sigue con lo que sabes: escribe un borrador real del copy en la voz del proyecto y marca solo un dato que no puedas respaldar, como una cifra, un cliente o una cita. Nunca dejes vacío un titular o una sección.",
       ].join("\n"),
     },
   },
