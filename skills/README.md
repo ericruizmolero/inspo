@@ -19,10 +19,7 @@ npx skills add https://github.com/ericruizmolero/inspo --skill <name>
 | [CSS grid](grid/SKILL.md) | Layout: grid, container queries, and spacing and radii as tokens | `npx skills add https://github.com/ericruizmolero/inspo --skill grid` |
 | [GSAP](gsap/SKILL.md) | Smooth micro-animations, with the curves and durations of the Motion area | `npx skills add https://github.com/ericruizmolero/inspo --skill gsap` |
 | [Native transitions](transitions/SKILL.md) | Motion without a library: CSS, view transitions and scroll | `npx skills add https://github.com/ericruizmolero/inspo --skill transitions` |
-| [Icon set](icons/SKILL.md) | Iconography: one library, one stroke, and how to draw the missing ones | `npx skills add https://github.com/ericruizmolero/inspo --skill icons` |
-| [Logo as SVG](logo-svg/SKILL.md) | Logo: versions, clear space, favicon and share image | `npx skills add https://github.com/ericruizmolero/inspo --skill logo-svg` |
 | [Responsive images](images/SKILL.md) | Imagery: formats, sizes, crops and one treatment | `npx skills add https://github.com/ericruizmolero/inspo --skill images` |
-| [Isometric figure](iso-figure/SKILL.md) | Imagery: an object as an interactive isometric line drawing in SVG | `npx skills add https://github.com/ericruizmolero/inspo --skill iso-figure` |
 | [Microcopy](microcopy/SKILL.md) | Voice: buttons, errors, empty screens, forms and metadata | `npx skills add https://github.com/ericruizmolero/inspo --skill microcopy` |
 | [Avoid AI slop](no-ai-slop/SKILL.md) | Voice: writing without the patterns of generated text (no-ai-slop, by Peter Yang) | `npx skills add https://github.com/ericruizmolero/inspo --skill no-ai-slop` |
 | [Avoid UI slop](no-ui-slop/SKILL.md) | The whole system: the habits that make an interface read as generated, as rules with an id | `npx skills add https://github.com/ericruizmolero/inspo --skill no-ui-slop` |
@@ -30,4 +27,4 @@ npx skills add https://github.com/ericruizmolero/inspo --skill <name>
 | [Tailwind](tailwind/SKILL.md) | The whole system as a Tailwind 4 theme | `npx skills add https://github.com/ericruizmolero/inspo --skill tailwind` |
 | [Bring in a brand](bring-brand/SKILL.md) | Reads a site or a repo and fills the project's presentation through the criterio MCP | `npx skills add https://github.com/ericruizmolero/inspo --skill bring-brand` |
 
-The fourteen are written by `scripts/build-skills.ts` from the same text criterio.md carries (`lib/md-skills.ts`): edit it there and run `npm run skills:build`. The connector's are written by hand in their folder.
+The eleven are written by `scripts/build-skills.ts` from the same text criterio.md carries (`lib/md-skills.ts`): edit it there and run `npm run skills:build`. The connector's are written by hand in their folder.

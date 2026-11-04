@@ -36,12 +36,11 @@ export const AREA_SKILLS: Record<SystemArea | "all", { ours: MdSkill[]; external
     ext("animate", "emilkowalski/skills", { en: "Whether to animate, which curve, how long, how it is interrupted", es: "Si animar, qué curva, cuánto dura y cómo se interrumpe" }),
     ext("vercel-react-view-transitions", "vercel-labs/agent-skills", { en: "Native view transitions in React and Next", es: "View Transitions nativas en React y Next" }),
   ] },
-  iconography: { ours: ["icons"], external: [
+  iconography: { ours: [], external: [
     ext("better-icons", "better-auth/better-icons", { en: "Searches Iconify's libraries and returns the SVG", es: "Busca en las librerías de Iconify y devuelve el SVG" }),
   ] },
-  // Nothing outside draws a logo with judgement: ours is the one
-  logo: { ours: ["logo-svg"], external: [] },
-  imagery: { ours: ["images", "iso-figure"], external: [
+  logo: { ours: [], external: [] },
+  imagery: { ours: ["images"], external: [
     ext("unsplash-asset-images", "MengTo/Skills", { en: "Picks real Unsplash photos with their URL", es: "Elige fotos reales de Unsplash con su URL" }),
   ] },
   voice: { ours: ["microcopy", "no-ai-slop"], external: [

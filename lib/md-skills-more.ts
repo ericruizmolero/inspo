@@ -6,7 +6,7 @@ import type { ProjectSystem, SystemArea, SystemAreaState } from "@/types/system"
 type Lang = "en" | "es";
 
 /** In the order the file has them: the areas' order, then the ones that cross them */
-export const MORE_SKILLS = ["fonts", "color-tokens", "grid", "transitions", "icons", "logo-svg", "images", "iso-figure", "microcopy", "no-ai-slop", "no-ui-slop", "a11y", "tailwind"] as const;
+export const MORE_SKILLS = ["fonts", "color-tokens", "grid", "transitions", "images", "microcopy", "no-ai-slop", "no-ui-slop", "a11y", "tailwind"] as const;
 export type MoreSkill = (typeof MORE_SKILLS)[number];
 
 export interface SkillText {
@@ -259,76 +259,6 @@ export const MORE_SKILL_DEFS: Record<MoreSkill, SkillDef> = {
       ],
     },
   },
-  icons: {
-    area: "iconography",
-    en: {
-      heading: "Build it: one set of icons",
-      lead: "How to bring the Iconography area above into the site as one consistent set.",
-      setup: "If the area rules out stock or ready-made icons, install nothing: draw them on the grid below. Otherwise pick one library that matches the area and install it as components: Lucide (`lucide-react`) for a fine, round outline; Phosphor (`@phosphor-icons/react`) when the area wants several weights of the same drawing. Import icon by icon, so only the ones used are shipped.",
-      defaults: ["Outline, 1.5px stroke, round caps and joins.", "16px beside text, 20px in buttons, 24px on their own.", "The icon takes the colour of its text: `currentColor`."],
-      rules: [
-        "One set and one weight in the whole site. A filled icon never sits beside an outlined one, and an emoji is not an icon.",
-        "The stroke stays the same at every size (Lucide: `absoluteStrokeWidth`), so a 16px icon is not thinner than a 24px one.",
-        "Sizes from the scale, in `em` when the icon sits in text (`1em`, `vertical-align: -0.125em`) so it follows the type.",
-        "The pressable area is 44px or more even when the icon is 20: the padding belongs to the button.",
-        "An icon that only decorates is `aria-hidden=\"true\"`. A button with nothing but an icon has an `aria-label` that says what it does.",
-        "An icon the set lacks is drawn on its grid (24 by 24, 2px of margin, the same stroke, caps and joins) and exported as SVG with `stroke=\"currentColor\"`.",
-        "Never an icon font. SVG inline or as components, optimised with SVGO keeping the `viewBox`.",
-        "An icon goes with a word wherever its meaning is not universal; alone, only the ones everyone knows (close, search, menu).",
-      ],
-    },
-    es: {
-      heading: "Construirlo: un solo set de iconos",
-      lead: "Cómo llevar a la web el área de Iconografía de arriba como un único set coherente.",
-      setup: "Si el área descarta los iconos de stock o ya hechos, no instales nada: dibújalos sobre la retícula de abajo. Si no, elige una librería que encaje con el área e instálala como componentes: Lucide (`lucide-react`) para un contorno fino y redondeado; Phosphor (`@phosphor-icons/react`) cuando el área pida varios pesos del mismo dibujo. Importa icono a icono, para servir solo los que se usan.",
-      defaults: ["Contorno, trazo de 1,5px, extremos y uniones redondeados.", "16px junto al texto, 20px en botones y 24px cuando van solos.", "El icono toma el color de su texto: `currentColor`."],
-      rules: [
-        "Un solo set y un solo peso en toda la web. Un icono relleno nunca va junto a uno de contorno, y un emoji no es un icono.",
-        "El trazo es el mismo a cualquier tamaño (Lucide: `absoluteStrokeWidth`), para que un icono de 16px no quede más fino que uno de 24.",
-        "Tamaños de la escala, en `em` cuando el icono va dentro del texto (`1em`, `vertical-align: -0.125em`), para que siga a la tipografía.",
-        "La zona pulsable mide 44px o más aunque el icono sea de 20: el relleno es del botón.",
-        "Un icono que solo decora lleva `aria-hidden=\"true\"`. Un botón con solo un icono lleva un `aria-label` que dice lo que hace.",
-        "Un icono que el set no tiene se dibuja sobre su retícula (24 por 24, 2px de margen, mismo trazo, extremos y uniones) y se exporta en SVG con `stroke=\"currentColor\"`.",
-        "Nunca una fuente de iconos. SVG en línea o como componentes, optimizados con SVGO conservando el `viewBox`.",
-        "El icono va con una palabra siempre que su significado no sea universal; solos, únicamente los que todo el mundo conoce (cerrar, buscar, menú).",
-      ],
-    },
-  },
-  "logo-svg": {
-    area: "logo",
-    en: {
-      heading: "Build it: the logo as files",
-      lead: "How to turn the Logo area above into the files a site needs: the mark, its versions, the favicon and the share image.",
-      setup: "The master is one SVG: text converted to outlines, a tight `viewBox`, no fixed width or height, and `fill=\"currentColor\"` in the one-colour version so it takes the colour of where it sits.",
-      defaults: ["Clear space on every side equal to the height of one of its letters.", "Smallest size on screen: 80px wide for the wordmark, 16px for the symbol.", "Versions: whole, symbol alone, one colour, and on a dark ground."],
-      rules: [
-        "The logo is never recoloured, stretched, outlined, tilted or given a shadow. If it does not read on a ground, use its other version, do not alter it.",
-        "In the header it is inline SVG or an `<img>` whose `alt` is the name of the brand, it links home and its height comes from a token.",
-        "Favicons: `icon.svg` (it can change with `prefers-color-scheme` inside the file), `favicon.ico` at 32px for old browsers, `apple-touch-icon.png` at 180px, and 192 and 512px in the web manifest, with the symbol inside the maskable safe zone.",
-        "The symbol alone below 32px: a wordmark is not legible in a tab.",
-        "Share image (Open Graph) at 1200 by 630: the page's own headline in the project's type, the logo small in a corner. Never the logo huge and centred.",
-        "Optimise with SVGO, keep the `viewBox`, give it a `<title>` when it stands alone.",
-        "It moves only if the Motion area says so, once, on arrival (for a line drawing, `stroke-dasharray`), and it stands still with reduced motion.",
-        "Keep the versions together in one folder with what each is for. Nobody should have to redraw it from a screenshot.",
-      ],
-    },
-    es: {
-      heading: "Construirlo: el logo como ficheros",
-      lead: "Cómo convertir el área de Logo de arriba en los ficheros que una web necesita: la marca, sus versiones, el favicon y la imagen para compartir.",
-      setup: "El original es un único SVG: texto convertido a trazados, `viewBox` ajustado, sin ancho ni alto fijos y con `fill=\"currentColor\"` en la versión a un color, para que tome el color de donde se coloca.",
-      defaults: ["Área de respeto en cada lado igual a la altura de una de sus letras.", "Tamaño mínimo en pantalla: 80px de ancho para el logotipo y 16px para el símbolo.", "Versiones: completo, solo símbolo, a un color y sobre fondo oscuro."],
-      rules: [
-        "El logo nunca se recolorea, se estira, se contornea, se inclina ni recibe sombra. Si no se lee sobre un fondo, se usa su otra versión, no se altera.",
-        "En la cabecera es SVG en línea o un `<img>` cuyo `alt` es el nombre de la marca, enlaza al inicio y su altura sale de un token.",
-        "Favicons: `icon.svg` (puede cambiar con `prefers-color-scheme` dentro del fichero), `favicon.ico` a 32px para navegadores antiguos, `apple-touch-icon.png` a 180px, y 192 y 512px en el manifest, con el símbolo dentro de la zona segura maskable.",
-        "Por debajo de 32px, solo el símbolo: un logotipo no se lee en una pestaña.",
-        "Imagen para compartir (Open Graph) a 1200 por 630: el titular de la página en la tipografía del proyecto y el logo pequeño en una esquina. Nunca el logo enorme y centrado.",
-        "Optimiza con SVGO conservando el `viewBox` y ponle un `<title>` cuando vaya solo.",
-        "Solo se mueve si lo dice el área de Movimiento, una vez, al llegar (en un dibujo de línea, `stroke-dasharray`), y se queda quieto con movimiento reducido.",
-        "Guarda las versiones juntas en una carpeta con para qué sirve cada una. Nadie debería tener que redibujarlo desde una captura.",
-      ],
-    },
-  },
   images: {
     area: "imagery",
     en: {
@@ -363,47 +293,6 @@ export const MORE_SKILL_DEFS: Record<MoreSkill, SkillDef> = {
         "Mientras carga, su propio color dominante o un desenfoque de ella, nunca una caja gris ni un spinner.",
         "El texto sobre una foto va sobre un velo que garantiza su contraste y nunca forma parte del fichero de imagen.",
         "El vídeo va en silencio, con `playsinline`, `poster` y una forma de pausarlo; con movimiento reducido no arranca.",
-      ],
-    },
-  },
-  "iso-figure": {
-    area: "imagery",
-    en: {
-      heading: "Build it: an interactive isometric figure",
-      lead: "How to draw an object of the project as an isometric hairline figure in one HTML file, with parts that work when pressed (after MrBongoC's iso-figure skill).",
-      setup: "Plain SVG, no libraries: about 15 lines of projection turn each face of a box into an SVG `matrix()`, so flat rects, text and paths land on the right plane. Copy this kernel as it is, then build the scene:\n\n```js\nconst C = Math.cos(Math.PI/6), S = Math.sin(Math.PI/6), OX = 465, OY = 300;\nconst P = (x,y,z) => [(x-y)*C + OX, (x+y)*S - z + OY];\nconst D = (x,y,z) => [(x-y)*C, (x+y)*S - z];\nconst plane = (O,U,V) => { const o=P(...O), u=D(...U), v=D(...V);\n  return `matrix(${u[0]} ${u[1]} ${v[0]} ${v[1]} ${o[0]} ${o[1]})`; };\nconst TOP   = (x,y,z) => plane([x,y,z],[1,0,0],[0,1,0]);\nconst FRONT = (x,y,z) => plane([x,y,z],[1,0,0],[0,0,-1]);\nconst SIDE  = (x,y,z) => plane([x,y,z],[0,-1,0],[0,0,-1]);\nconst rect = (t,w,h,r=0,cls='face') =>\n  `<g transform=\"${t}\"><rect class=\"${cls}\" width=\"${w}\" height=\"${h}\" rx=\"${r}\"/></g>`;\nconst box = (x,y,z,w,d,h,r=0) =>\n  rect(SIDE(x+w,y+d,z+h), d,h,Math.min(r,h/4)) +\n  rect(FRONT(x,y+d,z+h), w,h,Math.min(r,h/4)) +\n  rect(TOP(x,y,z+h), w,d,r,'face top');\n```",
-      defaults: ["Two greys for the lines (structure and detail) and one `--live` colour for whatever is on: the lit screen, the pressed key.", "A dark and a light set of custom properties; the drawing works in both.", "Radii of 2 to 14 units on the boxes."],
-      rules: [
-        "Name the output first: what pressing a part produces (typed text, a number, a note, a light). A figure you can only watch is decoration; pick another object.",
-        "Axes: +x runs down-right, +y down-left, +z up. The front of the object (screen, display) goes on a FRONT face; what the hand reaches for (keys, buttons) sits at larger `y`.",
-        "Break the object into 3 to 8 boxes and write their `(x, y, z, w, d, h)` as a table before drawing. Detail (vents, bezels, labels) is drawn flat inside a group with the face's transform, never as hand-typed skewed polygons.",
-        "Paint back to front, the only depth sorting: smaller `x + y` first, lower `z` first; grids row by row with growing `y`. Faces need an opaque fill.",
-        "Every line `vector-effect: non-scaling-stroke` at 1px, or the matrix skews the hairline. Texture comes from repetition (slits, key grids, ribs), never from shading, gradients or shadows.",
-        "Each pressable part is its own `<g class=\"press\">` with its box and its label. Pressed: `translateY(4px)` in about 60ms and its stroke goes to `--live`; nothing moves with `prefers-reduced-motion`.",
-        "One `state` object and one `render()`; pointer and keyboard call the same functions. Typed text shows only its tail, clipped to the glass, with `&` and `<` escaped.",
-        "Frame it by numbers: project the extreme corners with `P` and set `OX`, `OY` and the `viewBox` for 8 to 15% of margin on every side.",
-        "The plate: four monospace captions at the corners, `Fig N`, the object's name, the instruction and a live readout in lowercase (`on · 9 chars · key t`) that changes on every press.",
-        "On the object, the project's own mark or an invented glyph, never another company's logo or a real product's silhouette.",
-        "One file that runs from disk: no external scripts. The svg has `role=\"img\"`, `tabindex=\"0\"` and an `aria-label` saying what it is and how to use it.",
-      ],
-    },
-    es: {
-      heading: "Construirlo: una figura isométrica interactiva",
-      lead: "Cómo dibujar un objeto del proyecto como figura isométrica de línea fina en un solo HTML, con partes que funcionan al pulsarlas (a partir de la skill iso-figure de MrBongoC).",
-      setup: "SVG plano, sin librerías: unas 15 líneas de proyección convierten cada cara de una caja en un `matrix()` de SVG, así que rectángulos, textos y trazados planos caen en el plano correcto. Copia este núcleo tal cual y luego monta la escena:\n\n```js\nconst C = Math.cos(Math.PI/6), S = Math.sin(Math.PI/6), OX = 465, OY = 300;\nconst P = (x,y,z) => [(x-y)*C + OX, (x+y)*S - z + OY];\nconst D = (x,y,z) => [(x-y)*C, (x+y)*S - z];\nconst plane = (O,U,V) => { const o=P(...O), u=D(...U), v=D(...V);\n  return `matrix(${u[0]} ${u[1]} ${v[0]} ${v[1]} ${o[0]} ${o[1]})`; };\nconst TOP   = (x,y,z) => plane([x,y,z],[1,0,0],[0,1,0]);\nconst FRONT = (x,y,z) => plane([x,y,z],[1,0,0],[0,0,-1]);\nconst SIDE  = (x,y,z) => plane([x,y,z],[0,-1,0],[0,0,-1]);\nconst rect = (t,w,h,r=0,cls='face') =>\n  `<g transform=\"${t}\"><rect class=\"${cls}\" width=\"${w}\" height=\"${h}\" rx=\"${r}\"/></g>`;\nconst box = (x,y,z,w,d,h,r=0) =>\n  rect(SIDE(x+w,y+d,z+h), d,h,Math.min(r,h/4)) +\n  rect(FRONT(x,y+d,z+h), w,h,Math.min(r,h/4)) +\n  rect(TOP(x,y,z+h), w,d,r,'face top');\n```",
-      defaults: ["Dos grises para las líneas (estructura y detalle) y un color `--live` para lo que está encendido: la pantalla iluminada, la tecla pulsada.", "Un juego de custom properties oscuro y otro claro; el dibujo funciona en los dos.", "Radios de 2 a 14 unidades en las cajas."],
-      rules: [
-        "Primero, qué produce: qué sale al pulsar una parte (texto tecleado, un número, una nota, una luz). Una figura que solo se mira es decoración; elige otro objeto.",
-        "Ejes: +x baja a la derecha, +y baja a la izquierda, +z sube. El frente del objeto (pantalla, display) va en una cara FRONT; lo que toca la mano (teclas, botones) queda a mayor `y`.",
-        "Descompón el objeto en 3 a 8 cajas y apunta sus `(x, y, z, w, d, h)` en una tabla antes de dibujar. El detalle (rejillas, biseles, etiquetas) se dibuja plano dentro de un grupo con la transformación de la cara, nunca con polígonos sesgados a mano.",
-        "Se pinta de atrás adelante, la única ordenación de profundidad: primero menor `x + y`, primero menor `z`; las cuadrículas fila a fila con `y` creciente. Las caras necesitan relleno opaco.",
-        "Toda línea con `vector-effect: non-scaling-stroke` a 1px, o la matriz deforma el trazo fino. La textura sale de la repetición (ranuras, rejillas de teclas, nervios), nunca de sombreados, degradados ni sombras.",
-        "Cada parte pulsable es su propio `<g class=\"press\">` con su caja y su etiqueta. Al pulsar: `translateY(4px)` en unos 60ms y su trazo pasa a `--live`; con `prefers-reduced-motion` no se mueve nada.",
-        "Un objeto `state` y un `render()`; puntero y teclado llaman a las mismas funciones. El texto tecleado muestra solo su final, recortado al cristal, con `&` y `<` escapados.",
-        "Encuadre con números: proyecta las esquinas extremas con `P` y ajusta `OX`, `OY` y el `viewBox` para dejar de 8 a 15% de margen por cada lado.",
-        "La lámina: cuatro rótulos monoespaciados en las esquinas, `Fig N`, el nombre del objeto, la instrucción y una lectura en vivo en minúsculas (`on · 9 chars · key t`) que cambia con cada pulsación.",
-        "Sobre el objeto, la marca del propio proyecto o un glifo inventado, nunca el logo de otra empresa ni la silueta de un producto real.",
-        "Un solo fichero que funciona abierto desde el disco: sin scripts externos. El svg lleva `role=\"img\"`, `tabindex=\"0\"` y un `aria-label` que dice qué es y cómo se usa.",
       ],
     },
   },
