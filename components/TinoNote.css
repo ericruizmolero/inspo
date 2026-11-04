@@ -3,7 +3,8 @@
    drops under it whole when it does not. The answers sit on the right, centred on the row */
 .tino-note { display: flex; align-items: center; gap: 12px; padding: 10px 14px 10px 10px; font-family: var(--font-sans); --ib-fg-strong: var(--on-butter); }
 .tino-note__say { flex: 1; min-width: 0; margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 6px; row-gap: 2px; font-family: var(--font-sans); }
-.tino-note__title { font-family: var(--font-title); font-size: var(--fs-title-s); line-height: var(--lh-title-s); font-weight: var(--fw-title-s); }
+/* Tino speaks in the sans: the serif is for page titles (Eric, 04-11) */
+.tino-note__title { font-family: var(--font-sans); font-size: var(--fs-title-s); line-height: var(--lh-title-s); font-weight: var(--fw-semibold); }
 .tino-note__text { font-size: var(--fs-ui); line-height: var(--lh-ui); text-wrap: pretty; }
 .tino-note__actions { flex: none; display: flex; align-items: center; gap: 12px; font-size: var(--fs-small); }
 @media (max-width: 640px) { .tino-note { flex-wrap: wrap; } .tino-note__actions { flex-basis: 100%; justify-content: flex-end; } }

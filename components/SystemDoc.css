@@ -126,7 +126,7 @@
 .mdv--doc .mdv-mark { font-size: 0; }
 .mdv--doc .mdv-line, .mdv--doc .mdv-eline { min-height: calc(var(--lh-body) * 1em); }
 /* Headings read as the app's headings: # title-l, ## title-m, ### and deeper title-s, in the title face */
-.mdv--doc .mdv-h { font-family: var(--font-title); color: var(--text); font-weight: var(--fw-title-s); font-size: var(--fs-title-s); line-height: var(--lh-title-s); }
+.mdv--doc .mdv-h { font-family: var(--font-sans); color: var(--text); font-weight: var(--fw-title-s); font-size: var(--fs-title-s); line-height: var(--lh-title-s); }
 .sdoc .mdv--doc .mdv-h1 { font-weight: var(--fw-title-l); font-size: var(--fs-title-l); line-height: var(--lh-title-l); letter-spacing: var(--tr-title-l); }
 .sdoc .mdv--doc .mdv-h2 { font-size: var(--fs-title-m); line-height: var(--lh-title-m); letter-spacing: var(--tr-title-m); }
 /* The file's title (the head's id outranks the line above) */
