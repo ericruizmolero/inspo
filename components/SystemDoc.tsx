@@ -8,12 +8,11 @@ import type { InspoItem } from "@/types/inspo";
 import type { ProjectSystem, SystemArea } from "@/types/system";
 import type { CriterioBlock, RefInfo } from "@/lib/criterio-md";
 import type { SystemActivity } from "@/lib/area-comments";
-import type { EditAsk } from "@/lib/system/edit";
 import { answerAreaProposal, postAreaComment, removeAreaComment } from "@/app/actions/area-comments";
 import { decideSystemArea, releaseSystemArea, saveDocPart, setSystemEvidence, saveSystemSummary } from "@/app/actions/system";
 import { readAreaMeta } from "@/lib/criterio-md";
 import SystemMarkdown, { type ProposedText } from "./SystemMarkdown";
-import TinoDock, { type DockSay } from "./TinoDock";
+import HomeTino from "./HomeTino";
 import { systemIdle, systemNudges } from "./board-nudges";
 import TinoNote from "./TinoNote";
 import { useT } from "./I18nProvider";
@@ -61,13 +60,11 @@ interface Props {
   fileTools?: React.ReactNode;
   /** The file as the Markdown it is, or set as a document: chosen in the page's tabs (components/SystemView.tsx) */
   look: "md" | "doc";
-  /** Where Tino's dock goes (SystemView's slot beside the page's scroll) */
-  dock?: HTMLElement | null;
   /** The references the polish kept (closed with "keep"), for Tino */
   kept?: string[];
 }
 
-export default function SystemDoc({ onConnect, blocks, system, boardIds, itemOf, imageOf, refInfo, activity, busy, onSave, onSystem, onTalk, onAbout, onText, onTextTitle, onCopy, onDownload, copied, markdown, projectId, projectName, hasRecipe, fileTools, look, dock, kept = [] }: Props) {
+export default function SystemDoc({ onConnect, blocks, system, boardIds, itemOf, imageOf, refInfo, activity, busy, onSave, onSystem, onTalk, onAbout, onText, onTextTitle, onCopy, onDownload, copied, markdown, projectId, projectName, hasRecipe, fileTools, look, kept = [] }: Props) {
   const { t } = useT();
   const s = t.doc;
   const md = t.system.md;
@@ -253,54 +250,13 @@ export default function SystemDoc({ onConnect, blocks, system, boardIds, itemOf,
       </>,
     };
   });
-  const [ask, setAsk] = useState("");
-  const [editing, setEditing] = useState(false);
-  const [say, setSay] = useState<DockSay | null>(null);
-  // "Tell Tino what to change", in words, for the whole file: one model call returns the areas it touches, each posted
-  // as Tino's proposal under its area. Never written into an area. None: he says the file needs no change for that
-  // An answer to his "which way?": posted as his proposal under that area, as any change in words
-  const pick = async (area: SystemArea, o: EditAsk["options"][number]) => {
-    if (editing) return;
-    setEditing(true); setSay(null);
-    try {
-      const r = await postAreaComment(projectId, area, t.tino.whichPicked(o.label, t.system.areas[area].toLowerCase()), { proposal: { decision: o.decision, why: o.why, never: o.never, state: "open", via: TINO } });
-      if (!r.ok) { setSay({ key: `failed:${Date.now()}`, title: [t.tino.editFailed], text: r.error, mood: "sad" }); return; }
-      onTalk();
-      go(`sdoc-${area}`);
-    } finally { setEditing(false); }
-  };
-  const tell = async (instruction: string) => {
-    if (editing) return;
-    setEditing(true); setSay(null);
-    const fail = (why?: string) => setSay({ key: `failed:${Date.now()}`, title: [t.tino.editFailed], text: why, mood: "sad" });
-    try {
-      const res = await fetch("/api/system/edit", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ projectId, instruction }) });
-      const data = (await res.json().catch(() => ({}))) as { edits?: { area: SystemArea; decision: string; why: string; never: string; reason: string }[]; ask?: EditAsk | null; error?: string };
-      if (!res.ok || !data.edits) { fail(res.status < 500 ? data.error : undefined); return; }
-      // It named an area but not which way: he asks, and the answer picked is the proposal
-      if (!data.edits.length && data.ask) {
-        const q = data.ask;
-        setAsk("");
-        setSay({ key: `which:${Date.now()}`, title: q.question, text: q.now, mood: "thinking",
-          options: q.options.map((o, i) => ({ key: `${i}`, label: o.label, onPick: () => void pick(q.area, o) })) });
-        return;
-      }
-      if (!data.edits.length) { setSay({ key: `nothing:${Date.now()}`, title: t.tino.nothingTitle, text: t.tino.nothingText, mood: "skeptic" }); setAsk(""); return; }
-      for (const e of data.edits) {
-        const r = await postAreaComment(projectId, e.area, e.reason, { proposal: { decision: e.decision, why: e.why, never: e.never, state: "open", via: TINO } });
-        if (!r.ok) { fail(r.error); return; }
-      }
-      setAsk("");
-      onTalk();
-      go(`sdoc-${data.edits[0].area}`);
-    } catch { fail(); } finally { setEditing(false); }
-  };
+  // Tino in the corner, in <body>, as on the home and the board
+  const [host, setHost] = useState<HTMLElement | null>(null);
+  useEffect(() => setHost(document.body), []);
   // What Tino brings up on his own here: how the file works (once each), then what is waiting in it
-  const askRef = useRef<HTMLInputElement>(null);
   // When the page opened, and which of the non-urgent things Tino leads with this visit
   const [openedAt] = useState(() => Date.now());
   const [visitSeed] = useState(() => Math.floor(Math.random() * 1000));
-  const fill = (text: string) => { setAsk(text); setSay(null); requestAnimationFrame(() => askRef.current?.focus()); };
   const openProposals = areaBlocks.filter((b) => notesOf(b.area).some((n) => n.proposal?.state === "open"));
   const read = new Set(system.run?.itemIds ?? []);
   const unread = system.run ? Math.max(0, boardIds.filter((id) => !read.has(id)).length - (system.run.omitted ?? 0)) : 0;
@@ -309,8 +265,6 @@ export default function SystemDoc({ onConnect, blocks, system, boardIds, itemOf,
     proposals: openProposals.reduce((n, b) => n + notesOf(b.area).filter((x) => x.proposal?.state === "open").length, 0),
     undecided: system.areas.filter((a) => !a.decision).map((a) => a.area),
     stale: unread,
-    onTry: () => fill(t.tino.system.askExample),
-    onAsk: (area) => fill(t.tino.system.undecidedAsk(t.system.areas[area].toLowerCase())),
     onConnect: onConnect ?? onCopy,
     onFirstProposal: () => { if (openProposals[0]) go(`sdoc-${openProposals[0].area}`); },
     areas: system.areas, boardIds, readIds: system.run?.itemIds ?? [], kept, seed: visitSeed, now: openedAt,
@@ -345,11 +299,7 @@ export default function SystemDoc({ onConnect, blocks, system, boardIds, itemOf,
           onPart={async (part, text) => { const r = part.startsWith("meta:") && text !== null ? await saveMeta(part.slice(5), text) : await saveDocPart(projectId, part, text); if (r.ok) onSystem(r.data); else setError(r.error); }}
           pins={pins} onPin={pin} onUnpin={unpin} />
       </div>
-      {dock && createPortal(
-        <TinoDock label={t.tino.dock.edit} placeholder={t.tino.dock.edit} value={ask} onChange={(v) => { setAsk(v); setSay(null); }} onSubmit={(v) => void tell(v)} busy={editing}
-          say={say} onSayClose={() => setSay(null)} nudges={nudges} idle={idle} focusRef={askRef} />,
-        dock,
-      )}
+      {host && createPortal(<HomeTino className="board-tino" nudges={nudges} scope=":system" idle={idle} />, host)}
     </div>
   );
 }

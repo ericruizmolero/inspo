@@ -241,7 +241,7 @@ export function othersThisWeek(items: { addedBy: string; date: string }[], me: s
 
 /** On the System page: how the file works and what can be done with it, each said once ever, then what is waiting
  *  in it (open proposals, areas still undecided, references not read yet) */
-export function systemNudges({ t, project, proposals, undecided, stale, onTry, onAsk, onConnect, onFirstProposal, areas = [], boardIds = [], readIds = [], kept = [], seed = 0, now = 0, onGo }: {
+export function systemNudges({ t, project, proposals, undecided, stale, onConnect, onFirstProposal, areas = [], boardIds = [], readIds = [], kept = [], seed = 0, now = 0, onGo }: {
   t: Dict;
   project: string;
   /** Proposals waiting for a yes or a no */
@@ -250,10 +250,6 @@ export function systemNudges({ t, project, proposals, undecided, stale, onTry, o
   undecided: SystemArea[];
   /** References on the board the file has not read yet */
   stale: number;
-  /** Fills the field below with an example of asking for a change */
-  onTry: () => void;
-  /** Fills the field below with asking for a proposal for that area */
-  onAsk: (area: SystemArea) => void;
   /** The handoff: connects the person's agent, which carries on with the landing (ConnectDialog) */
   onConnect: () => void;
   /** Takes the page to the first area with a proposal waiting */
@@ -277,12 +273,10 @@ export function systemNudges({ t, project, proposals, undecided, stale, onTry, o
   const name = (a: SystemArea) => t.system.areas[a].toLowerCase();
   // How it works first, while it is new: each said once ever, so the second visit goes straight to what is waiting
   list.push({ key: "how:file", once: true, title: s.fileTitle, text: s.fileText(project), mood: "watching" });
-  list.push({ key: "how:ask", once: true, title: s.askTitle, text: s.askText, act: s.askAct, mood: "accomplice", go: onTry });
   list.push({ key: "how:take", once: true, title: s.takeTitle, text: s.takeText, act: s.takeAct, mood: "smug", go: onConnect });
   if (proposals > 0) list.push({ key: `proposals:${proposals}`, title: s.proposalsTitle, text: s.proposalsText(proposals), act: s.proposalsAct, mood: "accomplice", go: onFirstProposal });
   if (undecided.length) {
-    const first = undecided[0];
-    list.push({ key: `undecided:${undecided.join("+")}`, title: s.undecidedTitle, text: s.undecidedText(said(undecided.slice(0, 3).map((a) => t.system.areas[a].toLowerCase()), s.and), undecided.length), act: s.undecidedAct(t.system.areas[first].toLowerCase()), mood: "skeptic", go: () => onAsk(first) });
+    list.push({ key: `undecided:${undecided.join("+")}`, title: s.undecidedTitle, text: s.undecidedText(said(undecided.slice(0, 3).map((a) => t.system.areas[a].toLowerCase()), s.and), undecided.length), mood: "skeptic" });
   }
   if (stale > 0) list.push({ key: `stale:${stale}`, title: t.tino.board.staleTitle, text: s.staleText(stale), mood: "skeptic" });
   // What the file holds, to read and go over: these take turns from one visit to the next

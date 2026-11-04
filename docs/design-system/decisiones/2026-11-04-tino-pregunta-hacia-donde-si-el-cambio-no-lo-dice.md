@@ -1,7 +1,7 @@
 ---
 title: Si le pides a Tino un cambio sin decir hacia dónde, pregunta con opciones en vez de inventarlo
 date: 2026-11-04
-status: vigente
+status: sustituida
 kind: producto
 ---
 **Contexto.** En la página Sistema, lo que se le escribe a Tino en la caja va a `/api/system/edit` y vuelve como propuestas bajo cada área. La instrucción del modelo (`EDIT_SYSTEM`) le pedía seguir el cambio sin negarse y sin añadir nada que no se pidiera. Con una frase como "cambia la iconografía", que nombra el área pero no la dirección, el modelo o se inventaba una (iconos rellenos, por ejemplo) o devolvía que no había nada que cambiar, y en los dos casos se gastaba una pasada de IA. Se le propuso a Eric que Tino preguntara, y contestó: "eso es. perfecto".

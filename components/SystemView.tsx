@@ -237,8 +237,6 @@ export default function SystemView({ onConnect, project, system, onSystem, board
   const readVersion = useCallback(() => { void criterioVersionNow(project.id).then((r) => { if (r.ok && r.data !== null) setVersion(r.data); }); }, [project.id]);
   useEffect(() => { readVersion(); }, [readVersion]);
   useEffect(() => { const id = setTimeout(readVersion, 2000); return () => clearTimeout(id); }, [markdown, readVersion]);
-  // Tino's dock stands outside the page's scroll (beside .spage), so the views put it there
-  const [dock, setDock] = useState<HTMLDivElement | null>(null);
   // Bringing in a brand that exists: asked for here, or from the empty project's start (?bring=site)
   const [bringing, setBringing] = useState<"site" | "files" | "text" | null>(null);
   const [sharing, setSharing] = useState(false);
@@ -351,7 +349,7 @@ export default function SystemView({ onConnect, project, system, onSystem, board
           <VersionView projectId={project.id} projectName={project.name} n={viewing} rows={versions} onPick={setViewing} />
         ) : (
           <SystemDoc look={view === "doc" ? "doc" : "md"} blocks={blocks} system={sys} labels={labels} boardIds={boardIds} itemOf={itemOf} imageOf={imageOf} refInfo={refInfo} activity={activity}
-            onSystem={setSystem} onTalk={() => setTalkN((n) => n + 1)} dock={dock} kept={kept}
+            onSystem={setSystem} onTalk={() => setTalkN((n) => n + 1)} kept={kept}
             onAbout={async (text) => { if (!(await onBrief({ about: text }))) throw new Error("brief not saved"); }} onOpenItem={onOpenItem} onText={onText} onTextTitle={onTextTitle}
             fileTools={<SkillsMenu on={skillsOn} onToggle={(id) => void toggleSkill(id)} />}
             busy={busy} onConnect={onConnect} onCopy={() => void copy()} onDownload={download} copied={copied} markdown={markdown} projectId={project.id} projectName={project.name} hasRecipe={!!project.hasRecipe}
@@ -363,7 +361,6 @@ export default function SystemView({ onConnect, project, system, onSystem, board
         )}
       </div>
     </div>
-    <div className="spage-dock" ref={setDock} />
     <Clouds />
     </>
   );
