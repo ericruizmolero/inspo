@@ -11,7 +11,7 @@ export const isNewSkill = (s: Skill, now = Date.now()) => isNew(s, now);
 
 /** The skills Discover features: a handful picked by hand, by the page each one opens */
 export const FEATURED_SKILLS: readonly string[] = [
-  skillPage("gsap"), skillPage("no-ai-slop"), skillPage("a11y"),
+  skillPage("gsap"), skillPage("copy"), skillPage("a11y"),
   "https://ui-skills.com/skills/anthropics/frontend-design",
   "https://ui-skills.com/skills/emilkowalski/emil-design-eng",
   "https://ui-skills.com/skills/emilkowalski/apple-design",

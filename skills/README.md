@@ -20,11 +20,10 @@ npx skills add https://github.com/ericruizmolero/inspo --skill <name>
 | [GSAP](gsap/SKILL.md) | Smooth micro-animations, with the curves and durations of the Motion area | `npx skills add https://github.com/ericruizmolero/inspo --skill gsap` |
 | [Native transitions](transitions/SKILL.md) | Motion without a library: CSS, view transitions and scroll | `npx skills add https://github.com/ericruizmolero/inspo --skill transitions` |
 | [Responsive images](images/SKILL.md) | Imagery: formats, sizes, crops and one treatment | `npx skills add https://github.com/ericruizmolero/inspo --skill images` |
-| [Microcopy](microcopy/SKILL.md) | Voice: buttons, errors, empty screens, forms and metadata | `npx skills add https://github.com/ericruizmolero/inspo --skill microcopy` |
-| [Avoid AI slop](no-ai-slop/SKILL.md) | Voice: writing without the patterns of generated text (no-ai-slop, by Peter Yang) | `npx skills add https://github.com/ericruizmolero/inspo --skill no-ai-slop` |
+| [Copy](copy/SKILL.md) | Voice: the landing section by section, with no generated tics | `npx skills add https://github.com/ericruizmolero/inspo --skill copy` |
 | [Avoid UI slop](no-ui-slop/SKILL.md) | The whole system: the habits that make an interface read as generated, as rules with an id | `npx skills add https://github.com/ericruizmolero/inspo --skill no-ui-slop` |
 | [Accessibility](a11y/SKILL.md) | The whole system: keyboard, focus, contrast and reduced motion | `npx skills add https://github.com/ericruizmolero/inspo --skill a11y` |
 | [Tailwind](tailwind/SKILL.md) | The whole system as a Tailwind 4 theme | `npx skills add https://github.com/ericruizmolero/inspo --skill tailwind` |
 | [Bring in a brand](bring-brand/SKILL.md) | Reads a site or a repo and fills the project's presentation through the criterio MCP | `npx skills add https://github.com/ericruizmolero/inspo --skill bring-brand` |
 
-The eleven are written by `scripts/build-skills.ts` from the same text criterio.md carries (`lib/md-skills.ts`): edit it there and run `npm run skills:build`. The connector's are written by hand in their folder.
+The ten are written by `scripts/build-skills.ts` from the same text criterio.md carries (`lib/md-skills.ts`): edit it there and run `npm run skills:build`. The connector's are written by hand in their folder.

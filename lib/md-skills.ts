@@ -6,6 +6,7 @@
 //   - the project, read from the system: the area's decision and never list, the curves the team kept, the
 //     durations named. Two projects with the same skill on get different sections.
 // Shared by client (the Markdown view) and server (scripts). Plain data in, lines out: no model call.
+import type { Brief } from "@/types/brief";
 import type { ProjectSystem, SystemArea, SystemAreaState } from "@/types/system";
 import { AREAS, MORE_SKILLS, MORE_SKILL_DEFS, moreSkillSection, type MoreSkill, type SkillText } from "./md-skills-more";
 
@@ -174,7 +175,7 @@ export function skillCraft(id: MdSkill, lang: Lang): SkillText & { area: SystemA
 }
 
 /** The sections the switched-on skills add to criterio.md, as blocks of the file */
-export function skillSections(system: ProjectSystem, skills: readonly string[], locale: string = "en"): { id: string; heading: string; lines: string[] }[] {
+export function skillSections(system: ProjectSystem, skills: readonly string[], locale: string = "en", brief?: Brief | null): { id: string; heading: string; lines: string[] }[] {
   const lang: Lang = locale === "es" ? "es" : "en";
   const out: { id: string; heading: string; lines: string[] }[] = [];
   for (const id of MD_SKILLS) {
@@ -182,7 +183,7 @@ export function skillSections(system: ProjectSystem, skills: readonly string[], 
     // A project saved with both ways to build motion gets one: GSAP, the one that names its curves
     if (id === "transitions" && skills.includes("gsap")) continue;
     if (id === "gsap") out.push({ id: "skill:gsap", heading: T[lang].heading, lines: gsapLines(system, lang) });
-    else if ((MORE_SKILLS as readonly string[]).includes(id)) out.push(moreSkillSection(id as MoreSkill, system, lang));
+    else if ((MORE_SKILLS as readonly string[]).includes(id)) out.push(moreSkillSection(id as MoreSkill, system, lang, brief));
   }
   return out;
 }

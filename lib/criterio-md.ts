@@ -466,7 +466,7 @@ export function criterioBlocks({ project, system, items: allItems, labels, strin
   // What crosses every area (slop, accessibility, the stack), after the areas, as each area ends with its own
   const across = areaSkillLines("all", skills, lang).slice(1).map((l) => l.replace(/^  /, ""));
   if (across.length) blocks.push({ kind: "section", id: "skills-all", heading: title("skills-all", lang === "es" ? "Skills para todo el sistema" : "Skills for the whole system"), lines: across });
-  for (const s of skillSections(system, skills, locale)) blocks.push({ kind: "section", ...s, heading: title(s.id, s.heading), lines: doc[s.id] ? doc[s.id].split("\n") : s.lines, edited: !!doc[s.id] });
+  for (const s of skillSections(system, skills, locale, stored)) blocks.push({ kind: "section", ...s, heading: title(s.id, s.heading), lines: doc[s.id] ? doc[s.id].split("\n") : s.lines, edited: !!doc[s.id] });
   // The values as variables, ready to paste into a project
   if (css.length) blocks.push({ kind: "section", id: "brand-tokens", heading: title("brand-tokens", strings.brand.tokens), mark: strings.required, ...byHandOr("brand-tokens", [`> ${strings.brand.tokensIntro}`, "", ...css]) });
   // No brand drawn: the values the areas already decided, gathered so an agent need not dig them out of the prose

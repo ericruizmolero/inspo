@@ -1,12 +1,13 @@
 // More skills for criterio.md (see lib/md-skills.ts, which lists them and writes the GSAP one). One per area and
 // two that cross them all. Each is written the same way: first the project (the area's decision, what the team
 // kept in its curation, its never list), then the craft, the same for every project. Plain data in, lines out.
+import type { Brief } from "@/types/brief";
 import type { ProjectSystem, SystemArea, SystemAreaState } from "@/types/system";
 
 type Lang = "en" | "es";
 
 /** In the order the file has them: the areas' order, then the ones that cross them */
-export const MORE_SKILLS = ["fonts", "color-tokens", "grid", "transitions", "images", "microcopy", "no-ai-slop", "no-ui-slop", "a11y", "tailwind"] as const;
+export const MORE_SKILLS = ["fonts", "color-tokens", "grid", "transitions", "images", "copy", "no-ui-slop", "a11y", "tailwind"] as const;
 export type MoreSkill = (typeof MORE_SKILLS)[number];
 
 export interface SkillText {
@@ -24,7 +25,7 @@ interface SkillDef {
   area: SystemArea | null;
   en: SkillText; es: SkillText;
   /** What the project already decided that this skill needs, as lines of the file */
-  facts?: (system: ProjectSystem, lang: Lang) => string[];
+  facts?: (system: ProjectSystem, lang: Lang, brief?: Brief | null) => string[];
 }
 
 export const AREAS: Record<Lang, Record<SystemArea, string>> = {
@@ -118,7 +119,125 @@ const themeFacts = (system: ProjectSystem, lang: Lang): string[] => {
 // ─── The skills ──────────────────────────────────────────────────────────────────────────────────
 
 /** Each skill's area and craft, exported so the agent-skill files are built from the same text (lib/md-skills.ts skillCraft) */
+
+/** Copy decides a landing, so the file carries it and it starts switched on. The rules for the small words and against
+ *  generated text are the last two steps of one way of writing, not two more switches. Adapted from Peter Yang's
+ *  no-ai-slop (MIT) */
+const COPY_WORDS = {
+  en: [
+        "A button says what happens when it is pressed: a verb and its object (\"Book a call\"), never \"Submit\" or \"OK\". One main action in each screen.",
+        "A headline says the fact or the benefit in the reader's own words. No slogans that would fit any company.",
+        "An error says what happened and how to fix it, beside the field, without blaming and without a code on its own.",
+        "An empty screen says what will be here and gives the first step.",
+        "Forms: the label above the field, an example as a hint and not as a placeholder, only the questions that are needed, and why when a piece of data is sensitive.",
+        "A confirmation names the thing done (\"Message sent to the office\"), not \"Success\".",
+        "Links say where they go; never \"click here\" or \"read more\" alone.",
+        "For search and sharing: a `<title>` of up to 60 characters (what it is, then the brand), a description of 140 to 160 that sounds like the voice, and the same care in the share title.",
+        "The never list of the area holds everywhere: alt texts, emails, legal notes and error pages too.",
+        "Consent and legal text in plain words, with the choice that costs the reader nothing as easy as the other.",
+  ],
+  es: [
+        "Un botón dice lo que pasa al pulsarlo: un verbo y su objeto («Pedir cita»), nunca «Enviar» ni «Aceptar». Una sola acción principal en cada pantalla.",
+        "Un titular dice el hecho o el beneficio con las palabras de quien lee. Nada de lemas que le servirían a cualquier empresa.",
+        "Un error dice qué ha pasado y cómo arreglarlo, junto al campo, sin culpar y sin un código a secas.",
+        "Una pantalla vacía dice qué habrá aquí y da el primer paso.",
+        "Formularios: la etiqueta encima del campo, un ejemplo como ayuda y no como placeholder, solo las preguntas necesarias y el porqué cuando un dato es delicado.",
+        "Una confirmación nombra lo que se ha hecho («Mensaje enviado al despacho»), no «Éxito».",
+        "Los enlaces dicen adónde llevan; nunca «haz clic aquí» ni «leer más» a secas.",
+        "Para buscadores y al compartir: un `<title>` de hasta 60 caracteres (qué es y después la marca), una descripción de 140 a 160 que suene a la voz y el mismo cuidado en el título para compartir.",
+        "La lista de nunca del área vale en todas partes: también en textos alternativos, correos, avisos legales y páginas de error.",
+        "El consentimiento y lo legal, en palabras llanas, y la opción que no le cuesta nada a quien lee, tan a mano como la otra.",
+  ],
+};
+const COPY_SLOP = {
+  en: [
+        "Keep the voice the area describes: fix what sounds generated and leave what sounds like the brand, rough edges included. Never invent a claim, a figure or a quote: mark it.",
+        "The portability test: a sentence that could move unchanged to another company is filler. Replace it with a fact, a number, a name or what happens next, or cut it.",
+        "Say the thing itself. No \"It is not X, it is Y\" and no \"Not an X. Not a Y. A Z.\": state the Y, or the Z.",
+        "Start with the point. No opener that clears the throat or promises an insight (\"Here's the thing\", \"What nobody tells you\", \"Let's dive in\").",
+        "No reveal after a colon (\"The best part: it learns\"). A colon is for a list, a label or a quote.",
+        "Facts instead of importance: no \"marks a pivotal moment\", \"plays a vital role\" or \"stands as a testament\", and no clause in \"-ing\" at the end that pretends to explain (\"…, highlighting our commitment to quality\").",
+        "Do not tell the reader what to notice or think (\"The key point is\", \"As you can see\", \"It is worth noting\"). Show it, and trust them.",
+        "Name the source or cut the claim: no \"experts agree\" and no \"studies show\".",
+        "Plain verbs in the active voice: \"is\", \"has\", \"tracks\", not \"serves as\" or \"has the ability to\". One word for one thing: do not rotate synonyms for style.",
+        "No last line that tries to sound deep, and no closing paragraph that repeats the piece. End on the last concrete point or on the next step.",
+        "Rhythm: no stacked fragments (\"That's it. That's the whole thing.\"), no question answered by itself, no list of three by reflex.",
+        "Format follows the content: no emoji in headings, no bold scattered through a sentence, no bullets where two sentences read better. No em dashes in short copy.",
+        "Words to cut: delve, foster, leverage, utilize, empower, streamline, robust, cutting-edge, seamless, game changer, paradigm shift, transformative, elevate, unlock, supercharge, harness, ever-evolving, tapestry, realm.",
+        "Phrases that only delay the point: it's worth noting, at the end of the day, when it comes to, at its core, in today's world, the reality is, in order to, going forward.",
+  ],
+  es: [
+        "Se conserva la voz que describe el área: se arregla lo que suena generado y se deja lo que suena a la marca, con sus aristas. Nunca se inventa un dato, una cifra ni una cita para rellenar un hueco: se marca.",
+        "La prueba de la mudanza: una frase que podría irse tal cual a otra empresa es relleno. Se cambia por un hecho, una cifra, un nombre o lo que pasa después, o se quita.",
+        "Se dice la cosa. Nada de «No es X, es Y» ni de «No es un X. No es un Y. Es un Z.»: se afirma Y, o Z.",
+        "Se empieza por lo que se quiere decir. Sin arranques que carraspean o prometen una revelación («La cuestión es que», «Lo que nadie te cuenta», «Vamos a verlo»).",
+        "Sin revelaciones tras dos puntos («Lo mejor: aprende solo»). Los dos puntos son para una lista, una etiqueta o una cita.",
+        "Hechos en vez de importancia: sin «marca un antes y un después», «juega un papel clave» ni «es un referente», y sin gerundio final que finge explicar («…, reforzando nuestro compromiso con la calidad»).",
+        "No se le dice a quien lee en qué fijarse ni qué pensar («La clave es», «Como puedes ver», «Cabe destacar»). Se muestra, y se confía en él.",
+        "Se nombra la fuente o se quita la afirmación: sin «los expertos coinciden» ni «los estudios demuestran».",
+        "Verbos llanos y en activa: «es», «tiene», «lleva», no «actúa como» ni «tiene la capacidad de». Una palabra para cada cosa: no se rotan sinónimos por estilo.",
+        "Sin última frase que quiera sonar profunda y sin párrafo final que repita el texto. Se termina en lo último concreto o en el siguiente paso.",
+        "Ritmo: sin fragmentos apilados («Eso es. Eso es todo.»), sin pregunta que se contesta sola, sin tríos por reflejo.",
+        "El formato sigue al contenido: sin emojis en los títulos, sin negritas sueltas en mitad de la frase, sin viñetas donde dos frases se leen mejor. Sin rayas en textos cortos.",
+        "Palabras que se quitan: potenciar, impulsar, optimizar, empoderar, revolucionar, transformador, innovador, disruptivo, de vanguardia, robusto, integral, holístico, sinergia, cambio de paradigma, llevar al siguiente nivel, sumergirse en, desbloquear.",
+        "Frases que solo retrasan lo que se quiere decir: cabe destacar, es importante señalar, al fin y al cabo, a la hora de, en el mundo actual, la realidad es que, en definitiva, sin lugar a dudas.",
+  ],
+};
+
+/** What the project already said that the copy needs: the person's answers, what was corrected, and the landing's plan */
+function copyFacts(system: ProjectSystem, lang: Lang, brief?: Brief | null): string[] {
+  const t = lang === "es"
+    ? { audience: "A quién se dirige", why: "Por qué este y no otro", proof: "Pruebas que se pueden usar, y ninguna más", seconds: "Qué debe entender en 5 segundos", never: "Lo que nunca diría", noProof: "Aún no hay pruebas: marca lo que necesite una.", goal: "Objetivo", learned: "Lo que ya se corrigió" }
+    : { audience: "Who it speaks to", why: "Why this and not another", proof: "Proof that can be used, and no other", seconds: "What to grasp in 5 seconds", never: "What it would never say", noProof: "No proof yet: mark whatever needs it.", goal: "Goal", learned: "What was already corrected" };
+  const said = (id: string) => brief?.answers?.[id]?.text;
+  const L: string[] = [];
+  const add = (label: string, text: string | undefined) => { if (text?.trim()) L.push(`**${label}:** ${oneLine(text)}`, ""); };
+  add(t.goal, said("goal"));
+  add(t.audience, said("audience"));
+  add(t.seconds, said("first-seconds") ?? brief?.firstSeconds);
+  add(t.why, said("why-us"));
+  if (said("proof")) add(t.proof, said("proof")); else if (brief) L.push(`_${t.noProof}_`, "");
+  add(t.never, said("never-say") ?? brief?.neverSay);
+  const voice = (system.learned ?? []).filter((l) => l.area === "voice").slice(0, 8);
+  if (voice.length) L.push(`**${t.learned}:**`, ...voice.map((l) => `- ${l.section ? `(${l.section}) ` : ""}${oneLine(l.note)}`), "");
+  return L;
+}
+
 export const MORE_SKILL_DEFS: Record<MoreSkill, SkillDef> = {
+  copy: {
+    area: "voice",
+    facts: copyFacts,
+    en: {
+      heading: "Build it: write the copy",
+      lead: "How to write the landing, section by section, so that every word serves its goal, in the Voice and tone above and without the patterns of generated text.",
+      setup: "Adapted from Peter Yang's `no-ai-slop` skill (MIT). It holds for the site's copy and for anything written about the project.",
+      defaults: ["Know who reads it and what they should do next before writing a line.", "Short sentences with a verb that acts; one idea in each.", "A fact, a name or a number wherever an adjective was going to go."],
+      rules: [
+        "Read the real text first: the current site, the project's own texts, the person's answers. Their words win over yours, and what the client wrote stays literal where the Voice area says so.",
+        "Write from the goal. The headline says what the visitor gets, in their words, so they know within seconds if this is for them. Each section then does its job from the outline: name the problem, remove a doubt, prove the claim, ask for the action. A line that does none of these goes.",
+        "One primary action, the same one through the page, in words that say what happens next.",
+        "Always write a real draft. A missing answer is no reason to leave a headline or a section empty. Mark only a fact you cannot back, as `[proof needed: what]`, and never invent a figure, a client or a quote. Show the person each mark at the end.",
+        "A correction from the person is kept: with the connector, record_learning with area voice and the section, so the next landing starts from it.",
+...COPY_WORDS.en,
+...COPY_SLOP.en,
+      ],
+    },
+    es: {
+      heading: "Construirlo: escribir el copy",
+      lead: "Cómo escribir la landing, sección a sección, para que cada palabra sirva a su objetivo, con la Voz y tono de arriba y sin los tics del texto generado.",
+      setup: "Adaptada de la skill `no-ai-slop` de Peter Yang (MIT). Vale para el copy de la web y para todo lo que se escriba sobre el proyecto.",
+      defaults: ["Saber quién lo lee y qué debe hacer después antes de escribir una línea.", "Frases cortas con un verbo que actúa; una idea en cada una.", "Un dato, un nombre o una cifra donde iba a ir un adjetivo."],
+      rules: [
+        "Lee primero el texto real: la web actual, los textos del proyecto, las respuestas de la persona. Sus palabras ganan a las tuyas, y lo que escribió el cliente se queda literal donde el área de Voz lo diga.",
+        "Escribe desde el objetivo. El titular dice lo que se lleva quien visita, con sus palabras, para que en segundos sepa si es para él. Cada sección hace después su trabajo del esquema: nombrar el problema, quitar una duda, probar lo que se afirma, pedir la acción. Una línea que no hace nada de esto sobra.",
+        "Una sola acción principal, la misma en toda la página, con palabras que digan qué pasa después.",
+        "Escribe siempre un borrador real. Que falte una respuesta no es motivo para dejar vacío un titular o una sección. Marca solo un dato que no puedas respaldar, como `[falta prueba: qué]`, y nunca inventes una cifra, un cliente o una cita. Enseña cada marca a la persona al final.",
+        "Una corrección de la persona se guarda: con el conector, record_learning con el área voz y la sección, para que la siguiente landing empiece desde ahí.",
+...COPY_WORDS.es,
+...COPY_SLOP.es,
+      ],
+    },
+  },
   fonts: {
     area: "typography", facts: fontFacts,
     en: {
@@ -296,90 +415,6 @@ export const MORE_SKILL_DEFS: Record<MoreSkill, SkillDef> = {
       ],
     },
   },
-  microcopy: {
-    area: "voice",
-    en: {
-      heading: "Build it: the small words",
-      lead: "How to write, in the Voice and tone above, the words nobody designs: buttons, errors, empty screens, forms and what search engines show.",
-      defaults: ["Sentence case everywhere, no full stop in headlines or buttons.", "Speak to one person, the same way from the headline to the error message.", "Short: if a word can go, it goes."],
-      rules: [
-        "A button says what happens when it is pressed: a verb and its object (\"Book a call\"), never \"Submit\" or \"OK\". One main action in each screen.",
-        "A headline says the fact or the benefit in the reader's own words. No slogans that would fit any company.",
-        "An error says what happened and how to fix it, beside the field, without blaming and without a code on its own.",
-        "An empty screen says what will be here and gives the first step.",
-        "Forms: the label above the field, an example as a hint and not as a placeholder, only the questions that are needed, and why when a piece of data is sensitive.",
-        "A confirmation names the thing done (\"Message sent to the office\"), not \"Success\".",
-        "Links say where they go; never \"click here\" or \"read more\" alone.",
-        "For search and sharing: a `<title>` of up to 60 characters (what it is, then the brand), a description of 140 to 160 that sounds like the voice, and the same care in the share title.",
-        "The never list of the area holds everywhere: alt texts, emails, legal notes and error pages too.",
-        "Consent and legal text in plain words, with the choice that costs the reader nothing as easy as the other.",
-      ],
-    },
-    es: {
-      heading: "Construirlo: las palabras pequeñas",
-      lead: "Cómo escribir, con la Voz y tono de arriba, las palabras que nadie diseña: botones, errores, pantallas vacías, formularios y lo que enseñan los buscadores.",
-      defaults: ["Mayúscula solo al empezar, sin punto final en titulares ni botones.", "Se habla a una persona, y de la misma forma desde el titular hasta el mensaje de error.", "Corto: si una palabra sobra, se quita."],
-      rules: [
-        "Un botón dice lo que pasa al pulsarlo: un verbo y su objeto («Pedir cita»), nunca «Enviar» ni «Aceptar». Una sola acción principal en cada pantalla.",
-        "Un titular dice el hecho o el beneficio con las palabras de quien lee. Nada de lemas que le servirían a cualquier empresa.",
-        "Un error dice qué ha pasado y cómo arreglarlo, junto al campo, sin culpar y sin un código a secas.",
-        "Una pantalla vacía dice qué habrá aquí y da el primer paso.",
-        "Formularios: la etiqueta encima del campo, un ejemplo como ayuda y no como placeholder, solo las preguntas necesarias y el porqué cuando un dato es delicado.",
-        "Una confirmación nombra lo que se ha hecho («Mensaje enviado al despacho»), no «Éxito».",
-        "Los enlaces dicen adónde llevan; nunca «haz clic aquí» ni «leer más» a secas.",
-        "Para buscadores y al compartir: un `<title>` de hasta 60 caracteres (qué es y después la marca), una descripción de 140 a 160 que suene a la voz y el mismo cuidado en el título para compartir.",
-        "La lista de nunca del área vale en todas partes: también en textos alternativos, correos, avisos legales y páginas de error.",
-        "El consentimiento y lo legal, en palabras llanas, y la opción que no le cuesta nada a quien lee, tan a mano como la otra.",
-      ],
-    },
-  },
-  "no-ai-slop": {
-    area: "voice",
-    en: {
-      heading: "Build it: avoiding AI slop",
-      lead: "How to write every word of the project, in the Voice and tone above, without the patterns that make a text read as generated.",
-      setup: "Adapted from Peter Yang's `no-ai-slop` skill (MIT). An agent that takes skills can install the original, which also edits and audits drafts: `npx skills add petergyang/no-ai-slop --skill no-ai-slop --global --yes`. It holds for the site's copy and for anything written about the project.",
-      defaults: ["Know who reads it and what they should do next before writing a line.", "Short sentences with a verb that acts; one idea in each.", "A fact, a name or a number wherever an adjective was going to go."],
-      rules: [
-        "Keep the voice the area describes: fix what sounds generated and leave what sounds like the brand, rough edges included. Never invent a claim, a figure or a quote to fill a gap: ask.",
-        "The portability test: a sentence that could move unchanged to another company is filler. Replace it with a fact, a number, a name or what happens next, or cut it.",
-        "Say the thing itself. No \"It is not X, it is Y\" and no \"Not an X. Not a Y. A Z.\": state the Y, or the Z.",
-        "Start with the point. No opener that clears the throat or promises an insight (\"Here's the thing\", \"What nobody tells you\", \"Let's dive in\").",
-        "No reveal after a colon (\"The best part: it learns\"). A colon is for a list, a label or a quote.",
-        "Facts instead of importance: no \"marks a pivotal moment\", \"plays a vital role\" or \"stands as a testament\", and no clause in \"-ing\" at the end that pretends to explain (\"…, highlighting our commitment to quality\").",
-        "Do not tell the reader what to notice or think (\"The key point is\", \"As you can see\", \"It is worth noting\"). Show it, and trust them.",
-        "Name the source or cut the claim: no \"experts agree\" and no \"studies show\".",
-        "Plain verbs in the active voice: \"is\", \"has\", \"tracks\", not \"serves as\" or \"has the ability to\". One word for one thing: do not rotate synonyms for style.",
-        "No last line that tries to sound deep, and no closing paragraph that repeats the piece. End on the last concrete point or on the next step.",
-        "Rhythm: no stacked fragments (\"That's it. That's the whole thing.\"), no question answered by itself, no list of three by reflex.",
-        "Format follows the content: no emoji in headings, no bold scattered through a sentence, no bullets where two sentences read better. No em dashes in short copy.",
-        "Words to cut: delve, foster, leverage, utilize, empower, streamline, robust, cutting-edge, seamless, game changer, paradigm shift, transformative, elevate, unlock, supercharge, harness, ever-evolving, tapestry, realm.",
-        "Phrases that only delay the point: it's worth noting, at the end of the day, when it comes to, at its core, in today's world, the reality is, in order to, going forward.",
-      ],
-    },
-    es: {
-      heading: "Construirlo: evitar el AI slop",
-      lead: "Cómo escribir cada palabra del proyecto, con la Voz y tono de arriba, sin los tics que hacen que un texto suene generado.",
-      setup: "Adaptada de la skill `no-ai-slop` de Peter Yang (MIT). Un agente que acepte skills puede instalar la original, que además edita y audita borradores: `npx skills add petergyang/no-ai-slop --skill no-ai-slop --global --yes`. Vale para el copy de la web y para todo lo que se escriba sobre el proyecto.",
-      defaults: ["Antes de escribir una línea, saber quién lee y qué debería hacer después.", "Frases cortas con un verbo que actúa; una idea en cada una.", "Un hecho, un nombre o una cifra allí donde iba a ir un adjetivo."],
-      rules: [
-        "Se conserva la voz que describe el área: se arregla lo que suena generado y se deja lo que suena a la marca, con sus aristas. Nunca se inventa un dato, una cifra ni una cita para rellenar un hueco: se pregunta.",
-        "La prueba de la mudanza: una frase que podría irse tal cual a otra empresa es relleno. Se cambia por un hecho, una cifra, un nombre o lo que pasa después, o se quita.",
-        "Se dice la cosa. Nada de «No es X, es Y» ni de «No es un X. No es un Y. Es un Z.»: se afirma Y, o Z.",
-        "Se empieza por lo que se quiere decir. Sin arranques que carraspean o prometen una revelación («La cuestión es que», «Lo que nadie te cuenta», «Vamos a verlo»).",
-        "Sin revelaciones tras dos puntos («Lo mejor: aprende solo»). Los dos puntos son para una lista, una etiqueta o una cita.",
-        "Hechos en vez de importancia: sin «marca un antes y un después», «juega un papel clave» ni «es un referente», y sin gerundio final que finge explicar («…, reforzando nuestro compromiso con la calidad»).",
-        "No se le dice a quien lee en qué fijarse ni qué pensar («La clave es», «Como puedes ver», «Cabe destacar»). Se muestra, y se confía en él.",
-        "Se nombra la fuente o se quita la afirmación: sin «los expertos coinciden» ni «los estudios demuestran».",
-        "Verbos llanos y en activa: «es», «tiene», «lleva», no «actúa como» ni «tiene la capacidad de». Una palabra para cada cosa: no se rotan sinónimos por estilo.",
-        "Sin última frase que quiera sonar profunda y sin párrafo final que repita el texto. Se termina en lo último concreto o en el siguiente paso.",
-        "Ritmo: sin fragmentos apilados («Eso es. Eso es todo.»), sin pregunta que se contesta sola, sin tríos por reflejo.",
-        "El formato sigue al contenido: sin emojis en los títulos, sin negritas sueltas en mitad de la frase, sin viñetas donde dos frases se leen mejor. Sin rayas en textos cortos.",
-        "Palabras que se quitan: potenciar, impulsar, optimizar, empoderar, revolucionar, transformador, innovador, disruptivo, de vanguardia, robusto, integral, holístico, sinergia, cambio de paradigma, llevar al siguiente nivel, sumergirse en, desbloquear.",
-        "Frases que solo retrasan lo que se quiere decir: cabe destacar, es importante señalar, al fin y al cabo, a la hora de, en el mundo actual, la realidad es que, en definitiva, sin lugar a dudas.",
-      ],
-    },
-  },
   "no-ui-slop": {
     area: null,
     facts: rejectFacts,
@@ -503,7 +538,7 @@ export const MORE_SKILL_DEFS: Record<MoreSkill, SkillDef> = {
 };
 
 /** The section one of these skills adds to criterio.md */
-export function moreSkillSection(id: MoreSkill, system: ProjectSystem, lang: Lang): { id: string; heading: string; lines: string[] } {
+export function moreSkillSection(id: MoreSkill, system: ProjectSystem, lang: Lang, brief?: Brief | null): { id: string; heading: string; lines: string[] } {
   const def = MORE_SKILL_DEFS[id];
   const s = def[lang];
   const c = COMMON[lang];
@@ -514,7 +549,7 @@ export function moreSkillSection(id: MoreSkill, system: ProjectSystem, lang: Lan
     if (a?.decision) L.push(`**${c.decided(area)}:** ${oneLine(a.decision)}`, "");
     else L.push(`_${c.open(area)}_`, "");
   }
-  const facts = def.facts?.(system, lang) ?? [];
+  const facts = def.facts?.(system, lang, brief) ?? [];
   L.push(...facts);
   const never = (a?.never ?? "").split("\n").map((l) => l.trim()).filter(Boolean);
   if (never.length && area) L.push(`**${c.never(area)}:**`, ...never.map((l) => `- ${l}`), "");

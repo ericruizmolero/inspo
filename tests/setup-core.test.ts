@@ -1,6 +1,7 @@
 import { expect, test } from "vitest";
 import { nextAction, setupState, type SetupFacts } from "@/lib/setup-core";
 import { readBrief } from "@/types/brief";
+import { NO_SKILLS, skillsOf } from "@/lib/md-skill-ids";
 
 const brief = (v: Record<string, unknown>) => readBrief({ updatedAt: "2026-11-04", ...v });
 const said = (text = "x") => ({ text, at: "2026-11-04" });
@@ -54,4 +55,11 @@ test("the criterio completes the setup, and the landing is only offered", () => 
   expect(nextAction(s)).toContain("nothing is unfinished");
   expect(setupState({ ...base, picked: true }).next).toBe("landing");
   expect(setupState({ ...base, picked: true, built: true }).next).toBeNull();
+});
+
+test("a file starts with copy on, a list saved before keeps what its skills became, and off stays off", () => {
+  expect(skillsOf(null)).toEqual(["copy"]);
+  expect(skillsOf({})).toEqual(["copy"]);
+  expect(skillsOf({ skills: "gsap,no-ai-slop,microcopy,icons" })).toEqual(["gsap", "copy"]);
+  expect(skillsOf({ skills: NO_SKILLS })).toEqual([]);
 });

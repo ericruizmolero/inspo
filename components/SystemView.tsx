@@ -10,7 +10,7 @@ import { emptySystem, type ProjectSystem, type SystemArea, type SystemFocus } fr
 import { blocksToMd, criterioBlocks, type RefInfo } from "@/lib/criterio-md";
 import type { ProjectMeasures } from "@/lib/ref-measured";
 import SkillsMenu from "./SkillsMenu";
-import { MD_SKILL_EXCLUSIVE, type MdSkill } from "@/lib/md-skill-ids";
+import { NO_SKILLS, skillsOf, MD_SKILL_EXCLUSIVE, type MdSkill } from "@/lib/md-skill-ids";
 import ImproveModal from "./ImproveModal";
 import { VersionPicker, VersionView, useVersions } from "./VersionPicker";
 import { readBrief, type Brief } from "@/types/brief";
@@ -193,11 +193,11 @@ export default function SystemView({ project, system, onSystem, board, library, 
   // Oldest first: a reference keeps its code (R1, R2…) when more arrive
   const boardIds = useMemo(() => board.map((i) => i.id!).filter(Boolean).reverse(), [board]);
   // The skills switched on for criterio.md, kept with the system so the whole team copies the same file
-  const skillsOn = useMemo(() => (sys.doc?.skills ?? "").split(",").filter(Boolean), [sys.doc?.skills]);
+  const skillsOn: string[] = useMemo(() => skillsOf(sys.doc), [sys.doc]);
   const toggleSkill = async (id: string) => {
     const rival = MD_SKILL_EXCLUSIVE[id as MdSkill];
     const next = skillsOn.includes(id) ? skillsOn.filter((s) => s !== id) : [...skillsOn.filter((s) => s !== rival), id];
-    const r = await saveDocPart(project.id, "skills", next.length ? next.join(",") : null);
+    const r = await saveDocPart(project.id, "skills", next.length ? next.join(",") : NO_SKILLS);
     if (r.ok) setSystem(r.data); else setError(r.error);
   };
   // What each reference measured and the client's own words, read on the server so the file says what a share link's does

@@ -43,7 +43,7 @@ export const AREA_SKILLS: Record<SystemArea | "all", { ours: MdSkill[]; external
   imagery: { ours: ["images"], external: [
     ext("unsplash-asset-images", "MengTo/Skills", { en: "Picks real Unsplash photos with their URL", es: "Elige fotos reales de Unsplash con su URL" }),
   ] },
-  voice: { ours: ["microcopy", "no-ai-slop"], external: [
+  voice: { ours: ["copy"], external: [
     // Written for English copy: in Spanish its method holds, its formulas and punctuation do not
     ext("copywriting", "coreyhaines31/marketingskills", { en: "Landing, pricing and About copy", es: "Copy de landing, precios y About. Pensada para inglés: escribe en castellano, con comillas rectas y sin calcos" }),
     // The same job in each language: humanizer reads English tells (Wikipedia's list), humanamente Spanish ones

@@ -2,6 +2,7 @@
 // criterio.md in the link's mode (lib/criterio-md.ts), all built on the server from the same data the app reads. Every
 // stored file the page points at goes through the link's own file route (/s/<token>/f/<key>), which serves only
 // the files this view names.
+import { skillsOf } from "./md-skill-ids";
 import "server-only";
 import { and, asc, eq, inArray, or } from "drizzle-orm";
 import { db, schema } from "./db";
@@ -107,7 +108,7 @@ export async function loadShareView(organizationId: string, projectId: string, m
   const blocks = criterioBlocks({
     project: project.name, system, items: infos, labels: t.system.areas as Record<SystemArea, string>, strings: t.system.md,
     client: client ? { name: client.name, web: client.web } : null, about: project.brief?.about || null, brief: project.brief,
-    board: boardIds, talk: activity?.notes ?? {}, origin, skills: (system.doc?.skills ?? "").split(",").filter(Boolean), locale,
+    board: boardIds, talk: activity?.notes ?? {}, origin, skills: skillsOf(system.doc), locale,
     brand, mode, fileHref: (key) => { keys.add(key); return `${origin}${out(key)}`; }, clientCopy,
   });
   return { name: project.name, system, refs, markdown: blocksToMd(blocks), blocks, keys };

@@ -68,6 +68,19 @@ test("a pick closes the direction, a built outline closes the landing, and the p
   expect(file).toContain("**testimonials:** Removes the doubt that it works");
 });
 
+test("a new file carries the copy add-on, written from the person's answers and corrections", async () => {
+  await tool("create_project", { name: "Acme" });
+  await tool("answer_question", { project: "Acme", question: "audience", answer: "Heads of finance at mid-size firms" });
+  await tool("answer_question", { project: "Acme", question: "proof", answer: "Forty clients in Spain" });
+  await tool("record_learning", { project: "Acme", note: "Prices always with VAT", area: "voice", section: "pricing" });
+  const file = (await raw("read_criterio", { project: "Acme" })).result.content[0].text;
+  expect(file).toContain("Heads of finance at mid-size firms");
+  expect(file).toContain("Forty clients in Spain");
+  expect(file).toContain("(pricing) Prices always with VAT");
+  expect(file).toContain("[proof needed: what]");
+  expect(file).toContain("portability test");
+});
+
 test("a section kind outside the vocabulary is refused", async () => {
   await tool("create_project", { name: "Acme" });
   expect((await raw("set_outline", { project: "Acme", name: "Home", goal: "x", sections: [{ kind: "banner", job: "x" }] })).result.isError).toBe(true);
