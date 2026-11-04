@@ -181,9 +181,7 @@
 .mdv--doc .mdv-refhead::before { content: ""; position: absolute; left: 0; top: 0; width: 256px; height: 162px; border-radius: var(--radius-lg); background: var(--pic) top center / cover no-repeat, var(--surface-2); box-shadow: 0 0 0 1px var(--border); }
 @media (max-width: 600px) { .mdv--doc { --ref-w: 96px; --ref-h: 60px; --ref-gap: 12px; --ref-in: 0px; } .mdv--doc .mdv-tr { font-size: var(--fs-label); } .mdv--doc .mdv-th { font-size: var(--fs-label); } .mdv--doc .mdv-td { padding: 8px 6px 8px 0; } }
 
-/* A skill switched on, in the parts list: its mark instead of a dot, its name on one line */
-.sdoc-toc button.is-skill { color: var(--text); }
-.sdoc-toc__spark { flex-shrink: 0; display: inline-flex; width: 14px; margin-left: -3px; color: var(--text-2); } .sdoc-toc__spark svg { width: 14px; height: 14px; }
+/* A part's name on one line */
 .sdoc-toc__name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* The skills menu holds eleven now: it scrolls inside instead of running off the screen */

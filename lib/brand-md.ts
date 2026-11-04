@@ -75,7 +75,7 @@ export function brandTokenLines(area: SystemArea, b: BrandSpec, s: BrandMdString
     case "voice": {
       const v = b.voice;
       if (!v.principles.length && !v.pairs.length) break;
-      if (v.principles.length) { head(s.principles); for (const p of v.principles) L.push(`- **${p.title}.** ${p.body}${p.sample ? ` «${p.sample}»` : ""}`); }
+      if (v.principles.length) { head(s.principles); for (const p of v.principles) L.push(`- **${p.title}.** ${p.body}${p.sample ? ` "${p.sample}"` : ""}`); }
       if (v.pairs.length) {
         L.push("", `**${s.pairs}**`, "", `| ${s.context} | ${s.do} | ${s.dont} |`, "|---|---|---|");
         for (const p of v.pairs) L.push(`| ${cell(p.context)} | ${cell(p.do)} | ~~${cell(p.dont)}~~ |`);

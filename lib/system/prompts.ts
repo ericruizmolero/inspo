@@ -129,6 +129,13 @@ RULES
 - "why": the area's why after the change. The same as now unless the change makes it wrong; empty when it is empty now and the change gives no reason.
 - "never": the area's never lines after the change, one item each. The same as now unless the change touches them.
 - "reason": one sentence of at most 25 words, said to the person by Tino, a plush that reads the file with them: what changes in that area, and why it matters to the agent that reads the file. First person, plain and a little dry. No praise, no exclamation marks.
+
+WHEN THE CHANGE DOES NOT SAY WHICH WAY
+- A change that names an area but not what it should become ("change the iconography", "improve the colour", "something else for the type") is not guessed. Return no edits and fill "ask"; otherwise "ask" is null.
+- "ask.area": the area it names.
+- "ask.question": what Tino asks, at most 10 words, plain ("Which way do I take the icons?").
+- "ask.now": how the area is now, one sentence of at most 18 words, with its concrete values (library, weight, sizes).
+- "ask.options": 3 or 4 directions that differ in substance, drawn from the file's references and the brief where they can be. Each has "label" (at most 4 words), "decision" (the area's whole decision taken that way, the same length and shape as now) and "why" (at most 20 words).
 ${STYLE}`;
 
 export const START_ASK_SYSTEM = `One area of a project's SYSTEM is EMPTY. Ask the team the one question that gets it going, and give the answers it could have.

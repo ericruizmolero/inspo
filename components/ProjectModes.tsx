@@ -25,8 +25,8 @@ export default function ProjectModes({ projectView, onChange, polishTab, solo, m
     <SegmentedControl className="topbar__modes" label={t.system.button} active={PROJECT_VIEWS.indexOf(projectView)}
       onChange={onChange}
       items={[
-        { icon: "grid", label: <span className="topbar__mode-label">{t.system.modeBoard}</span> },
-        { icon: "sparkle", label: <>
+        { icon: "pin", label: <span className="topbar__mode-label">{t.system.modeBoard}</span> },
+        { icon: "funnel", label: <>
             <span className="topbar__mode-label">{t.polish.mode}</span>
             {/* Who in the team has gone through the whole board: in Polish, or anywhere while votes wait */}
             {!solo && polishTab && (projectView === "polish" || polishTab.under) && (
@@ -42,7 +42,7 @@ export default function ProjectModes({ projectView, onChange, polishTab, solo, m
           </>,
           count: polishTab && polishTab.left > 0 ? polishTab.left : undefined,
           title: polishTab && polishTab.left > 0 ? t.polish.left(polishTab.left) : undefined },
-        { icon: "gauge", label: <span className="topbar__mode-label">{t.system.modeSystem}</span>,
+        { icon: "file-md", label: <span className="topbar__mode-label">{t.system.modeSystem}</span>,
           count: t.system.fill(systemFilled, SYSTEM_AREAS.length), dot: systemStale > 0,
           title: systemStale ? t.system.stale(systemStale) : undefined },
       ]} />

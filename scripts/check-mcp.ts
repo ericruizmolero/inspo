@@ -1,7 +1,7 @@
 // Walks the MCP connector end to end against a running LOCAL dev server: registers a client (RFC 7591), approves
 // it for the dev user as the consent page would, exchanges the code for tokens, speaks MCP (initialize, tools,
-// prompts, resources) and reads a project's criterio.md. With --write it also saves a reference, a text, a proposal
-// and a brand's palette and type (sections only: a dev server writes files to the production bucket, so no logo and
+// prompts, resources) and reads a project's criterio.md. With --write it also saves a reference, a text, a proposal,
+// an answer to a starting question, a learning and a brand's palette and type (sections only: a dev server writes files to the production bucket, so no logo and
 // no guide go through it) in a project called "Prueba MCP" (made if missing), as Claude would. Cleans up its client
 // and grant at the end; what --write saved stays, as it would in the app. Not a test framework: look at the output.
 //   npm run check:mcp -- [--write] [server url, default http://localhost:3837]
@@ -73,7 +73,7 @@ async function main() {
   const icon = ((init.result?.serverInfo as Json)?.icons as { src: string }[] | undefined)?.[0]?.src ?? "";
   ok("server icon is public", (await fetch(icon, { redirect: "manual" }).catch(() => null))?.headers.get("content-type") === "image/png", icon);
   const tools = ((await rpc("tools/list")).result?.tools as Json[]) ?? [];
-  ok("tools/list", tools.length === 8, tools.map((t) => t.name).join(", "));
+  ok("tools/list", tools.length === 10, tools.map((t) => t.name).join(", "));
   const bring = tools.find((t) => t.name === "bring_brand")?.inputSchema as { properties?: Record<string, unknown> } | undefined;
   ok("bring_brand schema has the brand's sections", !!bring?.properties?.color && !!bring?.properties?.logo, Object.keys(bring?.properties ?? {}).join(", "));
   const imagery = bring?.properties?.imagery as { properties?: Record<string, unknown> } | undefined;
@@ -87,7 +87,7 @@ async function main() {
     ok("read_criterio", !md.isError && md.text.startsWith("# "), `${projects[0].name}: ${md.text.length} chars`);
     const guide = await call("read_criterio", { project: projects[0].id, section: "guide" });
     ok("read_criterio guide", !guide.isError && /^## (Start here|Empieza aquí)$/m.test(guide.text), `${guide.text.length} chars`);
-    const refs = await call("list_references", { project: projects[0].name });
+    const refs = await call("list_references", { project: projects[0].id });
     ok("list_references", !refs.isError, `${(JSON.parse(refs.text).references as unknown[]).length} references`);
     const res = await rpc("resources/read", { uri: `criterio://projects/${projects[0].id}/criterio.md` });
     ok("resources/read", typeof (res.result?.contents as Json[])?.[0]?.text === "string");
@@ -120,6 +120,16 @@ async function main() {
     ok("bring_brand (sections only)", written.includes("color") && written.includes("typography"), brought.text.replace(/\s+/g, " ").slice(0, 120));
     const md = await call("read_criterio", { project: project.id, section: "decisions" });
     ok("the palette is in criterio.md", /#D9480F/i.test(md.text), `${md.text.length} chars`);
+    const answer = `Pedir una demo, con un calendario (prueba ${Date.now()})`;
+    const answered = await call("answer_question", { project: project.id, question: "goal", answer });
+    ok("answer_question", !answered.isError && !(JSON.parse(answered.text) as { still_open: { id: string }[] }).still_open.some((q) => q.id === "goal"), answered.text.replace(/\s+/g, " ").slice(0, 100));
+    const wrongQ = await call("answer_question", { project: project.id, question: "not-a-question", answer: "x" });
+    ok("an unknown question is refused", wrongQ.isError, wrongQ.text.slice(0, 60));
+    const note = `Nada de degradados en la cabecera (prueba ${Date.now()})`;
+    const learned = await call("record_learning", { project: project.id, note, area: "color" });
+    ok("record_learning", !learned.isError, learned.text.replace(/\s+/g, " ").slice(0, 100));
+    const guide = await call("read_criterio", { project: project.id, section: "guide" });
+    ok("the answer and the learning are in the guide", guide.text.includes(answer.slice(0, 40)) && guide.text.includes(note), `${guide.text.length} chars`);
   }
 
   // 6. Gone: the grant and the client this run made

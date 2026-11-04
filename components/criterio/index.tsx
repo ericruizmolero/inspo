@@ -6,7 +6,7 @@
 // TipWindow and EmptyState take no drawing.
 
 import { useEffect, useId, useLayoutEffect, useRef, useState, type ButtonHTMLAttributes, type CSSProperties, type InputHTMLAttributes, type ReactNode, type Ref, type TextareaHTMLAttributes } from "react";
-import { ArrowDown, ArrowLeft, ArrowRight, ArrowUUpLeft, ArrowUp, ArrowUpRight, Bell, CalendarBlank, CaretDown, CaretLeft, CaretRight, Chat, ChatCircle, Check, Compass, Copy, CornersIn, CornersOut, DotsThree, DownloadSimple, EnvelopeSimple, FileText, FilmStrip, Folder, Gauge, Gear, House, Info, Lightbulb, LinkSimple, LockSimple, MagnifyingGlass, Minus, MonitorPlay, Moon, PaperPlaneTilt, Pause, PencilSimple, Play, Plug, PlugsConnected, Plus, Pulse, Quotes, Shuffle, SidebarSimple, SlidersHorizontal, Smiley, Sparkle, SpeakerHigh, SpeakerSlash, SquaresFour, Sun, TextAlignLeft, Trash, Tray, UploadSimple, User, Users, X, Image as ImageIcon } from "@phosphor-icons/react/ssr";
+import { ArrowDown, ArrowLeft, ArrowRight, ArrowUUpLeft, ArrowUp, ArrowUpRight, Bell, CalendarBlank, CaretDown, CaretLeft, CaretRight, Chat, ChatCircle, Check, Compass, Copy, CornersIn, CornersOut, DotsThree, DownloadSimple, EnvelopeSimple, FileMd, FileText, FilmStrip, Folder, FunnelSimple, Gauge, Gear, House, Info, Lightbulb, LinkSimple, LockSimple, MagnifyingGlass, Minus, MonitorPlay, Moon, PaperPlaneTilt, Pause, PencilSimple, Play, Plug, PlugsConnected, Plus, Pulse, PushPin, Quotes, Shuffle, SidebarSimple, SlidersHorizontal, Smiley, Sparkle, SpeakerHigh, SpeakerSlash, SquaresFour, Sun, Tornado, TextAlignLeft, Trash, Tray, UploadSimple, User, Users, X, Image as ImageIcon } from "@phosphor-icons/react/ssr";
 import type { Icon as PhosphorIcon, IconWeight } from "@phosphor-icons/react";
 import { Liquid } from "@/components/ui/liquid";
 import "./criterio.css";
@@ -47,8 +47,16 @@ const ICONS = {
   volume: SpeakerHigh,
   mute: SpeakerSlash,
   grid: SquaresFour,
+  /** The Board tab: references pinned to a corkboard (Eric, 04-11, in place of the grid there) */
+  pin: PushPin,
   sparkle: Sparkle,
+  /** Polish's tab: the tornado the cards go through (Eric, 04-11: the sparkle there "no me gusta nada"); the sparkle stays for AI */
+  tornado: Tornado,
+  /** Polish's tab, on trial (Eric, 04-11): what stays goes through the funnel */
+  funnel: FunnelSimple,
   gauge: Gauge,
+  /** The System tab: what it makes is criterio.md (Eric, 04-11, in place of the gauge) */
+  "file-md": FileMd,
   plug: Plug,
   cable: PlugsConnected,
   text: TextAlignLeft,

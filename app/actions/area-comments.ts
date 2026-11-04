@@ -2,6 +2,7 @@
 // The team's thread on one area of a project's system (lib/area-comments.ts).
 import { withCtx } from "@/lib/workspace";
 import { addAreaComment, areaThread, deleteAreaComment, resolveProposal, systemActivity } from "@/lib/area-comments";
+import { versionAfterEdit } from "@/lib/criterio-versions";
 
 export async function loadAreaThread(projectId: string, area: string, itemIds: string[]) {
   return withCtx(async (ctx) => areaThread(ctx.workspace.id, String(projectId), String(area), Array.isArray(itemIds) ? itemIds.map(String) : [], ctx.user.id));
@@ -22,5 +23,10 @@ export async function loadSystemActivity(projectId: string) {
 
 /** Yes or no to a change someone proposed: yes writes it as the area's decision, the team's; a no may say why. Returns the system. */
 export async function answerAreaProposal(id: string, accept: boolean, reason?: string) {
-  return withCtx(async (ctx) => resolveProposal(ctx.workspace.id, String(id), !!accept, { id: ctx.user.id, name: ctx.user.name }, reason == null ? undefined : String(reason)));
+  return withCtx(async (ctx) => {
+    const system = await resolveProposal(ctx.workspace.id, String(id), !!accept, { id: ctx.user.id, name: ctx.user.name }, reason == null ? undefined : String(reason));
+    // Taken or turned down, the file says so: a version
+    await versionAfterEdit(ctx, system.projectId);
+    return system;
+  });
 }

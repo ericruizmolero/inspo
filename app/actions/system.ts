@@ -1,15 +1,23 @@
 "use server";
 // The project's system: read it, confirm or write an area, hand an area back to the board.
 // The model run (reading the whole board) takes longer and goes through app/api/system.
+// Every change of what criterio.md says is kept as a version once the answer is out (versionAfterEdit).
 import { withCtx } from "@/lib/workspace";
 import { getSystem, decideArea, releaseArea, areaHistory, revertArea, assignEvidence, setAreaEvidence, setAreaNever, setDocPart, setSummary } from "@/lib/system/areas";
 import { boardStamp, boardVisuals } from "@/lib/system/board";
 import { setVerdict } from "@/lib/system/curate";
 import { brandStale } from "@/lib/brand";
 import type { SystemEvidence } from "@/types/system";
-import { currentVersion, listVersions, versionMarkdown } from "@/lib/criterio-versions";
+import { currentVersion, listVersions, versionAfterEdit, versionMarkdown } from "@/lib/criterio-versions";
 import { headers } from "next/headers";
 import { originOfHeaders } from "@/lib/mcp/auth";
+
+/** The change done, then the file it leaves kept as a version */
+async function edited<T>(ctx: Parameters<typeof versionAfterEdit>[0], projectId: string, change: Promise<T>): Promise<T> {
+  const out = await change;
+  await versionAfterEdit(ctx, projectId);
+  return out;
+}
 
 export async function loadSystem(projectId: string) {
   return withCtx(async (ctx) => {
@@ -21,17 +29,17 @@ export async function loadSystem(projectId: string) {
 
 /** Any member decides: the system is the team's. An empty decision empties the area. */
 export async function decideSystemArea(projectId: string, area: string, input: { decision: string; confidence?: number; evidence?: SystemEvidence[]; why?: string }) {
-  return withCtx(async (ctx) => decideArea(ctx.workspace.id, String(projectId), String(area), input ?? { decision: "" }, { id: ctx.user.id, name: ctx.user.name }));
+  return withCtx(async (ctx) => edited(ctx, String(projectId), decideArea(ctx.workspace.id, String(projectId), String(area), input ?? { decision: "" }, { id: ctx.user.id, name: ctx.user.name })));
 }
 
 /** What an area must never do, one rule per line. */
 export async function setSystemNever(projectId: string, area: string, never: string) {
-  return withCtx(async (ctx) => setAreaNever(ctx.workspace.id, String(projectId), String(area), String(never ?? "")));
+  return withCtx(async (ctx) => edited(ctx, String(projectId), setAreaNever(ctx.workspace.id, String(projectId), String(area), String(never ?? ""))));
 }
 
 /** The next run may change this area again. */
 export async function releaseSystemArea(projectId: string, area: string) {
-  return withCtx(async (ctx) => releaseArea(ctx.workspace.id, String(projectId), String(area), { id: ctx.user.id, name: ctx.user.name }));
+  return withCtx(async (ctx) => edited(ctx, String(projectId), releaseArea(ctx.workspace.id, String(projectId), String(area), { id: ctx.user.id, name: ctx.user.name })));
 }
 
 /** What the sheets of the board's references can show: palettes, families, captures, easing. */
@@ -41,7 +49,7 @@ export async function loadSystemVisuals(projectId: string) {
 
 /** One step back for an area: what it said before its last change. */
 export async function undoSystemArea(projectId: string, area: string) {
-  return withCtx(async (ctx) => revertArea(ctx.workspace.id, String(projectId), String(area), { id: ctx.user.id, name: ctx.user.name }));
+  return withCtx(async (ctx) => edited(ctx, String(projectId), revertArea(ctx.workspace.id, String(projectId), String(area), { id: ctx.user.id, name: ctx.user.name })));
 }
 
 export async function loadSystemHistory(projectId: string) {
@@ -50,12 +58,12 @@ export async function loadSystemHistory(projectId: string) {
 
 /** From the board: this reference belongs to (or leaves) an area of the project's system. */
 export async function assignSystemArea(projectId: string, area: string, itemId: string, on: boolean) {
-  return withCtx(async (ctx) => assignEvidence(ctx.workspace.id, String(projectId), String(area), String(itemId), !!on, { id: ctx.user.id, name: ctx.user.name }));
+  return withCtx(async (ctx) => edited(ctx, String(projectId), assignEvidence(ctx.workspace.id, String(projectId), String(area), String(itemId), !!on, { id: ctx.user.id, name: ctx.user.name })));
 }
 
 /** From criterio.md: the references behind an area, as the team left them in the file. */
 export async function setSystemEvidence(projectId: string, area: string, refs: { itemId: string; take: string }[]) {
-  return withCtx(async (ctx) => setAreaEvidence(ctx.workspace.id, String(projectId), String(area), Array.isArray(refs) ? refs : []));
+  return withCtx(async (ctx) => edited(ctx, String(projectId), setAreaEvidence(ctx.workspace.id, String(projectId), String(area), Array.isArray(refs) ? refs : [])));
 }
 
 /** On the table: a person keeps or discards a candidate, or rewrites its reason. */
@@ -65,12 +73,12 @@ export async function setSystemVerdict(projectId: string, area: string, verdict:
 
 /** The project's paragraph, written by a person in the file. */
 export async function saveSystemSummary(projectId: string, summary: string) {
-  return withCtx(async (ctx) => setSummary(ctx.workspace.id, String(projectId), String(summary ?? "")));
+  return withCtx(async (ctx) => edited(ctx, String(projectId), setSummary(ctx.workspace.id, String(projectId), String(summary ?? ""))));
 }
 
 /** A part of criterio.md rewritten by hand ("head", "refs", "meta:<area>"); null goes back to what the app writes. */
 export async function saveDocPart(projectId: string, part: string, text: string | null) {
-  return withCtx(async (ctx) => setDocPart(ctx.workspace.id, String(projectId), String(part), text === null ? null : String(text)));
+  return withCtx(async (ctx) => edited(ctx, String(projectId), setDocPart(ctx.workspace.id, String(projectId), String(part), text === null ? null : String(text))));
 }
 
 /** criterio.md's versions, newest first (lib/criterio-versions.ts) */

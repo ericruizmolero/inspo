@@ -129,3 +129,24 @@ test("with no brand drawn, the sentences of the areas that carry a value are gat
   expect(tokens).not.toContain("Keep it airy");
   expect(tokens).toContain("look for it in its area before asking");
 });
+
+test("the starting questions list what is still open, by id and with the areas each decides; what was learned follows", () => {
+  const i = input();
+  i.system.learned = [{ id: "l1", note: "No gradients on the hero.", area: "color", by: "Eric", via: "Claude", at: "2026-11-04T10:00:00Z" }];
+  const brief = { about: "A scheduler for social posts", traits: ["calm", "exact", "warm"], answers: { goal: { text: "Book a demo, through a calendar", at: "2026-11-04T09:00:00Z" } }, updatedAt: "2026-11-04" };
+  const blocks = criterioBlocks({ ...i, brief, locale: "en" });
+  const ids = blocks.flatMap((b) => (b.kind === "section" ? [b.id] : []));
+  expect(ids.slice(0, 4)).toEqual(["guide", "questions", "learned", "use"]);
+  const md = blocksToMd(blocks);
+  expect(md).toContain("- `audience` Who are you mainly speaking to?");
+  expect(md).toMatch(/- `first-seconds` .* _Decides: Layout, Typography, Voice and tone_/);
+  expect(md, "answered by the brief or by an answer: not asked again").not.toMatch(/- `(offer|traits|goal)` /);
+  expect(md).toContain("**Already answered (3)**");
+  expect(md).toContain("- `goal`: «Book a demo, through a calendar»");
+  expect(md).toContain("- **Color:** No gradients on the hero. _(Eric with Claude, 2026-11-04)_");
+  expect(md).toContain("Then ask the open questions under **Starting questions** (20)");
+  expect(md).not.toMatch(/—|–/);
+  // The first read carries them; a client's copy carries no learnings
+  expect(partMd(blocks, "guide")).toContain("## What was learned");
+  expect(criterioBlocks({ ...i, brief, mode: "clean" }).some((b) => b.kind === "section" && b.id === "learned")).toBe(false);
+});

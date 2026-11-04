@@ -25,8 +25,8 @@ export type StepKey = "example" | "project" | "brief" | "refs" | "system" | "out
 export const STEPS: readonly { key: StepKey; done: (s: FirstSteps) => boolean; /** Where it is done */ href: (s: FirstSteps) => string }[] = [
   { key: "example", done: (s) => s.example, href: () => "/?in=templates" },
   { key: "project", done: (s) => s.project !== null, href: () => "/?in=home" },
-  // An empty project opens on its start, which asks what it is; one with references has the brief in its system view
-  { key: "brief", done: (s) => s.brief, href: (s) => s.refs ? `${projectHref(s)}&view=system&brief=1` : projectHref(s) },
+  // An empty project opens on its start, which asks what it is; one with references says it at the top of its criterio.md
+  { key: "brief", done: (s) => s.brief, href: (s) => s.refs ? `${projectHref(s)}&view=system` : projectHref(s) },
   { key: "refs", done: (s) => s.refs >= REFS_GOAL, href: projectHref },
   { key: "system", done: (s) => s.system, href: (s) => `${projectHref(s)}&view=system` },
   { key: "out", done: (s) => s.out, href: (s) => `${projectHref(s)}&view=system` },

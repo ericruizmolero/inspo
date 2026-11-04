@@ -6,7 +6,7 @@ import { db, schema } from "./db";
 import { HttpError } from "./workspace-core";
 import { getErrors } from "./i18n";
 import { SECTORS } from "./taxonomy";
-import { readBrief, type Brief } from "@/types/brief";
+import { BRIEF_LIMITS, readBrief, type Brief } from "@/types/brief";
 
 const P = schema.project;
 
@@ -36,6 +36,19 @@ export async function saveBrief(organizationId: string, projectId: string, input
   return { brief };
 }
 
+/** An answer to one of criterio.md's starting questions (lib/playbook-questions.ts), kept in the brief under its id. A
+ *  second answer to the same question replaces the first. Empty text takes the answer back */
+export async function saveAnswer(organizationId: string, projectId: string, questionId: string, input: { text: string; by?: string; via?: string }, userId: string): Promise<Brief> {
+  const current = readBrief(await stored(organizationId, projectId)) ?? cleanBrief({}, userId);
+  const answers = { ...(current.answers ?? {}) };
+  const text = String(input.text ?? "").trim().slice(0, BRIEF_LIMITS.answer);
+  if (text) answers[questionId] = { text, at: new Date().toISOString(), ...(input.by ? { by: input.by } : {}), ...(input.via ? { via: input.via } : {}) };
+  else delete answers[questionId];
+  const brief = readBrief({ ...current, answers, updatedAt: new Date().toISOString(), updatedBy: userId })!;
+  await write(organizationId, projectId, brief);
+  return brief;
+}
+
 /** Marks the reference that is the client's current site (a redesign), or clears it. Only a reference filed in the project */
 export async function setClientBrand(organizationId: string, projectId: string, itemId: string | null, userId: string): Promise<void> {
   const current = await stored(organizationId, projectId);
@@ -50,7 +63,7 @@ export async function setClientBrand(organizationId: string, projectId: string, 
 
 // ─── What the models read ──────────────────────────────────────────────────
 
-const MODEL_KEYS: Record<Exclude<keyof Brief, "drafted" | "clientItemId" | "updatedAt" | "updatedBy">, string> = {
+const MODEL_KEYS: Record<Exclude<keyof Brief, "drafted" | "clientItemId" | "answers" | "updatedAt" | "updatedBy">, string> = {
   about: "about", sector: "sector", product: "product", markets: "markets", competitors: "competitors",
   competitorsNote: "competitors_note", traits: "brand_traits", neverSay: "never_say", firstSeconds: "first_five_seconds",
   platforms: "platforms", stack: "build_stack", a11y: "accessibility", keep: "keep_from_client_brand", voiceSamples: "voice_samples",
@@ -68,6 +81,8 @@ export function briefForModel(stored: unknown) {
     const v = k === "a11y" ? `WCAG ${b.a11y ?? "AA"}` : k === "product" ? { what: b.product.what || undefined, price_range: b.product.price ?? undefined } : b[k];
     if (filled(v)) (draft.has(k) ? unconfirmed : team)[key] = v;
   }
+  // What the person answered to criterio.md's starting questions, by question id: the team's word too
+  if (b.answers) team.answers = Object.fromEntries(Object.entries(b.answers).map(([id, a]) => [id, a.text]));
   return Object.keys(unconfirmed).length ? { ...team, unconfirmed_draft: unconfirmed } : team;
 }
 

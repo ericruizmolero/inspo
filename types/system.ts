@@ -104,8 +104,40 @@ export interface ProjectSystem {
   doc?: Record<string, string>;
   /** The brand as values (types/brand.ts). Only the project's own reading carries it; the sidebar's list does not */
   brand?: BrandSpec | null;
+  /** What agents learned working with the person, newest first (criterio.md's "What was learned") */
+  learned?: SystemLearning[];
   /** ISO; null when nothing was ever written */
   updatedAt: string | null;
+}
+
+/** One thing an agent learned with the person: what they corrected or chose, kept so the next session starts from it */
+export interface SystemLearning {
+  id: string;
+  note: string;
+  /** The area it is about, when it is about one */
+  area?: SystemArea;
+  /** Who it was learned with, and the AI client that wrote it down */
+  by?: string;
+  via?: string;
+  /** ISO */
+  at: string;
+}
+export const LEARNED_MAX = 50;
+export const LEARNING_NOTE_MAX = 600;
+
+/** The stored list read into its shape: unknown keys drop, notes are cut, newest first, at most LEARNED_MAX */
+export function readLearned(v: unknown): SystemLearning[] {
+  if (!Array.isArray(v)) return [];
+  const str = (x: unknown, max: number) => (typeof x === "string" ? x.trim().slice(0, max) : "");
+  return v.flatMap((x): SystemLearning[] => {
+    if (!x || typeof x !== "object") return [];
+    const r = x as Record<string, unknown>;
+    const note = str(r.note, LEARNING_NOTE_MAX), id = str(r.id, 40), at = str(r.at, 40);
+    if (!note || !id || !at) return [];
+    const area = (SYSTEM_AREAS as readonly string[]).includes(r.area as string) ? (r.area as SystemArea) : undefined;
+    const by = str(r.by, 120), via = str(r.via, 80);
+    return [{ id, note, at, ...(area ? { area } : {}), ...(by ? { by } : {}), ...(via ? { via } : {}) }];
+  }).sort((p, q) => q.at.localeCompare(p.at)).slice(0, LEARNED_MAX);
 }
 
 /** The parts of criterio.md that can be rewritten by hand over what the app writes */

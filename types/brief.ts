@@ -49,15 +49,20 @@ export interface Brief {
   drafted: DraftField[];
   /** A redesign: the reference on the board that is the client's current site. Its copy, typefaces, logo and figures are the source of truth */
   clientItemId?: string | null;
+  /** Answers to criterio.md's starting questions (lib/playbook-questions.ts) that have no field above, by question id:
+   *  given over MCP (answer_question) by the agent that asked them */
+  answers?: Record<string, BriefAnswer>;
   /** ISO */
   updatedAt: string;
   updatedBy?: string;
 }
 
+export interface BriefAnswer { text: string; by?: string; via?: string; /** ISO */ at: string }
+
 /** Not a limit anyone writing a brief meets: the screens show none. A ceiling on what the server keeps and sends to
  *  the models, so a whole file pasted by mistake is not stored and billed on every reading. */
 export const BRIEF_TEXT_MAX = 20_000;
-export const BRIEF_LIMITS = { markets: 12, competitors: 3, traits: 3, stack: 12, voiceSamples: 10, word: 60, url: 500 } as const;
+export const BRIEF_LIMITS = { markets: 12, competitors: 3, traits: 3, stack: 12, voiceSamples: 10, word: 60, url: 500, answers: 40, answer: 2000 } as const;
 
 const text = (v: unknown, max: number = BRIEF_TEXT_MAX) => (typeof v === "string" ? v.trim().slice(0, max) : "");
 const texts = (v: unknown, n: number, max?: number) => [...new Set((Array.isArray(v) ? v : []).map((x) => text(x, max)).filter(Boolean))].slice(0, n);
@@ -67,6 +72,20 @@ const BCP47 = /^[a-z]{2,3}(-[a-z0-9]{2,8})*$/i;
 /** A market as readBrief keeps it: a BCP 47 tag */
 export const isMarketTag = (m: string) => BCP47.test(m);
 const httpUrl = (u: string) => { try { return /^https?:$/.test(new URL(u).protocol); } catch { return false; } };
+const QUESTION_ID = /^[a-z0-9-]{1,40}$/;
+function readAnswers(v: unknown): Record<string, BriefAnswer> | undefined {
+  if (!v || typeof v !== "object" || Array.isArray(v)) return undefined;
+  const out: Record<string, BriefAnswer> = {};
+  for (const [id, x] of Object.entries(v as Record<string, unknown>).slice(0, BRIEF_LIMITS.answers)) {
+    if (!QUESTION_ID.test(id) || !x || typeof x !== "object") continue;
+    const a = x as Record<string, unknown>;
+    const t = text(a.text, BRIEF_LIMITS.answer), at = text(a.at, 40);
+    if (!t || !at) continue;
+    const by = text(a.by, 120), via = text(a.via, 80);
+    out[id] = { text: t, at, ...(by ? { by } : {}), ...(via ? { via } : {}) };
+  }
+  return Object.keys(out).length ? out : undefined;
+}
 
 /** A brief as stored, read into the current shape: a brief saved before a field existed reads it empty, and the
  *  fields that were dropped (tone, audience, avoid) are left behind. Null when nothing was ever saved */
@@ -74,6 +93,7 @@ export function readBrief(v: unknown): Brief | null {
   if (!v || typeof v !== "object") return null;
   const b = v as Record<string, unknown>;
   const product = (b.product && typeof b.product === "object" ? b.product : {}) as Record<string, unknown>;
+  const answers = readAnswers(b.answers);
   return {
     about: text(b.about),
     sector: text(b.sector, 40) || null,
@@ -91,6 +111,7 @@ export function readBrief(v: unknown): Brief | null {
     voiceSamples: texts(b.voiceSamples, BRIEF_LIMITS.voiceSamples),
     drafted: keysOf(DRAFT_FIELDS, b.drafted),
     clientItemId: typeof b.clientItemId === "string" && b.clientItemId ? b.clientItemId.slice(0, 40) : null,
+    ...(answers ? { answers } : {}),
     updatedAt: text(b.updatedAt, 40),
     ...(typeof b.updatedBy === "string" ? { updatedBy: b.updatedBy } : {}),
   };

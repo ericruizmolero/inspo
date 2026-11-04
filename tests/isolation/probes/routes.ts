@@ -320,6 +320,23 @@ export const routes: Record<string, Surface> = {
       expect((await db.select({ n: count() }).from(C).where(eq(C.projectId, fx.a.project)))[0].n, "A's project has no new proposal").toBe(before);
     },
   },
+  "mcp:answer_question": {
+    probe: async (fx) => {
+      const briefOf = async () => (await db.select({ brief: schema.project.brief }).from(schema.project).where(eq(schema.project.id, fx.a.project)))[0].brief;
+      const before = await briefOf();
+      await refusedTool(fx, "answer_question", { project: fx.a.project, question: "goal", answer: "probe" });
+      expect(await briefOf(), "A's brief is unchanged").toEqual(before);
+    },
+  },
+  "mcp:record_learning": {
+    probe: async (fx) => {
+      const S = schema.projectSystem;
+      const learnedOf = async () => (await db.select({ learned: S.learned }).from(S).where(eq(S.projectId, fx.a.project)))[0]?.learned ?? null;
+      const before = await learnedOf();
+      await refusedTool(fx, "record_learning", { project: fx.a.project, note: "probe" });
+      expect(await learnedOf(), "A's learnings are unchanged").toEqual(before);
+    },
+  },
   "mcp:bring_brand": {
     probe: async (fx) => {
       const S = schema.projectSystem;

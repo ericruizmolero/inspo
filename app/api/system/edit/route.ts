@@ -10,9 +10,10 @@ import { log } from "@/lib/log";
 
 export const maxDuration = 60;
 
-// POST { projectId, instruction } → { edits: [{ area, decision, why, never, reason }] }: the areas of criterio.md the change
+// POST { projectId, instruction } → { edits: [{ area, decision, why, never, reason }], ask }: the areas of criterio.md the change
 // asked for in words touches, each written again with it and Tino's sentence saying what changes (one model call; none
-// when the file needs no change for it). Nothing is written: the client posts each as Tino's proposal under its area
+// when the file needs no change for it). `ask`: the change named an area but not which way, so a question and its
+// answers instead (lib/system/edit.ts EditAsk). Nothing is written: the client posts each as Tino's proposal under its area
 // and the team takes it or leaves it.
 export async function POST(req: NextRequest) {
   if (!llmEnabled()) return Response.json({ error: (await getErrors()).noModelKey }, { status: 503 });
@@ -27,11 +28,11 @@ export async function POST(req: NextRequest) {
   if (!projectId || !instruction.trim()) return Response.json({ error: (await getErrors()).badBody }, { status: 400 });
 
   try {
-    const edits = await editFile({
+    const { edits, ask } = await editFile({
       organizationId: ctx.workspace.id, projectId, instruction, usage: { organizationId: ctx.workspace.id, userId: ctx.user.id }, language: ctx.workspace.outputLanguage,
       locale: ctx.user.language, origin: originOfHeaders(req.headers, req.nextUrl.origin),
     });
-    return Response.json({ edits });
+    return Response.json({ edits, ask });
   } catch (e) {
     if (e instanceof HttpError) return Response.json({ error: e.message }, { status: e.status });
     log.error("system.edit_failed", { ref: projectId, err: e });

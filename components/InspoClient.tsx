@@ -6,23 +6,24 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useMemo, useEffect, useLayoutEffect, useRef, useCallback } from "react";
 import type { InspoItem, Project, ProjectLinks, PolishVote, ItemsPage } from "@/types/inspo";
 import { COLORS, viewOf } from "@/lib/taxonomy";
-import { filterKey, newestFirst } from "@/lib/search-query";
+import { filterKey, newestFirst, parseDate } from "@/lib/search-query";
 import Sidebar, { type QuotaView } from "./Sidebar";
 import Connectors from "./Connectors";
 import ThemeToggle from "./ThemeToggle";
 import Island from "./Island";
-import SearchBar from "./SearchBar";
+import SearchBar, { filterLabel } from "./SearchBar";
 import { Button as CrButton, Busy, EmptyState, Icon, IconButton, PillBar, PillBarSep, StatusBar, StatusCell } from "@/components/criterio";
 import { captionFor } from "./InspoCard";
 import BoardCard, { type GridActions } from "./BoardCard";
 import AgentCard from "./AgentCard";
 import Toast, { type ToastNote } from "./Toast";
 import GatherBar, { StartButton } from "./GatherBar";
+import { boardNudges, boardIdle, kindsOf, missingFrom, paceOf, oldReference, othersThisWeek, quietReference, sameSite, sharedTag, unansweredTalk, unusedByAreas, withoutReason } from "./board-nudges";
 import InboxZero from "./InboxZero";
 import SelectBar from "./SelectBar";
 import { refInfoOf } from "@/lib/ref-info";
 import { restoreTextHeadings } from "@/lib/text-headings";
-import { webKeyOf, nameFromHost, typeFromUrl, mediaKindOf, hasOwnPage } from "@/lib/url";
+import { webKeyOf, nameFromHost, typeFromUrl, mediaKindOf, hasOwnPage, hostOf } from "@/lib/url";
 import type { SystemSpot } from "./RefCriterio";
 import RefPage from "./RefPage";
 import ProjectModes, { PROJECT_VIEWS } from "./ProjectModes";
@@ -273,6 +274,11 @@ export default function InspoClient({
   // Something added here still on its way (no id yet): Tino says so from the bar. A file is a local blob: until it is up
   const pending = spaceItems.find((i) => !i.id);
   const saving = pending ? (pending.web.startsWith("blob:") ? "upload" as const : "save" as const) : null;
+
+  // Tino stands in the bottom-right corner wherever he speaks for the page: the home, Polish, the system, and a board
+  // with something on it (SearchTino); the theme button leaves that corner and sits after the pill
+  const boardTino = searchHere && spaceItems.length > 0;
+  const tinoCorner = space === "home" || boardTino || (!!currentProject && projectView !== "board");
 
   const { watch, gathering } = useTagWatch({ items: spaceItems, tagJobs, setTagJobs, setTagMap });
   const { bellNews, beatRef, filling } = useLibrarySync({ first, stamp, since, bell, workspace, items, setMirror, setProjects, setLinks, setVotes, withVoteWrites, watch });
@@ -610,9 +616,47 @@ export default function InspoClient({
   // The board stays mounted under Polish and under the system, inert and hidden: coming back is instant, and the
   // cards fly from the tornado onto a board already laid out (components/view-morph.ts). The same element first in
   // both branches below, so React keeps it from one to the other
+  // What Tino brings up on a project's board when nobody searches (components/board-nudges.ts)
+  const goView = (v: "system" | "polish") => { const wait = leaveView(v); if (wait) window.setTimeout(() => setProjectView(v, true), wait); else afterPaint(() => setProjectView(v, true)); };
+  // What the open project's polish kept: closed with "keep", for Tino on the System page
+  const polishKept = useMemo(() => [...polishVotes].filter(([, vs]) => vs.some((v) => v.closedAt && v.vote === "keep")).map(([id]) => id), [polishVotes]);
+  const [openedAt] = useState(() => Date.now());
+  // Which of the non-urgent things Tino leads with: a different one each visit
+  const [visitSeed] = useState(() => Math.floor(Math.random() * 1000));
+  const boardNudgeList = useMemo(() => currentProject && boardTino ? boardNudges({
+    t, count: spaceItems.length, read: !!currentSystem?.read, stale: systemStale,
+    empty: currentSystem?.read ? currentSystem.areas.filter((a) => !a.evidence.length).map((a) => a.area) : [],
+    others: othersThisWeek(spaceItems, user.name || user.email, parseDate, openedAt),
+    onAdd: () => setShowAdd(true), onStart: () => void startSystem(), onSystem: () => goView("system"), onPolish: () => goView("polish"),
+    talk: unansweredTalk(spaceItems, commentMap, user.id, openedAt),
+    // The team's polish only: alone, the "polish" nudge already says it
+    vote: !solo && polishTab && [...polishVotes.values()].some((vs) => vs.some((v) => v.userId !== user.id && !v.closedAt))
+      ? { left: polishTab.left, toClose: canManage && polishTab.under && polishTab.left === 0 } : null,
+    quietRef: quietReference(spaceItems, commentMap, user.name || user.email, parseDate, openedAt),
+    kinds: kindsOf(spaceItems, mediaKindOf), oldRef: oldReference(spaceItems, commentMap, parseDate, openedAt), seed: visitSeed,
+    onKind: (k) => setFilters([{ kind: "media", value: k }]),
+    noReason: withoutReason(spaceItems, user.name || user.email, mediaKindOf, parseDate),
+    twins: sameSite(spaceItems, mediaKindOf, hostOf),
+    unused: currentSystem?.read ? unusedByAreas(spaceItems.map((i) => i.id).filter((x): x is string => !!x), currentSystem.read.itemIds, currentSystem.areas.flatMap((a) => a.evidence)) : 0,
+    shared: (() => {
+      const top = sharedTag(spaceItems, tagMap);
+      if (!top) return null;
+      const f = { kind: "tag" as const, value: top.sel };
+      return { label: filterLabel(f, t).toLowerCase(), n: top.n, total: spaceItems.length, go: () => setFilters([f]) };
+    })(),
+    onSearch: (words) => setQuery(words),
+    // With a team only: who has not put anything here yet, and how this week went against the last
+    missing: solo ? [] : missingFrom(spaceItems, members.map((m) => m.name), user.name || user.email),
+    pace: solo ? null : paceOf(spaceItems, parseDate, openedAt),
+    onPerson: (who) => setFilters([{ kind: "person", value: who }]),
+    onOpen: (item) => openItem(item),
+  }) : [], [currentProject, boardTino, t, spaceItems, currentSystem, systemStale, user, openedAt, commentMap, solo, polishTab, polishVotes, canManage, tagMap, members]); // eslint-disable-line react-hooks/exhaustive-deps
+  const boardIdleLine = useMemo(() => currentProject && boardTino ? boardIdle(t, spaceItems, parseDate, (item) => openItem(item)) : undefined,
+    [currentProject, boardTino, t, spaceItems]); // eslint-disable-line react-hooks/exhaustive-deps
   const grid = (
     <Grid
       under={!!currentProject && projectView !== "board"}
+      corner={boardTino ? <ThemeToggle /> : undefined}
       missed={missed}
       items={boardItems}
       ratioOf={ratioOf}
@@ -680,7 +724,6 @@ export default function InspoClient({
         workspaces={workspaces}
         isAdmin={isAdmin}
         onOpenItem={(item) => openItem(item)}
-        onBrief={currentProject ? () => setParams({ view: "system", brief: "1" }) : undefined}
         onAddUrl={(web) => {
           // Already saved: show it instead of saving it twice (found on the board; opened where there is no search)
           if (isDuplicate(web)) {
@@ -694,7 +737,7 @@ export default function InspoClient({
       />}
       {boardDrag && <div className="board-drop" aria-hidden><span className="t-title-l">{t.add.dropHere}</span></div>}
       {/* The home and Polish give the bottom-right corner to Tino: their theme button sits after the pill */}
-      {space !== "home" && !(currentProject && projectView === "polish") && <ThemeToggle />}
+      {!tinoCorner && <ThemeToggle />}
       {showAdd && (
         <AddInspoModal
           onClose={() => { setShowAdd(false); setAddInitial(undefined); }}
@@ -796,6 +839,7 @@ export default function InspoClient({
             key={currentProject.id}
             project={currentProject}
             system={fullSystems[currentProject.id] ?? null}
+            kept={polishKept}
             onSystem={(sys) => setSystem(currentProject.id, sys)}
             board={spaceItems}
             library={items}
@@ -913,6 +957,12 @@ export default function InspoClient({
               <ZoomPill zoom={null}><SoundControl /><i className="zoom-pill__sep" aria-hidden /><TinoSwitch /></ZoomPill>
               <ThemeToggle />
             </div>
+          ) : tinoCorner ? (
+            // The system gives that corner to Tino too (TinoDock)
+            <div className="board-zoom home-corner">
+              <ZoomPill zoom={null}><SoundControl /></ZoomPill>
+              <ThemeToggle />
+            </div>
           ) : <ZoomPill className="board-zoom" zoom={null}><SoundControl /></ZoomPill>)}
         {/* The way to find anything on a project's board, at the bottom like a conversation: people, dates, kinds,
             every tag, and what it means. Solid and bright in both themes, so it is the first thing the eye finds.
@@ -962,7 +1012,7 @@ export default function InspoClient({
                 search with nothing to look through reads as broken (Andoni, 06-10) */}
             {searchHere && spaceItems.length > 0 && (
               <SearchBar className="sb--dock" filters={filters} text={query} onFilters={setFilters} onText={setQuery}
-                lead={<span className="sb__tino-room" aria-hidden />} onFocusChange={setSearchFocused}
+                onFocusChange={setSearchFocused}
                 // On a project's board the bar is one row: Tino, the search, adding and the step to the system
                 actions={currentProject ? <>
                   <IconButton icon="plus" variant="quiet" size="s" label={t.gather.add} onClick={() => setShowAdd(true)} />
@@ -971,16 +1021,19 @@ export default function InspoClient({
                 vocab={vocab} busy={searchBusy} gathering={gathering} swatches={swatches} faces={authorImages} onAsk={(v) => void askAgent(v)} asking={!!agent?.busy}
                 target={agentTargetItem ? { name: agentTargetItem.name, image: smallImageOf(agentTargetItem) } : null} onClearTarget={() => setAgentTarget(null)} quick={agentQuick} />
             )}
-            {searchHere && spaceItems.length > 0 && (
-              <SearchTino report={agent ? null : searchReport(filters, query, filtered, space === "inbox" ? 0 : unfiled.length, t)} saving={saving}
-                busy={searchBusy || jevBusy || !!agent?.busy} typing={!!query.trim()} onClose={resetFilters}
-                focused={searchFocused} failed={searchFailed} total={spaceItems.length}
-                chips={askChips.map((k) => ({ key: k, label: k, onPick: () => setFilters([...filters, { kind: "tag", value: `k:${k}` }]) }))}
-                onAct={() => { resetFilters(); setSpace("inbox"); }} />
-            )}
             </div>
             )}
           </div>
+        )}
+        {/* Tino in the bottom-right corner, as on the home: he answers the search and, when nobody searches, brings up
+            what the board could use next. Outside the dock, whose transform would carry his fixed corner with it */}
+        {boardTino && (
+          <SearchTino report={agent ? null : searchReport(filters, query, filtered, space === "inbox" ? 0 : unfiled.length, t)} saving={saving}
+            busy={searchBusy || jevBusy || !!agent?.busy} typing={!!query.trim()} onClose={resetFilters}
+            focused={searchFocused} failed={searchFailed} total={spaceItems.length}
+            chips={askChips.map((k) => ({ key: k, label: k, onPick: () => setFilters([...filters, { kind: "tag", value: `k:${k}` }]) }))}
+            onAct={() => { resetFilters(); setSpace("inbox"); }}
+            scope={`:${space}`} quiet={!!agent || selected.size > 0} nudges={boardNudgeList} idle={boardIdleLine} />
         )}
       </SidebarInset>
     </SidebarProvider>

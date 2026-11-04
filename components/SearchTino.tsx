@@ -1,15 +1,15 @@
 "use client";
-// Tino is the search on the boards: he sits in the dock's left end, his ears over its top edge, and when a search
-// settles he reports on it in a balloon over himself (the copy sheet's Search): several found, one, or nothing and
-// where else to look. The × closes the balloon and clears the search. While the person types he only follows; while
+// Tino is the search on the boards: he sits in the bottom-right corner as on the home (TinoCorner), and when a search
+// settles he reports on it in his balloon (the copy sheet's Search): several found, one, or nothing and
+// where else to look. The × closes the balloon and clears the search. With no search on, he brings up what the
+// board could use next (the nudges), one at a time, as on the home. While the person types he only follows; while
 // the search reads he thinks, and the bar says how much he is going through.
 import { useEffect, useRef, useState } from "react";
-import Tino from "./Tino";
 import Typed, { typedMs } from "./Typed";
 import type { TinoApi } from "./tino/engine";
 import { moodProps, type TinoMood } from "./tino/moods";
-import { Balloon, Button, Icon } from "@/components/criterio";
-import { useDark, useLine } from "./HomeTino";
+import { Button } from "@/components/criterio";
+import HomeTino, { useLine, type CornerSay, type TinoNudge } from "./HomeTino";
 import { filterKey, type Filter } from "@/lib/search-query";
 import { filterLabel } from "./SearchBar";
 import { useT } from "./I18nProvider";
@@ -60,7 +60,7 @@ export function useSearchingLine(busy: boolean, total: number): string {
   return useAfter(busy, SLOW_MS) ? t.tino.searchSlow : t.tino.searching(total);
 }
 
-export default function SearchTino({ report, busy, typing, focused, failed, total, chips, onClose, onAct, saving = null }: {
+export default function SearchTino({ report, busy, typing, focused, failed, total, chips, onClose, onAct, saving = null, nudges = [], scope, quiet = false, idle }: {
   report: SearchReport | null;
   /** Something added is still on its way (a file uploading, a link or a text saving): he says so while it lasts */
   saving?: "upload" | "save" | null;
@@ -80,9 +80,16 @@ export default function SearchTino({ report, busy, typing, focused, failed, tota
   onClose: () => void;
   /** The report's one way elsewhere (nothing found: the inbox) */
   onAct?: () => void;
+  /** What he brings up on his own when the search is quiet: what the board could use next (lib/board-nudges.ts) */
+  nudges?: TinoNudge[];
+  /** Where "Later" holds: this board */
+  scope: string;
+  /** Another of his windows is open (the agent's card): nothing unprompted */
+  quiet?: boolean;
+  /** What he says when asked with nothing pending (boardIdle): how the board stands. By default, what to ask him */
+  idle?: TinoNudge;
 }) {
   const { t } = useT();
-  const dark = useDark();
   const tino = useRef<TinoApi>(null);
   const settled = useAfter(!!report && !busy, SETTLE_MS, report?.key);
   const shown = settled ? report : null;
@@ -103,36 +110,26 @@ export default function SearchTino({ report, busy, typing, focused, failed, tota
     : asking ? { key: "ask:me", title: [t.tino.askMe] }
     : null;
   const title = useLine(say?.key, say?.title);
-  // The copy sheet's faces: resting while the bar is untouched, following the words, searching, then how it went
-  const mood: TinoMood = saving ? "thinking" : failed && report ? "sad" : busy ? "searching" : again ? "judge"
-    : shown ? (shown.found > 1 ? "smug" : shown.found ? "admirer" : "suspect") : typing || report || asking ? "following" : "asleep";
+  // The copy sheet's faces: following the words, searching, then how it went; at rest, the corner's own
+  const mood: TinoMood | undefined = saving ? "thinking" : failed && report ? "sad" : busy ? "searching" : again ? "judge"
+    : shown ? (shown.found > 1 ? "smug" : shown.found ? "admirer" : "suspect") : typing || report || asking ? "following" : undefined;
   // A find gets a small hop, never a party
   useEffect(() => { if (shown?.found) tino.current?.jump(0.6); }, [shown?.key, shown?.found]);
-  return (
-    <div className="sb-tino">
-      {say && title && (
-        <Balloon key={say.key} className="sb-tino__say" tail="left"
-          title={<><span className="sb-tino__who">Tino</span><span><Typed text={title} /></span></>}
-          actions={"act" in say && say.act && onAct ? <Button size="s" onClick={onAct}>{say.act}</Button> : null}>
-          {"text" in say && say.text && <Typed text={say.text} delay={typedMs(title)} />}
-          {asking && say.key === "ask:me" && (
-            <span className="sb-tino__chips">
-              {/* Before the field's blur, so the click lands and the box keeps the focus */}
-              {chips.map((c) => <button key={c.key} type="button" className="cr-chip cr-chip-paper cr-chip-button" onMouseDown={(e) => { e.preventDefault(); c.onPick(); }}>{c.label}</button>)}
-            </span>
-          )}
-          {!asking && !saving && (
-            <button type="button" className="cr-window-close sb-tino__close" aria-label={t.tino.closeSearch} onClick={onClose}>
-              <Icon name="close" size={10} weight="bold" />
-            </button>
-          )}
-        </Balloon>
-      )}
-      <span className="sb-tino__body" aria-hidden>
-        <Tino ref={tino} dark={dark} petting={false} {...moodProps(mood)} />
+  const text = say && "text" in say && say.text ? <Typed text={say.text} delay={title ? typedMs(title) : 0} /> : null;
+  const speak: CornerSay | null = say && title ? {
+    key: say.key, title,
+    text: asking && say.key === "ask:me" ? (
+      <span className="sb-tino__chips">
+        {/* Before the field's blur, so the click lands and the box keeps the focus */}
+        {chips.map((c) => <button key={c.key} type="button" className="cr-chip cr-chip-paper cr-chip-button" onMouseDown={(e) => { e.preventDefault(); c.onPick(); }}>{c.label}</button>)}
       </span>
-    </div>
-  );
+    ) : text,
+    actions: "act" in say && say.act && onAct ? <Button size="s" onClick={onAct}>{say.act}</Button> : null,
+    onClose: !asking && !saving ? onClose : undefined,
+  } : null;
+  // Searching, he says it while a search is on even with nothing to say yet: the nudges wait
+  return <HomeTino className="board-tino" tinoRef={tino} nudges={nudges} scope={scope} speak={speak} face={mood} quiet={quiet || !!report || typing || asking}
+    idle={idle ?? { key: "idle", title: t.tino.board.idleTitle, text: t.tino.board.idleText, mood: "watching" }} />;
 }
 
 const SAME_KEY = "criterio:tino-same";

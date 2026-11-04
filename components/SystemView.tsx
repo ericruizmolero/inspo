@@ -3,7 +3,7 @@
 // area (components/SystemDoc.tsx). The model reads the board into it ("Improve with AI"); the team writes over it.
 // Beside it, the brand as a presentation (components/brand/BrandPresentation.tsx): the same values drawn.
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import Clouds from "@/components/Clouds";
 import type { InspoItem, Project } from "@/types/inspo";
 import { emptySystem, type ProjectSystem, type SystemArea, type SystemFocus } from "@/types/system";
@@ -12,7 +12,7 @@ import type { ProjectMeasures } from "@/lib/ref-measured";
 import SkillsMenu from "./SkillsMenu";
 import { MD_SKILL_EXCLUSIVE, type MdSkill } from "@/lib/md-skill-ids";
 import ImproveModal from "./ImproveModal";
-import BriefPanel from "./BriefPanel";
+import { VersionPicker, VersionView, useVersions } from "./VersionPicker";
 import { readBrief, type Brief } from "@/types/brief";
 import { loadSystem, decideSystemArea, setSystemNever, saveDocPart, criterioVersionNow } from "@/app/actions/system";
 import { useT } from "./I18nProvider";
@@ -44,8 +44,8 @@ type View = "markdown" | "doc" | "presentation";
 const VIEW_KEY = "criterio.system.view.v2";
 function useView(): [View, (v: View) => void] {
   const [view, setView] = useState<View>("markdown");
-  useEffect(() => { try { const v = localStorage.getItem(VIEW_KEY); if (v === "markdown" || v === "presentation") setView(v); } catch { /* the default stands */ } }, []);
-  return [view, (v) => { setView(v); try { localStorage.setItem(VIEW_KEY, v === "presentation" ? "presentation" : "markdown"); } catch { /* only this visit */ } }];
+  useEffect(() => { try { const v = localStorage.getItem(VIEW_KEY); if (v === "markdown") setView(v); } catch { /* the default stands */ } }, []);
+  return [view, (v) => { setView(v); try { localStorage.setItem(VIEW_KEY, "markdown"); } catch { /* only this visit */ } }];
 }
 
 interface Props {
@@ -84,6 +84,8 @@ interface Props {
   onAddSite?: (web: string) => Promise<InspoItem | null>;
   /** Saves fields of the brief; the brief as saved, or null when it failed (the caller says why) */
   onBrief: (patch: Partial<Brief>) => Promise<Brief | null>;
+  /** The references the polish kept (closed with "keep"), for Tino on the file */
+  kept?: string[];
 }
 
 /** A redesign: the reference that is the client's current site, named under the project. Its copy, typefaces, logo and figures rule the system */
@@ -102,7 +104,7 @@ function ClientChip({ client, imageOf, onPick }: { client: InspoItem; imageOf: (
   );
 }
 
-export default function SystemView({ project, system, onSystem, board, library, imageOf, onOpenBoard, focusArea, focusRef, onOpenChange, onClient, onOpenItem, refInfo, onText, onTextTitle, onAddSite, onBrief }: Props) {
+export default function SystemView({ project, system, onSystem, board, library, imageOf, onOpenBoard, focusArea, focusRef, onOpenChange, onClient, onOpenItem, refInfo, onText, onTextTitle, onAddSite, onBrief, kept }: Props) {
   const { t, locale } = useT();
   const setSystem = onSystem;
   const [running, setRunning] = useState(false);
@@ -235,18 +237,8 @@ export default function SystemView({ project, system, onSystem, board, library, 
   const [bringing, setBringing] = useState<"site" | "files" | "text" | null>(null);
   const [sharing, setSharing] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
-  const [briefOpen, setBriefOpen] = useState(false);
-  // ⌘K → Brief asks with ?brief=1, also while this view is already open, so it is read on every change
-  const briefParam = useSearchParams().get("brief");
   // Through the router, not history: on first load Next has not patched history yet and would write the param back
   const router = useRouter();
-  useEffect(() => {
-    if (briefParam !== "1") return;
-    setBriefOpen(true);
-    const p = new URLSearchParams(window.location.search);
-    p.delete("brief");
-    router.replace(window.location.pathname + (p.size ? `?${p}` : ""), { scroll: false });
-  }, [briefParam, router]);
   useEffect(() => {
     const p = new URLSearchParams(window.location.search);
     const b = p.get("bring");
@@ -256,6 +248,9 @@ export default function SystemView({ project, system, onSystem, board, library, 
     router.replace(window.location.pathname + (p.size ? `?${p}` : ""), { scroll: false });
   }, [router]);
   const [view, setView] = useView();
+  // A version picked in the head's list takes the page's place until "Back to now" (components/VersionPicker.tsx)
+  const [viewing, setViewing] = useState<number | null>(null);
+  const versions = useVersions(project.id, version);
   const [notice, setNotice] = useState("");
   useEffect(() => { if (!notice) return; const tm = setTimeout(() => setNotice(""), 6000); return () => clearTimeout(tm); }, [notice]);
   // The brand as a presentation: its values edited where they stand, saved section by section
@@ -268,7 +263,6 @@ export default function SystemView({ project, system, onSystem, board, library, 
   const findFace = useCallback(async (family: string): Promise<FoundFace | null> => { const r = await findBrandFace(project.id, family); return r.ok ? r.data : null; }, [project.id]);
 
   const copy = async () => { try { await navigator.clipboard.writeText(markdown); setCopied(true); setTimeout(() => setCopied(false), 1500); void criterioExported(project.id); } catch { /* the download still works */ } };
-  const slug = project.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/gi, "-").replace(/^-+|-+$/g, "").toLowerCase();
   const download = () => {
     void criterioExported(project.id, "download");
     const blob = new Blob([markdown], { type: "text/markdown" });
@@ -278,28 +272,28 @@ export default function SystemView({ project, system, onSystem, board, library, 
 
   // The three ways to see the project sit in the page, not on the chrome: the paper tone, which follows the theme.
   // The whole row is size s (Eric, 07-10: "más pequeños"): tabs, "Improve with AI" and the "…"
-  // Result is out of the row for now (Eric, 03-11): ResultView and its API stay, unused
-  const VIEWS = ["markdown", "doc", "presentation"] as const;
+  // Result is out of the row for now (Eric, 03-11): ResultView and its API stay, unused. The Presentation left on 04-11,
+  // with the Brief: the MD's playbook asks what they asked. BrandPresentation stays in the code, unreached
+  const VIEWS = ["markdown", "doc"] as const;
   const views = (
-    <SegmentedControl tone="paper" size="s" label={project.name} className="spage-views" active={VIEWS.indexOf(view)} onChange={(i) => setView(VIEWS[i])}
-      items={VIEWS.map((v) => ({ label: v === "markdown" ? t.doc.markdown : v === "doc" ? t.doc.document : t.brand.views.presentation }))} />
+    <SegmentedControl tone="paper" size="s" label={project.name} className="spage-views" active={view === "doc" ? 1 : 0} onChange={(i) => setView(VIEWS[i])}
+      items={VIEWS.map((v) => ({ label: v === "markdown" ? t.doc.markdown : t.doc.document }))} />
   );
   // "Improve with AI" is the first step while nothing is decided: the row's primary then. After, the "…" holds it
   const firstStep = board.length > 0 && filled === 0;
   const runningLabel = phase === "brand" ? t.brand.drawing : t.system.running;
-  const head = version === null ? "" : `${t.system.headVersion(version)} \u00b7 ${t.system.headDecided(filled, sys.areas.length)}`;
+  // Only the version (Eric, 04-11: "el puntito es ai slop, pon Versión 1 y ya")
+  const head = version === null ? "" : t.system.headVersion(version);
   const actions = (
     <div className="spage-head__actions">
       {!filled && !running && <p className="spage-muted">{board.length ? t.system.runHint(board.length) : t.system.noBoard}</p>}
       {running && !firstStep ? <p className="spage-muted spage-label" role="status"><Busy label={runningLabel} /> {runningLabel}</p>
-        : filled > 0 && head && <p className="spage-muted spage-label">{head}</p>}
-      <Button size="s" icon="file" onClick={() => setBriefOpen(true)} data-tip={t.system.briefPanel.openHint}>{t.system.briefPanel.open}</Button>
+        : filled > 0 && head && version !== null && <VersionPicker label={head} rows={versions} current={version} viewing={viewing} onPick={setViewing} />}
       {firstStep ? (
         <Button variant="primary" size="s" onClick={() => setImproving(true)} disabled={running} data-tip={t.system.improveHint}>
           {running ? <><Busy label={runningLabel} /> {runningLabel}</> : <><Icon name="sparkle" size={16} /> {t.system.improve}</>}
         </Button>
       ) : !board.length && <Button variant="primary" size="s" onClick={onOpenBoard}><Icon name="plus" size={16} /> {t.system.addRefs}</Button>}
-      {view === "presentation" && filled > 0 && !sys.brand?.run && !running && <Button size="s" onClick={() => void fillBrand()} data-tip={t.brand.fillHint}>{t.brand.fill}</Button>}
       {/* What is asked for now and then stays out of the row: another pass, bringing in a brand that exists, the share links */}
       <Popover open={moreOpen} onOpenChange={setMoreOpen}>
         <PopoverTrigger className="cr-iconbtn cr-iconbtn-quiet cr-iconbtn-s spage-more" aria-label={t.card.more} data-tip={t.card.more}>{Icons.dots}</PopoverTrigger>
@@ -327,7 +321,6 @@ export default function SystemView({ project, system, onSystem, board, library, 
         {error && <p className="sysv-error" role="alert">{error}</p>}
         {notice && <p className="spage-notice" role="status">{notice}</p>}
         {improving && <ImproveModal system={sys} onRun={(focus) => void run(focus)} onClose={() => setImproving(false)} />}
-        {briefOpen && <BriefPanel brief={project.brief} client={clientItem?.name ?? null} onSave={onBrief} onClose={() => setBriefOpen(false)} />}
         {sharing && <ShareDialog projectId={project.id} onClose={() => setSharing(false)} />}
         {bringing && <BrandImport projectId={project.id} brand={editor.brand} initial={bringing} onClose={() => setBringing(null)} onAddSite={onAddSite} onClient={onClient}
           onSystem={setSystem} onRun={() => runAll()} save={editor.save} />}
@@ -338,9 +331,11 @@ export default function SystemView({ project, system, onSystem, board, library, 
               save={editor.save} release={editor.release} saving={editor.saving} findFace={findFace} brief={readBrief(project.brief)} onBrief={onBrief}
               upload={(file, purpose) => uploadBrandFile(project.id, file, purpose)} zipHref={`/api/system/brand/assets?projectId=${encodeURIComponent(project.id)}`} />
           </div>
+        ) : viewing !== null && versions ? (
+          <VersionView projectId={project.id} projectName={project.name} n={viewing} rows={versions} onPick={setViewing} />
         ) : (
           <SystemDoc look={view === "doc" ? "doc" : "md"} blocks={blocks} system={sys} labels={labels} boardIds={boardIds} itemOf={itemOf} imageOf={imageOf} refInfo={refInfo} activity={activity}
-            onSystem={setSystem} onTalk={() => setTalkN((n) => n + 1)} dock={dock}
+            onSystem={setSystem} onTalk={() => setTalkN((n) => n + 1)} dock={dock} kept={kept}
             onAbout={async (text) => { if (!(await onBrief({ about: text }))) throw new Error("brief not saved"); }} onOpenItem={onOpenItem} onText={onText} onTextTitle={onTextTitle}
             fileTools={<SkillsMenu on={skillsOn} onToggle={(id) => void toggleSkill(id)} />}
             busy={busy} onCopy={() => void copy()} onDownload={download} copied={copied} markdown={markdown} projectId={project.id} projectName={project.name} hasRecipe={!!project.hasRecipe}

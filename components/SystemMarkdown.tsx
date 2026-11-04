@@ -541,7 +541,7 @@ export default function SystemMarkdown({ fileTools, blocks, busy, onSave, onCopy
           {fileTools}
           <span className="mdv-split">
             <button type="button" className="cr-btn cr-btn-quiet cr-btn-s mdv-btn" onClick={onCopy}><Icon name={copied ? "check" : "copy"} size={16} /> {copied ? t.system.copied : s.copy}</button>
-            <FileMenu markdown={markdown} projectName={projectName} projectId={readOnly ? undefined : projectId} onDownload={onDownload} />
+            <FileMenu markdown={markdown} projectName={projectName} onDownload={onDownload} />
           </span>
         </span>
       </header>
@@ -571,7 +571,7 @@ export default function SystemMarkdown({ fileTools, blocks, busy, onSave, onCopy
             // A skill's section is written from the system (lib/md-skills.ts); typed over, it stays as the team left it
             // The content is the texts the team pasted, whole (lib/criterio-md.ts): each one's words are typed in place
             // and saved to the reference itself; who saved it and what was said of it stay the app's
-            const edit = b.id === "project" ? (onAbout ? { onSave: onAbout } : null) : b.id === "content" || b.id === "brief" || b.id === "rejects" || b.id === "guide" ? null : over(b.id, b.edited);
+            const edit = b.id === "project" ? (onAbout ? { onSave: onAbout } : null) : b.id === "content" || b.id === "brief" || b.id === "rejects" || b.id === "guide" || b.id === "questions" || b.id === "learned" ? null : over(b.id, b.edited);
             if (b.texts && onText) return (
               <div key={b.id} id={`sdoc-${b.id}`} className="mdv-block">
                 {title(b.id, b.heading, whole)}<Line text="" />
@@ -641,6 +641,8 @@ export default function SystemMarkdown({ fileTools, blocks, busy, onSave, onCopy
                   </div>
                 );
               })}</> : null}
+              {/* The skills recommended for the area (lib/area-skills.ts): the app's lines, never typed over */}
+              {b.skillRecs?.length ? <><Line text="" />{lines(b.area, b.skillRecs, whole, false)}</> : null}
               {after && <div className="mdv-team">{after(b)}</div>}
               <Line text="" />
             </div>

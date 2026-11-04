@@ -17,19 +17,31 @@ import { EDIT_SYSTEM } from "./prompts";
 // A person says in words what to change in criterio.md ("no bold in running text"). The model reads the file and
 // writes again the areas the change touches, each with a sentence, as Tino, of what changes and why. Nothing is
 // written: the client leaves each one under its area as Tino's proposal, for the team to accept or leave (the same
-// road as any proposal). An instruction the file already follows touches no area.
+// road as any proposal). An instruction the file already follows touches no area. One that names an area without
+// saying which way ("change the iconography") is not guessed: Tino asks, with 3 or 4 answers taken from the area and
+// the board, and the one picked becomes the proposal.
 
 const EditSchema = z.object({
   edits: z.array(z.object({ area: z.enum(SYSTEM_AREAS), decision: z.string(), why: z.string(), never: z.array(z.string()), reason: z.string() })),
+  // The change names an area but not which way to take it ("change the iconography"): a question and its answers
+  // instead of a guess
+  ask: z.object({
+    area: z.enum(SYSTEM_AREAS), question: z.string(), now: z.string(),
+    options: z.array(z.object({ label: z.string(), decision: z.string(), why: z.string() })),
+  }).nullable(),
 });
 
 export type AreaEdit = { area: SystemArea; decision: string; why: string; never: string; reason: string };
+/** Which way to take an area, when the change did not say: Tino asks, each answer is a proposal ready to post */
+export type EditAsk = { area: SystemArea; question: string; now: string; options: { label: string; decision: string; why: string; never: string }[] };
 
 const INSTRUCTION_MAX = 400;
 /** A change in words touches a few areas at most; more would be a new pass, which "Improve with AI" is */
 const EDITS_MAX = 3;
 const WHY_MAX = 400;
 const REASON_MAX = 240;
+/** Answers to "which way?": enough to differ, few enough to read in a balloon */
+const OPTIONS_MAX = 4;
 /** The file the model reads: the areas lead it, the references' appendix at its end can be cut */
 const FILE_MAX = 60_000;
 
@@ -41,7 +53,7 @@ export async function editFile(input: {
   organizationId: string; projectId: string; instruction: string; usage: UsageCtx; language?: OutputLanguage;
   /** The file is read as a share link hands it out, as an agent gets it */
   locale: Locale; origin: string;
-}): Promise<AreaEdit[]> {
+}): Promise<{ edits: AreaEdit[]; ask: EditAsk | null }> {
   const instruction = line(input.instruction, INSTRUCTION_MAX);
   if (!instruction) throw new HttpError(400, (await getErrors()).badBody);
   const project = await projectRow(input.organizationId, input.projectId);
@@ -63,7 +75,7 @@ export async function editFile(input: {
   void recordUsage(input.usage, { action: "system", ...billOf(res), ref: `project:${input.projectId} edit` });
   const out = EditSchema.parse(JSON.parse(res.text));
   const seen = new Set<SystemArea>();
-  return out.edits.flatMap((e) => {
+  const edits = out.edits.flatMap((e) => {
     const decision = cleanDecision(e.decision);
     const reason = line(e.reason, REASON_MAX);
     const now = system.areas.find((a) => a.area === e.area)!;
@@ -74,4 +86,15 @@ export async function editFile(input: {
     seen.add(e.area);
     return [{ area: e.area, decision, why, never, reason }];
   }).slice(0, EDITS_MAX);
+  // A question only when there is nothing to propose: 2 to 4 answers that each change the area, its never lines kept
+  let ask: EditAsk | null = null;
+  if (!edits.length && out.ask) {
+    const now = system.areas.find((a) => a.area === out.ask!.area)!;
+    const options = out.ask.options
+      .map((o) => ({ label: line(o.label, 40), decision: cleanDecision(o.decision), why: line(o.why, WHY_MAX), never: now.never }))
+      .filter((o) => o.label && o.decision && o.decision !== now.decision).slice(0, OPTIONS_MAX);
+    const question = line(out.ask.question, 120);
+    if (question && options.length >= 2) ask = { area: out.ask.area, question, now: line(out.ask.now, 200), options };
+  }
+  return { edits, ask };
 }

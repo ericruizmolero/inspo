@@ -9,7 +9,7 @@ import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { db, schema } from "../db";
 import { HttpError, newId } from "../workspace-core";
 import { getErrors } from "../i18n";
-import { DOC_PART_MAX, isDocPart, NEVER_MAX, SYSTEM_AREAS, cleanDecision, emptySystem, type ProjectSystem, type SystemArea, type SystemAreaState, type SystemEvidence, type SystemRun, type AreaCuration, type AreaSupport, type SystemSummary } from "@/types/system";
+import { DOC_PART_MAX, isDocPart, NEVER_MAX, SYSTEM_AREAS, cleanDecision, emptySystem, type ProjectSystem, type SystemArea, type SystemAreaState, type SystemEvidence, type SystemRun, type AreaCuration, type AreaSupport, type SystemSummary, type SystemLearning, LEARNED_MAX, LEARNING_NOTE_MAX, readLearned } from "@/types/system";
 import { readBrand } from "@/types/brand";
 
 const P = schema.project;
@@ -62,6 +62,7 @@ export async function getSystem(organizationId: string, projectId: string): Prom
     run: (head?.runJson as SystemRun | null) ?? null,
     doc: head?.doc ?? {},
     brand: readBrand(head?.brand),
+    learned: readLearned(head?.learned),
     updatedAt: latest?.toISOString() ?? null,
   };
 }
@@ -78,6 +79,23 @@ export async function setSummary(organizationId: string, projectId: string, summ
   await ensureHead(organizationId, projectId, now);
   await db.update(S).set({ summary: String(summary ?? "").trim().slice(0, 4000), updatedAt: now }).where(and(eq(S.organizationId, organizationId), eq(S.projectId, projectId)));
   return getSystem(organizationId, projectId);
+}
+
+/** Something an agent learned with the person, kept on top of the list. Prepended in one statement, so two agents
+ *  writing at once both stay; the list is cut to LEARNED_MAX on the way in */
+export async function addLearning(organizationId: string, projectId: string, input: { note: string; area?: SystemArea; by?: string; via?: string }): Promise<SystemLearning> {
+  await projectRow(organizationId, projectId);
+  const note = String(input.note ?? "").replace(/\s+/g, " ").trim().slice(0, LEARNING_NOTE_MAX);
+  if (!note) throw new HttpError(400, (await getErrors()).badBody);
+  const now = new Date();
+  const entry: SystemLearning = { id: newId(), note, at: now.toISOString(), ...(input.area && AREA_SET.has(input.area) ? { area: input.area } : {}), ...(input.by ? { by: input.by.slice(0, 120) } : {}), ...(input.via ? { via: input.via.slice(0, 80) } : {}) };
+  await ensureHead(organizationId, projectId, now);
+  const list = sql`(jsonb_build_array(${JSON.stringify(entry)}::jsonb) || coalesce(${S.learned}, '[]'::jsonb))`;
+  await db.update(S).set({
+    learned: sql`(select coalesce(jsonb_agg(e order by i), '[]'::jsonb) from jsonb_array_elements(${list}) with ordinality as x(e, i) where i <= ${LEARNED_MAX})`,
+    updatedAt: now,
+  }).where(and(eq(S.organizationId, organizationId), eq(S.projectId, projectId)));
+  return entry;
 }
 
 /** A part of the file rewritten by hand; null (or the empty text) goes back to what the app writes */
@@ -125,7 +143,7 @@ export async function loadSystems(organizationId: string): Promise<Record<string
   ]);
   const out: Record<string, ProjectSystem> = {};
   for (const id of ids) out[id] = emptySystem(id);
-  for (const h of heads) { out[h.projectId].summary = h.summary; out[h.projectId].run = (h.runJson as SystemRun | null) ?? null; out[h.projectId].doc = h.doc ?? {}; out[h.projectId].updatedAt = h.updatedAt.toISOString(); }
+  for (const h of heads) { out[h.projectId].summary = h.summary; out[h.projectId].run = (h.runJson as SystemRun | null) ?? null; out[h.projectId].doc = h.doc ?? {}; out[h.projectId].learned = readLearned(h.learned); out[h.projectId].updatedAt = h.updatedAt.toISOString(); }
   for (const r of rows) {
     const sys = out[r.projectId];
     const i = SYSTEM_AREAS.indexOf(r.area as SystemArea);

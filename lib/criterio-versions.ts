@@ -1,6 +1,9 @@
-// criterio.md's history: the file as it left the app, one version each time it had changed since the last one.
-// It leaves by Copy, Download or an agent reading it over MCP, and that is when the team iterates with an AI: so a
-// version is exactly what an agent got, and editing in between leaves no trace until the file is taken out again.
+// criterio.md's history: one version with each change of the file, and each time it left the app changed.
+// A change is the team's in the app (an area, a part typed over, a proposal accepted, the skills, the brand: via
+// "edit") or an agent's over MCP (an answer, a learning, a proposal, a brand: "mcp-write"). It leaves by Copy,
+// Download, a result or an agent reading it, and a version that left is marked `exported`: it is what someone got.
+// Changes of the same person a few minutes apart are one version: the last one that has not left is rewritten in
+// place instead of taking a new number, so typing a decision in three goes does not leave three versions.
 import "server-only";
 import { createHash } from "crypto";
 import { and, desc, eq, max } from "drizzle-orm";
@@ -10,10 +13,17 @@ import { loadShareView } from "./share-view";
 import type { Locale } from "./i18n/locale";
 import type { CriterioBlock } from "./criterio-md";
 import { log } from "./log";
+import { inBackground } from "./notify";
+import { headers } from "next/headers";
+import { originOfHeaders } from "./mcp/auth";
 
 const V = schema.criterioVersion;
 
-export type VersionVia = "copy" | "download" | "mcp" | "result";
+export type VersionVia = "copy" | "download" | "mcp" | "result" | "edit" | "mcp-write";
+/** The vias that take the file out of the app: the version they keep is marked exported, and is never rewritten */
+const LEAVES: ReadonlySet<VersionVia> = new Set(["copy", "download", "mcp", "result"]);
+/** How long after a version the same person's next change still goes into it, while it has not left */
+export const GROUP_MS = 5 * 60_000;
 
 export interface CriterioVersionRow {
   n: number;
@@ -51,7 +61,7 @@ async function standing(input: { organizationId: string; projectId: string; loca
   const view = input.view ?? await loadShareView(input.organizationId, input.projectId, "full", input.locale, null, input.origin);
   if (!view) return null;
   const hash = hashOf(view.markdown);
-  const [last] = await db.select({ n: V.n, hash: V.hash, markdown: V.markdown }).from(V)
+  const [last] = await db.select({ id: V.id, n: V.n, hash: V.hash, markdown: V.markdown, byName: V.byName, exported: V.exported, at: V.createdAt }).from(V)
     .where(and(eq(V.organizationId, input.organizationId), eq(V.projectId, input.projectId))).orderBy(desc(V.n)).limit(1);
   return { view, hash, last, n: last?.hash === hash ? last.n : (last?.n ?? 0) + 1 };
 }
@@ -63,30 +73,58 @@ export async function currentVersion(input: { organizationId: string; projectId:
 }
 
 /**
- * Keeps the project's criterio.md as a new version when it changed since the last one. `view` is the file already
- * built (the MCP read builds it anyway); without it the file is built here, as a share link would hand it out.
- * Never throws: the file has already left, and a lost version only means one fewer step in the history.
+ * Keeps the project's criterio.md as a version when it changed since the last one: a new number, or, for a change by
+ * the same person within GROUP_MS of a version that has not left, that version rewritten. An exit marks the version it
+ * took as exported, changed or not. `view` is the file already built (the MCP read builds it anyway); without it the
+ * file is built here, as a share link would hand it out. Never throws: a lost version only means one fewer step.
  */
 export async function recordVersion(input: {
   organizationId: string; projectId: string; via: VersionVia; byName: string | null; viaName?: string;
-  locale: Locale; origin: string; view?: FileView;
+  locale: Locale; origin: string; view?: FileView; now?: Date;
 }): Promise<number | null> {
   try {
     const now = await standing(input);
     if (!now) return null;
     const { view, hash, last, n } = now;
-    if (last?.hash === hash) return n;
-    // Two exits at the same moment race for the same number: the unique index lets one win, the other is the same file
+    const leaves = LEAVES.has(input.via);
+    const at = input.now ?? new Date();
+    if (last?.hash === hash) {
+      if (leaves && !last.exported) await db.update(V).set({ exported: true }).where(eq(V.id, last.id));
+      return last.n;
+    }
+    const via = (input.via === "mcp" || input.via === "mcp-write") && input.viaName ? `${input.via}:${input.viaName}` : input.via;
+    // The same person still at it, and the file has not left since: their last version is rewritten, not followed
+    if (last && !last.exported && last.byName === input.byName && at.getTime() - last.at.getTime() < GROUP_MS) {
+      const [before] = last.n > 1 ? await db.select({ markdown: V.markdown }).from(V)
+        .where(and(eq(V.organizationId, input.organizationId), eq(V.projectId, input.projectId), eq(V.n, last.n - 1))).limit(1) : [];
+      // Only while it still has not left: an exit that took it in between keeps it as it was
+      const [kept] = await db.update(V).set({
+        markdown: view.markdown, hash, changed: changedAreas(view.blocks, view.markdown, before?.markdown ?? null), via, exported: leaves, createdAt: at,
+      }).where(and(eq(V.id, last.id), eq(V.exported, false))).returning({ n: V.n });
+      if (kept) return kept.n;
+    }
+    // Two writers at the same moment race for the same number: the unique index lets one win, the other is the same file
     await db.insert(V).values({
       id: newId(), organizationId: input.organizationId, projectId: input.projectId, n, markdown: view.markdown, hash,
       changed: changedAreas(view.blocks, view.markdown, last?.markdown ?? null),
-      byName: input.byName, via: input.via === "mcp" && input.viaName ? `mcp:${input.viaName}` : input.via, createdAt: new Date(),
+      byName: input.byName, via, exported: leaves, createdAt: at,
     }).onConflictDoNothing();
     return n;
   } catch (err) {
     log.warn("criterio_version.not_recorded", { ref: input.projectId, err });
     return null;
   }
+}
+
+/** A change the team made in the app, kept as a version once the answer is out. Called from the server actions that
+ *  change what the file says; the origin is read now, while the request is at hand */
+export async function versionAfterEdit(ctx: { workspace: { id: string }; user: { name: string; language: Locale } }, projectIds: string | readonly string[]): Promise<void> {
+  const ids = typeof projectIds === "string" ? [projectIds] : [...new Set(projectIds)];
+  if (!ids.length) return;
+  const origin = originOfHeaders(await headers());
+  inBackground(async () => {
+    for (const projectId of ids) await recordVersion({ organizationId: ctx.workspace.id, projectId, via: "edit", byName: ctx.user.name, locale: ctx.user.language, origin });
+  });
 }
 
 /** The project's versions, newest first, without their files */

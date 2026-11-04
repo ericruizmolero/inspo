@@ -25,7 +25,7 @@ test("each step links to where it is done, in the project the path follows", () 
   expect(href("example", none)).toBe("/?in=templates");
   expect(href("project", none)).toBe("/?in=home");
   expect(href("brief", { ...all, refs: 0 })).toBe("/?in=p1");
-  expect(href("brief", all)).toBe("/?in=p1&view=system&brief=1");
+  expect(href("brief", all)).toBe("/?in=p1&view=system");
   expect(href("refs", all)).toBe("/?in=p1");
   expect(href("system", all)).toBe("/?in=p1&view=system");
   expect(href("refs", none)).toBe("/?in=home");

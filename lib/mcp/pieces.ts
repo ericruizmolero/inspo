@@ -3,6 +3,9 @@
 // a loose document. A client reads criterio.md, which is a view, and writes pieces: a reference on the board
 // (a site, a picture, a text), or a change to an area's
 // decision, which is never written straight in: it waits under its area as a proposal for the team's yes or no.
+// Two pieces go straight in, because they are the person's own words and change no decision: an answer to one of
+// the file's starting questions (kept in the brief) and something learned with the person (kept with the system).
+// Every write leaves criterio.md as a version (via "mcp-write"), once the answer is out.
 import "server-only";
 import { z } from "zod";
 import { and, asc, eq, inArray, isNull } from "drizzle-orm";
@@ -29,8 +32,11 @@ import { log } from "../log";
 import { assertRoom } from "../quota";
 import { cleanText, readText, TEXT_TITLE_MAX } from "../text-refs";
 import { addAreaComment, systemActivity } from "../area-comments";
-import { saveBrief } from "../brief";
-import { SYSTEM_AREAS, cleanDecision, NEVER_MAX, type SystemArea } from "@/types/system";
+import { saveAnswer, saveBrief } from "../brief";
+import { addLearning } from "../system/areas";
+import { PLAYBOOK_QUESTIONS, openQuestions, questionById, questionText } from "../playbook-questions";
+import { SYSTEM_AREAS, cleanDecision, NEVER_MAX, LEARNING_NOTE_MAX, type SystemArea } from "@/types/system";
+import { BRIEF_LIMITS, readBrief } from "@/types/brief";
 import type { McpCtx } from "./auth";
 
 const P = schema.project;
@@ -290,10 +296,67 @@ export async function proposeDecision(ctx: McpCtx, origin: string, input: NewPro
   const waiting = (activity.notes[area] ?? []).find((n) => n.proposal?.state === "open" && n.proposal.decision === decision);
   if (waiting) return { proposed: false, reason: "This same text is already waiting for the team's answer.", project: project.name, area, url: projectUrl(origin, project.id) };
   const note = await addAreaComment(org, project.id, area, oneLine(input.reason, 600) || decision, authorOf(ctx), { proposal: { decision, why, never, state: "open", via: ctx.via } });
+  versionAfterWrite(ctx, origin, project);
   return {
     proposed: true, id: note.id, project: project.name, area,
     status: "Waiting for the team: someone accepts or rejects it in the app. The area says what it said until then.",
     ...(current?.decision ? { current_decision: current.decision } : {}),
+    url: projectUrl(origin, project.id),
+  };
+}
+
+/** What an agent wrote, kept as a version of the file once the answer is out */
+export function versionAfterWrite(ctx: McpCtx, origin: string, project: { id: string; workspace: Workspace }): void {
+  inBackground(async () => { await recordVersion({ organizationId: project.workspace.id, projectId: project.id, via: "mcp-write", viaName: ctx.via, byName: ctx.user.name, locale: ctx.user.language, origin }); });
+}
+
+export const QUESTION_IDS = PLAYBOOK_QUESTIONS.map((q) => q.id) as [string, ...string[]];
+
+/** The questions a project still has open, as an agent asks them next */
+async function stillOpen(org: string, projectId: string, lang: "en" | "es") {
+  const [[row], [board]] = await Promise.all([
+    db.select({ brief: P.brief }).from(P).where(and(eq(P.organizationId, org), eq(P.id, projectId))).limit(1),
+    db.select({ id: PI.itemId }).from(PI).where(and(eq(PI.organizationId, org), eq(PI.projectId, projectId))).limit(1),
+  ]);
+  const brief = readBrief(row?.brief);
+  return openQuestions(brief, new Set(Object.keys(brief?.answers ?? {}))).map((q) => ({ id: q.id, question: questionText(q, lang, !!board) }));
+}
+
+/**
+ * The person's answer to one of criterio.md's starting questions, kept in the project's brief under the question's
+ * id: the file lists it as answered and no agent asks it again. Straight in, no approval: it is what the person said.
+ */
+export async function answerQuestion(ctx: McpCtx, origin: string, input: { project: string; question: string; answer: string }) {
+  const project = await resolveProject(ctx, input.project);
+  const q = questionById(String(input.question ?? ""));
+  if (!q) throw new HttpError(400, `"${input.question}" is not a starting question. Their ids are in criterio.md, under the starting questions: ${QUESTION_IDS.join(", ")}.`);
+  const text = String(input.answer ?? "").trim().slice(0, BRIEF_LIMITS.answer);
+  if (!text) throw new HttpError(400, "The answer is empty.");
+  await saveAnswer(project.workspace.id, project.id, q.id, { text, by: ctx.user.name || ctx.user.email, via: ctx.via }, ctx.user.id);
+  versionAfterWrite(ctx, origin, project);
+  const open = await stillOpen(project.workspace.id, project.id, ctx.user.language === "es" ? "es" : "en");
+  return {
+    saved: true, project: project.name, question: q.id,
+    still_open: open,
+    status: open.length ? `${open.length} starting questions still open. Ask the next one, one at a time.` : "Every starting question is answered.",
+    url: projectUrl(origin, project.id),
+  };
+}
+
+/**
+ * Something learned with the person (a correction, a choice, a preference), kept with the project's system: the
+ * next session reads it under "What was learned". Straight in: it changes no decision, which only propose_decision does.
+ */
+export async function recordLearning(ctx: McpCtx, origin: string, input: { project: string; note: string; area?: string }) {
+  const project = await resolveProject(ctx, input.project);
+  const note = oneLine(input.note, LEARNING_NOTE_MAX);
+  if (!note) throw new HttpError(400, "The note is empty.");
+  if (input.area && !(SYSTEM_AREAS as readonly string[]).includes(input.area)) throw new HttpError(400, `"${input.area}" is not an area. The areas are: ${SYSTEM_AREAS.join(", ")}.`);
+  const entry = await addLearning(project.workspace.id, project.id, { note, area: input.area as SystemArea | undefined, by: ctx.user.name || ctx.user.email, via: ctx.via });
+  versionAfterWrite(ctx, origin, project);
+  return {
+    saved: true, id: entry.id, project: project.name, ...(entry.area ? { area: entry.area } : {}),
+    status: "Kept under \"What was learned\" in criterio.md. To change what an area decides, use propose_decision.",
     url: projectUrl(origin, project.id),
   };
 }

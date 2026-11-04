@@ -33,6 +33,36 @@ test("the file's number is the one the next exit records, and stays while the fi
   expect(await currentVersion(a)).toBe(2);
 });
 
+test("changes of the same person minutes apart are one version until the file leaves", async () => {
+  const a = { organizationId: fx.a.team, projectId: fx.a.project, ...at };
+  const V = schema.criterioVersion;
+  const rows = () => db.select({ n: V.n, via: V.via, exported: V.exported, byName: V.byName }).from(V).where(eq(V.projectId, fx.a.project)).orderBy(V.n);
+  const owner = { id: fx.a.owner.id, name: fx.a.owner.name };
+  const decide = (area: string, words: string) => decideArea(fx.a.team, fx.a.project, area, { decision: `${words} ${fx.tag}` }, owner);
+  await db.delete(V).where(eq(V.projectId, fx.a.project));
+  const t0 = Date.now();
+
+  await decide("color", "Ink on paper");
+  expect(await recordVersion({ ...a, via: "edit", byName: owner.name, now: new Date(t0) })).toBe(1);
+  await decide("color", "Ink on warm paper");
+  expect(await recordVersion({ ...a, via: "edit", byName: owner.name, now: new Date(t0 + 60_000) }), "a minute later, same person: the same version, rewritten").toBe(1);
+  expect(await rows()).toEqual([{ n: 1, via: "edit", exported: false, byName: owner.name }]);
+
+  // Leaving unchanged only marks it: what someone got is never rewritten after
+  expect(await recordVersion({ ...a, via: "copy", byName: owner.name, now: new Date(t0 + 90_000) })).toBe(1);
+  expect((await rows())[0].exported).toBe(true);
+  await decide("motion", "Short and quiet");
+  expect(await recordVersion({ ...a, via: "edit", byName: owner.name, now: new Date(t0 + 120_000) }), "after it left, a change is a new version").toBe(2);
+
+  // An agent's write, under another name, is its own version; and so is the same person's change after the window
+  await decide("motion", "Short, quiet, no bounce");
+  expect(await recordVersion({ ...a, via: "mcp-write", viaName: "Claude", byName: "Someone else", now: new Date(t0 + 150_000) })).toBe(3);
+  await decide("motion", "Short, quiet, no bounce, no parallax");
+  expect(await recordVersion({ ...a, via: "mcp-write", viaName: "Claude", byName: "Someone else", now: new Date(t0 + 150_000 + 6 * 60_000) }), "six minutes later: a new one").toBe(4);
+  expect((await rows()).map((r) => [r.n, r.via, r.exported])).toEqual([[1, "edit", true], [2, "edit", false], [3, "mcp-write:Claude", false], [4, "mcp-write:Claude", false]]);
+  expect(await recordVersion({ ...a, via: "edit", byName: owner.name }), "nothing changed: no version").toBe(4);
+});
+
 test("another workspace's project carries no number", async () => {
   expect(await currentVersion({ organizationId: fx.b.team, projectId: fx.a.project, ...at })).toBeNull();
 });

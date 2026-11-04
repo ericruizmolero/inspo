@@ -5,7 +5,7 @@
 // "Later" and the cross put it away until the next one, and a click on Tino brings it back with the rest. What the
 // person starts (typing a project's name) he answers every time. Muted, he sinks and sleeps: no balloons, and a
 // click wakes him. The switch in the corner pill (TinoSwitch) mutes him too, and both are remembered.
-import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode, type Ref } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode, type Ref, type RefObject } from "react";
 import Tino from "./Tino";
 import Typed, { typedMs } from "./Typed";
 import type { TinoApi } from "./tino/engine";
@@ -107,29 +107,47 @@ export function TinoSwitch() {
  *  was days ago (ms; 0 otherwise) */
 type Visit = { later: string[]; closed: boolean; seen: string[]; awaySince: number };
 
-export default function HomeTino({ nudges, say }: {
+export default function HomeTino({ nudges, say, speak, face, quiet = false, scope = "", className = "", tinoRef, idle }: {
   nudges: TinoNudge[];
   /** What the person started (typing on the home): said over any nudge, every time */
   say?: TinoNudge;
+  /** An answer to what the person is doing on the page (a search, an edit): its own balloon, over any nudge and
+   *  even with Tino muted, since it was asked for */
+  speak?: CornerSay | null;
+  /** His face while nothing else decides it (following the words, searching); `speak`'s face goes here too */
+  face?: TinoMood;
+  /** Nothing unprompted now (another of his windows is open on the page) */
+  quiet?: boolean;
+  /** Where "Later" and the cross hold: the home's, or a board's own, so closing one does not silence the other */
+  scope?: string;
+  className?: string;
+  tinoRef?: RefObject<TinoApi | null>;
+  /** What he says when clicked and there is nothing pending: a click on him always gets an answer */
+  idle?: TinoNudge;
 }) {
   const { t } = useT();
   const on = useTinoOn();
-  const tino = useRef<TinoApi>(null);
+  const own = useRef<TinoApi>(null);
+  const tino = tinoRef ?? own;
+  const laterKey = LATER_KEY + scope, closedKey = CLOSED_KEY + scope;
   // Nothing is said until the visit is read, so a balloon closed a moment ago never flashes back in
   const [visit, setVisit] = useState<Visit | null>(null);
   const [at, setAt] = useState(0);
   useEffect(() => {
     const last = visitBefore();
     setVisit({
-      later: JSON.parse(read(session, LATER_KEY) ?? "[]") as string[],
-      closed: read(session, CLOSED_KEY) === "1",
+      later: JSON.parse(read(session, laterKey) ?? "[]") as string[],
+      closed: read(session, closedKey) === "1",
       seen: JSON.parse(read(local, SEEN_KEY) ?? "[]") as string[],
       awaySince: last > 0 && Date.now() - last > AWAY_MS ? last : 0,
     });
-  }, []);
+  }, [laterKey, closedKey]);
 
   const left = visit ? nudges.filter((n) => !visit.later.includes(n.key) && !(n.once && visit.seen.includes(n.key)) && !(n.happened && !(visit.awaySince && Date.parse(n.happened) > visit.awaySince))).slice(0, MAX_NUDGES) : [];
-  const shown = on ? say ?? (visit && !visit.closed && left.length ? left[at % left.length] : undefined) : undefined;
+  // Asked (a click on him), he answers even while the page would keep him quiet, and with nothing pending says `idle`
+  const [asked, setAsked] = useState(false);
+  const pending = visit && !visit.closed && (asked || !quiet);
+  const shown = on && !speak ? say ?? (pending && left.length ? left[at % left.length] : pending && asked ? idle : undefined) : undefined;
 
   const title = useLine(shown?.key, shown?.title);
   // A once-only nudge is spent the moment it is said
@@ -142,27 +160,33 @@ export default function HomeTino({ nudges, say }: {
 
   const close = () => {
     setVisit((v) => v && { ...v, closed: true });
-    write(session, CLOSED_KEY, "1");
+    write(session, closedKey, "1");
+    setAsked(false);
   };
   const putOff = (key: string) => {
     const later = [...(visit?.later ?? []), key];
     setVisit((v) => v && { ...v, later, closed: true });
-    write(session, LATER_KEY, JSON.stringify(later));
-    write(session, CLOSED_KEY, "1");
+    write(session, laterKey, JSON.stringify(later));
+    write(session, closedKey, "1");
+    setAsked(false);
     tino.current?.set("descarta");
   };
   const wake = () => {
     tino.current?.jump(1);
     if (!on) { setOn(true); return; }
-    setVisit((v) => v && { ...v, closed: false });
-    write(session, CLOSED_KEY, "0");
+    // Already speaking: a click passes to the next thing. Otherwise he opens again with what was put off as well
+    if (shown && shown !== say && left.length > 1) { setAt((i) => (i % left.length) + 1); return; }
+    setAsked(true);
+    setVisit((v) => v && { ...v, closed: false, later: [] });
+    write(session, closedKey, "0");
+    write(session, laterKey, "[]");
   };
 
-  const mood: TinoMood = !on ? "asleep" : shown ? shown.mood : left.length ? "watching" : "asleep";
-  const paged = shown && !say && left.length > 1;
+  const mood: TinoMood = speak && face ? face : !on ? "asleep" : shown ? shown.mood : face ?? (left.length ? "watching" : "asleep");
+  const paged = shown && shown !== idle && !say && left.length > 1;
   return (
-    <TinoCorner tinoRef={tino} mood={mood} muted={!on} bodyLabel={on ? t.tino.talk : t.tino.wake} onBody={wake}
-      say={shown && {
+    <TinoCorner tinoRef={tino} mood={mood} muted={!on && !speak} bodyLabel={on ? t.tino.talk : t.tino.wake} onBody={wake} className={className}
+      say={speak ?? (shown && {
         key: shown.key, who: shown.who, title, text: shown.text,
         onClose: shown === say ? undefined : close,
         actions: shown === say ? null : <>
@@ -174,7 +198,7 @@ export default function HomeTino({ nudges, say }: {
             </button>
           )}
         </>,
-      }} />
+      })} />
   );
 }
 

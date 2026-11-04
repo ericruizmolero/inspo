@@ -713,6 +713,10 @@ export const criterioVersion = pgTable("criterio_version", {
   /** Who took it out, and how: "copy", "download", or "mcp" with the AI client's name */
   byName: text("by_name"),
   via: text("via").notNull(),
+  /** The file left the app as this version (copied, downloaded, read by an agent, used for a result). A version that
+   *  never left can still be rewritten by the next change of the same person within minutes (lib/criterio-versions.ts) */
+  exported: boolean("exported").notNull().default(false),
+  /** When this version was last written: its first change, or the last one grouped into it */
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
 }, (t) => [
   uniqueIndex("criterio_version_project_n_idx").on(t.projectId, t.n),
@@ -753,6 +757,9 @@ export const projectSystem = pgTable("project_system", {
   /** The brand as values (types/brand.ts BrandSpec): colours, faces and scale, curves, logo files, the voice's pairs.
    *  The presentation draws it and criterio.md writes it as tables */
   brand: jsonb("brand").$type<unknown>(),
+  /** What an agent learned working with the person (types/system.ts SystemLearning), newest first: criterio.md's
+   *  "What was learned". Written over MCP (record_learning) */
+  learned: jsonb("learned").$type<unknown>(),
   /** The first time someone copied or downloaded the project's criterio.md: the file left the app */
   exportedAt: timestamp("exported_at", { withTimezone: true, mode: "date" }),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),

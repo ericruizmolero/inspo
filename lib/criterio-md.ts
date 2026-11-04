@@ -11,11 +11,13 @@
 // it as it is and let a block be edited: the system stays the one source, the file is its other face.
 import { SYSTEM_AREAS, confidenceOf, type ProjectSystem, type SystemArea } from "@/types/system";
 import { skillSections } from "@/lib/md-skills";
+import { areaSkillLines } from "@/lib/area-skills";
 import { areaTokenLines } from "@/lib/area-tokens";
 import { hostOf, readableDomain } from "@/lib/url";
 import { brandTokenLines, brandIntroLines, brandCssLines, type BrandMdStrings } from "@/lib/brand-md";
 import type { BrandSpec } from "@/types/brand";
 import { readBrief, type KeepPart, type Platform, type PriceRange } from "@/types/brief";
+import { PLAYBOOK_QUESTIONS, QUESTION_GROUPS, QUESTION_GROUP_NAMES, questionText } from "@/lib/playbook-questions";
 import type { RefMeasured } from "@/lib/ref-measured";
 import type { RefComposition } from "@/types/inspo";
 import { compositionPatterns, isPage, type CompositionPattern } from "@/lib/composition-core";
@@ -93,6 +95,10 @@ export interface CriterioMdInput {
     use: { heading: string; lines: (k: UseMdKeys) => string[] };
     /** "Start here": the walk the agent takes the person on, written from what the project has (lib/criterio-md.ts guideKeys) */
     guide: { heading: string; lines: (k: GuideMdKeys) => string[] };
+    /** "Starting questions": the questions still open, which the agent asks in phase 1 (lib/playbook-questions.ts) */
+    questions: { heading: string; intro: string; decides: string; none: string; answered: (n: number) => string; inBrief: string };
+    /** "What was learned": what agents wrote down with the person (types/system.ts SystemLearning) */
+    learned: { heading: string; intro: string; with: (who: string, app: string) => string };
     /** Every area's never lines gathered in one place, for the reader who reads one list before building */
     rejects: { heading: string; intro: string };
     clientCopy: string;
@@ -122,6 +128,10 @@ export interface GuideMdKeys {
   pagesHeading: string | null; repeats: string | null; content: string | null; contentCodes: string[];
   rejects: string | null; neverCount: number; tokens: string | null; use: string;
   why: string; never: string; client: string | null;
+  /** The Starting questions' heading and how many are still open; null heading when every one is answered */
+  questions: string | null; openQuestions: number;
+  /** What was learned's heading, when anything was */
+  learned: string | null;
 }
 
 export interface BriefMdStrings {
@@ -188,6 +198,8 @@ export type CriterioBlock =
     /** How many references show each signal behind the decision: the line the file says it in, and the lines that
      *  cite those references, which the app opens under it. Written by the app from the run, never typed over */
     support?: { line: string; refs: string[] }[];
+    /** The skills recommended for the area (lib/area-skills.ts), as lines. Written by the app, never typed over */
+    skillRecs?: string[];
   };
 
 const one = (s: string) => s.replace(/\s+/g, " ").trim();
@@ -207,6 +219,33 @@ function measuredLines(m: RefMeasured | undefined, s: CriterioMdInput["strings"]
   if (m.radius?.length) out.push(`  - ${s.radius}: ${m.radius.map((r) => `${r.element} ${r.value}`).join(", ")}`);
   if (m.pixels?.length) out.push(`  - ${s.pixels}: ${m.pixels.map((p) => `\`${p.hex}\` ${Math.round(p.share * 100)}%`).join(", ")}`);
   return out;
+}
+
+/** Starting questions: the open ones by group, each with its id (what answer_question takes) and the areas its answer
+ *  decides; then, in a line or a few, what is already answered (by the brief's fields, or an answer kept for it) */
+function startingQuestions(stored: unknown, hasRefs: boolean, lang: "en" | "es", area: (k: SystemArea) => string, s: CriterioMdInput["strings"]["questions"]): { open: string[]; lines: string[] } {
+  const brief = readBrief(stored);
+  const answers = brief?.answers ?? {};
+  const fromBrief = PLAYBOOK_QUESTIONS.filter((q) => !answers[q.id] && brief && q.fromBrief?.(brief));
+  const kept = PLAYBOOK_QUESTIONS.filter((q) => answers[q.id]);
+  const open = PLAYBOOK_QUESTIONS.filter((q) => !answers[q.id] && !fromBrief.includes(q));
+  const lines = [`> ${s.intro}`, ""];
+  for (const g of QUESTION_GROUPS) {
+    const qs = open.filter((q) => q.group === g);
+    if (!qs.length) continue;
+    lines.push(`**${QUESTION_GROUP_NAMES[g][lang]}**`, "");
+    for (const q of qs) lines.push(`- \`${q.id}\` ${questionText(q, lang, hasRefs)}${q.feeds.length ? ` _${s.decides}: ${q.feeds.map(area).join(", ")}_` : ""}`);
+    lines.push("");
+  }
+  if (!open.length) lines.push(s.none, "");
+  const done = fromBrief.length + kept.length;
+  if (done) {
+    lines.push(`**${s.answered(done)}**`, "");
+    if (fromBrief.length) lines.push(`- ${s.inBrief}: ${fromBrief.map((q) => `\`${q.id}\``).join(", ")}`);
+    for (const q of kept) lines.push(`- \`${q.id}\`: ${quote(answers[q.id].text, 160)}`);
+  }
+  while (lines[lines.length - 1] === "") lines.pop();
+  return { open: open.map((q) => q.id), lines };
 }
 
 export function criterioBlocks({ project, system, items: allItems, labels, strings, client, about, brief, board = [], talk: allTalk = {}, origin = "", skills = [], locale, brand, mode = "full", fileHref, links = {}, clientCopy = [] }: CriterioMdInput): CriterioBlock[] {
@@ -263,6 +302,13 @@ export function criterioBlocks({ project, system, items: allItems, labels, strin
     const ids = [...new Set([...(a?.support ?? []).flatMap((x) => x.itemIds), ...(a?.evidence ?? []).map((e) => e.itemId)])].filter((id) => code.has(id)).sort((p, q) => at(p) - at(q));
     return [{ label: title(key, labels[key]), state: level === "empty" ? "open" as const : "proposed" as const, confidence: level === "low" ? a?.confidence : undefined, codes: ids.map((id) => code.get(id)!).slice(0, 6) }];
   });
+  const lang = locale === "es" ? "es" : "en";
+  const asked = startingQuestions(brief, board.length > 0, lang, (k) => title(k, labels[k]), strings.questions);
+  // What agents learned with the person, newest first. A record of the team's sessions: a client's copy goes without it
+  const learnedLines = clean ? [] : (system.learned ?? []).map((l) => {
+    const who = l.by && l.via ? strings.learned.with(l.by, l.via) : l.by ?? l.via ?? "";
+    return `- ${l.area ? `**${title(l.area, labels[l.area])}:** ` : ""}${one(l.note)} _(${[who, l.at.slice(0, 10)].filter(Boolean).join(", ")})_`;
+  });
   const guideLines = strings.guide.lines({
     project, open,
     pages: byKind.map(({ k, ids }) => ({ name: strings.composition.kinds[k], n: ids.length })),
@@ -273,8 +319,12 @@ export function criterioBlocks({ project, system, items: allItems, labels, strin
     rejects: rejected.length ? title("rejects", strings.rejects.heading) : null, neverCount: rejected.length,
     tokens: css.length || derived.length ? strings.brand.tokens : null, use: title("use", strings.use.heading),
     why: strings.why, never: strings.never, client: client?.name ?? null,
+    questions: asked.open.length ? title("questions", strings.questions.heading) : null, openQuestions: asked.open.length,
+    learned: learnedLines.length ? title("learned", strings.learned.heading) : null,
   });
   blocks.push({ kind: "section", id: "guide", heading: title("guide", strings.guide.heading), lines: guideLines });
+  blocks.push({ kind: "section", id: "questions", heading: title("questions", strings.questions.heading), lines: asked.lines });
+  if (learnedLines.length) blocks.push({ kind: "section", id: "learned", heading: title("learned", strings.learned.heading), lines: [`> ${strings.learned.intro}`, "", ...learnedLines] });
   blocks.push({ kind: "section", id: "use", heading: title("use", strings.use.heading), ...byHandOr("use", useLines) });
   if (rejected.length) blocks.push({ kind: "section", id: "rejects", heading: title("rejects", strings.rejects.heading), mark: strings.required, lines: [`> ${strings.rejects.intro}`, "", ...rejected] });
   if (about?.trim()) blocks.push({ kind: "section", id: "project", heading: title("project", strings.project), lines: [about.trim()] });
@@ -320,6 +370,7 @@ export function criterioBlocks({ project, system, items: allItems, labels, strin
     });
   for (const key of SYSTEM_AREAS) {
     const a = system.areas.find((x) => x.area === key);
+    const skillRecs = areaSkillLines(key, skills, lang);
     const base = { kind: "area" as const, area: key, heading: title(key, labels[key]), whyLabel: strings.why, neverLabel: strings.never, openText: strings.open, evidenceLabel: strings.evidence, never: a?.never ?? "" };
     const meta: string[] = [];
     if (a?.decision) {
@@ -359,7 +410,7 @@ export function criterioBlocks({ project, system, items: allItems, labels, strin
     // The values' first title is marked required; the imagery's examples are references, so they never are
     const valuesAt = tokens.findIndex((l) => /^\*\*[^*]+\*\*$/.test(l) && l !== `**${strings.brand.examples}**`);
     const marks = { required: strings.required, guidance: strings.guidance, must: strings.must, should: strings.should, valuesAt };
-    blocks.push({ ...base, marks, decision: a?.decision ?? "", why: a?.decision ? a.why : "", meta: byHand ? byHand.split("\n") : meta, metaEdited: !!byHand, ...(tokens.length ? { tokens } : {}), ...(support.length ? { support } : {}) });
+    blocks.push({ ...base, marks, decision: a?.decision ?? "", why: a?.decision ? a.why : "", meta: byHand ? byHand.split("\n") : meta, metaEdited: !!byHand, ...(tokens.length ? { tokens } : {}), ...(support.length ? { support } : {}), ...(skillRecs.length ? { skillRecs } : {}) });
   }
   /** One reference's entry: what it is, who brought it, what was said of it and what it brings to each area */
   const refLines = (id: string, byLabel: string): string[] => {
@@ -398,6 +449,9 @@ export function criterioBlocks({ project, system, items: allItems, labels, strin
   }
   // How to build it with the tools the team switched on, after the decisions it builds and before the appendix
   // Typed over by hand, a skill's section stays as the team left it until they bring the app's back
+  // What crosses every area (slop, accessibility, the stack), after the areas, as each area ends with its own
+  const across = areaSkillLines("all", skills, lang).slice(1).map((l) => l.replace(/^  /, ""));
+  if (across.length) blocks.push({ kind: "section", id: "skills-all", heading: title("skills-all", lang === "es" ? "Skills para todo el sistema" : "Skills for the whole system"), lines: across });
   for (const s of skillSections(system, skills, locale)) blocks.push({ kind: "section", ...s, heading: title(s.id, s.heading), lines: doc[s.id] ? doc[s.id].split("\n") : s.lines, edited: !!doc[s.id] });
   // The values as variables, ready to paste into a project
   if (css.length) blocks.push({ kind: "section", id: "brand-tokens", heading: title("brand-tokens", strings.brand.tokens), mark: strings.required, ...byHandOr("brand-tokens", [`> ${strings.brand.tokensIntro}`, "", ...css]) });
@@ -523,18 +577,19 @@ export function blocksToMd(blocks: CriterioBlock[]): string {
     const cites = new RegExp(`^- \\*\\*${escRe(b.evidenceLabel)} \\((\\d+)\\):\\*\\*$`);
     if (b.meta.length) { for (const line of b.meta) p(b.marks ? line.replace(cites, `- **${b.evidenceLabel} ($1)** (${b.marks.guidance}):`) : line); p(); }
     if (b.support?.length) { for (const x of b.support) p(x.line); p(); }
+    if (b.skillRecs?.length) { for (const line of b.skillRecs) p(line); p(); }
   }
   return publicLinks(L.join("\n"));
 }
 
 /** The parts a reader can ask for: the whole file, the decisions (without the long lists at the end), the walk
- *  ("guide": where to start, with the rules it leans on and every Never), or one area */
+ *  ("guide": where to start, the starting questions, what was learned, the rules it leans on and every Never), or one area */
 export const CRITERIO_PARTS = ["all", "decisions", "guide", ...SYSTEM_AREAS] as const;
 export type CriterioPart = (typeof CRITERIO_PARTS)[number];
 export const isCriterioPart = (x: unknown): x is CriterioPart => (CRITERIO_PARTS as readonly unknown[]).includes(x);
 
 /** One part of the file as Markdown. "decisions" leaves out every reference's own entry and the texts, whole; "guide"
- *  is the head, Start here, How to use this file and every Never, the first read; an area's name gives that area
+ *  is the head, Start here, the starting questions, what was learned, How to use this file and every Never, the first read; an area's name gives that area
  *  under the file's head and its "How to use this file", so a single area still says what binds */
 export function partMd(blocks: CriterioBlock[], part: CriterioPart = "all"): string {
   if (part === "all") return blocksToMd(blocks);
@@ -542,7 +597,7 @@ export function partMd(blocks: CriterioBlock[], part: CriterioPart = "all"): str
   return blocksToMd(blocks.filter((b) => part === "decisions"
     ? b.kind !== "section" || !["refs", "content"].includes(b.id)
     : part === "guide"
-      ? b.kind === "head" || section(b, "guide", "use", "rejects")
+      ? b.kind === "head" || section(b, "guide", "questions", "learned", "use", "rejects")
       : b.kind === "head" || section(b, "use") || (b.kind === "area" && b.area === part)));
 }
 

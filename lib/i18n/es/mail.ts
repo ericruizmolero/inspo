@@ -87,7 +87,7 @@ export const mail: typeof EnMail = {
       `Ya tienes tu espacio:\n${url}\n\n` +
       `Este es el orden que seguiríamos nosotros el primer día.\n\n` +
       `1. Crea un proyecto.\n` +
-      `2. Escribe una línea de qué es. Con «La web de un estudio de cerámica en Lisboa» basta.\n` +
+      `2. Escribe una línea de qué es. Con "La web de un estudio de cerámica en Lisboa" basta.\n` +
       `3. Guarda 10 referencias. Con la extensión del navegador, pegando un enlace o importando un tablero que ya tengas en Are.na, Pinterest o Cosmos.\n` +
       `4. Pide a Criterio el Sistema. Lee tus referencias y propone la tipografía, el color, el layout y la voz hacia los que apuntan, una decisión por área. La primera pasada no cuenta para las 30 acciones de IA del plan gratis.\n` +
       `5. Exporta el criterio.md o conecta el MCP, y tu agente lo leerá mientras programa.\n\n` +

@@ -17,7 +17,7 @@ import {
   MotionSchema, TypographySchema, VoiceSchema, runMayWrite, type BrandFile, type BrandSections, type BrandSpec,
 } from "@/types/brand";
 import type { McpCtx } from "./auth";
-import { ProjectArg, projectUrl, resolveProject } from "./pieces";
+import { ProjectArg, projectUrl, resolveProject, versionAfterWrite } from "./pieces";
 
 /** A file as an agent can hand it over: markup it read, an address it knows, or bytes it has on disk */
 const FileIn = z.object({
@@ -132,6 +132,7 @@ export async function bringBrand(ctx: McpCtx, origin: string, input: BringIn) {
   const oldGuide = key ? current.sources.find((s) => s.kind === "text" && s.label === source && s.key?.startsWith(prefix))?.key : undefined;
   await deleteFiles([...gone, ...(oldGuide ? [oldGuide] : [])]);
   const kept = asked.filter((k) => !written.includes(k));
+  if (written.length) versionAfterWrite(ctx, origin, project);
   return {
     project: project.name,
     written,

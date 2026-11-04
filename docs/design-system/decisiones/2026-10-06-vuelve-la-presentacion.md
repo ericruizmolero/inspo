@@ -1,7 +1,7 @@
 ---
 title: Vuelve la pestaña Presentación de Alberto y Resultados sale de la interfaz
 date: 2026-10-06
-status: vigente
+status: sustituida
 kind: producto
 supersedes: La pestaña Presentación pasa a ser Resultados (05-10), Resultados es un bento (05-10) y En Resultados la imagen va dentro de lo que se escribe (05-10)
 ---

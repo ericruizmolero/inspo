@@ -8,6 +8,14 @@ import { enqueueEmbed } from "@/lib/jobs";
 import { cleanText, readText, rewriteText, textTags, ownsTextFile, TEXT_TITLE_MAX } from "@/lib/text-refs";
 import { db, schema } from "@/lib/db";
 import { getErrors } from "@/lib/i18n";
+import { versionAfterEdit } from "@/lib/criterio-versions";
+
+/** A text's words are the Content of every project it is filed in: each of those files changed */
+async function textEdited(ctx: Parameters<typeof versionAfterEdit>[0], itemId: string) {
+  const PI = schema.projectItem;
+  const rows = await db.select({ projectId: PI.projectId }).from(PI).where(and(eq(PI.organizationId, ctx.workspace.id), eq(PI.itemId, itemId)));
+  await versionAfterEdit(ctx, rows.map((r) => r.projectId));
+}
 
 /** A pasted text becomes a card: its words go to a file, whose path is the item's address.
  *  Added from inside a project, it is filed there too. Its "tags" are its first lines: no model reads it here. */
@@ -33,6 +41,7 @@ export async function saveText(itemId: string, text: string) {
     const tags = await textTags(row.web);
     await setTags(ctx.workspace.id, row.web, tags);
     void enqueueEmbed(ctx.workspace.id, [row.id]);
+    await textEdited(ctx, row.id);
     return { text: next, tags };
   });
 }
@@ -46,6 +55,7 @@ export async function renameText(itemId: string, title: string) {
     if (!name || !row || !ownsTextFile(ctx.workspace.id, row.web)) throw new HttpError(400, (await getErrors()).badBody);
     await db.update(T).set({ name, updatedAt: new Date() }).where(and(eq(T.organizationId, ctx.workspace.id), eq(T.id, row.id)));
     void enqueueEmbed(ctx.workspace.id, [row.id]);
+    await textEdited(ctx, row.id);
     return { name };
   });
 }

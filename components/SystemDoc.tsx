@@ -8,14 +8,16 @@ import type { InspoItem } from "@/types/inspo";
 import type { ProjectSystem, SystemArea } from "@/types/system";
 import type { CriterioBlock, RefInfo } from "@/lib/criterio-md";
 import type { SystemActivity } from "@/lib/area-comments";
+import type { EditAsk } from "@/lib/system/edit";
 import { answerAreaProposal, postAreaComment, removeAreaComment } from "@/app/actions/area-comments";
 import { decideSystemArea, releaseSystemArea, saveDocPart, setSystemEvidence, saveSystemSummary } from "@/app/actions/system";
 import { readAreaMeta } from "@/lib/criterio-md";
 import SystemMarkdown, { type ProposedText } from "./SystemMarkdown";
 import TinoDock, { type DockSay } from "./TinoDock";
+import { systemIdle, systemNudges } from "./board-nudges";
 import TinoNote from "./TinoNote";
 import { useT } from "./I18nProvider";
-import { Button, Chip, Icon, IconButton } from "@/components/criterio";
+import { Button, Chip, IconButton } from "@/components/criterio";
 import { createPortal } from "react-dom";
 import "./SystemDoc.css";
 
@@ -59,9 +61,11 @@ interface Props {
   look: "md" | "doc";
   /** Where Tino's dock goes (SystemView's slot beside the page's scroll) */
   dock?: HTMLElement | null;
+  /** The references the polish kept (closed with "keep"), for Tino */
+  kept?: string[];
 }
 
-export default function SystemDoc({ blocks, system, boardIds, itemOf, imageOf, refInfo, activity, busy, onSave, onSystem, onTalk, onAbout, onText, onTextTitle, onCopy, onDownload, copied, markdown, projectId, projectName, hasRecipe, fileTools, look, dock }: Props) {
+export default function SystemDoc({ blocks, system, boardIds, itemOf, imageOf, refInfo, activity, busy, onSave, onSystem, onTalk, onAbout, onText, onTextTitle, onCopy, onDownload, copied, markdown, projectId, projectName, hasRecipe, fileTools, look, dock, kept = [] }: Props) {
   const { t } = useT();
   const s = t.doc;
   const md = t.system.md;
@@ -185,14 +189,25 @@ export default function SystemDoc({ blocks, system, boardIds, itemOf, imageOf, r
   };
   const unpin = async (id: string) => { const r = await removeAreaComment(id); if (r.ok) onTalk(); else setError(r.error); };
 
-  // The file's parts, to jump between: each area says where it stands. One reference under it is enough for
-  // the green dot, however many there are
+  // The file's parts, to jump between, as short as the file allows (Eric, 04-11: "hay que hacerlo más sintetizado"):
+  // one line per part (where to start, the project, building it, the skills, the references) and only the eight
+  // areas listed, since that is where the team works. Each line is there only when the file has that part. Each area
+  // says where it stands; one reference under it is enough for the green dot, however many there are
+  const sectionOf = (id: string) => blocks.find((b): b is Extract<CriterioBlock, { kind: "section" }> => b.kind === "section" && b.id === id);
+  const jump = (id: string, label: string, extra?: React.ReactNode) => (
+    <button key={id} type="button" onClick={() => go(`sdoc-${id}`)} title={label}><span className="sdoc-toc__name">{label}</span>{extra}</button>
+  );
+  const first = (ids: string[]) => ids.find((id) => sectionOf(id));
+  const startAt = first(["guide", "questions", "learned", "use", "rejects"]);
+  const projectAt = project ? "project" : first(["brief", "content"]) ?? (summary ? "summary" : first(["brand-intro"]));
+  const buildAt = first(["pages", "brand-tokens", "area-tokens"]);
+  // The skills switched on are one line, with how many: it shows the moment one is on
+  const skillsAt = first(["skills-all"]) ?? skillBlocks[0]?.id;
   const toc = (
     <nav className="sdoc-toc" aria-label="criterio.md">
-      <p className="sdoc-toc__label">{s.tocFile}</p>
-      {project && <button type="button" onClick={() => go("sdoc-project")}>{md.project}</button>}
-      {summary && <button type="button" onClick={() => go("sdoc-summary")}>{md.summary}</button>}
-      <span className="sdoc-toc__gap" aria-hidden />
+      {startAt && jump(startAt, s.tocStart)}
+      {projectAt && jump(projectAt, s.tocProject)}
+      <span className="sdoc-toc__gap" aria-hidden /><p className="sdoc-toc__label">{s.tocAreas}</p>
       {areaBlocks.map((b) => {
         const a = system.areas.find((x) => x.area === b.area);
         const open = (activity?.notes[b.area] ?? []).filter((n) => n.proposal?.state === "open").length;
@@ -202,15 +217,10 @@ export default function SystemDoc({ blocks, system, boardIds, itemOf, imageOf, r
           </button>
         );
       })}
-      {/* A skill switched on is a part of the file too: it shows here the moment it is on */}
-      {skillBlocks.length > 0 && <><span className="sdoc-toc__gap" aria-hidden /><p className="sdoc-toc__label">{s.tocSkills(skillBlocks.length)}</p></>}
-      {skillBlocks.map((b) => (
-        <button key={b.id} type="button" className="is-skill" onClick={() => go(`sdoc-${b.id}`)} title={b.heading}>
-          <span className="sdoc-toc__spark" aria-hidden><Icon name="sparkle" size={14} /></span><span className="sdoc-toc__name">{skillName(b.id.slice(6))}</span>
-        </button>
-      ))}
       <span className="sdoc-toc__gap" aria-hidden />
-      {boardIds.length > 0 && <button type="button" onClick={() => go("sdoc-refs")}>{md.refs}<em>{boardIds.length}</em></button>}
+      {buildAt && jump(buildAt, s.tocBuild)}
+      {skillsAt && jump(skillsAt, s.tocSkills, skillBlocks.length > 0 ? <em>{skillBlocks.length}</em> : undefined)}
+      {boardIds.length > 0 && jump("refs", md.refs, <em>{boardIds.length}</em>)}
     </nav>
   );
   const notesOf = (area: SystemArea) => activity?.notes[area] ?? [];
@@ -246,14 +256,33 @@ export default function SystemDoc({ blocks, system, boardIds, itemOf, imageOf, r
   const [say, setSay] = useState<DockSay | null>(null);
   // "Tell Tino what to change", in words, for the whole file: one model call returns the areas it touches, each posted
   // as Tino's proposal under its area. Never written into an area. None: he says the file needs no change for that
+  // An answer to his "which way?": posted as his proposal under that area, as any change in words
+  const pick = async (area: SystemArea, o: EditAsk["options"][number]) => {
+    if (editing) return;
+    setEditing(true); setSay(null);
+    try {
+      const r = await postAreaComment(projectId, area, t.tino.whichPicked(o.label, t.system.areas[area].toLowerCase()), { proposal: { decision: o.decision, why: o.why, never: o.never, state: "open", via: TINO } });
+      if (!r.ok) { setSay({ key: `failed:${Date.now()}`, title: [t.tino.editFailed], text: r.error, mood: "sad" }); return; }
+      onTalk();
+      go(`sdoc-${area}`);
+    } finally { setEditing(false); }
+  };
   const tell = async (instruction: string) => {
     if (editing) return;
     setEditing(true); setSay(null);
     const fail = (why?: string) => setSay({ key: `failed:${Date.now()}`, title: [t.tino.editFailed], text: why, mood: "sad" });
     try {
       const res = await fetch("/api/system/edit", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ projectId, instruction }) });
-      const data = (await res.json().catch(() => ({}))) as { edits?: { area: SystemArea; decision: string; why: string; never: string; reason: string }[]; error?: string };
+      const data = (await res.json().catch(() => ({}))) as { edits?: { area: SystemArea; decision: string; why: string; never: string; reason: string }[]; ask?: EditAsk | null; error?: string };
       if (!res.ok || !data.edits) { fail(res.status < 500 ? data.error : undefined); return; }
+      // It named an area but not which way: he asks, and the answer picked is the proposal
+      if (!data.edits.length && data.ask) {
+        const q = data.ask;
+        setAsk("");
+        setSay({ key: `which:${Date.now()}`, title: q.question, text: q.now, mood: "thinking",
+          options: q.options.map((o, i) => ({ key: `${i}`, label: o.label, onPick: () => void pick(q.area, o) })) });
+        return;
+      }
       if (!data.edits.length) { setSay({ key: `nothing:${Date.now()}`, title: t.tino.nothingTitle, text: t.tino.nothingText, mood: "skeptic" }); setAsk(""); return; }
       for (const e of data.edits) {
         const r = await postAreaComment(projectId, e.area, e.reason, { proposal: { decision: e.decision, why: e.why, never: e.never, state: "open", via: TINO } });
@@ -264,6 +293,28 @@ export default function SystemDoc({ blocks, system, boardIds, itemOf, imageOf, r
       go(`sdoc-${data.edits[0].area}`);
     } catch { fail(); } finally { setEditing(false); }
   };
+  // What Tino brings up on his own here: how the file works (once each), then what is waiting in it
+  const askRef = useRef<HTMLInputElement>(null);
+  // When the page opened, and which of the non-urgent things Tino leads with this visit
+  const [openedAt] = useState(() => Date.now());
+  const [visitSeed] = useState(() => Math.floor(Math.random() * 1000));
+  const fill = (text: string) => { setAsk(text); setSay(null); requestAnimationFrame(() => askRef.current?.focus()); };
+  const openProposals = areaBlocks.filter((b) => notesOf(b.area).some((n) => n.proposal?.state === "open"));
+  const read = new Set(system.run?.itemIds ?? []);
+  const unread = system.run ? Math.max(0, boardIds.filter((id) => !read.has(id)).length - (system.run.omitted ?? 0)) : 0;
+  const nudges = systemNudges({
+    t, project: projectName,
+    proposals: openProposals.reduce((n, b) => n + notesOf(b.area).filter((x) => x.proposal?.state === "open").length, 0),
+    undecided: system.areas.filter((a) => !a.decision).map((a) => a.area),
+    stale: unread,
+    onTry: () => fill(t.tino.system.askExample),
+    onAsk: (area) => fill(t.tino.system.undecidedAsk(t.system.areas[area].toLowerCase())),
+    onCopy,
+    onFirstProposal: () => { if (openProposals[0]) go(`sdoc-${openProposals[0].area}`); },
+    areas: system.areas, boardIds, readIds: system.run?.itemIds ?? [], kept, seed: visitSeed, now: openedAt,
+    onGo: (part) => go(`sdoc-${part}`),
+  });
+  const idle = systemIdle(t, system.areas, openedAt, (area) => go(`sdoc-${area}`));
   // An area's status and references typed over in the file go back to the board: the references it cites (by code)
   // are the area's, with their takes, and "decided" or "proposed" confirms or hands it back. What the app writes there
   // is written again from that, so the part never stays frozen by hand
@@ -294,7 +345,7 @@ export default function SystemDoc({ blocks, system, boardIds, itemOf, imageOf, r
       </div>
       {dock && createPortal(
         <TinoDock label={t.tino.dock.edit} placeholder={t.tino.dock.edit} value={ask} onChange={(v) => { setAsk(v); setSay(null); }} onSubmit={(v) => void tell(v)} busy={editing}
-          say={say} onSayClose={() => setSay(null)} />,
+          say={say} onSayClose={() => setSay(null)} nudges={nudges} idle={idle} focusRef={askRef} />,
         dock,
       )}
     </div>

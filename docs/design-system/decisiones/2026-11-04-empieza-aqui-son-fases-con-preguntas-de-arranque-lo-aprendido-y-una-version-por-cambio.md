@@ -1,0 +1,20 @@
+---
+title: Empieza aquí son fases con preguntas de arranque, lo aprendido y una versión por cambio
+date: 2026-11-04
+status: vigente
+kind: producto
+---
+**Contexto.** [La guía por fases](2026-11-03-el-criterio-md-guia-por-fases-con-las-preguntas-a-clientes-y-las-skills-de-cada-area.md) quedó decidida el 03-11 pero sin construir: Empieza aquí seguía siendo un recorrido de pasos, las preguntas a clientes no llegaban al fichero, nada guardaba lo que se aprendía con la persona y las versiones solo nacían cuando el fichero salía de la app. Esta decisión cierra lo que quedaba, acordado con Eric.
+
+**Decisión.**
+- **Empieza aquí** (`strings.guide` en `lib/i18n/{en,es}/ui.ts`) es el guion de la sesión: unas reglas de la sesión (una pregunta cada vez, opciones antes que preguntas abiertas, nunca un valor por defecto, decir qué se eligió y por qué, resumir cada pocas vueltas) y seis fases con su punto de control: 0 Conectar (con el conector, leer solo la parte que hace falta con `read_criterio`), 1 Entender (las preguntas abiertas de una en una; resumir y esperar un sí), 2 Plan (de tres a cinco líneas y esperar un sí; las áreas abiertas se cierran aquí con `propose_decision`), 3 Construir por partes, 4 Revisar con evidencia (la lista de antes de entregar, enseñando qué token y qué decisión) y 5 Aprender. Cabe en unas 60 líneas y sigue saliendo de `GuideMdKeys`.
+- **Preguntas de arranque** (`id: "questions"`, en `criterioBlocks`): las abiertas por grupo (`QUESTION_GROUP_NAMES`), con su id, el texto de `questionText` (la versión del tablero si hay referencias) y las áreas que deciden; al final, "Ya respondidas (n)" con los ids que sabe el Brief y las respuestas guardadas, citadas cortas.
+- **Lo aprendido** (`id: "learned"`): lo último primero, con área, quién y cliente, y día. Solo si hay algo, y nunca en el fichero limpio de un enlace.
+- **Dónde se guarda.** Las respuestas, en el JSON del brief (`Brief.answers`, por id de pregunta, con `text`, `by`, `via` y `at`; `readBrief` las lee con tope de 40 y 2000 caracteres). Lo aprendido, en una columna nueva `project_system.learned` (jsonb, `SystemLearning` en `types/system.ts`, tope de 50 y 600 caracteres por nota). Migración `drizzle/0050_criterio_learned_exported.sql`, que también añade `criterio_version.exported`.
+- **Conector.** `answer_question` y `record_learning` (`lib/mcp/tools.ts`, `lib/mcp/pieces.ts`) escriben directo, sin aprobación; las decisiones siguen yendo solo por `propose_decision`. `design_with_criterio` ya no repite los pasos: manda leer la guía y seguir sus fases.
+- **Versiones.** Hay una con cada cambio que importa: `via: "edit"` desde las server actions (área, Nunca, partes del documento, resumen, textos, propuestas aceptadas o rechazadas, skills, marca, brief) y `"mcp-write:<cliente>"` desde las cuatro escrituras del conector. Se agrupan: si la última no ha salido de la app, es de la misma persona y tiene menos de cinco minutos, se reescribe en vez de tomar número. Salir la marca `exported` y ya no se toca. `VersionPicker` dice "editado" y "escrito por Claude".
+- En la vista Markdown, `questions` y `learned` no se editan, como `guide`; el índice entra a Empieza aquí por la primera de las cinco partes que haya.
+
+**Por qué.** El fichero tiene que llevar la conversación como un playbook, no aplicarse de golpe (reunión del 03-11, "no un ONE-SHOOT md"), y lo que se responde o se corrige en una sesión tiene que estar en la siguiente sin volver a preguntarlo. Guardar en el brief y en el sistema, y no en tablas nuevas, es interpretación nuestra: es lo mínimo y ya llega a todos los que construyen el fichero (la vista, los enlaces, MCP, las versiones). Juntar los cambios de unos minutos evita que escribir una decisión en tres veces deje tres versiones.
+
+**Cómo aplicarlo.** Una pregunta nueva va a `PLAYBOOK_QUESTIONS` con su `fromBrief` si el brief ya la sabe. Una acción nueva que cambie lo que dice criterio.md llama a `versionAfterEdit` (o, por MCP, a `versionAfterWrite`). Lo que el conector escribe directo es solo lo que dijo la persona y no cambia ninguna decisión.

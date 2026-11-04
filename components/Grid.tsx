@@ -94,9 +94,11 @@ function layoutBoard(items: InspoItem[], ratioOf: (item: InspoItem) => number, c
   return { slots, byKey, height: Math.max(padTop, ...bottoms) - GAP, col };
 }
 
-export default memo(function Grid({ under = false, missed = false, items, ratioOf, hasNote, insets, zoom, onZoom, fitKey, focusKey, renderCard, handleRef }: {
+export default memo(function Grid({ under = false, missed = false, corner, items, ratioOf, hasNote, insets, zoom, onZoom, fitKey, focusKey, renderCard, handleRef }: {
   /** Under Polish: kept laid out but inert, out of reach and without its corner */
   under?: boolean;
+  /** After the corner pill (the theme button): where Tino takes the bottom-right corner, it sits here, as on the home */
+  corner?: ReactNode;
   /** A search found nothing: the board stays as it was, dimmed, so it never reads as results */
   missed?: boolean;
   /** The cards to lay out: the whole space, or the search's results in the order they rank */
@@ -356,8 +358,12 @@ export default memo(function Grid({ under = false, missed = false, items, ratioO
 
       {/* Outside the scroller, so it stays in its corner while the board moves */}
       {/* The corner pill: the system's chrome pill with the zoom (minus, %, plus) and the music after a hairline */}
-      {!under && <ZoomPill
-        className="board-zoom"
+      {!under && (corner ? <div className="board-zoom home-corner">{pill(undefined)}{corner}</div> : pill("board-zoom"))}
+    </>
+  );
+  function pill(className: string | undefined) {
+    return <ZoomPill
+        className={className}
         zoom={{
           pct,
           label: t.zoom.columns(cols),
@@ -369,7 +375,6 @@ export default memo(function Grid({ under = false, missed = false, items, ratioO
         }}
       >
         <SoundControl />
-      </ZoomPill>}
-    </>
-  );
+      </ZoomPill>;
+  }
 });

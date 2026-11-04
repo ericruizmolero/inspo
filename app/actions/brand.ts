@@ -10,15 +10,24 @@ import { getDesignMd } from "@/lib/design-store";
 import { getSystem } from "@/lib/system/areas";
 import { resolveFace } from "@/lib/brand-fonts";
 import { inspectBrandFile, projectBrandPrefix } from "@/lib/brand-files";
+import { versionAfterEdit } from "@/lib/criterio-versions";
 
 /** Any member edits: the brand is the team's. `baseAt` is when the section was last written, as the editor read it */
 export async function saveBrand(projectId: string, section: string, value: unknown, baseAt: string | null) {
-  return withCtx(async (ctx) => saveBrandSection(ctx.workspace.id, String(projectId), String(section), value, baseAt ? String(baseAt) : null, ctx.user.id));
+  return withCtx(async (ctx) => {
+    const out = await saveBrandSection(ctx.workspace.id, String(projectId), String(section), value, baseAt ? String(baseAt) : null, ctx.user.id);
+    await versionAfterEdit(ctx, String(projectId));
+    return out;
+  });
 }
 
 /** The values stay; the next run may change them */
 export async function releaseBrand(projectId: string, section: string) {
-  return withCtx(async (ctx) => releaseBrandSection(ctx.workspace.id, String(projectId), String(section)));
+  return withCtx(async (ctx) => {
+    const out = await releaseBrandSection(ctx.workspace.id, String(projectId), String(section));
+    await versionAfterEdit(ctx, String(projectId));
+    return out;
+  });
 }
 
 /** The client's site, as its DESIGN.md measured it, written over every section the team has not set by hand */
@@ -31,6 +40,7 @@ export async function seedBrandFromClient(projectId: string) {
     if (!entry?.spec) throw new HttpError(409, (await getErrors()).badBody);
     const sections = await seedFromDesignMd(entry, client);
     await writeBrandSections(ctx.workspace.id, id, sections, "site", { source: { kind: "site", label: client.web, itemId: client.itemId, at: new Date().toISOString(), by: ctx.user.name } });
+    await versionAfterEdit(ctx, id);
     return getSystem(ctx.workspace.id, id);
   });
 }

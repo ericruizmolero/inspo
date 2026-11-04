@@ -1,0 +1,34 @@
+/* criterio.md's versions (components/VersionPicker.tsx): the head's label opens the list; a version picked takes the
+ * page's place with what it changed marked. Hierarchy by weight and colour, no boxes around the rows (gusto: fewer borders) */
+.vpk-trigger { border: 0; background: none; padding: 2px 4px; margin-left: -4px; border-radius: var(--radius-md); cursor: pointer; font: inherit; color: var(--text-2); }
+.vpk-trigger:hover, .vpk-trigger[data-popup-open] { background: var(--surface-2); color: var(--text); }
+.vpk-trigger:focus-visible { outline: 2px solid var(--text); outline-offset: 1px; }
+.vpk-menu { width: 300px; }
+.vpk-list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 2px; max-height: 60vh; overflow: auto; }
+.vpk-row { display: flex; flex-direction: column; gap: 2px; width: 100%; padding: 8px 10px; border: 0; border-radius: var(--radius-md); background: none; color: var(--text); text-align: left; cursor: pointer; font: inherit; }
+.vpk-row:hover, .vpk-row.is-on { background: var(--surface-2); }
+.vpk-row:focus-visible { outline: 2px solid var(--text); outline-offset: -2px; }
+.vpk-row__head { display: flex; align-items: baseline; gap: 8px; font-size: var(--fs-ui); }
+.vpk-row__head b { font-weight: var(--fw-medium); }
+.vpk-row__tag { font-size: var(--fs-small); color: var(--text-2); }
+.vpk-row__when { margin-left: auto; font-size: var(--fs-small); color: var(--muted); }
+.vpk-row__what { font-size: var(--fs-small); line-height: var(--lh-small); color: var(--text-2); }
+
+/* In the live file's frame (.sdoc, .sdoc-toc, .sdoc-page): only the parts' landing under the head is its own */
+.vpk-line { scroll-margin-top: 92px; }
+.vpk-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-height: 52px; }
+.vpk-bar__text { min-width: 0; flex: 1; }
+.vpk-bar__title { margin: 0; font-size: var(--fs-ui); font-weight: var(--fw-medium); color: var(--text); }
+.vpk-bar__when { font-weight: var(--fw-regular); color: var(--muted); }
+.vpk-bar__what { margin: 2px 0 0; font-size: var(--fs-small); line-height: var(--lh-small); color: var(--text-2); }
+.vpk-bar__actions { display: flex; gap: 8px; margin-left: auto; }
+.vpk-loading { display: flex; align-items: center; gap: 8px; margin: 0; font-size: var(--fs-small); color: var(--text-2); }
+/* The file as the Agent view draws it (.mdv, .mdv-doc), with a dashed edge: a past version, not the live file */
+.vpk-mdv { max-width: none; border-style: dashed; border-color: var(--md-dim); }
+.vpk-mdv:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.vpk-line { margin: 0 -8px; padding: 0 8px; border-radius: 3px; }
+.vpk-line.is-add { background: color-mix(in srgb, var(--success) 18%, transparent); }
+.vpk-line.is-del { background: color-mix(in srgb, var(--danger) 14%, transparent); text-decoration: line-through; opacity: .75; }
+@media (max-width: 720px) {
+  .vpk-bar__actions { width: 100%; margin-left: 0; }
+}
