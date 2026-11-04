@@ -108,7 +108,8 @@
   --fw-regular: 400; --fw-medium: 500; --fw-semibold: 600; --fw-bold: 700;
   /* …and the rest of each step: weight, line-height and tracking. The .t-* classes below use them; component CSS
      picks a step's tokens or a weight above, never a raw number. Tracking is in em so it follows the size */
-  --fw-display: var(--fw-bold); --fw-title-l: var(--fw-bold); --fw-title-m: var(--fw-semibold); --fw-title-s: var(--fw-semibold);
+  /* Titles are Geist Serif, which has one weight: 400 */
+  --fw-display: var(--fw-regular); --fw-title-l: var(--fw-regular); --fw-title-m: var(--fw-regular); --fw-title-s: var(--fw-regular);
   --fw-body: var(--fw-regular); --fw-ui: var(--fw-medium); --fw-small: var(--fw-regular); --fw-label: var(--fw-medium);
   --lh-display: 1.05; --lh-title-l: 1.1; --lh-title-m: 1.2; --lh-title-s: 1.3;
   --lh-body: 1.55; --lh-ui: 1.4; --lh-small: 1.45; --lh-label: 1.3;
@@ -142,7 +143,7 @@
 
   /* One family: Geist for titles, text and UI. Titles keep their own token so a second face is one line */
   --font-sans: var(--font-geist), "Geist", system-ui, sans-serif;
-  --font-title: var(--font-geist), "Geist", system-ui, sans-serif;
+  --font-title: var(--font-geist-serif), "Geist Serif", Georgia, serif;
   --font: var(--font-sans);
   --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
   /* shadcn/ui: its variables point at the tokens above, so both themes follow data-theme */
@@ -195,7 +196,7 @@
   --color-ember: var(--ember);
   --color-butter: var(--butter);
   --font-sans: var(--font-geist), "Geist", system-ui, sans-serif;
-  --font-title: var(--font-geist), "Geist", system-ui, sans-serif;
+  --font-title: var(--font-geist-serif), "Geist Serif", Georgia, serif;
   --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
@@ -345,13 +346,13 @@ p { text-wrap: pretty; }
 /* On a phone the display drops to 32, still a step above title-l (28) so h1 and h2 never collapse into one size */
 @media (max-width: 560px) { :root { --fs-display: 32px; } }
 @layer base {
-  h1, h2, h3, h4, h5, h6 { margin: 0; font-family: var(--font-title); }
+  h1, h2, h3, h4, h5, h6 { margin: 0; font-family: var(--font-title); font-synthesis-weight: none; }
   h1 { font-size: var(--fs-display); font-weight: var(--fw-display); line-height: var(--lh-display); letter-spacing: var(--tr-display); }
   h2 { font-size: var(--fs-title-l); font-weight: var(--fw-title-l); line-height: var(--lh-title-l); letter-spacing: var(--tr-title-l); }
   h3 { font-size: var(--fs-title-m); font-weight: var(--fw-title-m); line-height: var(--lh-title-m); letter-spacing: var(--tr-title-m); }
   h4, h5, h6 { font-size: var(--fs-title-s); font-weight: var(--fw-title-s); line-height: var(--lh-title-s); letter-spacing: 0; }
 }
-.t-display { font-family: var(--font-title); font-size: var(--fs-display); font-weight: var(--fw-display); line-height: var(--lh-display); letter-spacing: var(--tr-display); }
+.t-display { font-synthesis-weight: none; font-family: var(--font-title); font-size: var(--fs-display); font-weight: var(--fw-display); line-height: var(--lh-display); letter-spacing: var(--tr-display); }
 .t-title-l { font-family: var(--font-title); font-size: var(--fs-title-l); font-weight: var(--fw-title-l); line-height: var(--lh-title-l); letter-spacing: var(--tr-title-l); }
 .t-title-m { font-family: var(--font-title); font-size: var(--fs-title-m); font-weight: var(--fw-title-m); line-height: var(--lh-title-m); letter-spacing: var(--tr-title-m); }
 .t-title-s { font-family: var(--font-title); font-size: var(--fs-title-s); font-weight: var(--fw-title-s); line-height: var(--lh-title-s); letter-spacing: 0; }

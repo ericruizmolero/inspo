@@ -1,7 +1,7 @@
 ---
 title: Geist es la única familia
 date: 2026-11-03
-status: vigente
+status: sustituida
 kind: diseño
 supersedes: Satoshi es la única familia (2026-10-08)
 ---

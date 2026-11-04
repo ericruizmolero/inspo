@@ -1,26 +1,27 @@
 # Tipografía
 
-Una familia y ocho pasos. Un solo sitio: el bloque "Type: the one place" de `app/globals.css`; la familia se carga en `app/fonts.ts`. → [decisión](../decisiones/2026-10-07-la-tipografia-vive-en-un-solo-sitio.md)
+Dos familias y ocho pasos. Un solo sitio: el bloque "Type: the one place" de `app/globals.css`; las familias se cargan en `app/fonts.ts`. → [decisión](../decisiones/2026-10-07-la-tipografia-vive-en-un-solo-sitio.md)
 
 ## Familias
 
 | Familia | Token | Para qué |
 | --- | --- | --- |
-| Geist | `--font-sans` (y `--font-title`, que apunta a ella) | Todo: títulos, texto corrido, interfaz, botones, campos, etiquetas |
+| Geist Serif | `--font-title` | Los títulos: los cuatro pasos display, title-l, title-m y title-s, y `h1` a `h6` |
+| Geist | `--font-sans` | Todo lo demás: texto corrido, interfaz, botones, campos, etiquetas |
 | Monoespaciada del sistema | `--font-mono` | Solo datos literales: el fichero crudo, hex, código. Nunca títulos, etiquetas ni "eyebrows" |
 
-Sin segunda fuente. Los títulos tienen su propio token (`--font-title`) para que una segunda familia sea una sola línea. Bricolage Grotesque, Archivo, Inter, Family, Söhne y Satoshi se retiraron. → [Geist es la única familia](../decisiones/2026-11-03-geist-es-la-unica-familia.md), [sin mono, menos bordes](../decisiones/2026-10-03-sin-mono-menos-bordes.md)
+Los títulos van en Geist Serif desde el 04-11, en su único peso (400), con `font-synthesis-weight: none` para que el navegador nunca invente una negrita; la jerarquía la da el tamaño. → [decisión](../decisiones/2026-11-04-los-titulos-van-en-geist-serif.md) Bricolage Grotesque, Archivo, Inter, Family, Söhne y Satoshi se retiraron. → [Geist es la única familia](../decisiones/2026-11-03-geist-es-la-unica-familia.md), [sin mono, menos bordes](../decisiones/2026-10-03-sin-mono-menos-bordes.md)
 
-**Los ficheros de Geist están en git.** Su licencia (SIL Open Font License 1.1) lo permite. `app/fonts/geist/` guarda las variables normal e itálica para la app y las dos TTF estáticas para la imagen OG; la extensión y la web de marketing llevan su copia de la variable. Cada carpeta tiene su `OFL.txt`.
+**Los ficheros de Geist y Geist Serif están en git.** Su licencia (SIL Open Font License 1.1) lo permite. `app/fonts/geist/` guarda las variables normal e itálica para la app y las dos TTF estáticas para la imagen OG; la extensión y la web de marketing llevan su copia de la variable. `app/fonts/geist-serif/` guarda `GeistSerif-Regular.woff2`. Cada carpeta tiene su `OFL.txt`.
 
 ## Escala
 
 | Paso | Clase | Tamaño / peso / interlineado / tracking | Elemento |
 | --- | --- | --- | --- |
-| display | `.t-display` | 40 (32 en móvil) / 700 / 1,05 / −0,025 em | `h1` |
-| title-l | `.t-title-l` | 28 / 700 / 1,1 / −0,02 em | `h2` |
-| title-m | `.t-title-m` | 22 / 600 / 1,2 / −0,01 em | `h3` |
-| title-s | `.t-title-s` | 18 / 600 / 1,3 | `h4` a `h6` |
+| display | `.t-display` | 40 (32 en móvil) / 400 / 1,05 / −0,025 em | `h1` |
+| title-l | `.t-title-l` | 28 / 400 / 1,1 / −0,02 em | `h2` |
+| title-m | `.t-title-m` | 22 / 400 / 1,2 / −0,01 em | `h3` |
+| title-s | `.t-title-s` | 18 / 400 / 1,3 | `h4` a `h6` |
 | body | `.t-body` | 17 / 400 / 1,55 | |
 | ui | `.t-ui` | 15 / 500 / 1,4 | `body` |
 | small | `.t-small` | 13 / 400 / 1,45 | |
