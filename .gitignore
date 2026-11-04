@@ -70,3 +70,4 @@ extension/dist/
 
 # A connector skill's scripts install their own dependencies next to them (skills/<id>/scripts); never in the tree
 /skills/*/scripts/node_modules/
+extension/safari/

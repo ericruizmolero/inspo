@@ -199,3 +199,7 @@ The store listing takes the name and description from `_locales` too, so it show
 ## Comment on a page
 
 "Comment on this page" in the popup injects `comment-pick.js` into the tab, only on that click (`activeTab`), so it works on localhost, previews and live sites. The picker's UI sits in a closed shadow root. It sends the comment to `background.js`, which holds the key: the page never sees it. Comments reach the agent through `list_comments`.
+
+## Safari
+
+`sh extension/build-safari.sh` converts `extension/chrome` into a Mac app in `extension/safari` and builds it unsigned. Signing and the Mac App Store need the Apple Developer account, in Xcode. Safari has no bookmarks API, so that import is hidden there. Injection and capture have not been tested in Safari yet.

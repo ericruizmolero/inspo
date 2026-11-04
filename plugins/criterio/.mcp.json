@@ -1,0 +1,5 @@
+{
+  "mcpServers": {
+    "criterio": { "type": "http", "url": "https://app.criterio.design/mcp" }
+  }
+}

@@ -299,7 +299,8 @@ $("btn-disconnect").addEventListener("click", () => disconnect(true));
 // opened on the source that was tapped
 const openImport = (source) => async () => { await chrome.tabs.create({ url: chrome.runtime.getURL(`import.html?source=${source}`) }); window.close(); };
 $("btn-import-x").addEventListener("click", openImport("x"));
-$("btn-import-browser").addEventListener("click", openImport("browser"));
+// Safari has no bookmarks API
+if (chrome.bookmarks) $("btn-import-browser").addEventListener("click", openImport("browser")); else $("btn-import-browser").hidden = true;
 // On a board of Are.na, Pinterest or Cosmos: "Import this board". Chrome asks for that platform here,
 // on the click, and the import page starts on its own; without a board it opens on the address field.
 const { BOARDS, boardOf, hostsOf } = globalThis.CriterioBoards;

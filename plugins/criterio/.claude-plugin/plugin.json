@@ -1,0 +1,9 @@
+{
+  "name": "criterio",
+  "version": "1.0.0",
+  "description": "Set up a brand's criterio from your agent and build landing pages from it, with memory across sessions.",
+  "author": { "name": "criterio.design", "url": "https://criterio.design" },
+  "homepage": "https://criterio.design",
+  "repository": "https://github.com/ericruizmolero/inspo",
+  "keywords": ["landing-pages", "design-system", "mcp"]
+}

@@ -3,6 +3,16 @@
 A shared library of websites that inspire a team, with a DESIGN.md for each one.
 Next.js 16, Postgres, Better Auth.
 
+## Use it from your agent
+
+```
+/plugin marketplace add ericruizmolero/inspo
+/plugin install criterio@criterio
+/criterio:setup
+```
+
+Other clients connect the MCP at `https://app.criterio.design/mcp` and say "set up criterio".
+
 ## How it runs
 
 No server to look after. Each part is a managed service:

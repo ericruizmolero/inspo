@@ -1,0 +1,7 @@
+{
+  "name": "criterio",
+  "owner": { "name": "criterio.design", "url": "https://criterio.design" },
+  "plugins": [
+    { "name": "criterio", "source": "./plugins/criterio", "description": "Set up a brand's criterio from your agent and build landing pages from it." }
+  ]
+}

@@ -5,7 +5,7 @@
 // language agents read skills in. No model call. The connector's skills (written by hand, with their scripts) live
 // in the same folder and only get their README row here.
 //   npm run skills:build
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { MD_SKILLS, skillCraft, type MdSkill } from "../lib/md-skills";
 import { SKILLS_REPO, skillInstall } from "../lib/md-skill-ids";
@@ -92,4 +92,8 @@ for (const id of MD_SKILLS) {
 }
 for (const s of CONNECTOR_SKILLS) if (!existsSync(join(dir, s.id, "SKILL.md"))) throw new Error(`skills/${s.id}/SKILL.md is missing`);
 writeFileSync(join(dir, "README.md"), readme());
+// The Claude Code plugin carries the same skills: a plugin cannot reach outside its own folder
+const inPlugin = resolve("plugins/criterio/skills");
+rmSync(inPlugin, { recursive: true, force: true });
+cpSync(dir, inPlugin, { recursive: true, filter: (f) => !f.endsWith("README.md") });
 console.log(`${MD_SKILLS.length} skills written to ${dir}; ${CONNECTOR_SKILLS.length} of the connector listed`);
