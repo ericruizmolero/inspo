@@ -29,7 +29,7 @@ export default function ConnectDialog({ onClose }: { onClose: () => void }) {
   const copy = async (what: string, text: string) => { try { await navigator.clipboard.writeText(text); setCopied(what); setTimeout(() => setCopied(null), 1500); } catch { /* it is on screen */ } };
   const drop = async (l: McpConnection) => { const r = await disconnectApp(l.id); if (r.ok) setLinks(r.data); else setError(r.error); };
   // What goes in the client's own box, where it is not the address alone
-  const snippet = client === "code" ? `claude mcp add --transport http criterio ${url}` : client === "cursor" ? JSON.stringify({ mcpServers: { criterio: { url } } }, null, 2) : null;
+  const snippet = client === "code" ? `/plugin marketplace add ericruizmolero/inspo\n/plugin install criterio@criterio\n/criterio:setup` : client === "cursor" ? JSON.stringify({ mcpServers: { criterio: { url } } }, null, 2) : null;
   const steps = s.steps[client];
 
   return (

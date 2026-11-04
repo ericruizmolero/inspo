@@ -1841,7 +1841,7 @@ export const ui: typeof EnUi = {
     steps: {
       claude: ["En Claude, abre Ajustes, luego Conectores, y añade un conector personalizado.", "Pega la dirección y pulsa Conectar: Criterio te pide permiso, una sola vez."],
       chatgpt: ["En ChatGPT, abre Ajustes, luego Conectores, y crea uno (pide el modo desarrollador).", "Pega la dirección, deja el acceso en OAuth y da permiso cuando Criterio lo pida."],
-      code: ["Ejecuta esto en tu terminal, en el proyecto en el que trabajas:", "Después escribe /mcp dentro de Claude Code, elige criterio y entra."],
+      code: ["Escribe esto en Claude Code, en el proyecto en el que trabajas:", "Te pide entrar una vez y la puesta en marcha empieza."],
       cursor: ["En Cursor, abre Ajustes, luego MCP, y añade un servidor con esto:", "Cursor abre Criterio en tu navegador para dar permiso."],
     },
     then: "Después pídelo con palabras: \u201clee el criterio de mi proyecto y revisa esta página contra él\u201d.",

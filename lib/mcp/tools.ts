@@ -12,6 +12,7 @@ import { SKIPPABLE } from "../setup-core";
 import { LEARNING_NOTE_MAX } from "@/types/system";
 import { BRIEF_LIMITS } from "@/types/brief";
 import { BringInput, bringBrand } from "./brand";
+import { TINO_APP_URI } from "./tino-app";
 
 const Areas = z.array(z.enum(SYSTEM_AREAS)).max(SYSTEM_AREAS.length).optional();
 
@@ -26,6 +27,8 @@ const piece = {
 interface Tool<S extends z.ZodType = z.ZodType> {
   name: string; title: string; description: string; input: S;
   annotations: { readOnlyHint: boolean; destructiveHint?: boolean; idempotentHint?: boolean; openWorldHint?: boolean };
+  /** Sent as the tool's _meta: an MCP App's address, which a client without MCP Apps ignores */
+  meta?: Record<string, unknown>;
   run: (input: z.infer<S>, ctx: McpCtx, origin: string) => Promise<unknown>;
 }
 const tool = <S extends z.ZodType>(t: Tool<S>) => t as unknown as Tool;
@@ -36,6 +39,7 @@ export const TOOLS: Tool[] = [
     description: "The way in when the person says \"set up criterio\", starts a project, or comes back to one. It says where the project stands and what to do next, in `do`. Follow it one step at a time, and call it again after each step. The same setup can start in the app or in any other client: nothing is repeated. Every step is optional except the project, the goal and the file. When `next` is direction or landing the setup is complete, and building is an offer, not a duty.",
     input: z.object({ project: Project.optional(), skip: z.enum(SKIPPABLE as [string, ...string[]]).optional().describe("A step the person declined."), ask_client: z.boolean().optional().describe("True when the person does not know an answer and wants to ask their client: the answer has a link to send, which needs no account. When the client answers, the person gets one email.") }),
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+    meta: { ui: { resourceUri: TINO_APP_URI, visibility: ["model"] } },
     run: (i, ctx, origin) => startSetup(ctx, origin, i),
   }),
   tool({
@@ -217,7 +221,7 @@ export const TOOLS: Tool[] = [
  *  JSON Schema says what the model sends, not what comes out. */
 export const toolList = () => TOOLS.map((t) => {
   const { $schema: _s, ...inputSchema } = z.toJSONSchema(t.input, { io: "input" }) as Record<string, unknown>;
-  return { name: t.name, title: t.title, description: t.description, inputSchema, annotations: { title: t.title, ...t.annotations } };
+  return { name: t.name, title: t.title, description: t.description, inputSchema, annotations: { title: t.title, ...t.annotations }, ...(t.meta ? { _meta: t.meta } : {}) };
 });
 
 /** What the client is told once, on connecting: how to work with criterio */

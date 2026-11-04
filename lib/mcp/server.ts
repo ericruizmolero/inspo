@@ -10,6 +10,7 @@ import { allow } from "../rate-limit";
 import type { McpCtx } from "./auth";
 import { INSTRUCTIONS, TOOLS, toolList } from "./tools";
 import { promptGet, promptList } from "./prompts";
+import { TINO_APP_MIME, TINO_APP_URI, tinoApp } from "./tino-app";
 import { listProjects, readCriterio, hasPictures } from "./pieces";
 
 /** The protocol versions this server speaks, newest first. A client asking for another one is offered the newest. */
@@ -75,7 +76,7 @@ export async function handleRpc(msg: RpcRequest, ctx: McpCtx, origin: string): P
       const asked = typeof p?.protocolVersion === "string" ? p.protocolVersion : "";
       return ok(id, {
         protocolVersion: VERSIONS.includes(asked) ? asked : VERSIONS[0],
-        capabilities: { tools: { listChanged: false }, prompts: { listChanged: false }, resources: { listChanged: false, subscribe: false } },
+        capabilities: { tools: { listChanged: false }, prompts: { listChanged: false }, resources: { listChanged: false, subscribe: false }, extensions: { "io.modelcontextprotocol/ui": { mimeTypes: [TINO_APP_MIME] } } },
         serverInfo: serverInfo(origin),
         instructions: INSTRUCTIONS,
       });
@@ -93,11 +94,12 @@ export async function handleRpc(msg: RpcRequest, ctx: McpCtx, origin: string): P
     }
     case "resources/list": {
       const projects = await listProjects(ctx, origin);
-      return ok(id, { resources: projects.map((x) => ({ uri: `criterio://projects/${x.id}/criterio.md`, name: `${x.name}: criterio.md`, title: x.name, description: x.about ?? `${x.workspace}: ${x.areas_decided} areas decided`, mimeType: "text/markdown" })) });
+      return ok(id, { resources: [{ uri: TINO_APP_URI, name: "Tino", mimeType: TINO_APP_MIME }, ...projects.map((x) => ({ uri: `criterio://projects/${x.id}/criterio.md`, name: `${x.name}: criterio.md`, title: x.name, description: x.about ?? `${x.workspace}: ${x.areas_decided} areas decided`, mimeType: "text/markdown" }))] });
     }
     case "resources/templates/list": return ok(id, { resourceTemplates: [] });
     case "resources/read": {
       const uri = String(p?.uri ?? "");
+      if (uri === TINO_APP_URI) return ok(id, { contents: [{ uri, mimeType: TINO_APP_MIME, text: tinoApp() }] });
       const m = RESOURCE.exec(uri);
       if (!m) return fail(id, -32002, `Resource not found: ${uri}`);
       try {

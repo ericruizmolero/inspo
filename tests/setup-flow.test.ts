@@ -94,6 +94,20 @@ test("the setup is one prompt away, in the person's language", async () => {
   expect(promptGet("setup_project", {}, "en")!.messages[0].content.text).toContain("start_setup");
 });
 
+test("start_setup points to Tino's page, and only his ears move", async () => {
+  const { POST } = await import("@/app/mcp/route");
+  const rpc = async (method: string, params: Record<string, unknown>) => (await (await POST(request("/mcp", { method: "POST", headers: bearer(key), body: { jsonrpc: "2.0", id: 1, method, params } }))).json()) as { result: Record<string, never> };
+  const { result: tools } = await rpc("tools/list", {});
+  const start = (tools.tools as unknown as { name: string; _meta?: { ui?: { resourceUri?: string } } }[]).find((t) => t.name === "start_setup")!;
+  expect(start._meta?.ui?.resourceUri).toBe("ui://criterio/tino.html");
+  const { result: read } = await rpc("resources/read", { uri: "ui://criterio/tino.html" });
+  const [content] = read.contents as unknown as { mimeType: string; text: string }[];
+  expect(content.mimeType).toBe("text/html;profile=mcp-app");
+  expect(content.text.match(/class="ear"/g)).toHaveLength(2);
+  expect(content.text).toContain("prefers-reduced-motion");
+  expect(content.text).not.toMatch(/\.visor\{[^}]*animation/);
+});
+
 test("a section kind outside the vocabulary is refused", async () => {
   await tool("create_project", { name: "Acme" });
   expect((await raw("set_outline", { project: "Acme", name: "Home", goal: "x", sections: [{ kind: "banner", job: "x" }] })).result.isError).toBe(true);

@@ -1855,7 +1855,7 @@ export const ui = {
     steps: {
       claude: ["In Claude, open Settings, then Connectors, and add a custom connector.", "Paste the address and press Connect: criterio asks you to allow it, once."],
       chatgpt: ["In ChatGPT, open Settings, then Connectors, and create one (it asks for developer mode).", "Paste the address, leave the sign-in as OAuth, and allow it when criterio asks."],
-      code: ["Run this in your terminal, in the project you work in:", "Then type /mcp inside Claude Code, pick criterio and sign in."],
+      code: ["Type these in Claude Code, in the project you work in:", "It asks you to sign in once, then the setup starts."],
       cursor: ["In Cursor, open Settings, then MCP, and add a server with this:", "Cursor opens criterio in your browser to allow it."],
     },
     then: "Then ask for it in words: \u201cread the criterio of my project and review this page against it\u201d.",
