@@ -98,7 +98,7 @@
      title-s sits above body so a heading never reads smaller than the text under it */
   --fs-display: 40px;
   /* The front-page titles (home, signed-out start): big as the type reference has them, so the serif shows its weight */
-  --fs-hero: clamp(44px, 7vw, 80px);
+  --fs-hero: clamp(38px, 5vw, 56px);
   --fs-title-l: 28px;
   --fs-title-m: 22px;
   --fs-title-s: 18px;

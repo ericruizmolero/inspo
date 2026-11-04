@@ -18,7 +18,7 @@ Los títulos van en Geist Serif desde el 04-11, en su único peso (400), con `fo
 
 | Paso | Clase | Tamaño / peso / interlineado / tracking | Elemento |
 | --- | --- | --- | --- |
-| hero | `--fs-hero` | clamp(44, 7vw, 80) / 400 / 0,96 / −0,025 em | los titulares de portada: `.cr-hello` (el inicio) y el arranque sin sesión |
+| hero | `--fs-hero` | clamp(38, 5vw, 56) / 400 / 0,96 / −0,025 em | los titulares de portada: `.cr-hello` (el inicio) y el arranque sin sesión |
 | display | `.t-display` | 40 (32 en móvil) / 400 / 0,96 / −0,025 em | `h1` |
 | title-l | `.t-title-l` | 28 / 400 / 1,1 / −0,02 em | `h2` |
 | title-m | `.t-title-m` | 22 / 400 / 1,2 / −0,01 em | `h3` |
