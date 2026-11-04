@@ -6,7 +6,7 @@ import "server-only";
 import { z } from "zod";
 import { SYSTEM_AREAS } from "@/types/system";
 import type { McpCtx } from "./auth";
-import { CRITERIO_SECTIONS, ProjectArg as Project, QUESTION_IDS, addPiece, answerQuestion, listProjects, listReferences, newProject, proposeDecision, readCriterio, readReference, recordLearning, startSetup } from "./pieces";
+import { CRITERIO_SECTIONS, ProjectArg as Project, QUESTION_IDS, addPiece, answerQuestion, listProjects, listReferences, newProject, proposeDecision, readCriterio, readReference, measureSite, recordLearning, runPass, startSetup } from "./pieces";
 import { ANSWER_SOURCES } from "@/types/brief";
 import { SKIPPABLE } from "../setup-core";
 import { LEARNING_NOTE_MAX } from "@/types/system";
@@ -37,6 +37,20 @@ export const TOOLS: Tool[] = [
     input: z.object({ project: Project.optional(), skip: z.enum(SKIPPABLE as [string, ...string[]]).optional().describe("A step the person declined.") }),
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     run: (i, ctx, origin) => startSetup(ctx, origin, i),
+  }),
+  tool({
+    name: "measure_site", title: "Measure a site",
+    description: "Measures a public site on the server and returns its colours, type, spacing, fonts, logo and copy, as values. Use it for the person's own site, on any client: it needs no local browser. It writes nothing: show the person the values, then call bring_brand after their yes. Can take a minute. It cannot reach localhost or a page behind a login: ask for a screenshot and mark what you read from it as inferred. Do not bring another company's brand into a project.",
+    input: z.object({ url: z.string().min(1).max(2000).describe("The site's public address.") }),
+    annotations: { readOnlyHint: true, openWorldHint: true },
+    run: (i, ctx) => measureSite(ctx, i),
+  }),
+  tool({
+    name: "run_pass", title: "Write criterio.md",
+    description: "Writes the project's criterio.md from its references, brand and answers, with the same pass the app uses, so every client gets the same file. Call it when the setup reaches the criterio step or the person asks. Takes up to a few minutes. It replaces no decision the team made by hand. After it, change the file only through propose_decision.",
+    input: z.object({ project: Project }),
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
+    run: (i, ctx, origin) => runPass(ctx, origin, i),
   }),
   tool({
     name: "list_projects", title: "List projects",

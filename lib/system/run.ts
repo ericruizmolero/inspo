@@ -13,6 +13,7 @@ import { autoSystemPass, billOf, recordUsage, systemPassRef, type UsageCtx } fro
 import { autoSystemToday, hadSystemPass } from "../quota";
 import { DECISION_MAX, IMPROVE_NOTE_MAX, SYSTEM_AREAS, cleanDecision, emptySystem, type ImproveAim, type SystemFocus, type ProjectSystem, type SystemArea, type SystemEvidence, type SystemRun } from "@/types/system";
 import { briefPrompt } from "../brief";
+import { learnedPrompt } from "@/types/system";
 import { guideCutLine } from "../brand-guides";
 import { log } from "../log";
 import { ensureHead, getSystem, writeArea, type AreaWrite } from "./areas";
@@ -79,6 +80,7 @@ export function systemRequest(s: SystemSnapshot, o: { language?: OutputLanguage;
   const text = [
     `Project: ${s.name}`,
     briefPrompt(s.brief),
+    learnedPrompt(s.learned),
     `System as it stands (JSON): ${JSON.stringify(s.standing)}`,
     `References on the board (JSON): ${JSON.stringify(s.refs)}`,
     s.omitted ? `${s.omitted} references on the board were left out of this reading; what you see is not everything the team saved.` : null,

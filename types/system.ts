@@ -126,6 +126,11 @@ export const LEARNED_MAX = 50;
 export const LEARNING_NOTE_MAX = 600;
 
 /** The stored list read into its shape: unknown keys drop, notes are cut, newest first, at most LEARNED_MAX */
+/** What was learned, as the model passes read it: the person's corrections outrank what a reference suggests */
+export function learnedPrompt(learned: SystemLearning[] | undefined): string {
+  return learned?.length ? `LEARNED: what the team corrected or chose while working with an agent, newest first. Keep to it unless the team decided otherwise since:\n${learned.map((l) => `- ${l.area ? `${l.area}: ` : ""}${l.note}`).join("\n")}` : "";
+}
+
 export function readLearned(v: unknown): SystemLearning[] {
   if (!Array.isArray(v)) return [];
   const str = (x: unknown, max: number) => (typeof x === "string" ? x.trim().slice(0, max) : "");

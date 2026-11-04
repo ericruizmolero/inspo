@@ -3,6 +3,10 @@
 // connector, the file's Start here and the app. Pure, so the browser can use it too.
 import { PLAYBOOK_QUESTIONS, SETUP_ROLES, openQuestions } from "./playbook-questions";
 import type { Brief } from "@/types/brief";
+import { sectionFilled, type BrandSpec } from "@/types/brand";
+
+/** A brand was brought in when it holds these: the other sections can read filled from the project alone */
+export const brandBrought = (brand: BrandSpec | null | undefined) => !!brand && (["logo", "color", "typography"] as const).some((k) => sectionFilled(brand, k));
 
 export const SETUP_KEYS = ["project", "source", "questions", "references", "criterio"] as const;
 export type SetupKey = (typeof SETUP_KEYS)[number];
@@ -61,7 +65,7 @@ const ACTIONS: Record<SetupKey | BuildKey, string> = {
   source: "Look for a live site, tokens, fonts, logos or a brand guide. Show what you found in one list and ask one question: bring this in? After the yes, call bring_brand. With nothing to bring, or on a no, call start_setup with skip: \"source\".",
   questions: "Save what you read with answer_question and source \"read\". Show those answers once, as one list, and let the person correct them. Then ask the questions in `ask`, one at a time. Only `goal` stops the setup: an unknown answer can stay open.",
   references: "Ask for landing pages the person likes, and what to take from each, in their words. Save each with add_reference and that note. References are optional: if the person only wants to keep the brand, call start_setup with skip: \"references\". For a new brand, say once that the file will be generic without them.",
-  criterio: "Tell the person the setup can write the file now. It is written from what is in the project.",
+  criterio: "Call run_pass. It writes the file from what is in the project.",
   direction: "The setup is complete. Offer to build a landing. On a no, stop here: nothing is unfinished. On a yes, build 2 heroes with the same copy and a different direction, and ask which serves the goal better and why.",
   landing: "Build the landing section by section, each one serving the goal.",
 };

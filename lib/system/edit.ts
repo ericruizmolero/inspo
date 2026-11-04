@@ -8,6 +8,7 @@ import { prompt } from "../prompts";
 import { billOf, recordUsage, type UsageCtx } from "../usage";
 import { NEVER_MAX, SYSTEM_AREAS, cleanDecision, type SystemArea } from "@/types/system";
 import { briefPrompt } from "../brief";
+import { learnedPrompt } from "@/types/system";
 import { loadShareView } from "../share-view";
 import type { Locale } from "../i18n/locale";
 import { getSystem, projectRow } from "./areas";
@@ -63,6 +64,7 @@ export async function editFile(input: {
     `What to change: ${JSON.stringify(instruction)}`,
     `The areas now, as written (JSON): ${JSON.stringify(Object.fromEntries(system.areas.map((a) => [a.area, { decision: a.decision, why: a.why, never: a.never.split("\n").filter(Boolean) }])))}`,
     briefPrompt(project.brief),
+    learnedPrompt(system.learned),
     `The file, criterio.md:\n${(view?.markdown ?? "").slice(0, FILE_MAX)}`,
   ].filter(Boolean).join("\n\n");
   let res: Awaited<ReturnType<typeof llm>>;

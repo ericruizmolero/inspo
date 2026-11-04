@@ -293,6 +293,8 @@ export const routes: Record<string, Surface> = {
   },
   "route:app/mcp/route.ts#GET": { exempt: "answers 401 or 405 and reads nothing: the connector only takes POST" },
   "route:app/mcp/route.ts#DELETE": { exempt: "answers 401 or 405 and reads nothing: the connector keeps no session to end" },
+  "mcp:measure_site": { exempt: "a public address, measured for anyone signed in: it reads no workspace data, and a stored measure is shared across workspaces by design" },
+  "mcp:run_pass": { probe: async (fx) => { await refusedTool(fx, "run_pass", { project: fx.a.project }); } },
   "mcp:start_setup": { probe: async (fx) => { await refusedTool(fx, "start_setup", { project: fx.a.project }); } },
   "mcp:list_projects": {
     probe: async (fx) => {

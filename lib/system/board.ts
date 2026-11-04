@@ -1,3 +1,4 @@
+import type { SystemLearning } from "@/types/system";
 import "server-only";
 import { createHash } from "crypto";
 import { and, asc, eq, inArray } from "drizzle-orm";
@@ -205,6 +206,8 @@ export interface SystemSnapshot {
   signals?: SignalTally;
   /** The page structures that repeat across the board, by board code (lib/composition-core.ts); missing before they were read */
   compositions?: CompositionPattern[];
+  /** What agents learned with the person (types/system.ts learnedPrompt) */
+  learned?: SystemLearning[];
 }
 
 /** The system pass's input as the database has it now */
@@ -213,6 +216,7 @@ export async function loadSnapshot(organizationId: string, projectId: string): P
   const [{ refs, stamp, omitted }, current, guides, memory] = await Promise.all([loadBoard(organizationId, projectId), getSystem(organizationId, projectId), projectGuides(organizationId, projectId), areaMemory(organizationId, projectId)]);
   const codeOf = new Map(refs.map((r) => [r.itemId, r.code]));
   const snapshot: SystemSnapshot = {
+    learned: current.learned,
     name: project.name,
     brief: project.brief,
     standing: current.areas.map((a) => ({

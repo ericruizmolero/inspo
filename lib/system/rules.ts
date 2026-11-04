@@ -8,6 +8,7 @@ import { prompt } from "../prompts";
 import { billOf, recordUsage, type UsageCtx } from "../usage";
 import { NEVER_MAX, type SystemArea } from "@/types/system";
 import { briefPrompt } from "../brief";
+import { learnedPrompt } from "@/types/system";
 import { areaMemory } from "../area-comments";
 import { cleanArea, getSystem, projectRow } from "./areas";
 import { loadBoard, markClient } from "./board";
@@ -67,6 +68,7 @@ export async function sharpenRules(input: { organizationId: string; projectId: s
     `never_now, the team's lines for this area (one per line):\n${standing.never || "(none)"}`,
     memoryLine(memory[area]),
     briefPrompt(project.brief),
+    learnedPrompt(current.learned),
     refs.length ? `References on the board (JSON): ${JSON.stringify(markClient(refs, project.brief))}` : "",
   ].filter(Boolean).join("\n\n");
   let res: Awaited<ReturnType<typeof llm>>;

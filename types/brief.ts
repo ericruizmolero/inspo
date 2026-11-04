@@ -52,12 +52,17 @@ export interface Brief {
   /** Answers to criterio.md's starting questions (lib/playbook-questions.ts) that have no field above, by question id:
    *  given over MCP (answer_question) by the agent that asked them */
   answers?: Record<string, BriefAnswer>;
+  /** The setup's optional steps the person chose to skip (lib/setup-core.ts) */
+  skipped?: string[];
   /** ISO */
   updatedAt: string;
   updatedBy?: string;
 }
 
-export interface BriefAnswer { text: string; by?: string; via?: string; /** ISO */ at: string }
+/** Where an answer comes from. "read": the agent read it on the site or in the repo, and the person has not confirmed it */
+export const ANSWER_SOURCES = ["person", "read"] as const;
+export type AnswerSource = (typeof ANSWER_SOURCES)[number];
+export interface BriefAnswer { text: string; by?: string; via?: string; /** ISO */ at: string; /** Absent: the person said it */ source?: AnswerSource; /** The address or path a read answer came from */ from?: string }
 
 /** Not a limit anyone writing a brief meets: the screens show none. A ceiling on what the server keeps and sends to
  *  the models, so a whole file pasted by mistake is not stored and billed on every reading. */
@@ -81,8 +86,8 @@ function readAnswers(v: unknown): Record<string, BriefAnswer> | undefined {
     const a = x as Record<string, unknown>;
     const t = text(a.text, BRIEF_LIMITS.answer), at = text(a.at, 40);
     if (!t || !at) continue;
-    const by = text(a.by, 120), via = text(a.via, 80);
-    out[id] = { text: t, at, ...(by ? { by } : {}), ...(via ? { via } : {}) };
+    const by = text(a.by, 120), via = text(a.via, 80), from = text(a.from, BRIEF_LIMITS.url);
+    out[id] = { text: t, at, ...(by ? { by } : {}), ...(via ? { via } : {}), ...(a.source === "read" ? { source: "read" as const } : {}), ...(from ? { from } : {}) };
   }
   return Object.keys(out).length ? out : undefined;
 }
@@ -112,6 +117,7 @@ export function readBrief(v: unknown): Brief | null {
     drafted: keysOf(DRAFT_FIELDS, b.drafted),
     clientItemId: typeof b.clientItemId === "string" && b.clientItemId ? b.clientItemId.slice(0, 40) : null,
     ...(answers ? { answers } : {}),
+    ...(Array.isArray(b.skipped) && b.skipped.length ? { skipped: b.skipped.filter((k): k is string => typeof k === "string").slice(0, 5) } : {}),
     updatedAt: text(b.updatedAt, 40),
     ...(typeof b.updatedBy === "string" ? { updatedBy: b.updatedBy } : {}),
   };

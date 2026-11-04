@@ -897,6 +897,7 @@ export const ui: typeof EnUi = {
       },
       guide: {
         heading: "Empieza aquí",
+        setupOpen: "**La puesta en marcha de este proyecto sigue abierta.** Con el conector de criterio, llama a start_setup y síguelo: dice qué hacer después y lo guarda todo. Si te han pegado el archivo sin el conector, sigue las fases de abajo y di que conectarlo guarda el trabajo.",
         lines: (k: GuideMdKeys): string[] => {
           const list = (xs: string[]) => xs.length < 2 ? xs.join("") : `${xs.slice(0, -1).join(", ")} y ${xs[xs.length - 1]}`;
           const refs = (codes: string[]) => codes.length ? `; apuntan ${codes.join(", ")}` : "";

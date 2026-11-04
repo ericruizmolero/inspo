@@ -11,6 +11,7 @@
 // it as it is and let a block be edited: the system stays the one source, the file is its other face.
 import { SYSTEM_AREAS, confidenceOf, type ProjectSystem, type SystemArea } from "@/types/system";
 import { skillSections } from "@/lib/md-skills";
+import { brandBrought, setupState } from "@/lib/setup-core";
 import { areaSkillLines } from "@/lib/area-skills";
 import { areaTokenLines } from "@/lib/area-tokens";
 import { hostOf, readableDomain } from "@/lib/url";
@@ -94,7 +95,7 @@ export interface CriterioMdInput {
     required: string; guidance: string; must: string; should: string;
     use: { heading: string; lines: (k: UseMdKeys) => string[] };
     /** "Start here": the walk the agent takes the person on, written from what the project has (lib/criterio-md.ts guideKeys) */
-    guide: { heading: string; lines: (k: GuideMdKeys) => string[] };
+    guide: { heading: string; setupOpen: string; lines: (k: GuideMdKeys) => string[] };
     /** "Starting questions": the questions still open, which the agent asks in phase 1 (lib/playbook-questions.ts) */
     questions: { heading: string; intro: string; decides: string; none: string; answered: (n: number) => string; inBrief: string };
     /** "What was learned": what agents wrote down with the person (types/system.ts SystemLearning) */
@@ -293,6 +294,9 @@ export function criterioBlocks({ project, system, items: allItems, labels, strin
   const texts = board.filter((id) => items[id]?.kind === "text");
   const css = brand ? brandCssLines(brand, project) : [];
   const derived = css.length ? [] : areaTokenLines(system, labels);
+  // A setup still open says so first: the agent follows it, and the session loop starts when it ends
+  const stored = readBrief(brief);
+  const setup = setupState({ project: true, brief: stored, brand: !!stored?.clientItemId || brandBrought(system.brand), refs: board.length, pass: !!system.run, picked: false, built: false });
   // Start here: the walk, before the rules it leans on. Written from the project as it stands, so it is never typed over
   const open = SYSTEM_AREAS.flatMap((key) => {
     const a = system.areas.find((x) => x.area === key);
@@ -322,7 +326,7 @@ export function criterioBlocks({ project, system, items: allItems, labels, strin
     questions: asked.open.length ? title("questions", strings.questions.heading) : null, openQuestions: asked.open.length,
     learned: learnedLines.length ? title("learned", strings.learned.heading) : null,
   });
-  blocks.push({ kind: "section", id: "guide", heading: title("guide", strings.guide.heading), lines: guideLines });
+  blocks.push({ kind: "section", id: "guide", heading: title("guide", strings.guide.heading), lines: setup.complete ? guideLines : [strings.guide.setupOpen, "", ...guideLines] });
   blocks.push({ kind: "section", id: "questions", heading: title("questions", strings.questions.heading), lines: asked.lines });
   if (learnedLines.length) blocks.push({ kind: "section", id: "learned", heading: title("learned", strings.learned.heading), lines: [`> ${strings.learned.intro}`, "", ...learnedLines] });
   blocks.push({ kind: "section", id: "use", heading: title("use", strings.use.heading), ...byHandOr("use", useLines) });

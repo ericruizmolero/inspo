@@ -906,6 +906,7 @@ export const ui = {
       },
       guide: {
         heading: "Start here",
+        setupOpen: "**The setup of this project is still open.** With the criterio connector, call start_setup and follow it: it says what to do next and saves everything. Pasted without the connector, follow the phases below, and say that connecting keeps the work.",
         lines: (k: GuideMdKeys): string[] => {
           const list = (xs: string[]) => xs.length < 2 ? xs.join("") : `${xs.slice(0, -1).join(", ")} and ${xs[xs.length - 1]}`;
           const refs = (codes: string[]) => codes.length ? `; ${codes.join(", ")} point somewhere` : "";

@@ -3,9 +3,8 @@ import "server-only";
 import { and, eq } from "drizzle-orm";
 import { db, schema } from "./db";
 import { readBrief } from "@/types/brief";
-import { BRAND_SECTIONS, sectionFilled } from "@/types/brand";
 import { getSystem } from "./system/areas";
-import type { SetupFacts } from "./setup-core";
+import { brandBrought, type SetupFacts } from "./setup-core";
 
 const P = schema.project, PI = schema.projectItem;
 
@@ -16,6 +15,6 @@ export async function setupFacts(organizationId: string, projectId: string): Pro
     getSystem(organizationId, projectId),
   ]);
   const brief = readBrief(row?.brief);
-  const brand = !!brief?.clientItemId || BRAND_SECTIONS.some((k) => k !== "intro" && !!system.brand && sectionFilled(system.brand, k));
+  const brand = !!brief?.clientItemId || brandBrought(system.brand);
   return { project: !!row, brief, brand, refs: refs.length, pass: !!system.run, picked: false, built: false };
 }

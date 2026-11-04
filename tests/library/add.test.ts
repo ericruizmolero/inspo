@@ -132,7 +132,7 @@ test("the MCP connector saves a site signed with the app it came from, files it 
   const from = reached.length;
   const out = await withKeys(async () => said(await call({ project, url: web, title: "Given title", note: "backs the palette", areas: ["color"] })));
   const row = await rowOf(web);
-  expect(out).toEqual({ id: row.id, name: "Given title", project: "Board", areas: ["color"], url: expect.stringContaining(`?in=${project}&view=system`) });
+  expect(out).toEqual({ setup: expect.objectContaining({ next: expect.anything() }), id: row.id, name: "Given title", project: "Board", areas: ["color"], url: expect.stringContaining(`?in=${project}&view=system`) });
   expect({ author: row.author, createdBy: row.createdBy, via: row.via, note: row.note }).toEqual({ author: team.user.name, createdBy: team.user.id, via: "Raycast", note: "backs the palette" });
   expect(await filedIn(row.id)).toEqual([project]);
   const [area] = await db.select({ evidence: schema.systemArea.evidence }).from(schema.systemArea).where(and(eq(schema.systemArea.projectId, project), eq(schema.systemArea.area, "color")));
@@ -140,7 +140,7 @@ test("the MCP connector saves a site signed with the app it came from, files it 
   expect(queued(from), "the tag job waits for after()").toEqual([]);
 
   const again = await said(await call({ project, url: web, note: "also the type" }));
-  expect(again).toEqual({ id: row.id, name: "Given title", project: "Board", already_in_library: true, url: expect.any(String) });
+  expect(again).toEqual({ setup: expect.objectContaining({ next: expect.anything() }), id: row.id, name: "Given title", project: "Board", already_in_library: true, url: expect.any(String) });
   const comments = await db.select({ body: schema.inspoComment.body }).from(schema.inspoComment).where(eq(schema.inspoComment.itemId, row.id));
   expect(comments, "the note on a reference already here goes in its thread").toEqual([{ body: "also the type" }]);
 

@@ -28,12 +28,19 @@ import { MEDIA_TYPES, MAX_MEDIA_BYTES, newMediaKey } from "../media";
 import { putFile, getFile, keyOf, ensureCardCopy } from "../storage";
 import { cardCopyOf } from "../board";
 import { pageShotsFor } from "../page-shots";
-import { log } from "../log";
 import { assertRoom } from "../quota";
 import { cleanText, readText, TEXT_TITLE_MAX } from "../text-refs";
 import { addAreaComment, systemActivity } from "../area-comments";
 import { saveAnswer, saveBrief, skipSetupStep } from "../brief";
 import { nextAction, setupState } from "../setup-core";
+import { allow } from "../rate-limit";
+import { assertQuota } from "../quota";
+import { extractDesign } from "../design-extract";
+import { getDesignMd } from "../design-store";
+import { keptCopy } from "../ref-measured";
+import { runSystem } from "../system/run";
+import { runBrand } from "../brand";
+import { log } from "../log";
 import { setupFacts } from "../setup";
 import type { AnswerSource } from "@/types/brief";
 import { addLearning } from "../system/areas";
@@ -314,6 +321,9 @@ export function versionAfterWrite(ctx: McpCtx, origin: string, project: { id: st
   inBackground(async () => { await recordVersion({ organizationId: project.workspace.id, projectId: project.id, via: "mcp-write", viaName: ctx.via, byName: ctx.user.name, locale: ctx.user.language, origin }); });
 }
 
+/** Each measure opens a browser on the server */
+const MEASURES_PER_HOUR = 10;
+
 export const QUESTION_IDS = PLAYBOOK_QUESTIONS.map((q) => q.id) as [string, ...string[]];
 
 /** The questions a project still has open, as an agent asks them next */
@@ -346,6 +356,40 @@ export async function answerQuestion(ctx: McpCtx, origin: string, input: { proje
     url: projectUrl(origin, project.id),
     setup: await setupStep(project.workspace.id, project.id),
   };
+}
+
+/**
+ * A public site as measured values, on any client: what `skills/bring-brand` does with local Chrome, on the server,
+ * for an agent with no machine. Reads, never writes: the agent shows the values and calls bring_brand after the yes.
+ */
+export async function measureSite(ctx: McpCtx, input: { url: string }) {
+  const url = normalizeWebUrl(input.url);
+  if (!url) throw new HttpError(400, "That is not a public address.");
+  if (!(await allow(`measure:${ctx.user.id}`, MEASURES_PER_HOUR, 3_600_000))) throw new HttpError(429, "Too many sites measured in an hour. Wait and go on.");
+  const stored = await getDesignMd(url);
+  if (stored) return { url, measured: "stored", at: stored.generatedAt, spec: stored.spec, copy: stored.copy, logo: { png: stored.logoUrl, svg: stored.logoSvgUrl }, fonts: stored.fontFiles };
+  const { tokens, logoSvg, fontFiles } = await extractDesign(url);
+  return { url, measured: "now", title: tokens.title, colors: tokens.colors, typography: { ...tokens.typography, paragraphs: undefined }, fonts: tokens.fonts, spacing: tokens.spacing, copy: keptCopy(tokens.copy), logo: { svg: logoSvg }, fontFiles };
+}
+
+/**
+ * Writes the project's criterio.md with the same pass as the app, so the file is the same from every door. The first
+ * pass of an account is free, as in the app; later ones count as an AI action.
+ */
+export async function runPass(ctx: McpCtx, origin: string, input: { project: string }) {
+  const project = await resolveProject(ctx, input.project);
+  const org = project.workspace.id;
+  await assertQuota(project.workspace, "ai");
+  const usage = { organizationId: org, userId: ctx.user.id };
+  try {
+    await runSystem({ organizationId: org, projectId: project.id, usage, language: project.workspace.outputLanguage });
+  } catch (e) {
+    if (e instanceof HttpError && e.status === 400) return { written: false, project: project.name, status: "There is nothing to read yet. Bring in a brand guide or the site, or add one reference, then call run_pass again.", setup: await setupStep(org, project.id) };
+    throw e;
+  }
+  await runBrand({ organizationId: org, projectId: project.id, usage, language: project.workspace.outputLanguage, auto: true }).catch((err) => log.warn("mcp.brand_pass_failed", { ref: project.id, err }));
+  versionAfterWrite(ctx, origin, project);
+  return { written: true, project: project.name, status: "criterio.md is written. Read it with read_criterio.", url: projectUrl(origin, project.id), setup: await setupStep(org, project.id) };
 }
 
 /** The path as the agent reads it: where the project stands and what to do next */
