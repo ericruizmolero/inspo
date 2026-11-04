@@ -1,0 +1,10 @@
+{"at":"2026-11-04T13:34:34.353Z","project":"zernio","label":"A","model":"anthropic/claude-sonnet-5.5","effort":"medium","costUsd":0.154496,"ms":67429}
+{"at":"2026-11-04T13:34:42.883Z","project":"xabier","label":"A","model":"anthropic/claude-sonnet-5.5","effort":"medium","costUsd":0.17588,"ms":75927}
+{"at":"2026-11-04T13:40:02.179Z","project":"xabier","label":"B","model":"anthropic/claude-opus-5.5","effort":"high","costUsd":0.85668,"ms":317365}
+{"at":"2026-11-04T13:45:43.138Z","project":"xabier","label":"C1","model":"anthropic/claude-opus-5.5","effort":"high","costUsd":0.78926,"ms":252658}
+{"at":"2026-11-04T13:49:22.364Z","project":"zernio","label":"B","model":"anthropic/claude-opus-5.5","effort":"high","costUsd":1.247132,"ms":477054}
+{"at":"2026-11-04T13:51:30.459Z","project":"xabier","label":"C2","model":"anthropic/claude-opus-5.5","effort":"high","costUsd":0.971048,"ms":343193}
+{"at":"2026-11-04T13:56:30.420Z","project":"zernio","label":"C1","model":"anthropic/claude-opus-5.5","effort":"high","costUsd":1.281204,"ms":423571}
+{"at":"2026-11-04T13:57:10.572Z","project":"xabier","label":"C3","model":"anthropic/claude-opus-5.5","effort":"high","costUsd":0.964432,"ms":336889}
+{"at":"2026-11-04T14:02:19.479Z","project":"zernio","label":"C2","model":"anthropic/claude-opus-5.5","effort":"high","costUsd":1.132272,"ms":345779}
+{"at":"2026-11-04T14:10:26.436Z","project":"zernio","label":"C3","model":"anthropic/claude-opus-5.5","effort":"high","costUsd":1.419188,"ms":483742}

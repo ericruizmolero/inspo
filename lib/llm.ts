@@ -17,6 +17,8 @@ export interface LlmInput {
   system: string;
   text: string;
   image?: Buffer | null;
+  /** More pictures, as JPEG, after `image` */
+  images?: Buffer[];
   /** Media type of `image` (a JPEG screenshot unless said otherwise) */
   imageType?: string;
   /** Structured output. Only providers that honour it strictly are used. */
@@ -92,6 +94,7 @@ async function call(i: LlmInput): Promise<Omit<LlmResult, "fallbackFrom" | "prom
 
   const user: unknown[] = [];
   if (i.image) user.push({ type: "image_url", image_url: { url: `data:${i.imageType ?? "image/jpeg"};base64,${i.image.toString("base64")}` } });
+  for (const image of i.images ?? []) user.push({ type: "image_url", image_url: { url: `data:image/jpeg;base64,${image.toString("base64")}` } });
   user.push({ type: "text", text: i.text });
 
   const body = {

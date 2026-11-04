@@ -62,6 +62,7 @@
     "eval:system": "tsx --conditions=react-server scripts/eval-system.ts",
     "eval:criterio": "tsx --conditions=react-server scripts/eval-criterio.ts",
     "eval:baseline": "tsx --conditions=react-server scripts/eval-baseline.ts",
+    "eval:material": "tsx --conditions=react-server scripts/eval-material.ts",
     "dev:marketing": "npm run dev -w @criterio/marketing-site",
     "build:marketing": "npm run build -w @criterio/marketing-site",
     "build:extension": "npm run build -w @criterio/extension"
