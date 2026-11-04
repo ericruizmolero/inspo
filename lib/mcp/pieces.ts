@@ -45,6 +45,7 @@ import { log } from "../log";
 import { setupFacts } from "../setup";
 import { clientAskToken } from "../client-ask";
 import { TINO } from "./tino";
+import { TINO_VOICE } from "./tools-voice";
 import type { LandingSection } from "@/types/landing";
 import type { AnswerSource } from "@/types/brief";
 import { addLearning, saveOutline } from "../system/areas";
@@ -388,7 +389,7 @@ export async function runPass(ctx: McpCtx, origin: string, input: { project: str
   try {
     await runSystem({ organizationId: org, projectId: project.id, usage, language: project.workspace.outputLanguage });
   } catch (e) {
-    if (e instanceof HttpError && e.status === 400) return { written: false, project: project.name, status: "There is nothing to read yet. Bring in a brand guide or the site, or add one reference, then call run_pass again.", setup: await setupStep(org, project.id) };
+    if (e instanceof HttpError && e.status === 400) return { written: false, project: project.name, status: "There is nothing to write from: no answers, no brand, no references. Ask the person one thing about the project first.", setup: await setupStep(org, project.id) };
     throw e;
   }
   await runBrand({ organizationId: org, projectId: project.id, usage, language: project.workspace.outputLanguage, auto: true }).catch((err) => log.warn("mcp.brand_pass_failed", { ref: project.id, err }));
@@ -445,7 +446,7 @@ export async function resolveComment(ctx: McpCtx, input: { project: string; id: 
 }
 
 /** The person sees what the agent writes, not this answer, so the agent has to print him */
-const TINO_GREETING = { print_first: "If you have not printed this in this conversation, make it the first thing in your next message: exactly as it is, in a code block, with nothing else in the block. Only once.", drawing: TINO };
+const TINO_GREETING = { print_first: "If you have not printed this in this conversation, make it the first thing in your next message: exactly as it is, in a code block, with nothing else in the block. Only once.", drawing: TINO, voice: TINO_VOICE };
 
 /** What is pending on a project, so each session starts from it: decisions to take, and answers that arrived */
 async function waiting(org: string, projectId: string) {

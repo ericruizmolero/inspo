@@ -1146,7 +1146,7 @@ export const ui: typeof EnUi = {
     // En la página Sistema, cuando nadie le pide nada (components/board-nudges.ts)
     system: {
       idleTitle: ["Todo en orden. Por ahora.", "Nada que objetar."],
-      idleText: "Pulsa cualquier texto para cambiarlo, o dime abajo qué cambiar y lo propongo yo.",
+      idleText: "Pulsa cualquier texto para cambiarlo, o coméntalo.",
       idleFile: (decided: number, total: number, team: number, area: string, long: string): string => `${decided} de ${total} áreas decididas, ${team === decided ? "todas" : team} confirmadas por el equipo. La última que se tocó es ${area}${long ? `, hace ${long}` : ", hoy"}.`,
       idleAct: (area: string): string => `Ir a ${area}`,
       readTitle: ["¿La has leído?", "Esto no se lee solo."],

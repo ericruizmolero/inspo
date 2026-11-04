@@ -13,6 +13,7 @@ import { LEARNING_NOTE_MAX } from "@/types/system";
 import { BRIEF_LIMITS } from "@/types/brief";
 import { BringInput, bringBrand } from "./brand";
 import { TINO_APP_URI } from "./tino-app";
+import { TINO_VOICE } from "./tools-voice";
 
 const Areas = z.array(z.enum(SYSTEM_AREAS)).max(SYSTEM_AREAS.length).optional();
 
@@ -36,7 +37,7 @@ const tool = <S extends z.ZodType>(t: Tool<S>) => t as unknown as Tool;
 export const TOOLS: Tool[] = [
   tool({
     name: "start_setup", title: "Start or continue the setup",
-    description: "The way in when the person says \"set up criterio\", starts a project, or comes back to one. It says where the project stands and what to do next, in `do`. First print the drawing in `tino` for the person, once, as it says. Follow it one step at a time, and call it again after each step. Never ask the person two things in one message: one question, wait, then the next. The same setup can start in the app or in any other client: nothing is repeated. Every step is optional except the project, the goal and the file. When `next` is direction or landing the setup is complete, and building is an offer, not a duty.",
+    description: "The way in when the person says \"set up criterio\", starts a project, or comes back to one. It says where the project stands and what to do next, in `do`. First print the drawing in `tino` for the person, once, as it says. Follow it one step at a time, and call it again after each step. Never ask the person two things in one message: one question, wait, then the next. Talk as `tino.voice` says. The same setup can start in the app or in any other client: nothing is repeated. Every step is optional except the project, the goal and the file. When `next` is direction or landing the setup is complete, and building is an offer, not a duty.",
     input: z.object({ project: Project.optional(), skip: z.enum(SKIPPABLE as [string, ...string[]]).optional().describe("A step the person declined."), ask_client: z.boolean().optional().describe("True when the person does not know an answer and wants to ask their client: the answer has a link to send, which needs no account. When the client answers, the person gets one email.") }),
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     meta: { ui: { resourceUri: TINO_APP_URI, visibility: ["model"] } },
@@ -227,6 +228,7 @@ export const toolList = () => TOOLS.map((t) => {
 /** What the client is told once, on connecting: how to work with criterio */
 export const INSTRUCTIONS = [
   "When the person says \"set up criterio\", starts a project or comes back to an unfinished one, call start_setup and follow what it says.",
+  TINO_VOICE,
   "criterio holds the design criteria of each of the person's projects as one file, criterio.md: what the team decided about typography, color, layout, motion, iconography, logo, imagery and voice, with the references behind each decision.",
   "Before designing, writing or reviewing anything for a project, call read_criterio and follow it. A decided area is a rule. Where an area is open, ask the person; do not invent.",
   "Work with the person as criterio.md's \"Start here\" says: read it first (read_criterio, section \"guide\") and follow its phases and checkpoints.",

@@ -40,9 +40,7 @@ test("an agent walks the setup by asking what comes next, and resumes where it s
   expect(on.next).toBe("criterio");
   expect(on.complete).toBe(false);
 
-  const empty = await tool("run_pass", { project: "Acme" });
-  expect(empty.written).toBe(false);
-  expect(empty.status).toContain("nothing to read");
+  expect(on.do).toContain("run_pass");
 });
 
 test("a pick closes the direction, a built outline closes the landing, and the plan is in the file", async () => {

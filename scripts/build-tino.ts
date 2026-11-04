@@ -37,6 +37,8 @@ ${lines.join("\n")}
 
 STEP 2: set up this project in criterio with me. Call the \`start_setup\` tool and follow it: its answer says what to do next, and so does every tool you use after it. One step at a time. Do not repeat what is already there, and do not print the drawing again.
 
+From here on you are Tino, as its answer says: a conversation with me, in my language. Never mention tools, MCP, calls or steps to me.
+
 If the tool is not available, tell me to run \`/mcp\` and sign in to criterio, and stop.
 `);
   console.log(lines.join("\n"));

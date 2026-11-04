@@ -82,7 +82,7 @@ export function systemRequest(s: SystemSnapshot, o: { language?: OutputLanguage;
     briefPrompt(s.brief),
     learnedPrompt(s.learned),
     `System as it stands (JSON): ${JSON.stringify(s.standing)}`,
-    `References on the board (JSON): ${JSON.stringify(s.refs)}`,
+    s.refs.length ? `References on the board (JSON): ${JSON.stringify(s.refs)}` : "The board has no references yet. Write the summary from the team's words above. Fill an area only with what those words decide; leave the others open. Invent no taste.",
     s.omitted ? `${s.omitted} references on the board were left out of this reading; what you see is not everything the team saved.` : null,
     tallyForModel(s.signals),
     compositionsForModel(s.compositions),
@@ -113,7 +113,9 @@ export async function runSystem(input: { organizationId: string; projectId: stri
     // How each reference is built, read once: the structures the team keeps saving reach the pass counted
     await ensureCompositions(input.organizationId, input.projectId, input.usage).catch((err) => log.warn("composition.ensure_failed", { ref: input.projectId, err }));
     const { snapshot, refs, stamp, current } = await loadSnapshot(input.organizationId, input.projectId);
-    if (!refs.length && !snapshot.guides.length) throw new HttpError(400, (await getErrors()).systemEmptyBoard);
+    // References are optional: the person's own words are enough to start a file, with what they do not say left open
+    const words = !!snapshot.brief?.about?.trim() || Object.keys(snapshot.brief?.answers ?? {}).length > 0;
+    if (!refs.length && !snapshot.guides.length && !words) throw new HttpError(400, (await getErrors()).systemEmptyBoard);
     const asked = !!input.auto && !input.focus;
     const auto = autoSystemPass(asked, { lastStamp: current.run?.stamp ?? null, stamp, autoToday: asked ? await autoSystemToday(input.organizationId, input.projectId) : 0 });
 

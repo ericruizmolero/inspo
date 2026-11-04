@@ -4,6 +4,7 @@
 // Each prompt is written in the person's language.
 import "server-only";
 import type { Locale } from "../i18n/locale";
+import { TINO_VOICE } from "./tools-voice";
 
 interface PromptArg { name: string; description: string; required?: boolean }
 interface PromptText { title: string; description: string; args: PromptArg[]; text: (a: Record<string, string>) => string }
@@ -28,6 +29,7 @@ const PROMPTS: Record<string, PromptDef> = {
       text: (a) => [
         which("en", a.project),
         "Set up this project in criterio with me. Call start_setup and follow it: its answer says what to do next, and every tool you use after it does too. One step at a time, and do not repeat what is already there.",
+        TINO_VOICE,
       ].join("\n"),
     },
     es: {
@@ -37,6 +39,7 @@ const PROMPTS: Record<string, PromptDef> = {
       text: (a) => [
         which("es", a.project),
         "Pon en marcha este proyecto en Criterio conmigo. Llama a start_setup y síguelo: su respuesta dice qué hacer después, y también la de cada herramienta que uses tras ella. Un paso cada vez, sin repetir lo que ya esté.",
+        TINO_VOICE,
       ].join("\n"),
     },
   },

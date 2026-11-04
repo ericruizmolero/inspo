@@ -1155,7 +1155,7 @@ export const ui = {
     // On the System page, when nobody is asking him anything (components/board-nudges.ts)
     system: {
       idleTitle: ["All in order. For now.", "No objections."],
-      idleText: "Click any text to change it, or tell me down there what to change and I'll propose it.",
+      idleText: "Click any text to change it, or comment on it.",
       idleFile: (decided: number, total: number, team: number, area: string, long: string): string => `${decided} of ${total} areas decided, ${team === decided ? "all" : team} confirmed by the team. The last one touched is ${area}${long ? `, ${long} ago` : ", today"}.`,
       idleAct: (area: string): string => `Go to ${area}`,
       readTitle: ["Have you read it?", "This won't read itself."],
