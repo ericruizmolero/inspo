@@ -8,12 +8,12 @@ import { readTemplateSpec } from "./template-seed";
 import { dictOf, type Locale } from "./i18n";
 import { emptySystem, type SystemArea, type SystemEvidence } from "@/types/system";
 
-const EXAMPLE = join(process.cwd(), "docs", "templates", "multiverse");
+const folderOf = (name: string) => join(process.cwd(), "docs", "templates", name);
 
 export interface ExampleMd { name: string; md: string }
 
-export function exampleCriterioMd(locale: Locale): ExampleMd {
-  const spec = readTemplateSpec(EXAMPLE);
+export function exampleCriterioMd(locale: Locale, template = "multiverse"): ExampleMd {
+  const spec = readTemplateSpec(folderOf(template));
   const t = dictOf(locale);
   const items: Record<string, RefInfo> = {};
   const evidence: Partial<Record<SystemArea, SystemEvidence[]>> = {};
