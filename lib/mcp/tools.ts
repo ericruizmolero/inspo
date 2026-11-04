@@ -6,7 +6,7 @@ import "server-only";
 import { z } from "zod";
 import { SYSTEM_AREAS } from "@/types/system";
 import type { McpCtx } from "./auth";
-import { CRITERIO_SECTIONS, ProjectArg as Project, QUESTION_IDS, addPiece, answerQuestion, listProjects, listReferences, newProject, proposeDecision, readCriterio, readReference, measureSite, recordLearning, runPass, setOutline, startSetup } from "./pieces";
+import { CRITERIO_SECTIONS, ProjectArg as Project, QUESTION_IDS, addPiece, answerQuestion, listProjects, listReferences, newProject, proposeDecision, readCriterio, readReference, measureSite, recordLearning, runPass, setOutline, startSetup, checkLandingPage } from "./pieces";
 import { OUTLINE_SECTIONS_MAX, OUTLINE_TEXT_MAX, SECTION_KINDS } from "@/types/landing";
 import { SKIPPABLE } from "../setup-core";
 import { LEARNING_NOTE_MAX } from "@/types/system";
@@ -144,6 +144,13 @@ export const TOOLS: Tool[] = [
     }),
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
     run: (i, ctx, origin) => recordLearning(ctx, origin, i),
+  }),
+  tool({
+    name: "check_landing", title: "Check a landing",
+    description: "Opens a built landing at desktop and phone width, on the server, and reports what it does for its goal: the primary actions, whether one shows on a phone's first screen, the headline, overflow, broken pictures and placeholder marks left, with pictures of both. It returns the project's rules too: judge the page against them and the goal, naming each breach. Use it after building, and after a fix. Public addresses and previews only: it cannot reach localhost.",
+    input: z.object({ project: Project, url: z.string().min(1).max(2000).describe("The landing's public address or preview.") }),
+    annotations: { readOnlyHint: true, openWorldHint: true },
+    run: (i, ctx, origin) => checkLandingPage(ctx, origin, i),
   }),
   tool({
     name: "set_outline", title: "Plan a landing",

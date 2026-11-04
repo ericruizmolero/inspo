@@ -71,7 +71,7 @@ const ACTIONS: Record<SetupKey | BuildKey, string> = {
   references: "Ask for landing pages the person likes, and what to take from each, in their words. Save each with add_reference and that note. References are optional: if the person only wants to keep the brand, call start_setup with skip: \"references\". For a new brand, say once that the file will be generic without them.",
   criterio: "Call run_pass. It writes the file from what is in the project.",
   direction: "The setup is complete. Offer to build a landing. On a no, stop here: nothing is unfinished. On a yes, build 2 heroes with the same copy and a different direction in type, layout, density or tone, never colour alone. With a brand brought in, differ in layout and density only. Ask which serves the goal better and why. Save the answer with record_learning, with section \"hero\", pick: true, what was rejected, and why. If it settles an area, also call propose_decision.",
-  landing: "Call set_outline with the landing's goal and its sections in order. Each section's job says what it does for the goal: a section that does nothing for it is cut. Build section by section. When the landing exists, call set_outline again with built.",
+  landing: "Call set_outline with the landing's goal and its sections in order. Each section's job says what it does for the goal: a section that does nothing for it is cut. Build section by section. When the landing exists, call set_outline again with built, and on a public address call check_landing and fix what it finds.",
 };
 
 /** A landing built without pictures of what the person likes comes out generic, whatever the model. The setup does not need

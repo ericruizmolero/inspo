@@ -296,6 +296,7 @@ export const routes: Record<string, Surface> = {
   "mcp:measure_site": { exempt: "a public address, measured for anyone signed in: it reads and stores no workspace data" },
   "mcp:run_pass": { probe: async (fx) => { await refusedTool(fx, "run_pass", { project: fx.a.project }); } },
   "mcp:set_outline": { probe: async (fx) => { await refusedTool(fx, "set_outline", { project: fx.a.project, name: "x", goal: "x", sections: [{ kind: "hero", job: "x", refs: [] }] }); } },
+  "mcp:check_landing": { probe: async (fx) => { await refusedTool(fx, "check_landing", { project: fx.a.project, url: "https://example.com" }); } },
   "mcp:start_setup": { probe: async (fx) => { await refusedTool(fx, "start_setup", { project: fx.a.project }); } },
   "mcp:list_projects": {
     probe: async (fx) => {

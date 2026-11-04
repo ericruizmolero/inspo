@@ -76,7 +76,7 @@
 
 /* The footer: the state in a StatusBar on the left, the step's answers on the right */
 .sep { margin: 0 24px; }
-.footer { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding: 14px 24px 16px; }
+.footer { position: sticky; bottom: 0; z-index: 1; background: var(--surface-raised); border-radius: 0 0 var(--radius-lg, 14px) var(--radius-lg, 14px); display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding: 14px 24px 16px; }
 .footStart > p { margin: 0; }
 .footStart, .footEnd { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0; }
 .footEnd { margin-left: auto; }

@@ -37,6 +37,7 @@ import { allow } from "../rate-limit";
 import { assertQuota } from "../quota";
 import { extractDesign } from "../design-extract";
 import { keptCopy } from "../ref-measured";
+import { checkLanding } from "../landing-check";
 import { runSystem } from "../system/run";
 import { runBrand } from "../brand";
 import { log } from "../log";
@@ -325,6 +326,7 @@ export function versionAfterWrite(ctx: McpCtx, origin: string, project: { id: st
 
 /** Each measure opens a browser on the server */
 const MEASURES_PER_HOUR = 10;
+const CHECKS_PER_HOUR = 20;
 
 export const QUESTION_IDS = PLAYBOOK_QUESTIONS.map((q) => q.id) as [string, ...string[]];
 
@@ -392,11 +394,46 @@ export async function runPass(ctx: McpCtx, origin: string, input: { project: str
   return { written: true, project: project.name, status: "criterio.md is written. Read it with read_criterio.", url: projectUrl(origin, project.id), setup: await setupStep(org, project.id) };
 }
 
+/**
+ * Opens the landing on the server and returns what it does for its goal, at desktop and phone width, with the project's
+ * rules. The facts are measured here; judging them against the file is the agent's. Only public addresses: for localhost,
+ * look at the page yourself. Nothing is stored.
+ */
+export async function checkLandingPage(ctx: McpCtx, origin: string, input: { project: string; url: string }): Promise<WithPictures> {
+  const project = await resolveProject(ctx, input.project);
+  const url = normalizeWebUrl(input.url);
+  if (!url) throw new HttpError(400, "That is not a public address.");
+  if (!(await allow(`check:${ctx.user.id}`, CHECKS_PER_HOUR, 3_600_000))) throw new HttpError(429, "Too many checks in an hour. Wait and go on.");
+  const [check, view, system] = await Promise.all([
+    checkLanding(url),
+    loadShareView(project.workspace.id, project.id, "full", ctx.user.language, null, origin),
+    getSystem(project.workspace.id, project.id),
+  ]);
+  const failed = check.findings.filter((f) => !f.ok);
+  return {
+    result: {
+    url, project: project.name, outlines: (system.outlines ?? []).map((o) => ({ name: o.name, goal: o.goal, sections: o.sections.map((s) => ({ kind: s.kind, job: s.job })) })),
+    findings: check.findings, desktop: check.desktop, phone: check.phone,
+    rules: view ? partMd(view.blocks, "guide") : "",
+    do: `${failed.length ? `${failed.length} of the landing's rules fail. Fix those first.` : "The landing's own rules pass."} Then look at both pictures and judge the page against the goal and every Never line in rules, naming the rule id or line each breach breaks. Show the person the result.`,
+    },
+    pictures: [{ data: check.shots.desktop.toString("base64"), mimeType: "image/jpeg" }, { data: check.shots.phone.toString("base64"), mimeType: "image/jpeg" }],
+  };
+}
+
 /** The path as the agent reads it: where the project stands and what to do next */
 export async function setupStep(org: string, projectId: string) {
   const facts = await setupFacts(org, projectId);
   const state = setupState(facts);
   return { next: state.next, do: nextAction(state, facts.refs), complete: state.complete, ask: state.ask, confirm: state.confirm, steps: state.steps };
+}
+
+/** What is pending on a project, so each session starts from it: decisions to take, and answers that arrived */
+async function waiting(org: string, projectId: string) {
+  const [activity, facts] = await Promise.all([systemActivity(org, projectId), setupFacts(org, projectId)]);
+  const proposals = Object.values(activity.notes).flat().filter((n) => (n as { proposal?: { state?: string } }).proposal?.state === "open").length;
+  const fromClient = Object.entries(facts.brief?.answers ?? {}).filter(([, a]) => a.source === "client").map(([id]) => id);
+  return { proposals_to_decide: proposals, client_answers: fromClient, open_questions: setupState(facts).ask, note: "Tell the person what is pending, in a line, before anything else." };
 }
 
 /** Where a project stands along the setup, and what the agent does next. With `skip`, the person declined that step */
@@ -410,6 +447,7 @@ export async function startSetup(ctx: McpCtx, origin: string, input: { project?:
   return {
     project: project.name, url: projectUrl(origin, project.id), ...(await setupStep(project.workspace.id, project.id)),
     ...(input.ask_client ? { client_link: `${origin}/a/${await clientAskToken(project.workspace.id, project.id, ctx.user.id)}` } : {}),
+    waiting: await waiting(project.workspace.id, project.id),
     repo_line: { line: `criterio project: ${project.name}`, do: "In a repo that does not have this line, ask once, and after a yes add it to AGENTS.md or CLAUDE.md, so a later session here finds the project. Another repo can copy the line to share this criterio." },
   };
 }
