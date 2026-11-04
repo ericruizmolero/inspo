@@ -65,7 +65,7 @@ export function setupState(f: SetupFacts): SetupState {
 
 /** What the agent does at each step, written for the model on the other end, in English */
 const ACTIONS: Record<SetupKey | BuildKey, string> = {
-  project: "Call list_projects. Pick the person's project, or create_project with what you know.",
+  project: "Call list_projects. Pick the person's project, or create_project with what you know. Ask only for the name. Ask for the workspace only if the person is in several, as its own question, naming each one. Do not ask what the project is about: the setup finds that out.",
   source: "Look for a live site, tokens, fonts, logos or a brand guide. Show what you found in one list and ask one question: bring this in? After the yes, call bring_brand. With nothing to bring, or on a no, call start_setup with skip: \"source\".",
   questions: "Save what you read with answer_question and source \"read\". Show those answers once, as one list, and let the person correct them. Then ask the questions in `ask`, one at a time. Only `goal` stops the setup: an unknown answer can stay open.",
   references: "Ask for landing pages the person likes, and what to take from each, in their words. Save each with add_reference and that note. References are optional: if the person only wants to keep the brand, call start_setup with skip: \"references\". For a new brand, say once that the file will be generic without them.",

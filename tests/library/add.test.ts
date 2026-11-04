@@ -132,7 +132,7 @@ test("the MCP connector saves a site signed with the app it came from, files it 
   const from = reached.length;
   const out = await withKeys(async () => said(await call({ project, url: web, title: "Given title", note: "backs the palette", areas: ["color"] })));
   const row = await rowOf(web);
-  expect(out).toEqual({ setup: expect.objectContaining({ next: expect.anything() }), id: row.id, name: "Given title", project: "Board", areas: ["color"], url: expect.stringContaining(`?in=${project}&view=system`) });
+  expect(out).toEqual({ setup: expect.objectContaining({ next: expect.anything() }), id: row.id, name: "Given title", project: "Board", areas: ["color"], url: expect.stringContaining(`/p/${project}`) });
   expect({ author: row.author, createdBy: row.createdBy, via: row.via, note: row.note }).toEqual({ author: team.user.name, createdBy: team.user.id, via: "Raycast", note: "backs the palette" });
   expect(await filedIn(row.id)).toEqual([project]);
   const [area] = await db.select({ evidence: schema.systemArea.evidence }).from(schema.systemArea).where(and(eq(schema.systemArea.projectId, project), eq(schema.systemArea.area, "color")));

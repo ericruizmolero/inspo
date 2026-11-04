@@ -60,7 +60,8 @@ const T = schema.inspoItem;
 /** The argument every tool names a project by, as resolveProject reads it */
 export const ProjectArg = z.string().min(1).max(120).describe("The project: its id or its name, as list_projects gives them.");
 /** The address of a project's system in the app, for the person to open */
-export const projectUrl = (origin: string, projectId: string) => `${origin}/?in=${projectId}&view=system`;
+/** Through /p/, which moves to the project's workspace first: the person may be in another one */
+export const projectUrl = (origin: string, projectId: string) => `${origin}/p/${projectId}`;
 export const authorOf = (ctx: McpCtx) => ({ id: ctx.user.id, name: ctx.user.name || ctx.user.email, image: ctx.user.image ?? null });
 
 // ─── Projects ────────────────────────────────────────────────────────────────

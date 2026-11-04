@@ -72,7 +72,7 @@ export async function submitClientAnswers(token: string, answers: Record<string,
       db.select({ email: U.email, language: U.language }).from(U).where(eq(U.id, row.createdBy)).limit(1),
       db.select({ name: P.name }).from(P).where(eq(P.id, row.projectId)).limit(1),
     ]);
-    if (who && project) await sendMail(who.email, clientAnswersMail({ project: project.name, n: given.length, url: `${APP_URL}/?in=${encodeURIComponent(row.projectId)}&view=system` }, toLocale(who.language)));
+    if (who && project) await sendMail(who.email, clientAnswersMail({ project: project.name, n: given.length, url: `${APP_URL}/p/${encodeURIComponent(row.projectId)}` }, toLocale(who.language)));
   });
   return "saved";
 }

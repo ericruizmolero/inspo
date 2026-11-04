@@ -306,6 +306,13 @@ export const routes: Record<string, Surface> = {
       expect((await POST(request("/api/ext/v1/comments", { method: "POST", headers: bearer(fx.b.extKey), body }))).status, "B commenting on A's project").toBeGreaterThanOrEqual(400);
     },
   },
+  "route:app/p/[id]/route.ts#GET": {
+    probe: async (fx) => {
+      asB(fx);
+      const { GET } = await import("@/app/p/[id]/route");
+      await expect(GET(request(`/p/${fx.a.project}`), { params: Promise.resolve({ id: fx.a.project }) }), "B reaching A's project goes home, with nothing of it in the address").rejects.toMatchObject({ kind: "redirect", url: "/" });
+    },
+  },
   "mcp:start_setup": { probe: async (fx) => { await refusedTool(fx, "start_setup", { project: fx.a.project }); } },
   "mcp:list_projects": {
     probe: async (fx) => {
