@@ -44,28 +44,28 @@ export const PLAN_TEXT: Record<Locale, Record<PlanKey, { name: string; tagline: 
     free: {
       name: "Free",
       tagline: "To try it out.",
-      features: ["You and one more person", "1 project with up to 12 references", "Automatic tags", "30 AI actions a month", "Your first criterio.md spends no AI actions", "30 different AI searches a month"],
+      features: ["You and one more person", "1 project with up to 12 references", "The agent remembers what you corrected", "10 landing checks a month", "Your first criterio.md spends no AI actions", "30 AI actions a month"],
     },
-    personal: { name: "Personal", tagline: "For a designer on their own.", features: ["You and one more person", "Unlimited projects and references", "300 AI actions a month", "AI searches, fair use"] },
-    studio: { name: "Studio", tagline: "For a design or product team.", features: ["Up to 5 people", "Unlimited projects and references", "500 AI actions a month", "AI searches, fair use"] },
+    personal: { name: "Personal", tagline: "For a designer on their own.", features: ["You and one more person", "Shared memory across your projects", "Unlimited projects and references", "Landing checks, fair use", "300 AI actions a month", "AI searches, fair use"] },
+    studio: { name: "Studio", tagline: "For a design or product team.", features: ["Up to 5 people", "Shared memory across your projects", "Unlimited projects and references", "Landing checks, fair use", "500 AI actions a month", "AI searches, fair use"] },
     agency: {
       name: "Agency",
       tagline: "For an agency, one criterio per client.",
-      features: ["Up to 15 people in each workspace", "10 workspaces on one plan", "2,000 AI actions a month", "AI searches, fair use"],
+      features: ["Up to 15 people in each workspace", "10 workspaces on one plan", "Shared memory for each client", "Landing checks, fair use", "2,000 AI actions a month", "AI searches, fair use"],
     },
   },
   es: {
     free: {
       name: "Gratis",
       tagline: "Para probarlo.",
-      features: ["Tú y una persona más", "1 proyecto con hasta 12 referencias", "Etiquetas automáticas", "30 acciones de IA al mes", "Tu primer criterio.md no gasta acciones de IA", "30 búsquedas IA distintas al mes"],
+      features: ["Tú y una persona más", "1 proyecto con hasta 12 referencias", "El agente recuerda lo que corregiste", "10 revisiones de landing al mes", "Tu primer criterio.md no gasta acciones de IA", "30 acciones de IA al mes"],
     },
-    personal: { name: "Personal", tagline: "Para quien diseña por su cuenta.", features: ["Tú y una persona más", "Proyectos y referencias sin límite", "300 acciones de IA al mes", "Búsquedas IA con uso justo"] },
-    studio: { name: "Studio", tagline: "Para un equipo de diseño o de producto.", features: ["Hasta 5 personas", "Proyectos y referencias sin límite", "500 acciones de IA al mes", "Búsquedas IA con uso justo"] },
+    personal: { name: "Personal", tagline: "Para quien diseña por su cuenta.", features: ["Tú y una persona más", "Memoria compartida en tus proyectos", "Proyectos y referencias sin límite", "Revisiones de landing, uso razonable", "300 acciones de IA al mes", "Búsquedas IA, uso razonable"] },
+    studio: { name: "Studio", tagline: "Para un equipo de diseño o de producto.", features: ["Hasta 5 personas", "Memoria compartida en tus proyectos", "Proyectos y referencias sin límite", "Revisiones de landing, uso razonable", "500 acciones de IA al mes", "Búsquedas IA, uso razonable"] },
     agency: {
       name: "Agency",
       tagline: "Para una agencia, con un criterio por cliente.",
-      features: ["Hasta 15 personas en cada espacio", "10 espacios con un solo plan", "2.000 acciones de IA al mes", "Búsquedas IA con uso justo"],
+      features: ["Hasta 15 personas en cada espacio", "10 espacios en un plan", "Memoria compartida por cliente", "Revisiones de landing, uso razonable", "2.000 acciones de IA al mes", "Búsquedas IA, uso razonable"],
     },
   },
 };

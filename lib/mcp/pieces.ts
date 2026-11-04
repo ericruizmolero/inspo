@@ -34,6 +34,7 @@ import { addAreaComment, pageComments, resolvePageComment, systemActivity } from
 import { saveAnswer, saveBrief, skipSetupStep } from "../brief";
 import { nextAction, setupState } from "../setup-core";
 import { allow } from "../rate-limit";
+import { FREE_CHECKS_PER_MONTH } from "../plans";
 import { assertQuota } from "../quota";
 import { extractDesign } from "../design-extract";
 import { keptCopy } from "../ref-measured";
@@ -404,6 +405,7 @@ export async function checkLandingPage(ctx: McpCtx, origin: string, input: { pro
   const url = normalizeWebUrl(input.url);
   if (!url) throw new HttpError(400, "That is not a public address.");
   if (!(await allow(`check:${ctx.user.id}`, CHECKS_PER_HOUR, 3_600_000))) throw new HttpError(429, "Too many checks in an hour. Wait and go on.");
+  if (project.workspace.plan === "free" && !(await allow(`check:month:${project.workspace.id}`, FREE_CHECKS_PER_MONTH, 30 * 24 * 3_600_000))) throw new HttpError(402, `The free plan has ${FREE_CHECKS_PER_MONTH} landing checks a month.`);
   const [check, view, system] = await Promise.all([
     checkLanding(url),
     loadShareView(project.workspace.id, project.id, "full", ctx.user.language, null, origin),

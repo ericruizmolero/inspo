@@ -46,6 +46,9 @@ export const PLANS: Plan[] = [
   paid("agency", 149, 15, 10, 2000),
 ];
 
+/** Landing checks open a browser on our side, so the free plan has a monthly cap; paid plans are fair use (the hourly limit) */
+export const FREE_CHECKS_PER_MONTH = 10;
+
 export const DEFAULT_PLAN: PlanKey = "free";
 
 export function planOf(key: string | null | undefined): Plan {
