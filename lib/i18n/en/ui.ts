@@ -981,6 +981,7 @@ export const ui = {
         decides: "Decides", none: "Every starting question is answered.",
         answered: (n: number): string => `Already answered (${n})`, inBrief: "In the Brief",
       },
+      landing: { heading: "The landing", goal: "Goal", proof: "Proof", cta: "Action" },
       learned: {
         heading: "What was learned",
         intro: "What the person corrected or chose in earlier sessions, newest first. Start from it; where it clashes with a decision, the decision wins and you say so.",

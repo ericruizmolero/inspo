@@ -45,6 +45,34 @@ test("an agent walks the setup by asking what comes next, and resumes where it s
   expect(empty.status).toContain("nothing to read");
 });
 
+test("a pick closes the direction, a built outline closes the landing, and the plan is in the file", async () => {
+  await tool("create_project", { name: "Acme" });
+  await tool("start_setup", { project: "Acme", skip: "source" });
+  await tool("start_setup", { project: "Acme", skip: "references" });
+  await tool("answer_question", { project: "Acme", question: "goal", answer: "Book a demo" });
+
+  const pick = await tool("record_learning", { project: "Acme", note: "Version B: the headline names the problem. A hid the action.", section: "hero", pick: true });
+  expect(pick.setup.steps.find((s: { key: string }) => s.key === "direction").state).toBe("done");
+
+  const sections = [{ kind: "hero", job: "Says the problem and asks for the demo", cta: "Book a demo" }, { kind: "testimonials", job: "Removes the doubt that it works", proof: "Three named clients" }];
+  const first = await tool("set_outline", { project: "Acme", name: "Home", goal: "Book a demo", sections });
+  expect(first.setup.steps.find((s: { key: string }) => s.key === "landing").state).toBe("open");
+  await tool("set_outline", { project: "Acme", name: "Campaign", goal: "Join the list", sections: [sections[0]] });
+  const done = await tool("set_outline", { project: "Acme", name: "home", goal: "Book a demo", sections, built: { url: "https://acme.test" } });
+  expect(done.setup.steps.find((s: { key: string }) => s.key === "landing").state).toBe("done");
+
+  const file = (await raw("read_criterio", { project: "Acme", section: "guide" })).result.content[0].text;
+  expect(file).toContain("Book a demo");
+  expect(file).toContain("Join the list");
+  expect(file.match(/### home/gi)?.length, "the same name replaces, whatever the case").toBe(1);
+  expect(file).toContain("**testimonials:** Removes the doubt that it works");
+});
+
+test("a section kind outside the vocabulary is refused", async () => {
+  await tool("create_project", { name: "Acme" });
+  expect((await raw("set_outline", { project: "Acme", name: "Home", goal: "x", sections: [{ kind: "banner", job: "x" }] })).result.isError).toBe(true);
+});
+
 test("the file says when the setup is open", async () => {
   await tool("create_project", { name: "Acme" });
   expect((await raw("read_criterio", { project: "Acme", section: "guide" })).result.content[0].text).toContain("start_setup");

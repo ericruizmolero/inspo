@@ -11,6 +11,7 @@ import { HttpError, newId } from "../workspace-core";
 import { getErrors } from "../i18n";
 import { DOC_PART_MAX, isDocPart, NEVER_MAX, SYSTEM_AREAS, cleanDecision, emptySystem, type ProjectSystem, type SystemArea, type SystemAreaState, type SystemEvidence, type SystemRun, type AreaCuration, type AreaSupport, type SystemSummary, type SystemLearning, LEARNED_MAX, LEARNING_NOTE_MAX, readLearned } from "@/types/system";
 import { readBrand } from "@/types/brand";
+import { OUTLINES_MAX, readOutlines, type LandingOutline } from "@/types/landing";
 
 const P = schema.project;
 const T = schema.inspoItem;
@@ -63,6 +64,7 @@ export async function getSystem(organizationId: string, projectId: string): Prom
     doc: head?.doc ?? {},
     brand: readBrand(head?.brand),
     learned: readLearned(head?.learned),
+    outlines: readOutlines(head?.outlines),
     updatedAt: latest?.toISOString() ?? null,
   };
 }
@@ -83,16 +85,37 @@ export async function setSummary(organizationId: string, projectId: string, summ
 
 /** Something an agent learned with the person, kept on top of the list. Prepended in one statement, so two agents
  *  writing at once both stay; the list is cut to LEARNED_MAX on the way in */
-export async function addLearning(organizationId: string, projectId: string, input: { note: string; area?: SystemArea; by?: string; via?: string }): Promise<SystemLearning> {
+export async function addLearning(organizationId: string, projectId: string, input: { note: string; area?: SystemArea; section?: string; pick?: boolean; by?: string; via?: string }): Promise<SystemLearning> {
   await projectRow(organizationId, projectId);
   const note = String(input.note ?? "").replace(/\s+/g, " ").trim().slice(0, LEARNING_NOTE_MAX);
   if (!note) throw new HttpError(400, (await getErrors()).badBody);
   const now = new Date();
-  const entry: SystemLearning = { id: newId(), note, at: now.toISOString(), ...(input.area && AREA_SET.has(input.area) ? { area: input.area } : {}), ...(input.by ? { by: input.by.slice(0, 120) } : {}), ...(input.via ? { via: input.via.slice(0, 80) } : {}) };
+  const entry: SystemLearning = { id: newId(), note, at: now.toISOString(), ...(input.area && AREA_SET.has(input.area) ? { area: input.area } : {}), ...(input.section ? { section: input.section } : {}), ...(input.pick ? { pick: true as const } : {}), ...(input.by ? { by: input.by.slice(0, 120) } : {}), ...(input.via ? { via: input.via.slice(0, 80) } : {}) };
   await ensureHead(organizationId, projectId, now);
   const list = sql`(jsonb_build_array(${JSON.stringify(entry)}::jsonb) || coalesce(${S.learned}, '[]'::jsonb))`;
   await db.update(S).set({
     learned: sql`(select coalesce(jsonb_agg(e order by i), '[]'::jsonb) from jsonb_array_elements(${list}) with ordinality as x(e, i) where i <= ${LEARNED_MAX})`,
+    updatedAt: now,
+  }).where(and(eq(S.organizationId, organizationId), eq(S.projectId, projectId)));
+  return entry;
+}
+
+/** Saves a landing's outline, by name: the same name replaces it, whole. The write is one statement, so two agents on
+ *  different landings both stay; a new one past OUTLINES_MAX is refused */
+export async function saveOutline(organizationId: string, projectId: string, input: Omit<LandingOutline, "id" | "built"> & { built?: { via?: string; url?: string } | null }): Promise<LandingOutline> {
+  await projectRow(organizationId, projectId);
+  const now = new Date();
+  await ensureHead(organizationId, projectId, now);
+  const [head] = await db.select({ outlines: S.outlines }).from(S).where(and(eq(S.organizationId, organizationId), eq(S.projectId, projectId))).limit(1);
+  const known = readOutlines(head?.outlines);
+  const same = known.find((o) => o.name.toLowerCase() === input.name.trim().toLowerCase());
+  if (!same && known.length >= OUTLINES_MAX) throw new HttpError(400, (await getErrors()).badBody);
+  const built = input.built ? { at: now.toISOString(), ...input.built } : input.built === null ? undefined : same?.built;
+  const [entry] = readOutlines([{ id: same?.id ?? newId(), name: input.name, goal: input.goal, sections: input.sections, built }]);
+  if (!entry) throw new HttpError(400, (await getErrors()).badBody);
+  const key = entry.name.toLowerCase();
+  await db.update(S).set({
+    outlines: sql`(select coalesce(jsonb_agg(e), '[]'::jsonb) from jsonb_array_elements(coalesce(${S.outlines}, '[]'::jsonb)) as x(e) where lower(e->>'name') is distinct from ${key}) || ${JSON.stringify([entry])}::jsonb`,
     updatedAt: now,
   }).where(and(eq(S.organizationId, organizationId), eq(S.projectId, projectId)));
   return entry;
@@ -143,7 +166,7 @@ export async function loadSystems(organizationId: string): Promise<Record<string
   ]);
   const out: Record<string, ProjectSystem> = {};
   for (const id of ids) out[id] = emptySystem(id);
-  for (const h of heads) { out[h.projectId].summary = h.summary; out[h.projectId].run = (h.runJson as SystemRun | null) ?? null; out[h.projectId].doc = h.doc ?? {}; out[h.projectId].learned = readLearned(h.learned); out[h.projectId].updatedAt = h.updatedAt.toISOString(); }
+  for (const h of heads) { out[h.projectId].summary = h.summary; out[h.projectId].run = (h.runJson as SystemRun | null) ?? null; out[h.projectId].doc = h.doc ?? {}; out[h.projectId].outlines = readOutlines(h.outlines); out[h.projectId].learned = readLearned(h.learned); out[h.projectId].updatedAt = h.updatedAt.toISOString(); }
   for (const r of rows) {
     const sys = out[r.projectId];
     const i = SYSTEM_AREAS.indexOf(r.area as SystemArea);

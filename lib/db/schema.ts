@@ -760,6 +760,8 @@ export const projectSystem = pgTable("project_system", {
   /** What an agent learned working with the person (types/system.ts SystemLearning), newest first: criterio.md's
    *  "What was learned". Written over MCP (record_learning) */
   learned: jsonb("learned").$type<unknown>(),
+  /** The landings planned for the project (types/landing.ts). Written over MCP (set_outline) */
+  outlines: jsonb("outlines").$type<unknown>(),
   /** The first time someone copied or downloaded the project's criterio.md: the file left the app */
   exportedAt: timestamp("exported_at", { withTimezone: true, mode: "date" }),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),

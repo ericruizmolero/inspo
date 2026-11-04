@@ -11,7 +11,7 @@
 // it as it is and let a block be edited: the system stays the one source, the file is its other face.
 import { SYSTEM_AREAS, confidenceOf, type ProjectSystem, type SystemArea } from "@/types/system";
 import { skillSections } from "@/lib/md-skills";
-import { brandBrought, setupState } from "@/lib/setup-core";
+import { brandBrought, built, picked, setupState } from "@/lib/setup-core";
 import { areaSkillLines } from "@/lib/area-skills";
 import { areaTokenLines } from "@/lib/area-tokens";
 import { hostOf, readableDomain } from "@/lib/url";
@@ -100,6 +100,8 @@ export interface CriterioMdInput {
     questions: { heading: string; intro: string; decides: string; none: string; answered: (n: number) => string; inBrief: string };
     /** "What was learned": what agents wrote down with the person (types/system.ts SystemLearning) */
     learned: { heading: string; intro: string; with: (who: string, app: string) => string };
+    /** "The landing": each landing planned, its goal and its sections in order (types/landing.ts) */
+    landing: { heading: string; goal: string; proof: string; cta: string };
     /** Every area's never lines gathered in one place, for the reader who reads one list before building */
     rejects: { heading: string; intro: string };
     clientCopy: string;
@@ -296,7 +298,7 @@ export function criterioBlocks({ project, system, items: allItems, labels, strin
   const derived = css.length ? [] : areaTokenLines(system, labels);
   // A setup still open says so first: the agent follows it, and the session loop starts when it ends
   const stored = readBrief(brief);
-  const setup = setupState({ project: true, brief: stored, brand: !!stored?.clientItemId || brandBrought(system.brand), refs: board.length, pass: !!system.run, picked: false, built: false });
+  const setup = setupState({ project: true, brief: stored, brand: !!stored?.clientItemId || brandBrought(system.brand), refs: board.length, pass: !!system.run, picked: picked(system), built: built(system) });
   // Start here: the walk, before the rules it leans on. Written from the project as it stands, so it is never typed over
   const open = SYSTEM_AREAS.flatMap((key) => {
     const a = system.areas.find((x) => x.area === key);
@@ -311,7 +313,7 @@ export function criterioBlocks({ project, system, items: allItems, labels, strin
   // What agents learned with the person, newest first. A record of the team's sessions: a client's copy goes without it
   const learnedLines = clean ? [] : (system.learned ?? []).map((l) => {
     const who = l.by && l.via ? strings.learned.with(l.by, l.via) : l.by ?? l.via ?? "";
-    return `- ${l.area ? `**${title(l.area, labels[l.area])}:** ` : ""}${one(l.note)} _(${[who, l.at.slice(0, 10)].filter(Boolean).join(", ")})_`;
+    return `- ${l.area ? `**${title(l.area, labels[l.area])}:** ` : ""}${l.section ? `(${l.section}) ` : ""}${one(l.note)} _(${[who, l.at.slice(0, 10)].filter(Boolean).join(", ")})_`;
   });
   const guideLines = strings.guide.lines({
     project, open,
@@ -329,6 +331,14 @@ export function criterioBlocks({ project, system, items: allItems, labels, strin
   blocks.push({ kind: "section", id: "guide", heading: title("guide", strings.guide.heading), lines: setup.complete ? guideLines : [strings.guide.setupOpen, "", ...guideLines] });
   blocks.push({ kind: "section", id: "questions", heading: title("questions", strings.questions.heading), lines: asked.lines });
   if (learnedLines.length) blocks.push({ kind: "section", id: "learned", heading: title("learned", strings.learned.heading), lines: [`> ${strings.learned.intro}`, "", ...learnedLines] });
+  const outlines = system.outlines ?? [];
+  if (outlines.length) blocks.push({ kind: "section", id: "landing", heading: title("landing", strings.landing.heading), lines: outlines.flatMap((o) => [
+    `### ${one(o.name)}`, "", `**${strings.landing.goal}:** ${one(o.goal)}`, "",
+    ...o.sections.map((x, i) => {
+      const refs = x.refs.map((id) => code.get(id)).filter(Boolean);
+      return `${i + 1}. **${x.kind}:** ${one(x.job)}${x.proof ? ` ${strings.landing.proof}: ${one(x.proof)}.` : ""}${x.cta ? ` ${strings.landing.cta}: ${one(x.cta)}.` : ""}${refs.length ? ` (${refs.join(", ")})` : ""}`;
+    }), "",
+  ]) });
   blocks.push({ kind: "section", id: "use", heading: title("use", strings.use.heading), ...byHandOr("use", useLines) });
   if (rejected.length) blocks.push({ kind: "section", id: "rejects", heading: title("rejects", strings.rejects.heading), mark: strings.required, lines: [`> ${strings.rejects.intro}`, "", ...rejected] });
   if (about?.trim()) blocks.push({ kind: "section", id: "project", heading: title("project", strings.project), lines: [about.trim()] });
@@ -601,7 +611,7 @@ export function partMd(blocks: CriterioBlock[], part: CriterioPart = "all"): str
   return blocksToMd(blocks.filter((b) => part === "decisions"
     ? b.kind !== "section" || !["refs", "content"].includes(b.id)
     : part === "guide"
-      ? b.kind === "head" || section(b, "guide", "questions", "learned", "use", "rejects")
+      ? b.kind === "head" || section(b, "guide", "questions", "learned", "landing", "use", "rejects")
       : b.kind === "head" || section(b, "use") || (b.kind === "area" && b.area === part)));
 }
 

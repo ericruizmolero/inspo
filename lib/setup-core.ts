@@ -4,6 +4,7 @@
 import { PLAYBOOK_QUESTIONS, SETUP_ROLES, openQuestions } from "./playbook-questions";
 import type { Brief } from "@/types/brief";
 import { sectionFilled, type BrandSpec } from "@/types/brand";
+import type { ProjectSystem } from "@/types/system";
 
 /** A brand was brought in when it holds these: the other sections can read filled from the project alone */
 export const brandBrought = (brand: BrandSpec | null | undefined) => !!brand && (["logo", "color", "typography"] as const).some((k) => sectionFilled(brand, k));
@@ -15,6 +16,9 @@ export const BUILD_KEYS = ["direction", "landing"] as const;
 export type BuildKey = (typeof BUILD_KEYS)[number];
 /** The steps a person may decline */
 export const SKIPPABLE: readonly SetupKey[] = ["source", "references"];
+
+export const picked = (s: Pick<ProjectSystem, "learned">) => !!s.learned?.some((l) => l.pick);
+export const built = (s: Pick<ProjectSystem, "outlines">) => !!s.outlines?.some((o) => o.built);
 
 export interface SetupFacts {
   project: boolean;
@@ -66,8 +70,8 @@ const ACTIONS: Record<SetupKey | BuildKey, string> = {
   questions: "Save what you read with answer_question and source \"read\". Show those answers once, as one list, and let the person correct them. Then ask the questions in `ask`, one at a time. Only `goal` stops the setup: an unknown answer can stay open.",
   references: "Ask for landing pages the person likes, and what to take from each, in their words. Save each with add_reference and that note. References are optional: if the person only wants to keep the brand, call start_setup with skip: \"references\". For a new brand, say once that the file will be generic without them.",
   criterio: "Call run_pass. It writes the file from what is in the project.",
-  direction: "The setup is complete. Offer to build a landing. On a no, stop here: nothing is unfinished. On a yes, build 2 heroes with the same copy and a different direction, and ask which serves the goal better and why.",
-  landing: "Build the landing section by section, each one serving the goal.",
+  direction: "The setup is complete. Offer to build a landing. On a no, stop here: nothing is unfinished. On a yes, build 2 heroes with the same copy and a different direction in type, layout, density or tone, never colour alone. With a brand brought in, differ in layout and density only. Ask which serves the goal better and why. Save the answer with record_learning, with section \"hero\", pick: true, what was rejected, and why. If it settles an area, also call propose_decision.",
+  landing: "Call set_outline with the landing's goal and its sections in order. Each section's job says what it does for the goal: a section that does nothing for it is cut. Build section by section. When the landing exists, call set_outline again with built.",
 };
 
 export const nextAction = (s: SetupState): string | null => s.next && ACTIONS[s.next];

@@ -6,7 +6,8 @@ import "server-only";
 import { z } from "zod";
 import { SYSTEM_AREAS } from "@/types/system";
 import type { McpCtx } from "./auth";
-import { CRITERIO_SECTIONS, ProjectArg as Project, QUESTION_IDS, addPiece, answerQuestion, listProjects, listReferences, newProject, proposeDecision, readCriterio, readReference, measureSite, recordLearning, runPass, startSetup } from "./pieces";
+import { CRITERIO_SECTIONS, ProjectArg as Project, QUESTION_IDS, addPiece, answerQuestion, listProjects, listReferences, newProject, proposeDecision, readCriterio, readReference, measureSite, recordLearning, runPass, setOutline, startSetup } from "./pieces";
+import { OUTLINE_SECTIONS_MAX, OUTLINE_TEXT_MAX, SECTION_KINDS } from "@/types/landing";
 import { ANSWER_SOURCES } from "@/types/brief";
 import { SKIPPABLE } from "../setup-core";
 import { LEARNING_NOTE_MAX } from "@/types/system";
@@ -139,9 +140,34 @@ export const TOOLS: Tool[] = [
       project: Project,
       note: z.string().min(1).max(LEARNING_NOTE_MAX).describe("What was learned, in one short sentence."),
       area: z.enum(SYSTEM_AREAS).optional().describe("The area it is about, when it is about one."),
+      section: z.enum(SECTION_KINDS).optional().describe("The kind of section it is about, when it is about one. It holds for every landing of the project."),
+      pick: z.boolean().optional().describe("True when the person chose between two versions: the note says which, what was rejected, and why."),
     }),
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
     run: (i, ctx, origin) => recordLearning(ctx, origin, i),
+  }),
+  tool({
+    name: "set_outline", title: "Plan a landing",
+    description: [
+      "Saves a landing's plan: its goal and its sections in order. The same name replaces that plan, whole; a project can hold several landings. It is a plan, not a decision, so it goes straight in, and criterio.md shows it under the landing.",
+      "A landing exists to move a visitor to one action, so start from the goal. Each section's job says what it does for that action, in a sentence: explains the problem, removes a doubt, proves the claim, asks for the action. A section with no job towards the goal is cut, however good it looks. Taste comes from the project's decisions, not from this plan.",
+      "When the landing is built, call it again with built, and its address if it has one.",
+    ].join("\n"),
+    input: z.object({
+      project: Project,
+      name: z.string().min(1).max(80).describe("The landing's name: home, demo, a campaign."),
+      goal: z.string().min(1).max(OUTLINE_TEXT_MAX).describe("The one thing someone should do after seeing the page."),
+      sections: z.array(z.object({
+        kind: z.enum(SECTION_KINDS).describe("The kind of section."),
+        job: z.string().min(1).max(OUTLINE_TEXT_MAX).describe("What this section does for the goal."),
+        proof: z.string().max(OUTLINE_TEXT_MAX).optional().describe("What backs it, from the project's answers. Never invented."),
+        cta: z.string().max(OUTLINE_TEXT_MAX).optional().describe("The action it asks for."),
+        refs: z.array(z.string().max(60)).max(12).default([]).describe("The ids of the references it draws from (list_references)."),
+      })).min(1).max(OUTLINE_SECTIONS_MAX),
+      built: z.object({ url: z.string().max(2000).optional() }).optional().describe("Set when the landing exists."),
+    }),
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+    run: (i, ctx, origin) => setOutline(ctx, origin, i),
   }),
   tool({
     name: "bring_brand", title: "Bring in a brand",

@@ -198,7 +198,7 @@ export default function SystemDoc({ blocks, system, boardIds, itemOf, imageOf, r
     <button key={id} type="button" onClick={() => go(`sdoc-${id}`)} title={label}><span className="sdoc-toc__name">{label}</span>{extra}</button>
   );
   const first = (ids: string[]) => ids.find((id) => sectionOf(id));
-  const startAt = first(["guide", "questions", "learned", "use", "rejects"]);
+  const startAt = first(["guide", "questions", "learned", "landing", "use", "rejects"]);
   const projectAt = project ? "project" : first(["brief", "content"]) ?? (summary ? "summary" : first(["brand-intro"]));
   const buildAt = first(["pages", "brand-tokens", "area-tokens"]);
   // The skills switched on are one line, with how many: it shows the moment one is on

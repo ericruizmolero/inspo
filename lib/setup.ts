@@ -4,7 +4,7 @@ import { and, eq } from "drizzle-orm";
 import { db, schema } from "./db";
 import { readBrief } from "@/types/brief";
 import { getSystem } from "./system/areas";
-import { brandBrought, type SetupFacts } from "./setup-core";
+import { brandBrought, built, picked, type SetupFacts } from "./setup-core";
 
 const P = schema.project, PI = schema.projectItem;
 
@@ -16,5 +16,5 @@ export async function setupFacts(organizationId: string, projectId: string): Pro
   ]);
   const brief = readBrief(row?.brief);
   const brand = !!brief?.clientItemId || brandBrought(system.brand);
-  return { project: !!row, brief, brand, refs: refs.length, pass: !!system.run, picked: false, built: false };
+  return { project: !!row, brief, brand, refs: refs.length, pass: !!system.run, picked: picked(system), built: built(system) };
 }

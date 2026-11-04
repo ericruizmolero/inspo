@@ -1,0 +1,1 @@
+ALTER TABLE "project_system" ADD COLUMN "outlines" jsonb;

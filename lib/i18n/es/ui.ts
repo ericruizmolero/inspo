@@ -972,6 +972,7 @@ export const ui: typeof EnUi = {
         decides: "Decide", none: "Todas las preguntas de arranque están respondidas.",
         answered: (n: number): string => `Ya respondidas (${n})`, inBrief: "En el Brief",
       },
+      landing: { heading: "La landing", goal: "Objetivo", proof: "Prueba", cta: "Acción" },
       learned: {
         heading: "Lo aprendido",
         intro: "Lo que la persona corrigió o eligió en sesiones anteriores, lo último primero. Parte de ahí; si choca con una decisión, manda la decisión y lo dices.",

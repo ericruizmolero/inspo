@@ -1,3 +1,4 @@
+import type { LandingOutline } from "./landing";
 import type { BrandSpec } from "./brand";
 // The project's system: what the project has decided about its design, area by area, alive from
 // the first reference. The board feeds it (a model proposes), the team confirms or writes over it,
@@ -106,6 +107,8 @@ export interface ProjectSystem {
   brand?: BrandSpec | null;
   /** What agents learned working with the person, newest first (criterio.md's "What was learned") */
   learned?: SystemLearning[];
+  /** The landings planned for the project (types/landing.ts) */
+  outlines?: LandingOutline[];
   /** ISO; null when nothing was ever written */
   updatedAt: string | null;
 }
@@ -116,6 +119,10 @@ export interface SystemLearning {
   note: string;
   /** The area it is about, when it is about one */
   area?: SystemArea;
+  /** The kind of section it is about (lib/taxonomy.ts SECTIONS): it holds for every landing of the project */
+  section?: string;
+  /** The person chose between two versions: this note says which and why, and closes the Direction step */
+  pick?: true;
   /** Who it was learned with, and the AI client that wrote it down */
   by?: string;
   via?: string;
@@ -128,7 +135,7 @@ export const LEARNING_NOTE_MAX = 600;
 /** The stored list read into its shape: unknown keys drop, notes are cut, newest first, at most LEARNED_MAX */
 /** What was learned, as the model passes read it: the person's corrections outrank what a reference suggests */
 export function learnedPrompt(learned: SystemLearning[] | undefined): string {
-  return learned?.length ? `LEARNED: what the team corrected or chose while working with an agent, newest first. Keep to it unless the team decided otherwise since:\n${learned.map((l) => `- ${l.area ? `${l.area}: ` : ""}${l.note}`).join("\n")}` : "";
+  return learned?.length ? `LEARNED: what the team corrected or chose while working with an agent, newest first. Keep to it unless the team decided otherwise since:\n${learned.map((l) => `- ${[l.area, l.section].filter(Boolean).map((x) => `${x}: `).join("")}${l.note}`).join("\n")}` : "";
 }
 
 export function readLearned(v: unknown): SystemLearning[] {
@@ -140,8 +147,8 @@ export function readLearned(v: unknown): SystemLearning[] {
     const note = str(r.note, LEARNING_NOTE_MAX), id = str(r.id, 40), at = str(r.at, 40);
     if (!note || !id || !at) return [];
     const area = (SYSTEM_AREAS as readonly string[]).includes(r.area as string) ? (r.area as SystemArea) : undefined;
-    const by = str(r.by, 120), via = str(r.via, 80);
-    return [{ id, note, at, ...(area ? { area } : {}), ...(by ? { by } : {}), ...(via ? { via } : {}) }];
+    const by = str(r.by, 120), via = str(r.via, 80), section = str(r.section, 40);
+    return [{ id, note, at, ...(area ? { area } : {}), ...(section ? { section } : {}), ...(r.pick === true ? { pick: true as const } : {}), ...(by ? { by } : {}), ...(via ? { via } : {}) }];
   }).sort((p, q) => q.at.localeCompare(p.at)).slice(0, LEARNED_MAX);
 }
 
