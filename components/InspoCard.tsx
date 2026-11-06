@@ -84,7 +84,7 @@ function usePostFit(body: React.RefObject<HTMLParagraphElement | null>): number 
       const w = box.clientWidth;
       if (!w) return;
       const pad = parseFloat(getComputedStyle(box).paddingTop) || 0;
-      const r = Math.min(1.4, Math.max(0.45, (el.offsetTop + el.scrollHeight + pad) / w));
+      const r = Math.min(1.4, Math.max(0.3, (el.offsetTop + el.scrollHeight + pad) / w));
       setRatio((was) => (was !== null && Math.abs(was - r) < 0.005 ? was : Math.round(r * 1000) / 1000));
     };
     read();
