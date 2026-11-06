@@ -24,8 +24,10 @@ function said(names: string[], and: string): string {
   return names.length > 1 ? `${names.slice(0, -1).join(", ")} ${and} ${names[names.length - 1]}` : names[0] ?? "";
 }
 
-export function boardNudges({ t, count, read, stale, empty, others, talk, vote, quietRef, kinds, oldRef, seed, noReason, twins, unused = 0, shared, missing = [], pace, onAdd, onStart, onSystem, onPolish, onPerson, onOpen, onKind, onSearch }: {
+export function boardNudges({ t, count, read, stale, empty, others, talk, vote, quietRef, kinds, oldRef, seed, noReason, twins, unused = 0, shared, missing = [], pace, onAdd, onStart, onSystem, onPolish, onPerson, onOpen, onKind, onSearch, pictureOf }: {
   t: Dict;
+  /** A reference's small picture, when it has one: Tino shows it and says "this one" */
+  pictureOf?: (item: InspoItem) => string | null;
   /** References on the board */
   count: number;
   /** The system has read the board at least once */
@@ -79,7 +81,7 @@ export function boardNudges({ t, count, read, stale, empty, others, talk, vote, 
   // does not open with the same thing every time
   const urgent: TinoNudge[] = [];
   const list: TinoNudge[] = [];
-  if (talk) urgent.push({ key: `talk:${talk.id}`, title: b.talkTitle, text: b.talkText(talk.who, refName(t, talk.item.name), talk.body), act: b.talkAct, mood: "accomplice", go: () => onOpen(talk.item) });
+  if (talk) { const n = named(t, talk.item, pictureOf); urgent.push({ key: `talk:${talk.id}`, title: b.talkTitle, text: b.talkText(talk.who, n.name, talk.body), thumb: n.thumb, act: b.talkAct, mood: "accomplice", go: () => onOpen(talk.item) }); }
   // The key does not carry the count: "Later" holds for the visit even as votes come in
   if (vote?.toClose) list.push({ key: "vote:close", title: b.closeTitle, text: b.closeText, act: b.closeAct, mood: "judge", go: onPolish });
   else if (vote && vote.left > 0) list.push({ key: "vote", title: b.voteTitle, text: b.voteText(vote.left), act: b.voteAct, mood: "skeptic", go: onPolish });
@@ -91,9 +93,9 @@ export function boardNudges({ t, count, read, stale, empty, others, talk, vote, 
   if (read && empty.length) list.push({ key: `gaps:${empty.join("+")}`, title: b.gapsTitle, text: b.gapsText(said(empty.slice(0, 3).map((a) => t.system.areas[a].toLowerCase()), b.and)), act: b.gapsAct, mood: "suspect", go: onAdd });
   const top = others[0];
   if (top) list.push({ key: `others:${top.who}:${top.n}`, title: b.othersTitle, text: b.othersText(top.who, top.n), act: b.othersAct, mood: "smug", go: () => onPerson(top.who) });
-  if (quietRef) list.push({ key: `quiet:${quietRef.item.id}`, title: b.quietTitle, text: b.quietText(quietRef.who, refName(t, quietRef.item.name)), act: b.quietAct, mood: "suspect", go: () => onOpen(quietRef.item) });
+  if (quietRef) { const n = named(t, quietRef.item, pictureOf); list.push({ key: `quiet:${quietRef.item.id}`, title: b.quietTitle, text: b.quietText(quietRef.who, n.name), thumb: n.thumb, act: b.quietAct, mood: "suspect", go: () => onOpen(quietRef.item) }); }
   if (count >= MANY_REFS && !vote) list.push({ key: "polish", title: b.polishTitle, text: b.polishText(count), act: b.polishAct, mood: "judge", go: onPolish });
-  if (oldRef) list.push({ key: `old:${oldRef.item.id}`, title: b.oldTitle, text: cap(b.oldText(refName(t, oldRef.item.name), b.howLong(oldRef.days))), act: b.oldAct, mood: "skeptic", go: () => onOpen(oldRef.item) });
+  if (oldRef) { const n = named(t, oldRef.item, pictureOf); list.push({ key: `old:${oldRef.item.id}`, title: b.oldTitle, text: cap(b.oldText(n.name, b.howLong(oldRef.days))), thumb: n.thumb, act: b.oldAct, mood: "skeptic", go: () => onOpen(oldRef.item) }); }
   // What the board holds that is worth a look of its own: one kind per visit, never all of them in a row
   if (onKind && kinds) {
     const worth = (["video", "post", "text"] as const).filter((k) => (kinds[k] ?? 0) >= (k === "text" ? 1 : 2));
@@ -222,6 +224,12 @@ function refName(t: Dict, name: string): string {
   const m = name.match(/^(.+?)\s+[·•|]\s+.+$/);
   return m ? t.tino.postOf(m[1].trim()) : name;
 }
+/** How a reference is named in a sentence: with its picture by the words, "this one" (the title, often in another
+ *  language and cut, read badly: Eric, 06-11); without one, by its name */
+function named(t: Dict, item: InspoItem, pictureOf?: (item: InspoItem) => string | null): { name: string; thumb?: string } {
+  const thumb = pictureOf?.(item) ?? undefined;
+  return thumb ? { name: t.tino.thisOne, thumb } : { name: refName(t, item.name) };
+}
 /** A sentence that opens with a name Tino made lower-case ("el post de…") starts upper-case */
 const cap = (text: string): string => text.charAt(0).toUpperCase() + text.slice(1);
 
@@ -258,11 +266,12 @@ export function quietReference(items: InspoItem[], comments: CommentMap, me: str
 }
 
 /** What he says when asked with nothing pending: how the board stands, and its newest reference */
-export function boardIdle(t: Dict, items: InspoItem[], parse: (d: string) => number, onOpen: (item: InspoItem) => void): TinoNudge {
+export function boardIdle(t: Dict, items: InspoItem[], parse: (d: string) => number, onOpen: (item: InspoItem) => void, pictureOf?: (item: InspoItem) => string | null): TinoNudge {
   const b = t.tino.board;
   const last = [...items].filter((i) => i.id).sort((a, c) => parse(c.date) - parse(a.date))[0];
   if (!last) return { key: "idle", title: b.idleTitle, text: b.idleText, mood: "watching" };
-  return { key: "idle", title: b.idleTitle, text: b.idleBoard(items.length, refName(t, last.name), last.addedBy && last.addedBy !== "Both" ? last.addedBy.split(" ")[0] : ""), act: b.idleAct, mood: "watching", go: () => onOpen(last) };
+  const n = named(t, last, pictureOf);
+  return { key: "idle", title: b.idleTitle, text: b.idleBoard(items.length, n.name, last.addedBy && last.addedBy !== "Both" ? last.addedBy.split(" ")[0] : ""), thumb: n.thumb, act: b.idleAct, mood: "watching", go: () => onOpen(last) };
 }
 
 /** Who added what to the board this week, other than me, most first */
@@ -366,8 +375,10 @@ export function systemIdle(t: Dict, areas: SystemAreaState[], now: number, onGo:
 /** In the Inbox, when nobody searches: what is loose here pushes towards a project, or out. A teammate talking to
  *  you first; the rest takes turns from one visit to the next (`seed`). Never "nothing to say" (Eric, 06-11: "tiene
  *  que ser proactivo y decirte cosas que te inciten a hacer otras siempre") */
-export function inboxNudges({ t, items, comments, meId, me, now, seed = 0, tags, kindOf, host, parse, onOpen, onKind, onSearch, onFilter, onProject, label, projects = [], onPerson }: {
+export function inboxNudges({ t, items, comments, meId, me, now, seed = 0, tags, kindOf, host, parse, onOpen, onKind, onSearch, onFilter, onProject, label, projects = [], onPerson, pictureOf }: {
   t: Dict;
+  /** A reference's small picture, when it has one: Tino shows it and says "this one" */
+  pictureOf?: (item: InspoItem) => string | null;
   /** What is in the Inbox */
   items: InspoItem[];
   comments: CommentMap;
@@ -397,12 +408,12 @@ export function inboxNudges({ t, items, comments, meId, me, now, seed = 0, tags,
   const urgent: TinoNudge[] = [];
   const list: TinoNudge[] = [];
   const talk = unansweredTalk(items, comments, meId, now);
-  if (talk) urgent.push({ key: `talk:${talk.id}`, title: b.talkTitle, text: b.talkText(talk.who, refName(t, talk.item.name), talk.body), act: b.talkAct, mood: "accomplice", go: () => onOpen(talk.item) });
+  if (talk) { const n = named(t, talk.item, pictureOf); urgent.push({ key: `talk:${talk.id}`, title: b.talkTitle, text: b.talkText(talk.who, n.name, talk.body), thumb: n.thumb, act: b.talkAct, mood: "accomplice", go: () => onOpen(talk.item) }); }
   // The one that has been loose the longest: to a project or out
   const dated = items.filter((i) => i.id).map((i) => ({ i, when: parse(i.date) })).filter(({ when }) => when > 0);
   const oldest = [...dated].sort((a, c) => a.when - c.when)[0];
   const DAY = 24 * 3600 * 1000;
-  if (oldest && now - oldest.when > 3 * DAY) list.push({ key: `loose:${oldest.i.id}`, title: x.looseTitle, text: cap(x.looseText(refName(t, oldest.i.name), b.howLong(Math.floor((now - oldest.when) / DAY)))), act: x.looseAct, mood: "skeptic", go: () => onOpen(oldest.i) });
+  if (oldest && now - oldest.when > 3 * DAY) { const n = named(t, oldest.i, pictureOf); list.push({ key: `loose:${oldest.i.id}`, title: x.looseTitle, text: cap(x.looseText(n.name, b.howLong(Math.floor((now - oldest.when) / DAY)))), thumb: n.thumb, act: x.looseAct, mood: "skeptic", go: () => onOpen(oldest.i) }); }
   // Enough loose for a project of their own
   if (items.length >= FEW_REFS) list.push({ key: "project", title: x.projectTitle, text: x.projectText(items.length), act: x.projectAct, mood: "accomplice", go: onProject });
   // What a good part of them share: that is a project asking to be named
@@ -420,16 +431,17 @@ export function inboxNudges({ t, items, comments, meId, me, now, seed = 0, tags,
   // why, what a teammate saved and nobody touched, what looks like a project that already exists
   const used = new Set<string>([oldest?.i.id, talk?.item.id].filter((v): v is string => !!v));
   const pickOne = (xs: InspoItem[]) => xs.find((i) => i.id && !used.has(i.id));
-  const said = (i: InspoItem) => { used.add(i.id!); return refName(t, i.name); };
+  const said = (i: InspoItem) => { used.add(i.id!); return named(t, i, pictureOf).name; };
+  const thumbOf = (i: InspoItem) => named(t, i, pictureOf).thumb;
   const days = (i: InspoItem) => Math.floor((now - parse(i.date)) / DAY);
   const talked = (i: InspoItem) => comments[i.id ?? ""]?.filter((c) => c.body.trim()).length ?? 0;
   const byAge = [...items].filter((i) => parse(i.date) > 0).sort((a, c) => parse(a.date) - parse(c.date));
   const chat = pickOne([...items].filter((i) => talked(i) > 0).sort((a, c) => talked(c) - talked(a)));
-  if (chat) { const n = talked(chat); list.push({ key: `talked:${chat.id}`, title: x.talkedTitle, text: cap(x.talkedText(said(chat), n)), act: x.talkedAct, mood: "suspect", go: () => onOpen(chat) }); }
+  if (chat) { const n = talked(chat); list.push({ key: `talked:${chat.id}`, title: x.talkedTitle, text: cap(x.talkedText(said(chat), n)), thumb: thumbOf(chat), act: x.talkedAct, mood: "suspect", go: () => onOpen(chat) }); }
   const mine = pickOne(byAge.filter((i) => i.addedBy === me && !i.note.trim() && !talked(i) && days(i) >= 14));
-  if (mine) { const long = b.howLong(days(mine)); list.push({ key: `mine:${mine.id}`, title: x.mineTitle, text: x.mineText(said(mine), long), act: x.mineAct, mood: "skeptic", go: () => onOpen(mine) }); }
+  if (mine) { const long = b.howLong(days(mine)); list.push({ key: `mine:${mine.id}`, title: x.mineTitle, text: x.mineText(said(mine), long), thumb: thumbOf(mine), act: x.mineAct, mood: "skeptic", go: () => onOpen(mine) }); }
   const theirs = pickOne(byAge.filter((i) => i.addedBy && i.addedBy !== me && i.addedBy !== "Both" && !talked(i) && days(i) >= 7));
-  if (theirs) { const who = theirs.addedBy.split(" ")[0], long = b.howLong(days(theirs)); list.push({ key: `theirs:${theirs.id}`, title: x.theirsTitle, text: x.theirsText(who, said(theirs), long), act: x.mineAct, mood: "suspect", go: () => onOpen(theirs) }); }
+  if (theirs) { const who = theirs.addedBy.split(" ")[0], long = b.howLong(days(theirs)); list.push({ key: `theirs:${theirs.id}`, title: x.theirsTitle, text: x.theirsText(who, said(theirs), long), thumb: thumbOf(theirs), act: x.mineAct, mood: "suspect", go: () => onOpen(theirs) }); }
   // The loose one that shares the most with a project's board: three tags or more in common
   const selsOf = (i: InspoItem) => { const v = viewOf(tags[i.web]); return v ? [...v.traits, ...v.palette.map((c) => `c:${c}`), ...v.type.map((y) => `y:${y}`), ...v.layout.map((l) => `l:${l}`), ...v.keywords.map((k) => `k:${k}`)] : []; };
   const boards = projects.filter((p) => p.items.length >= 3).map((p) => ({ name: p.name, sels: new Set(p.items.flatMap(selsOf)) }));
@@ -439,7 +451,7 @@ export function inboxNudges({ t, items, comments, meId, me, now, seed = 0, tags,
     const mineSels = new Set(selsOf(i));
     for (const p of boards) { let n = 0; for (const sel of mineSels) if (p.sels.has(sel)) n++; if (n >= 3 && (!fit || n > fit.n)) fit = { item: i, project: p.name, n }; }
   }
-  if (fit) { const f = fit; list.push({ key: `fits:${f.item.id}`, title: x.fitsTitle, text: cap(x.fitsText(said(f.item), f.project)), act: x.mineAct, mood: "smug", go: () => onOpen(f.item) }); }
+  if (fit) { const f = fit; list.push({ key: `fits:${f.item.id}`, title: x.fitsTitle, text: cap(x.fitsText(said(f.item), f.project)), thumb: thumbOf(f.item), act: x.mineAct, mood: "smug", go: () => onOpen(f.item) }); }
   // This week's saving that went nowhere
   const week = items.filter((i) => i.addedBy === me && now - parse(i.date) < 7 * DAY && now - parse(i.date) >= 0).length;
   if (week >= 3 && onPerson) list.push({ key: `week:${week}`, title: x.weekTitle, text: x.weekText(week), act: b.sharedAct, mood: "watching", go: () => onPerson(me) });
@@ -448,9 +460,10 @@ export function inboxNudges({ t, items, comments, meId, me, now, seed = 0, tags,
 }
 
 /** What he says in the Inbox when asked with nothing pending: the newest loose one, and where it goes */
-export function inboxIdle(t: Dict, items: InspoItem[], parse: (d: string) => number, onOpen: (item: InspoItem) => void): TinoNudge {
+export function inboxIdle(t: Dict, items: InspoItem[], parse: (d: string) => number, onOpen: (item: InspoItem) => void, pictureOf?: (item: InspoItem) => string | null): TinoNudge {
   const x = t.tino.inbox;
   const last = [...items].filter((i) => i.id).sort((a, c) => parse(c.date) - parse(a.date))[0];
   if (!last) return { key: "idle", title: t.tino.board.idleTitle, text: t.tino.board.idleText, mood: "watching" };
-  return { key: "idle", title: t.tino.board.idleTitle, text: x.idleText(items.length, refName(t, last.name)), act: x.looseAct, mood: "watching", go: () => onOpen(last) };
+  const n = named(t, last, pictureOf);
+  return { key: "idle", title: t.tino.board.idleTitle, text: x.idleText(items.length, n.name), thumb: n.thumb, act: x.looseAct, mood: "watching", go: () => onOpen(last) };
 }

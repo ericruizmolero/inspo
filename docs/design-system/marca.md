@@ -31,12 +31,13 @@ Dentro de la app, el mismo dibujo es `TinoMark` (`components/TinoMark.tsx`): el 
 
 ## Tino en la librería
 
-Esta página enseña a Tino en dos bloques, cada uno con sus ficheros para descargar:
+Esta página enseña a Tino en tres bloques, cada uno con sus ficheros para descargar:
 
+- **Logotipo**: Tino plano a los tamaños de la app, en la página y sobre el cromo. Descarga el SVG en blanco (`#FFFFFF`, para fondos oscuros) y en negro (tinta `#1B1B18`, para claros), transparentes y con el visor hueco (`public/tino/tino-logo-blanco.svg` y `tino-logo-negro.svg`, del mismo trazado que `TinoMark`).
 - **Tino**: el peluche en 3D (`Tino`, `components/Tino.tsx`) con el tema de la página y chips para probar sus gestos. Descarga el modelo de la app (`public/tino/tino-corta.glb`), el dibujo plano sin WebGL (`public/tino/tino-plano.svg`) y el `.blend` con `tino.py` (en la landing). "Manual de Tino" abre el artefacto del equipo con qué está hecha cada parte y dónde se cambia: <https://claude.ai/artifact/DU8qWh2gkV1vWd6GMD8dBM>.
 - **Favicon: Tino plano**: `app/icon.svg` leído tal como se sirve, en claro y en oscuro, sus tamaños y su ficha, y cada fichero (SVG, ICO, PNG 256, 180 y 512).
 
-Un fichero nuevo de la marca entra en la lista de descargas de su bloque (`TINO_3D_FILES` o `TINO_FILES` en `components/design-library/Specimens.tsx`) en el mismo trabajo.
+Un fichero nuevo de la marca entra en la lista de descargas de su bloque (`LOGO_FILES`, `TINO_3D_FILES` o `TINO_FILES` en `components/design-library/Specimens.tsx`) en el mismo trabajo.
 
 ## Nombre
 

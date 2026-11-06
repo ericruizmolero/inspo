@@ -2,7 +2,7 @@
 
 Cómo decide Tino qué decir sin que nadie le pregunte: de dónde saca cada aviso, en qué orden los enseña, qué recuerda y cada umbral que se puede tocar para afinarlo. Lo que dice cada aviso, con su botón, está en las tablas por vista; las reglas de tono, en [Patrones](../patrones.md#tino-toma-la-iniciativa). → [proactivo con el proyecto](../decisiones/2026-11-04-tino-siempre-en-la-esquina-y-proactivo-con-el-proyecto.md), [nunca se encoge de hombros](../decisiones/2026-11-06-tino-nunca-se-encoge-de-hombros-y-en-el-inbox-empuja-a-un-proyecto.md)
 
-## El algoritmo en seis pasos
+## El algoritmo en siete pasos
 
 1. **Cada vista arma su lista.** Al abrirse, la vista mira sus datos (referencias, comentarios, votos, áreas del sistema) con la hora fija de apertura (`openedAt`) y llama a su función: `nudges` en `ProjectChooser.tsx` (Inicio), `boardNudges` (tablón), `inboxNudges` (Inbox) y `systemNudges` (Sistema), las tres últimas en `components/board-nudges.ts`. Cada aviso es un `TinoNudge`: `key`, `title` (una frase o un grupo de frases), `text`, `mood` (la cara), y si lleva botón `act` y `go`.
 2. **Lo urgente delante, lo demás por turnos.** La función separa lo urgente (un comentario sin contestar en tablón e Inbox; en Sistema, todo lo fijo: cómo funciona, propuestas, áreas sin decidir) del resto. El resto rota: empieza en la posición `seed % n` y sigue en orden, dando la vuelta. `seed` es un número al azar entre 0 y 999 que se saca al montar la vista (`visitSeed`), así cada visita abre con otra cosa. Dentro de un grupo que elige uno (los tipos, las áreas del Sistema), el mismo `seed` elige cuál.
@@ -14,7 +14,8 @@ Cómo decide Tino qué decir sin que nadie le pregunte: de dónde saca cada avis
    - el aviso de turno (`left[at]`), solo si la persona pulsó a Tino: en ninguna vista abre el globo por su cuenta ([decisión](../decisiones/2026-11-06-tino-entra-callado-y-habla-cuando-le-pulsas.md)).
    - `idle`, si la persona pulsó a Tino y no queda nada.
 5. **La esquina se calla** (`quiet`) mientras la persona está a otra cosa: en el tablón, con el agente trabajando, con referencias seleccionadas, con una búsqueda escrita o su respuesta en pantalla. Callada no saca ni el respiro; pulsarla contesta igual. Con avisos pendientes pone cara de `watching`; sin nada, `asleep`.
-6. **La frase.** Si `title` es un grupo, sale una al azar y nunca la misma que la última vez para ese tipo de aviso (lo que va antes del primer `:` de la `key`); se recuerda en `localStorage`. Todo entra letra a letra ([Tino escribe](../componentes.md#tino-escribe)).
+6. **La referencia, en miniatura.** Un aviso sobre una referencia concreta lleva su miniatura junto al texto (`thumb`, de `pictureOf`: su captura o, sin ella, la cara de quien la guardó), y la frase dice "esta" en lugar del título, que suele venir en otro idioma y cortado. La miniatura es la tarjeta de la landing (`.v9`): 8:5, línea de tinta, radio 8 y sombra dura de 3 px; pulsarla hace lo que el botón. Sin imagen, dice el nombre como antes.
+7. **La frase.** Si `title` es un grupo, sale una al azar y nunca la misma que la última vez para ese tipo de aviso (lo que va antes del primer `:` de la `key`); se recuerda en `localStorage`. Todo entra letra a letra ([Tino escribe](../componentes.md#tino-escribe)).
 
 ## Qué hace cada gesto
 

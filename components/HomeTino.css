@@ -23,6 +23,16 @@
 .tino-corner__say .first-steps__list { margin: 4px -8px 0; --text: var(--on-butter); --text-2: color-mix(in srgb, var(--on-butter) 62%, transparent); --surface-2: color-mix(in srgb, var(--on-butter) 8%, transparent); }
 .tino-corner__say .cr-actions { align-items: center; margin-top: 12px; }
 .tino-corner__close { position: absolute; top: 10px; right: 10px; }
+/* The reference Tino talks about, by his words: the landing's screenshot card (.v9 in marketing-site/public/es),
+   8:5, ink line and a hard 3px shadow, cut from the top so the page's head shows */
+.tino-corner__with { display: flex; align-items: flex-start; gap: 12px; }
+.tino-corner__thumb {
+  flex-shrink: 0; width: 72px; aspect-ratio: 8 / 5; margin: 3px 0 3px; padding: 0; cursor: pointer;
+  border: 1.5px solid var(--on-butter); border-radius: 8px; box-shadow: 0 3px 0 var(--on-butter);
+  background: color-mix(in srgb, var(--on-butter) 10%, transparent) 50% 0 / cover no-repeat;
+  transition: transform 120ms var(--ease-out);
+}
+.tino-corner__thumb:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--on-butter); }
 /* Which of them, and the next: plain text on the butter, its own small pill */
 /* "2 de 4 ›": loose figures in grey, no pill (Eric, 06-11: "el / no me convence"); ink on hover */
 .tino-corner__next {

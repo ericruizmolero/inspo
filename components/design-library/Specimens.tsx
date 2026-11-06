@@ -526,6 +526,11 @@ function ButtonsSpecimen() {
 }
 
 const LOGO_SIZES = [24, 28, 36, 48, 88];
+/** The logo as files, transparent, from TinoMark's drawing: white for dark grounds, ink for light ones */
+const LOGO_FILES = [
+  { href: "/tino/tino-logo-blanco.svg", name: "tino-logo-blanco.svg", label: "SVG blanco", what: "Para fondos oscuros, #FFFFFF, con el visor hueco" },
+  { href: "/tino/tino-logo-negro.svg", name: "tino-logo-negro.svg", label: "SVG negro", what: "Para fondos claros, en tinta #1B1B18, con el visor hueco" },
+];
 
 function BrandSpecimen() {
   return (
@@ -536,6 +541,7 @@ function BrandSpecimen() {
           <div className="ds-logos">{LOGO_SIZES.map((n) => <span key={n} className="ds-logos__one"><Logo size={n} /><span className="ds-val">{n}</span></span>)}</div>
           <div className="ds-logos ds-logos--chrome cr-on-chrome">{[24, 36].map((n) => <span key={n} className="ds-logos__one"><Logo size={n} /><span className="ds-val">{n}</span></span>)}</div>
         </div>
+        <FileList files={LOGO_FILES} />
         {/* Por decidir (03-11): the logo as flat Tino or as the 3D plush. The 3D one here is drawn still, as a logo would be */}
         <p className="ds-note">Por decidir: plano (arriba) o el peluche en 3D (abajo, quieto, como sería de logotipo).</p>
         <div className="ds-row ds-row--top">

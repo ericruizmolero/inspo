@@ -1094,6 +1094,8 @@ export const ui: typeof EnUi = {
   tino: {
     /** An X post in Tino's sentences, kept as "Author · post": named as a person would */
     postOf: (author: string): string => `el post de ${author}`,
+    /** A reference named by its picture beside the words */
+    thisOne: "esta",
     on: "Con Tino",
     off: "Sin Tino",
     wake: "Despertar a Tino",
@@ -1193,7 +1195,7 @@ export const ui: typeof EnUi = {
       othersText: (who: string, n: number): string => `${who} ha añadido ${n === 1 ? "1 referencia" : `${n} referencias`} esta semana.`,
       othersAct: "Enséñamelas",
       talkTitle: ["No quiero meterme, pero…", "Te están esperando."],
-      talkText: (who: string, name: string, body: string): string => `${who} en ${name}: "${body}"`,
+      talkText: (who: string, name: string, body: string): string => `${who}, sobre ${name}: "${body}"`,
       talkAct: "Contestar",
       voteTitle: ["Falta un voto. El tuyo."],
       voteText: (n: number): string => `El equipo está puliendo. Te ${n === 1 ? "queda 1 referencia" : `quedan ${n} referencias`} por votar.`,
@@ -1400,7 +1402,7 @@ export const ui: typeof EnUi = {
     uploadThumb: "Subir thumbnail",
     openSite: "Abrir la web",
     removeFrom: (space: string): string => `Quitar de ${space}`,
-    removeFromProject: "Quitar del proyecto",
+    removeFromProject: "Al Cajón",
     confirmDelete: "Confirmar borrado",
     addFirstNote: "Añade la primera nota",
     openImage: "Abrir la imagen",

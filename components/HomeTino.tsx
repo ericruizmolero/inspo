@@ -23,6 +23,8 @@ import "./HomeTino.css";
 export type TinoNudge = {
   key: string; who?: string; title: string | readonly string[]; text: ReactNode; mood: TinoMood;
   act?: string; go?: () => void; once?: boolean; happened?: string;
+  /** The picture of the reference it talks about: drawn by the words, which then say "this one" instead of its title */
+  thumb?: string;
 };
 
 const ON_KEY = "criterio:tino";
@@ -199,7 +201,7 @@ export default function HomeTino({ nudges, say, speak, face, quiet = false, scop
   return (
     <TinoCorner tinoRef={tino} mood={mood} muted={!on && !speak} bodyLabel={on ? t.tino.talk : t.tino.wake} onBody={wake} className={className}
       say={speak ?? (shown && {
-        key: shown.key, who: shown.who, title, text: shown.text,
+        key: shown.key, who: shown.who, title, text: shown.text, thumb: shown.thumb, onThumb: shown.go,
         onClose: shown === say ? undefined : close,
         actions: shown === say ? null : <>
           {shown.act && <Button size="s" onClick={() => { tino.current?.set("aprueba"); shown.go?.(); }}>{shown.act}</Button>}
@@ -216,7 +218,7 @@ export default function HomeTino({ nudges, say, speak, face, quiet = false, scop
 
 /** What Tino says in his corner: who speaks (Tino by default), a line, what goes under it, the buttons, and on the
  *  title's right a small figure (Polish's "3 / 7"). Without `onClose` there is no × */
-export type CornerSay = { key: string; who?: string; title?: string; text?: ReactNode; top?: ReactNode; actions?: ReactNode; onClose?: () => void };
+export type CornerSay = { key: string; who?: string; title?: string; text?: ReactNode; top?: ReactNode; actions?: ReactNode; onClose?: () => void; thumb?: string; onThumb?: () => void };
 
 /** Tino in the bottom-right corner with his balloon over him, tail down to him: the home's, and Polish's, where the
  *  balloon holds Forget and Keep */
@@ -239,7 +241,13 @@ export function TinoCorner({ say, tinoRef, mood, muted = false, look, bodyLabel,
         <Balloon key={say.key} className="tino-corner__say" tail="right"
           title={<><span className="tino-corner__who">{say.who ?? "Tino"}{say.top != null && <span className="tino-corner__top">{say.top}</span>}</span>{say.title && <span><Typed text={say.title} /></span>}</>}
           actions={say.actions}>
-          {typeof say.text === "string" ? <Typed text={say.text} delay={say.title ? typedMs(say.title) : 0} /> : say.text}
+          {say.thumb ? (
+            // The reference it is about, framed like the landing's cards; a click opens it, as the button does
+            <span className="tino-corner__with">
+              <button type="button" className="tino-corner__thumb" style={{ backgroundImage: `url("${say.thumb}")` }} onClick={say.onThumb} tabIndex={-1} aria-hidden />
+              <span>{typeof say.text === "string" ? <Typed text={say.text} delay={say.title ? typedMs(say.title) : 0} /> : say.text}</span>
+            </span>
+          ) : typeof say.text === "string" ? <Typed text={say.text} delay={say.title ? typedMs(say.title) : 0} /> : say.text}
           {say.onClose && (
             <button type="button" className="cr-window-close tino-corner__close" aria-label={t.tino.close} onClick={say.onClose}>
               <Icon name="close" size={10} weight="bold" />

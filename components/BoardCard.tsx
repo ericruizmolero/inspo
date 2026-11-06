@@ -74,7 +74,9 @@ const BoardCard = memo(function BoardCard({ item, level, ratio, tags, tagJob, sc
       caption={caption}
       onComments={item.id ? open : undefined}
       onDelete={item.id && deletable ? () => act().deleteItem(item) : undefined}
-      onTakeOut={item.id && takeOutOf ? () => act().toggleFiled(item, takeOutOf, false) : undefined}
+      // The bin on a project's board sends it to the Cajón, whatever else holds it: out of every project, not only
+      // this one (Eric, 06-11: it stayed in another project and never reached the Cajón, "eso es un bug")
+      onTakeOut={item.id && takeOutOf ? () => Promise.all([...new Set([takeOutOf, ...(projectIds ?? [])])].map((id) => act().toggleFiled(item, id, false))).then(() => undefined) : undefined}
       spaceName={spaceName}
       manualThumbnail={manualThumbnail}
       signedThumbnail={card ? signedCard : signedThumbnail}

@@ -639,6 +639,8 @@ export default function InspoClient({
   const [openedAt] = useState(() => Date.now());
   // Which of the non-urgent things Tino leads with: a different one each visit
   const [visitSeed] = useState(() => Math.floor(Math.random() * 1000));
+  // The small picture Tino shows by his words when he talks about one reference: its capture, else who saved it
+  const tinoPicture = useCallback((i: InspoItem) => smallImageOf(i) ?? authorImages[i.addedBy] ?? null, [smallImageOf, authorImages]);
   const boardNudgeList = useMemo(() => currentProject && boardTino ? boardNudges({
     t, count: spaceItems.length, read: !!currentSystem?.read, stale: systemStale,
     empty: currentSystem?.read ? currentSystem.areas.filter((a) => !a.evidence.length).map((a) => a.area) : [],
@@ -666,20 +668,21 @@ export default function InspoClient({
     pace: solo ? null : paceOf(spaceItems, parseDate, openedAt),
     onPerson: (who) => setFilters([{ kind: "person", value: who }]),
     onOpen: (item) => openItem(item),
-  }) : [], [currentProject, boardTino, t, spaceItems, currentSystem, systemStale, user, openedAt, commentMap, solo, polishTab, polishVotes, canManage, tagMap, members]); // eslint-disable-line react-hooks/exhaustive-deps
-  const boardIdleLine = useMemo(() => !boardTino ? undefined : currentProject ? boardIdle(t, spaceItems, parseDate, (item) => openItem(item))
-    : space === "inbox" ? inboxIdle(t, spaceItems, parseDate, (item) => openItem(item)) : undefined,
-    [currentProject, boardTino, space, t, spaceItems]); // eslint-disable-line react-hooks/exhaustive-deps
+    pictureOf: tinoPicture,
+  }) : [], [currentProject, boardTino, tinoPicture, t, spaceItems, currentSystem, systemStale, user, openedAt, commentMap, solo, polishTab, polishVotes, canManage, tagMap, members]); // eslint-disable-line react-hooks/exhaustive-deps
+  const boardIdleLine = useMemo(() => !boardTino ? undefined : currentProject ? boardIdle(t, spaceItems, parseDate, (item) => openItem(item), tinoPicture)
+    : space === "inbox" ? inboxIdle(t, spaceItems, parseDate, (item) => openItem(item), tinoPicture) : undefined,
+    [currentProject, boardTino, space, t, spaceItems, tinoPicture]); // eslint-disable-line react-hooks/exhaustive-deps
   // In the Inbox: what is loose pushes towards a project, or out (components/board-nudges.ts)
   const inboxNudgeList = useMemo(() => space === "inbox" && boardTino ? inboxNudges({
-    t, items: spaceItems, comments: commentMap, meId: user.id, me: user.name || user.email, now: openedAt, seed: visitSeed,
+    t, items: spaceItems, comments: commentMap, meId: user.id, me: user.name || user.email, now: openedAt, seed: visitSeed, pictureOf: tinoPicture,
     tags: tagMap, kindOf: mediaKindOf, host: hostOf, parse: parseDate,
     onOpen: (item) => openItem(item), onKind: (k) => setFilters([{ kind: "media", value: k }]), onSearch: (words) => setQuery(words),
     onFilter: (sel) => setFilters([{ kind: "tag", value: sel }]), onProject: () => setSpace("home"),
     label: (sel) => filterLabel({ kind: "tag", value: sel }, t).toLowerCase(),
     projects: projects.map((p) => ({ name: p.name, items: items.filter((i) => i.id && links[i.id]?.includes(p.id)) })),
     onPerson: (who) => setFilters([{ kind: "person", value: who }]),
-  }) : [], [space, boardTino, t, spaceItems, commentMap, user, openedAt, tagMap, projects, items, links]); // eslint-disable-line react-hooks/exhaustive-deps
+  }) : [], [space, boardTino, tinoPicture, t, spaceItems, commentMap, user, openedAt, tagMap, projects, items, links]); // eslint-disable-line react-hooks/exhaustive-deps
   const grid = (
     <Grid
       under={(!!currentProject || space === "inbox") && projectView !== "board"}

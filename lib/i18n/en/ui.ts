@@ -1104,6 +1104,8 @@ export const ui = {
   tino: {
     /** An X post in Tino's sentences, kept as "Author · post": named as a person would */
     postOf: (author: string): string => `${author}'s post`,
+    /** A reference named by its picture beside the words */
+    thisOne: "this one",
     on: "Tino on",
     off: "Tino off",
     wake: "Wake Tino",
@@ -1414,7 +1416,7 @@ export const ui = {
     uploadThumb: "Upload thumbnail",
     openSite: "Open the site",
     removeFrom: (space: string): string => `Remove from ${space}`,
-    removeFromProject: "Remove from the project",
+    removeFromProject: "To the inbox",
     confirmDelete: "Confirm removal",
     addFirstNote: "Add the first note",
     openImage: "Open the image",
