@@ -185,7 +185,8 @@ export default function ItemPanel({ item, isSite, page, criterio, thread, onClos
             <section className="ip-card ip-card--page cr-viewer-media" aria-label={view === "criterio" ? t.panel.tabCriterio : t.panel.tabPage}>{view === "criterio" && criterio ? criterio : page}</section>
             {navigable && <IconButton icon="chevron-right" variant="default" size="l" className="ip-nav is-next" label={t.panel.next} onClick={onNext} disabled={!onNext} />}
           </div>
-          <section className="ip-card--talk cr-viewer-aside">{thread}</section>
+          {/* No conversation (a shared board in a clean link): the reference takes the whole sheet */}
+          {thread != null && thread !== false && <section className="ip-card--talk cr-viewer-aside">{thread}</section>}
         </div>
       </aside>
     </div>

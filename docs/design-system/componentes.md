@@ -454,10 +454,16 @@ La marca aplicada en los sitios donde vivirá, dibujada en vivo con sus propios 
 `BrandImport` · `components/brand/BrandImport.tsx`
 Traer una marca que ya existe de tres formas: su web (se mide y se lee), sus ficheros (logos, fuentes, fotos, un PDF de guía) o el texto de sus guías. Lo que entra es un punto de partida; los ficheros se reparten por su nombre ("mark", "white"…). Es el modal plano (`DialogContent`, cabecera con el título en `t-title-s` y cerrar `IconButton` default s), no una ventana moss: es un formulario. Las tres formas en un `SegmentedControl` de papel s; la web y "Traerla" en una fila, como en Importar; en Archivos y Guía el botón va a la derecha. → [decisión](decisiones/2026-10-12-traer-una-marca-es-el-modal-plano-sin-barra-moss.md)
 
-### Compartir el proyecto
-`ShareDialog` · `SharePage` · `ShareBoard` · `components/brand/` · `app/s/[token]/` · `.share-head`, `.sboard`
-Un enlace de solo lectura con dos pestañas, Tablón y Sistema. El tablón son las referencias en columnas, lo más reciente primero, y cada una abre su original. El sistema es la presentación y el criterio.md para copiar o descargar, más un zip con logos, iconos y tokens. Abre en la marca si la hay, si no en el tablón (`?view=`). Se crea desde Sistema o desde el menú ⌄ de la pestaña del proyecto en la Isla. → [decisión](decisiones/2026-11-06-el-enlace-del-proyecto-comparte-tambien-el-tablon.md) Cada enlace es completo o limpio, para gente de fuera: el limpio no lleva nombres ni comentarios del equipo en el fichero, y en el tablón enseña solo las referencias; el completo añade quién guardó cada una y su nota. Sin sesión: el token es la prueba; no se indexa y no manda referer.
-- El diálogo (`ShareDialog`, `.bshare`) importa `brand.css` por sí mismo: abierto desde el menú del tablón, donde la marca nunca se ha cargado, salía sin estilos (06-11). La entradilla es una frase: quien tenga el enlace ve el tablón y la marca, sin poder tocar nada.
+### Compartir el tablón
+`ShareDialog` · `SharePage` · `ShareBoard` · `components/brand/` · `app/s/[token]/` · `lib/share-board.ts` · `.share--board`, `.share-head--over`
+Un enlace de solo lectura al tablón del proyecto, tal cual se ve en la app, y nada más: ni criterio.md ni la marca. → [decisión](decisiones/2026-11-06-el-enlace-comparte-solo-el-tablon-tal-cual.md)
+- Es el tablón de la app: `Grid` con su zoom y sus nubes, y cada tarjeta es `InspoCard` como la dibuja `BoardCard` (capturas por nivel de zoom, portadas, miniaturas), en modo `readOnly`: sin papelera, sin "…", sin carpeta, áreas ni comentarios, sin selección.
+- Pulsar una tarjeta abre su ficha (`ItemPanel`) con la página entera, el vídeo o el texto, sin poder editar, y las flechas para pasar de una a otra. En un enlace completo la ficha lleva la nota de quien la guardó; en uno limpio, la ficha es solo la referencia.
+- Arriba, flotando como la Isla, el nombre del proyecto y "criterio.design" (`.share-head--over`).
+- Las imágenes pasan todas por el propio enlace (`/s/<token>/f/<key>`, solo las que nombra `loadShareBoard`). Una web sin captura guardada pide su og:image por `/s/<token>/og?id=`, solo para referencias de ese tablón; nunca una captura nueva en el servidor. Lo de X o Pinterest se nombra y se enlaza, sin nuestra copia (`staysInside`).
+- Completo o limpio: el limpio enseña las referencias solas; el completo añade quién guardó cada una y su nota.
+- Se crea desde el menú ⌄ de la pestaña del proyecto en la Isla, o desde Sistema. Sin sesión: el token es la prueba; no se indexa y no manda referer. Los enlaces hechos con `?view=system` abren en el tablón.
+- El diálogo (`ShareDialog`, `.bshare`) importa `brand.css` por sí mismo: abierto desde el menú del tablón salía sin estilos (06-11). Entradilla de una frase.
 
 ### Conectores
 `Connectors` · `components/Connectors.tsx` · `.connectors__menu`

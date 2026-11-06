@@ -384,46 +384,23 @@ export const routes: Record<string, Surface> = {
   },
 
   // ─── Share links ────────────────────────────────────────────────────────────
-  "route:app/s/[token]/md/route.ts#GET": {
-    probe: async (fx) => {
-      const { GET } = await import("@/app/s/[token]/md/route");
-      asB(fx);
-      const md = await (await GET(request(`/s/${fx.a.shareToken}/md`), params({ token: fx.a.shareToken }))).text();
-      expect(md, "the link hands out its own project").toContain(fx.a.secret);
-      expect(md, "and nothing of the project it does not share").not.toContain(fx.a.unshared);
-      await expectDenied(fx, await GET(request("/s/x/md"), params({ token: "A".repeat(22) })), "an unknown token");
-    },
-  },
-  "route:app/s/[token]/download/route.ts#GET": {
-    probe: async (fx) => {
-      const { GET } = await import("@/app/s/[token]/download/route");
-      await expectDenied(fx, await GET(request("/s/x/download"), params({ token: "A".repeat(22) })), "an unknown token");
-      // The zip is built from the same view as /md (lib/share-view.ts), whose content the md probe checks
-      expect((await GET(request(`/s/${fx.a.shareToken}/download`), params({ token: fx.a.shareToken }))).status, "the link's own zip").toBe(200);
-    },
-  },
   "route:app/s/[token]/f/[...key]/route.ts#GET": {
     probe: async (fx) => {
       const { GET } = await import("@/app/s/[token]/f/[...key]/route");
       const get = (key: string) => GET(request(`/s/${fx.a.shareToken}/f/${key}`), params({ token: fx.a.shareToken, key: key.split("/") }));
-      expect((await get(fx.a.keys.brand)).status, "the shared project's brand file is served").toBe(200);
+      // The link shares the board only (Eric, 06-11): not even its own project's brand files
+      await expectDenied(fx, await get(fx.a.keys.brand), "the shared project's brand file");
       await expectDenied(fx, await get(fx.a.keys.text), "the text only the unshared project holds");
       await expectDenied(fx, await get(`inspo/${fx.b.team}/media/x.png`), "another workspace's file");
       await expectDenied(fx, await GET(request("/s/x/f/k"), params({ token: "A".repeat(22), key: fx.a.keys.brand.split("/") })), "an unknown token");
     },
   },
-  "route:app/s/[token]/font/route.ts#GET": {
+  "route:app/s/[token]/og/route.ts#GET": {
     probe: async (fx) => {
-      const { GET } = await import("@/app/s/[token]/font/route");
-      await expectDenied(fx, await GET(request(`/s/${fx.a.shareToken}/font?u=https://example.com/f.woff2&t=forged`), params({ token: fx.a.shareToken })), "a font URL without a valid token");
-      await expectDenied(fx, await GET(request("/s/x/font"), params({ token: "A".repeat(22) })), "an unknown token");
-    },
-  },
-  "route:app/s/[token]/fonts/route.ts#GET": {
-    probe: async (fx) => {
-      const { GET } = await import("@/app/s/[token]/fonts/route");
-      await expectDenied(fx, await GET(request("/s/x/fonts"), params({ token: "A".repeat(22) })), "an unknown token");
-      expectNoSecret(fx, await (await GET(request(`/s/${fx.a.shareToken}/fonts`), params({ token: fx.a.shareToken }))).json(), "the link's faces");
+      const { GET } = await import("@/app/s/[token]/og/route");
+      await expectDenied(fx, await GET(request("/s/x/og?id=x"), params({ token: "A".repeat(22) })), "an unknown token");
+      // Only a reference on the link's own board: never an address of the link's choosing, nor another project's
+      await expectDenied(fx, await GET(request(`/s/${fx.a.shareToken}/og?id=nope`), params({ token: fx.a.shareToken })), "an id not on the shared board");
     },
   },
   "page:app/a/[token]/page.tsx": { exempt: "takes no session: the token is the proof, and it shows only that link's project name and open questions (tests/client-ask.test.ts)" },
@@ -431,11 +408,9 @@ export const routes: Record<string, Surface> = {
     probe: async (fx) => {
       const { default: Page } = await import("@/app/s/[token]/page");
       await expectPageRefused(fx, () => Page({ params: Promise.resolve({ token: "A".repeat(22) }), searchParams: Promise.resolve({}) } as never), "an unknown token");
-      // Both tabs: the brand and the board (which lists the project's references, lib/share-view.ts board)
-      for (const view of ["system", "board"]) {
-        const page = await Page({ params: Promise.resolve({ token: fx.a.shareToken }), searchParams: Promise.resolve({ view }) } as never);
-        expect(JSON.stringify(page), `the link's ${view} names nothing of the project it does not share`).not.toContain(fx.a.unshared);
-      }
+      // The board only (lib/share-board.ts): it lists the project's references, and nothing of the one it does not share
+      const page = await Page({ params: Promise.resolve({ token: fx.a.shareToken }), searchParams: Promise.resolve({}) } as never);
+      expect(JSON.stringify(page), "the link's board names nothing of the project it does not share").not.toContain(fx.a.unshared);
     },
   },
 

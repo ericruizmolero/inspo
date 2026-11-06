@@ -1,7 +1,7 @@
 ---
 title: El enlace de un proyecto comparte también su tablón, en una pestaña junto a la marca
 date: 2026-11-06
-status: vigente
+status: sustituida
 kind: producto
 ---
 **Contexto.** El enlace `/s/<token>` solo enseñaba la marca del proyecto (la presentación y `criterio.md`), y se creaba desde el menú de Sistema. Eric: "podria ser interesante que se pueda compartir publicamente un tablon de un proyecto... que se cree un enlace para gente".

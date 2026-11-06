@@ -2422,9 +2422,9 @@ export const ui: typeof EnUi = {
     fill: "Rellenar la marca",
     fillHint: "Convierte las decisiones en valores: colores, fuentes, curvas, voz. Las secciones que editaste a mano se quedan.",
     share: {
-      open: "Compartir", title: "Compartir el proyecto", lead: "Quien tenga el enlace ve el tablón y la marca, sin poder tocar nada.",
-      mode: "Qué enseña el enlace", clean: "Limpio", cleanHint: "Las referencias solas en el tablón. En criterio.md, decisiones, valores y referencias por nombre. Sin la conversación del equipo ni nombres.",
-      full: "Todo", fullHint: "En el tablón, quién guardó cada referencia y su nota. El mismo criterio.md que lee el equipo, con comentarios.",
+      open: "Compartir", title: "Compartir el tablón", lead: "Quien tenga el enlace ve el tablón tal cual, sin poder tocar nada.",
+      mode: "Qué enseña el enlace", clean: "Limpio", cleanHint: "Las referencias solas, sin nombres ni notas.",
+      full: "Todo", fullHint: "Con quién guardó cada referencia y su nota.",
       views: "Vistas del proyecto", boardEmpty: "El tablón de este proyecto está vacío.",
       label: "Para quién es (opcional)", labelPlaceholder: "Para el cliente", make: "Crear un enlace", copy: "Copiar criterio.md", copyLink: "Copiar enlace", copied: "Copiado", download: "Descargar .md",
       revoke: "Desactivar", untitled: "Enlace sin nombre", none: "Aún no hay enlaces.", made: (who: string, when: string): string => `De ${who}, ${when}`, viewed: (when: string): string => `abierto ${when}`, never: "aún sin abrir",

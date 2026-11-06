@@ -21,7 +21,7 @@ import { dictOf, type Locale } from "./i18n";
 import { refInfoOf } from "./ref-info";
 import { blocksToMd, criterioBlocks, type CriterioBlock, type RefInfo } from "./criterio-md";
 import { mediaKindOf, staysInside } from "./url";
-import { projectBrandPrefix, brandKeyAllowed, keysIn } from "./brand-files";
+import { brandKeyAllowed, keysIn } from "./brand-files";
 import type { ShareMode } from "./share";
 import type { SystemArea } from "@/types/system";
 import type { BrandRef } from "@/components/brand/context";
@@ -154,6 +154,7 @@ export async function loadProjectMeasures(organizationId: string, projectId: str
   return measuresOf(rows.map((r) => ({ id: r.id, web: r.web, colors: r.tags?.colors })), index, project.brief?.clientItemId ?? null);
 }
 
-/** Whether a key may be served through a link of this project, beyond the ones its view names */
-export const shareMayServe = (organizationId: string, projectId: string, key: string) =>
-  key.startsWith(projectBrandPrefix(organizationId, projectId)) || key.startsWith(DESIGN_MD_PREFIX) || key.startsWith(PAGES_PREFIX);
+/** Whether a key may be served through a link of this project, beyond the ones its board names: the public captures
+ *  of pages (DESIGN.md covers and page shots). The brand's files are not: a link shares the board only (Eric, 06-11) */
+export const shareMayServe = (_organizationId: string, _projectId: string, key: string) =>
+  key.startsWith(DESIGN_MD_PREFIX) || key.startsWith(PAGES_PREFIX);

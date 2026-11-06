@@ -1,9 +1,10 @@
 import { resolveShare } from "@/lib/share";
-import { loadShareView, shareMayServe } from "@/lib/share-view";
-import { getLocale } from "@/lib/i18n";
+import { shareMayServe } from "@/lib/share-view";
+import { loadShareBoard } from "@/lib/share-board";
 import { openFile, signedFileUrl, isSafeKey } from "@/lib/storage";
 
-// GET → a stored file the link's page shows: the brand's own files, its references' pictures, the public captures.
+// GET → a stored file the link's board shows: its references' pictures and the public captures. The link shares the
+// board only (Eric, 06-11), so the brand's files are not served.
 // Nothing else of the workspace: a key the view does not name is refused.
 export async function GET(req: Request, ctx: RouteContext<"/s/[token]/f/[...key]">) {
   const { token, key: parts } = await ctx.params;
@@ -14,8 +15,8 @@ export async function GET(req: Request, ctx: RouteContext<"/s/[token]/f/[...key]
   if (!share) return new Response("not found", { status: 404 });
   let ok = shareMayServe(share.organizationId, share.projectId, key);
   if (!ok) {
-    const view = await loadShareView(share.organizationId, share.projectId, share.mode, await getLocale(), `/s/${token}`, "");
-    ok = !!view?.keys.has(key);
+    const board = await loadShareBoard(share.organizationId, share.projectId, share.mode, `/s/${token}`);
+    ok = !!board?.keys.has(key);
   }
   if (!ok) return new Response("forbidden", { status: 403 });
   const signed = await signedFileUrl(key);

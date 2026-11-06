@@ -183,6 +183,10 @@ interface InspoCardProps {
   onSelect?: (range: boolean) => void;
   /** On a team's board: this person voted to forget it in a polish not closed yet, so it stays, faded */
   forgotten?: boolean;
+  /** A preview nobody edits (a project's board shared by link): no thumbnail menu, and no capture asked of the
+   *  server; a site with no stored picture tries `ogSrc` (its og:image through the link) and else shows its words */
+  readOnly?: boolean;
+  ogSrc?: string;
   /** On the board: the page's top as the cover, sized before it loads */
   board?: {
     /** Height/width of the media, when known (the layout already reserved it) */
@@ -223,7 +227,7 @@ export function captionFor(item: InspoItem, comments: InspoComment[] | undefined
   return { ...root, people, more: comments?.length ?? 0 };
 }
 
-export default function InspoCard({ item, text, tags, tagJob, score, reason, manualThumbnail: uploadedThumb, signedThumbnail, onUpload, onRemoveThumbnail, onOpen, designCover: coverSrc, designCoverFallback, designScroll: scrollSrc, designScrollFallback, commentCount = 0, caption, onComments, onDelete, onTakeOut, spaceName, projects, projectIds = [], onToggleProject, onCreateProject, backs = [], onToggleArea, areasIn, board, selected = false, selecting = false, onSelect, forgotten = false }: InspoCardProps) {
+export default function InspoCard({ item, text, tags, tagJob, score, reason, manualThumbnail: uploadedThumb, signedThumbnail, onUpload, onRemoveThumbnail, onOpen, designCover: coverSrc, designCoverFallback, designScroll: scrollSrc, designScrollFallback, commentCount = 0, caption, onComments, onDelete, onTakeOut, spaceName, projects, projectIds = [], onToggleProject, onCreateProject, backs = [], onToggleArea, areasIn, board, selected = false, selecting = false, onSelect, forgotten = false, readOnly = false, ogSrc }: InspoCardProps) {
   const { t } = useT();
   // An uploaded image is its own thumbnail; a video shows its frame when the provider gives one away
   const kind = mediaKindOf(item.web);
@@ -303,7 +307,7 @@ export default function InspoCard({ item, text, tags, tagJob, score, reason, man
   useEffect(() => {
     if (useManual || useDesign || useFrame || source !== "idle") return;
     // On the board only the cards near the screen are mounted at all: being here is being in view
-    if (board) { setSource("og"); return; }
+    if (board) { setSource(readOnly && !ogSrc ? "error" : "og"); return; }
     const el = containerRef.current;
     if (!el) return;
     const observer = new IntersectionObserver(
@@ -326,7 +330,7 @@ export default function InspoCard({ item, text, tags, tagJob, score, reason, man
     // The "v" changes the screenshot URL when the server gets fixed: old 502s
     // stay in the browser cache and without this would keep showing for a while.
     const apiUrl = source === "og"
-      ? `/api/og?url=${encodeURIComponent(item.web)}`
+      ? ogSrc ?? `/api/og?url=${encodeURIComponent(item.web)}`
       : `/api/shot?url=${encodeURIComponent(item.web)}&v=2`;
     const capture = source === "shot";
 
@@ -348,7 +352,8 @@ export default function InspoCard({ item, text, tags, tagJob, score, reason, man
       })
       .catch(() => {
         if (cancelled) return; // the card went away: nothing failed
-        if (source === "og") { setSource("shot"); setImgSrc(null); }
+        // A preview never asks the server to capture a page: without an og:image the card is its words
+        if (source === "og" && !readOnly) { setSource("shot"); setImgSrc(null); }
         else { imgCache.set(item.web, { src: null, source: "error" }); setSource("error"); }
       })
       .finally(() => { clearTimeout(timeout); release?.(); });
@@ -682,7 +687,7 @@ export default function InspoCard({ item, text, tags, tagJob, score, reason, man
               aria-label={openLabel} data-tip={openLabel} onClick={(e) => e.stopPropagation()}>
               {IconExternal}
             </a>}
-            {kind !== "image" && kind !== "text" && (
+            {!readOnly && kind !== "image" && kind !== "text" && (
               <Popover open={moreOpen} onOpenChange={(o) => { setMoreOpen(o); setPickerOpen(o); }}>
                 <PopoverTrigger className="cr-iconbtn cr-iconbtn-default cr-iconbtn-s tile__more" aria-label={t.card.more} data-tip={moreOpen ? undefined : t.card.more} onClick={(e) => e.stopPropagation()}>
                   {uploading ? <Busy label={t.card.more} /> : IconMore}
