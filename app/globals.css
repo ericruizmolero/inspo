@@ -1445,18 +1445,27 @@ video.vp__media { object-fit: contain; }
 .add .cr-input:focus-visible { outline: none; border-color: var(--text); }
 .add .modal__hint { font-size: var(--fs-label); color: var(--add-quiet); }
 .add .modal__footer { padding-top: var(--space-2); }
-/* The other ways in (an image, a text): a dashed box, transparent, so they read as options and not as more fields */
-.add__pick {
-  display: flex; align-items: center; gap: 10px; width: 100%; box-sizing: border-box;
-  padding: 11px 14px; border: 1px dashed var(--add-line); border-radius: var(--radius-md);
-  background: transparent; color: var(--add-quiet);
-  font: inherit; font-size: var(--fs-small); line-height: var(--lh-ui, 1.4); text-align: left; cursor: pointer;
-  transition: color 0.15s, border-color 0.15s;
+/* The six ways in, above the field, as the extension lists its sources (.source-row in extension/chrome/popup.css):
+ * glyph, name, what it takes, no line; the whole row is the button and rises on hover. Two columns so every line fits
+ * (Eric, 06-11: nothing on two lines). Once something is pasted, its kind stays lit and the rest step back */
+.add__kinds { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px; margin: -4px -8px 0; }
+.add__kind {
+  display: grid; grid-template-columns: 20px minmax(0, 1fr); align-items: center; gap: 10px;
+  padding: 8px; border: 0; border-radius: var(--radius-md); background: none; cursor: pointer; text-align: left;
+  font: inherit; color: var(--add-quiet); transition: background-color 150ms ease, color 150ms ease, opacity 150ms ease;
 }
-.add__pick:hover { color: var(--text); border-color: var(--text); }
-.add__pick:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
-.add__pick u { text-underline-offset: 3px; color: var(--text); }
-.add__pick > .cr-icon { flex-shrink: 0; }
+.add__kind:hover, .add__kind.is-on { background: color-mix(in srgb, var(--text) 7%, transparent); color: var(--text); }
+.add__kind:focus-visible { outline: 2px solid var(--focus); outline-offset: 0; }
+.add__kind:disabled { cursor: default; }
+.add__kind-icon { display: inline-flex; }
+.add__kind-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.add__kind-name { font-size: var(--fs-small); font-weight: var(--fw-medium); color: var(--text); }
+.add__kind-name, .add__kind-what { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.add__kind-what { font-size: var(--fs-label); color: var(--add-quiet); }
+.add__kinds.has-kind .add__kind:not(.is-on) { opacity: 0.4; }
+/* On a phone two columns leave no room for what each takes: the glyph and the name are enough */
+@media (max-width: 480px) { .add__kind-what { display: none; } }
+@media (prefers-reduced-motion: reduce) { .add__kind { transition: none; } }
 /* Line pills (.pills--line, Add and Improve with AI): the dashboard's pills (28 high, 12 px, transparent) instead of
  * the paper Chip. The line is the soft border; chosen is the same glass as the Island's live tab (no border, no white
  * fill: Eric, 08-10, "los borders que no sean blancos, más minimalistas") */
@@ -2392,8 +2401,6 @@ body:has(.fb-dock.has-notes) .theme-float { bottom: calc(72px + env(safe-area-in
 .ip-bar__tabs { flex-shrink: 0; }
 .ip-bar__tabs .cr-seg-item { padding: 6px 12px; font-size: var(--fs-ui); font-weight: var(--fw-medium); }
 .ip-bar__close { flex-shrink: 0; }
-/* The jump to the conversation only exists on a phone, where the thread is under the page */
-.ip-bar__talk { display: none; }
 
 /* Body: the stage takes the room, the conversation is a column of 320 down its right */
 .ip-bento.cr-viewer-body { flex: 1; min-height: 0; }
@@ -2432,7 +2439,6 @@ body:has(.fb-dock.has-notes) .theme-float { bottom: calc(72px + env(safe-area-in
   .ip .ip-nav { position: absolute; top: 50%; transform: translateY(-50%); z-index: 2; width: 32px; height: 32px; }
   .ip .ip-nav.is-prev { left: 12px; }
   .ip .ip-nav.is-next { right: 12px; }
-  .ip-bar__talk { display: inline-flex; }
   .ip-bento.cr-viewer-body { flex-direction: column; overflow-y: auto; }
   .ip-stage.cr-viewer-stage { position: relative; flex: none; height: 70svh; padding: 8px; }
   .ip-card--talk.cr-viewer-aside { flex: none; width: auto; height: 70svh; border-left: 0; border-top: 1px solid var(--chrome-raised); }

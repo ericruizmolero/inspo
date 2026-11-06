@@ -6,7 +6,7 @@
 // TipWindow and EmptyState take no drawing.
 
 import { forwardRef, useEffect, useId, useLayoutEffect, useRef, useState, type ButtonHTMLAttributes, type CSSProperties, type InputHTMLAttributes, type ReactNode, type Ref, type TextareaHTMLAttributes } from "react";
-import { ArrowDown, ArrowLeft, ArrowRight, ArrowUUpLeft, ArrowUp, ArrowUpRight, Bell, CalendarBlank, CaretDown, CaretLeft, CaretRight, Chat, ChatCircle, Check, Compass, Copy, CornersIn, CornersOut, DotsThree, DownloadSimple, EnvelopeSimple, FileMd, FileText, FilmStrip, Folder, FunnelSimple, Gauge, Gear, House, Info, Lightbulb, LinkSimple, LockSimple, MagnifyingGlass, Minus, MonitorPlay, Moon, PaperPlaneTilt, Pause, PencilSimple, Play, Plug, PlugsConnected, Plus, Pulse, PushPin, Quotes, Shuffle, SidebarSimple, SlidersHorizontal, Smiley, Sparkle, SpeakerHigh, SpeakerSlash, SquaresFour, Sun, Tornado, TextAlignLeft, Trash, UploadSimple, User, Users, X, Image as ImageIcon } from "@phosphor-icons/react/ssr";
+import { ArrowDown, ArrowLeft, ArrowRight, ArrowUUpLeft, ArrowUp, ArrowUpRight, Bell, CalendarBlank, CaretDown, CaretLeft, CaretRight, Chat, ChatCircle, Check, Compass, Copy, CornersIn, CornersOut, DotsThree, DownloadSimple, EnvelopeSimple, FileMd, FileText, FilmStrip, Folder, FunnelSimple, Gauge, Globe, Gear, House, Info, Lightbulb, LinkSimple, LockSimple, MagnifyingGlass, Minus, MonitorPlay, Moon, PaperPlaneTilt, Pause, PencilSimple, Play, Plug, PlugsConnected, Plus, Pulse, PushPin, Quotes, Shuffle, SidebarSimple, SlidersHorizontal, Smiley, Sparkle, SpeakerHigh, SpeakerSlash, SquaresFour, Sun, Tornado, TextAlignLeft, Trash, UploadSimple, User, Users, X, Image as ImageIcon } from "@phosphor-icons/react/ssr";
 import type { Icon as PhosphorIcon, IconProps, IconWeight } from "@phosphor-icons/react";
 import { Liquid } from "@/components/ui/liquid";
 import "./criterio.css";
@@ -89,6 +89,7 @@ const ICONS = {
   film: FilmStrip,
   inbox: Cajon,
   link: LinkSimple,
+  globe: Globe,
   dots: DotsThree,
   user: User,
   users: Users,

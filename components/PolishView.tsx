@@ -96,8 +96,10 @@ function randomBut(list: string[], not: string | undefined): number {
 }
 
 export default function PolishView({ project, items, imageOf, largeImageOf, ratioOf, textOf, noteOf, commentsOf, active, votes, me, myName, members, canClose, onVote, onClose, onRestore, onOpenItem, onBoard, onSystem }: {
-  project: Project;
-  /** The project's board, in the board's order */
+  /** The project polished, or null for the Cajón: there Keep leaves a card in the Cajón and Forget deletes it
+   *  (hooks/use-inbox-polish.ts), one person deciding at once, never a vote */
+  project: Project | null;
+  /** The project's board, in the board's order (the Cajón's references) */
   items: InspoItem[];
   /** A small picture (every card) and the largest one stored (laid over the cards nearest the front) */
   imageOf: (item: InspoItem) => string | null;
@@ -132,8 +134,11 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
   onSystem: () => void | Promise<void>;
 }) {
   const { t, locale } = useT();
-  const s = t.polish;
-  const team = members.length > 1;
+  const inbox = !project;
+  const placeId = project?.id ?? "inbox";
+  // The Cajón's own words where they differ from a project's
+  const s = inbox ? { ...t.polish, ...t.polish.inbox } : t.polish;
+  const team = !inbox && members.length > 1;
   const stageRef = useRef<HTMLDivElement>(null);
   const rootRef = useRef<HTMLElement>(null);
   const forgetRef = useRef<HTMLButtonElement>(null);
@@ -261,7 +266,7 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
   useLayoutEffect(() => {
     // What this browser remembered as kept, from before votes were saved on the server: handed over as keep votes, once
     let stored: string[] = [];
-    try { const raw = JSON.parse(localStorage.getItem(KEPT_KEY(project.id)) ?? "[]"); if (Array.isArray(raw)) stored = raw.filter((x): x is string => typeof x === "string"); localStorage.removeItem(KEPT_KEY(project.id)); } catch { /* no storage */ }
+    try { const raw = JSON.parse(localStorage.getItem(KEPT_KEY(placeId)) ?? "[]"); if (Array.isArray(raw)) stored = raw.filter((x): x is string => typeof x === "string"); localStorage.removeItem(KEPT_KEY(placeId)); } catch { /* no storage */ }
     const was = new Set(stored);
     const old = items.filter((i) => was.has(keyOf(i)) && !myVote(i));
     if (old.length) void onVote(old, "keep");
@@ -275,15 +280,15 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
     arriving.current = !!seen;
     const shown = seen ? open.filter((k) => seen.has(k)) : [];
     const pool = shown.length ? shown : open;
-    const pick = randomBut(pool, lastFront.get(project.id));
+    const pick = randomBut(pool, lastFront.get(placeId));
     const at = pool.length ? open.indexOf(pool[pick]) : 0;
-    if (open.length) lastFront.set(project.id, open[at]);
+    if (open.length) lastFront.set(placeId, open[at]);
     e.v = 0;
     e.p = e.target = e.base = at;
     setBase(at);
     // Only when the project opens: the cards changing later is the effect below
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [project.id]);
+  }, [placeId]);
 
   // The tornado's cards changed (one decided and gone, one taken back, the board itself): the card facing the screen
   // stays there, or hands over to the next one still here, and the others close the gap from where they were drawn
@@ -520,7 +525,7 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
         const week = thisWeek();
         let champ = false;
         try { champ = own && localStorage.getItem(CHAMP_KEY) !== week; if (champ) localStorage.setItem(CHAMP_KEY, week); } catch { /* no storage: the plain line */ }
-        setSure({ key: keyOf(item), champ, text: own ? p.sureOwn(project.name, team) : p.sureComments(n, team) });
+        setSure({ key: keyOf(item), champ, text: own ? (project ? p.sureOwn(project.name, team) : p.sureOwnInbox) : p.sureComments(n, team) });
         tino.current?.set("curiosa");
         return;
       }
@@ -549,7 +554,8 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
     press(forgetRef.current);
     cue("select", { direction: "back" });
     if (team) { vote("forget", at, item); return; }
-    send(at, item, "inbox");
+    // From the Cajón there is nowhere further back: it falls out of the view
+    send(at, item, inbox ? "away" : "inbox");
     setHistory((h) => [...h, { kind: "forget", item }]);
     setForgot((c) => c + 1);
     // Out of the tornado now; out of the project when it lands on the Inbox tab, so the Inbox counts it as it arrives
@@ -804,7 +810,9 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
           <div className="polish__done-actions">
             {voting && tally.doubt > 0 && <Button variant="primary" onClick={() => setMode("doubt")}>{canClose ? s.settleDoubts(tally.doubt) : s.seeDoubts(tally.doubt)}</Button>}
             {voting && canClose && <Button variant={tally.doubt > 0 ? "secondary" : "primary"} onClick={() => void close()} disabled={busy}>{busy && <Busy label={s.close} />}{s.close}</Button>}
-            <Button variant={voting && (canClose || tally.doubt > 0) ? "secondary" : "primary"} iconEnd={!voting && busy ? undefined : "arrow-right"} onClick={() => void toSystem()} disabled={busy}>{!voting && busy && <Busy label={s.toSystem} />}{s.toSystem}</Button>
+            {/* The Cajón has no system: what is kept is looked at on its board */}
+            {inbox ? <Button variant="primary" iconEnd="arrow-right" onClick={onBoard}>{s.toBoard}</Button>
+              : <Button variant={voting && (canClose || tally.doubt > 0) ? "secondary" : "primary"} iconEnd={!voting && busy ? undefined : "arrow-right"} onClick={() => void toSystem()} disabled={busy}>{!voting && busy && <Busy label={s.toSystem} />}{s.toSystem}</Button>}
             <Button onClick={again}>{s.again}</Button>
             {history.length > 0 && <Button onClick={undo}>{s.undo}</Button>}
           </div>
@@ -843,7 +851,7 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
                 {asking ? p.keepIt : reviewing && sideA ? p.withSide(sideA) : s.keep}<Icon name="arrow-right" size={16} />
               </button>
               <p className="tino-corner__foot">
-                <span>{team ? p.foot : p.footSolo}</span>
+                <span>{team ? p.foot : inbox ? p.footInbox : p.footSolo}</span>
                 {reviewing && <button type="button" className="tino-corner__link" onClick={later}>{p.later}</button>}
                 {history.length > 0 && <button type="button" className="tino-corner__link" onClick={takeBack}>{s.undo}</button>}
               </p>

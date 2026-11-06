@@ -78,7 +78,6 @@ export default function ItemPanel({ item, isSite, page, criterio, thread, onClos
   const asideRef = useRef<HTMLElement>(null);
   // A phone: a horizontal swipe over the cards steps to the next or previous reference (the arrows are tiny there),
   // and a button in the bar jumps to the conversation, which sits under the page
-  const bentoRef = useRef<HTMLDivElement>(null);
   const swipe = useRef<{ x: number; y: number } | null>(null);
   const onTouchStart = (e: React.TouchEvent) => { const t0 = e.touches[0]; swipe.current = { x: t0.clientX, y: t0.clientY }; };
   const onTouchEnd = (e: React.TouchEvent) => {
@@ -88,7 +87,6 @@ export default function ItemPanel({ item, isSite, page, criterio, thread, onClos
     if (Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 2) return;
     if (dx < 0) onNext?.(); else onPrev?.();
   };
-  const toThread = () => bentoRef.current?.querySelector(".ip-card--talk")?.scrollIntoView({ behavior: "smooth", block: "start" });
   const dimRef = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
     const el = asideRef.current;
@@ -176,14 +174,12 @@ export default function ItemPanel({ item, isSite, page, criterio, thread, onClos
           {/* Its address to paste elsewhere: Telegram or Slack draw it with its own name and picture (lib/share-card.ts) */}
           <IconButton icon={copied ? "check" : "link"} variant="quiet" size="m" className="ip-bar__share"
             label={copied ? t.panel.linkCopied : t.panel.copyLink} onClick={() => void copyLink()} />
-          {/* A phone: the conversation sits under the page, this takes you to it */}
-          <IconButton icon="comment" variant="quiet" size="m" className="ip-bar__talk" label={t.card.comments} onClick={toThread} />
           <IconButton icon="close" variant="quiet" size="m" className="ip-bar__close" label={t.common.close} onClick={leave} />
         </header>
 
         {/* The reference itself takes the room, with a step to either side; the conversation is a column down its right.
             On a phone a horizontal swipe over it steps too (see onTouchEnd) */}
-        <div ref={bentoRef} className="ip-bento cr-viewer-body" onTouchStart={navigable ? onTouchStart : undefined} onTouchEnd={navigable ? onTouchEnd : undefined}>
+        <div className="ip-bento cr-viewer-body" onTouchStart={navigable ? onTouchStart : undefined} onTouchEnd={navigable ? onTouchEnd : undefined}>
           <div className="ip-stage cr-viewer-stage">
             {navigable && <IconButton icon="chevron-left" variant="default" size="l" className="ip-nav is-prev" label={t.panel.previous} onClick={onPrev} disabled={!onPrev} />}
             <section className="ip-card ip-card--page cr-viewer-media" aria-label={view === "criterio" ? t.panel.tabCriterio : t.panel.tabPage}>{view === "criterio" && criterio ? criterio : page}</section>

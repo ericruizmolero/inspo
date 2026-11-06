@@ -8,8 +8,9 @@ import { SYSTEM_AREAS } from "@/types/system";
 /** The view switcher's order: Board, Polish, System */
 export const PROJECT_VIEWS = ["board", "polish", "system"] as const;
 
-/** A project's views in the top bar, each with what it has waiting: the votes left in Polish, the system's areas filled */
-export default function ProjectModes({ projectView, onChange, polishTab, solo, members, systemFilled, systemStale }: {
+/** A project's views in the top bar, each with what it has waiting: the votes left in Polish, the system's areas filled.
+ *  The Cajón has Board and Polish only: it is not a project, so it has no system (`noSystem`) */
+export default function ProjectModes({ projectView, onChange, polishTab, solo, members, systemFilled, systemStale, noSystem = false }: {
   projectView: (typeof PROJECT_VIEWS)[number];
   onChange: (i: number) => void;
   polishTab: { left: number; under: boolean; done: Set<string> } | null;
@@ -17,6 +18,7 @@ export default function ProjectModes({ projectView, onChange, polishTab, solo, m
   members: { id: string; name: string; image: string | null }[];
   systemFilled: number;
   systemStale: number;
+  noSystem?: boolean;
 }) {
   // Uncompiled, as it was inside InspoClient (which the React Compiler skips): the same renders and closures
   "use no memo";
@@ -42,9 +44,9 @@ export default function ProjectModes({ projectView, onChange, polishTab, solo, m
           </>,
           count: polishTab && polishTab.left > 0 ? polishTab.left : undefined,
           title: polishTab && polishTab.left > 0 ? t.polish.left(polishTab.left) : undefined },
-        { icon: "file-md", label: <span className="topbar__mode-label">{t.system.modeSystem}</span>,
+        ...(noSystem ? [] : [{ icon: "file-md" as const, label: <span className="topbar__mode-label">{t.system.modeSystem}</span>,
           count: t.system.fill(systemFilled, SYSTEM_AREAS.length), dot: systemStale > 0,
-          title: systemStale ? t.system.stale(systemStale) : undefined },
+          title: systemStale ? t.system.stale(systemStale) : undefined }]),
       ]} />
   );
 }

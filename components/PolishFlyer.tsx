@@ -9,10 +9,12 @@ export const LAND = 0.8; // the part of the flight after which the card is on it
 const EASE_FLY = "cubic-bezier(0.55, 0, 0.25, 1)";
 /** Where a decided card lands: the tab that stands for the place it goes to */
 export const LANDING = { inbox: '.island a[href*="in=inbox"]', board: '.topbar__modes [role="tab"]', polish: '.topbar__modes [role="tab"]:nth-of-type(2)' } as const;
+/** A card forgotten in the Cajón goes nowhere: it is deleted, and falls out of the view */
+export type FlightTo = keyof typeof LANDING | "away";
 /** The tab a card landed on takes it with a small bump */
 export const bump = (tab: HTMLElement) => tab.animate([{ transform: "scale(1)" }, { transform: "scale(1.16)" }, { transform: "scale(1)" }], { duration: 380, easing: EASE_OUT });
 
-export type Flight = { id: number; item: InspoItem; to: keyof typeof LANDING; x: number; y: number; w: number; h: number };
+export type Flight = { id: number; item: InspoItem; to: FlightTo; x: number; y: number; w: number; h: number };
 
 /** A decided card on its way: a copy of it, from where it stood to the tab of the place it goes to (the board for
  *  one kept, the Inbox for one forgotten, Polish itself for a vote), which takes it with a small bump. The card
@@ -24,7 +26,14 @@ export default function Flyer({ flight, image, text, onGone }: { flight: Flight;
     if (!el) return;
     let anim: Animation;
     if (stillMotion()) anim = el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 200, fill: "forwards" });
-    else {
+    else if (flight.to === "away") {
+      // Down and out, turning a little, fading as it goes
+      const drop = window.innerHeight - el.getBoundingClientRect().top;
+      anim = el.animate([
+        { transform: "translate3d(0, 0, 0) rotate(0deg) scale(1)", opacity: 1 },
+        { transform: `translate3d(-40px, ${drop.toFixed(1)}px, 0) rotate(-14deg) scale(0.7)`, opacity: 0 },
+      ], { duration: FLY_MS, easing: "cubic-bezier(0.5, 0, 0.75, 0)", fill: "forwards" });
+    } else {
       // Where the tab is not on screen (the island on a phone), to the corner the menu opens from
       const tab = document.querySelector<HTMLElement>(LANDING[flight.to]);
       const to = tab && tab.offsetParent ? tab.getBoundingClientRect() : null;

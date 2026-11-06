@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { InspoItem } from "@/types/inspo";
 import { SYSTEM_AREAS, type SystemArea } from "@/types/system";
 import { areaIcon } from "./area-icons";
-import { normalizeWebUrl, typeFromUrl } from "@/lib/url";
+import { mediaKindOf, normalizeWebUrl, typeFromUrl } from "@/lib/url";
 import { MEDIA_ACCEPT, isMediaFile, mediaFileFrom } from "@/lib/media-client";
 import { useT } from "./I18nProvider";
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Button, Chip, Icon, IconButton, TextArea } from "@/components/criterio";
 import { boardOf, PLATFORM_NAME } from "@/lib/boards/match";
 import { BoardProgress, useBoardImport, type ImportBoard } from "./BoardImport";
+import { PinterestLogo, XLogo, YoutubeLogo } from "@phosphor-icons/react/ssr";
 import "./TextRef.css";
 
 export interface NewInspoInput {
@@ -40,6 +41,15 @@ interface AddInspoModalProps {
   /** A board pasted (Are.na, Pinterest, Cosmos): what Criterio can save of it comes in, in a project of its own */
   onImportBoard: ImportBoard;
 }
+
+/** The six ways in, as the extension lists its sources: a glyph, the name, what it takes. The four links light up when
+ *  pasted; the image and the text open their own entry. Videos, posts and boards wear the mark people know them by
+ *  (Eric, 06-11: "iconos reconocibles"), in Phosphor's single-colour logos. */
+type Kind = "web" | "video" | "post" | "board" | "image" | "text";
+const KIND_ORDER: Kind[] = ["web", "video", "post", "board", "image", "text"];
+const kindGlyph = (k: Kind) =>
+  k === "video" ? <YoutubeLogo size={20} /> : k === "post" ? <XLogo size={20} /> : k === "board" ? <PinterestLogo size={20} />
+    : <Icon name={({ web: "globe", image: "image", text: "text" } as const)[k]} size={20} />;
 
 /** Only the link (or the image) is needed: name, screenshot, tags and collection are inferred.
  *  An image can be chosen, dropped anywhere on the dialog or pasted with ⌘V. */
@@ -77,6 +87,9 @@ export default function AddInspoModal({ onClose, onSubmit, isDuplicate, project,
     const failed = await run(raw);
     if (failed) setError(failed); else close();
   };
+  // The kind the pasted link is read as lights up in the row under the field
+  const kind: Kind | null = board ? "board" : web ? (({ video: "video", post: "post" } as Record<string, Kind>)[mediaKindOf(web)] ?? "web") : null;
+  const openKind = (k: Kind) => { if (k === "image") fileRef.current?.click(); else if (k === "text") startText(); else urlRef.current?.focus(); };
   const suggested = !file && web ? typeFromUrl(web) : "inspiration";
   const finalType = suggested;
 
@@ -160,6 +173,17 @@ export default function AddInspoModal({ onClose, onSubmit, isDuplicate, project,
             </div>
           ) : (
             <>
+              <div className={`add__kinds${kind ? " has-kind" : ""}`}>
+                {KIND_ORDER.map((k) => (
+                  <button key={k} type="button" className={`add__kind${kind === k ? " is-on" : ""}`} onClick={() => openKind(k)} disabled={!!step}>
+                    <span className="add__kind-icon">{kindGlyph(k)}</span>
+                    <span className="add__kind-text">
+                      <span className="add__kind-name">{t.add.kinds[k].name}</span>
+                      <span className="add__kind-what">{t.add.kinds[k].what}</span>
+                    </span>
+                  </button>
+                ))}
+              </div>
               <div className="field">
                 <Input
                   ref={urlRef}
@@ -174,17 +198,6 @@ export default function AddInspoModal({ onClose, onSubmit, isDuplicate, project,
                 {step ? <BoardProgress step={step} className="board-progress" />
                   : <p className="modal__hint">{board ? t.board.hint(PLATFORM_NAME[board.platform]) : t.add.linkHint}</p>}
               </div>
-              {/* The other two ways in: sunken wells, the field's shape, since an image can be dropped on them */}
-              {!board && <>
-              <button type="button" className="add__pick" onClick={() => fileRef.current?.click()}>
-                <Icon name="image" size={16} />
-                <span>{t.add.dropImage} <u>{t.add.chooseFile}</u></span>
-              </button>
-              <button type="button" className="add__pick" onClick={() => startText()}>
-                <Icon name="text" size={16} />
-                <span>{t.add.pickText}</span>
-              </button>
-              </>}
             </>
           )}
           <input ref={fileRef} type="file" accept={MEDIA_ACCEPT} hidden onChange={(e) => pick(e.target.files?.[0] ?? null)} />

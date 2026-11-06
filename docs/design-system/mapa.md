@@ -12,6 +12,7 @@ La app vive en `/`. Lo que se ve depende de la query, sin cambiar de página, pa
 | `/` la primera vez | Primera entrada (`Welcome`): nombre, primera referencia, extensión y cliente de IA, los dos últimos opcionales; `/?welcome=1` la fuerza en desarrollo → [decisión](decisiones/2026-11-06-la-primera-entrada-es-un-flujo-de-cuatro-pasos-con-extension-y-mcp-opcionales.md) |
 | `/?in=home` | Inicio: "¿Qué vas a hacer?" y los proyectos |
 | `/?in=inbox` | Inbox: lo que no está en ningún proyecto |
+| `/?in=inbox&view=polish` | Pulido del Cajón: lo que se queda o se borra |
 | `/?in=library` | Toda la biblioteca |
 | `/?in=templates` | Descubrir: los ejemplos. Sin pestaña en la Isla: desde el menú del espacio y los espacios vacíos → [decisión](decisiones/2026-10-13-descubrir-sale-de-la-isla-y-aparece-donde-no-hay-referencias.md) |
 | `/?in=discover` | Descubrir: los recursos, la lista de la web de marketing con la miniatura que sigue al puntero |

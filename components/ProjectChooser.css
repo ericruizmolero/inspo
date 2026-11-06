@@ -53,8 +53,8 @@
 .chooser__grid .cr-ring { margin-top: 4px; }
 /* On the ground, not on chrome: the theme's focus ring */
 .chooser__grid .cr-boardcard:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
-/* An empty project: its mosaic is one dashed place to drop a picture or a link (the dashed line marks a way in, as in
-   Add's .add__pick, never a card's edge). Over it while dragging, the line and the words come up to the text */
+/* An empty project: its mosaic is one dashed place to drop a picture or a link (the dashed line marks a way in, never
+   a card's edge). Over it while dragging, the line and the words come up to the text */
 .chooser__empty { min-width: 0; }
 .chooser__grid .chooser__empty .cr-boardcard { width: 100%; }
 .chooser__grid .chooser__empty .cr-boardcard-mosaic { display: flex; }

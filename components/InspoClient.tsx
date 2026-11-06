@@ -32,6 +32,7 @@ import { useTextBodies } from "@/hooks/use-text-bodies";
 import { useUrlSearch } from "@/hooks/use-url-search";
 import { useSystems } from "@/hooks/use-systems";
 import { usePolishVotes, usePolishTally } from "@/hooks/use-polish-votes";
+import { useInboxPolish } from "@/hooks/use-inbox-polish";
 import { useTagWatch } from "@/hooks/use-tag-watch";
 import { useLibraryMirror, useLibrarySync } from "@/hooks/use-library-sync";
 import { useAddDialog } from "@/hooks/use-add-dialog";
@@ -170,10 +171,14 @@ export default function InspoClient({
   const space = inParam === "inbox" || inParam === "templates" || inParam === "discover" || inParam === "skills" || (inParam && projects.some((p) => p.id === inParam)) ? inParam : inParam === "library" || items.length === 0 ? "all" : "home";
   const currentProject = projects.find((p) => p.id === space) ?? null;
   const currentSystem = currentProject ? systems[currentProject.id] ?? null : null;
-  // Inside a project the board comes first; polishing it (?view=polish) and the system (?view=system) are modes
+  // Inside a project the board comes first; polishing it (?view=polish) and the system (?view=system) are modes.
+  // The Cajón has the board and Polish: it is not a project, so it has no system (Eric, 06-11)
   const defaultView = "board" as const;
   const viewParam = sp.get("view");
-  const projectView: "system" | "polish" | "board" = !currentProject ? "board" : viewParam === "board" || viewParam === "polish" || viewParam === "system" ? viewParam : defaultView;
+  const projectView: "system" | "polish" | "board" = currentProject
+    ? viewParam === "board" || viewParam === "polish" || viewParam === "system" ? viewParam : defaultView
+    : space === "inbox" && viewParam === "polish" ? "polish" : "board";
+  const inboxPolish = space === "inbox" && projectView === "polish";
   // Back from Polish, the board takes the tornado's cards (components/view-morph.ts); its chunk is warm before it is asked for
   const lastView = useRef(projectView);
   useLayoutEffect(() => {
@@ -181,7 +186,7 @@ export default function InspoClient({
     distillIn(projectView);
     lastView.current = projectView;
   }, [projectView]);
-  useEffect(() => { if (currentProject) void import("./PolishView"); }, [currentProject]);
+  useEffect(() => { if (currentProject || space === "inbox") void import("./PolishView"); }, [currentProject, space]);
   /** Between the board and Polish the cards go from one to the other: the view leaving sets off at the click, before
    *  anything is rendered, and the view arriving takes them from where they have got to. To and from the system a
    *  copy of the view leaving fades over the one arriving (components/view-morph.ts). Returns how long to wait
@@ -199,7 +204,7 @@ export default function InspoClient({
   }, [setParams, defaultView, leaveView]);
   // The search lives on a project's board and in the Inbox, nowhere else: off them there is no box, and what was
   // typed or chipped there waits in the URL without narrowing anything
-  const searchHere = (!!currentProject && projectView === "board") || space === "inbox";
+  const searchHere = (!!currentProject || space === "inbox") && projectView === "board";
   // Which areas of the current project's system each reference backs (for the card's "to the system")
   const backsByItem = useMemo(() => {
     const m = new Map<string, SystemArea[]>();
@@ -271,6 +276,12 @@ export default function InspoClient({
     : space === "inbox" ? items.filter((i) => i.id ? !links[i.id]?.length : !i.pendingIn)
     : items.filter((i) => i.id ? !!links[i.id]?.includes(space) : i.pendingIn === space),
   [items, links, space]);
+  // Polish in the Cajón: kept stays, forgotten is deleted on leaving Polish (hooks/use-inbox-polish.ts)
+  const inboxPolishing = useInboxPolish({
+    workspaceId: workspace.id, userId: user.id, active: inboxPolish, inbox: space === "inbox" ? spaceItems : EMPTY_ITEMS,
+    deletable: (item) => workspace.role === "owner" || workspace.role === "admin" || item.addedBy === (user.name || user.email),
+    setItems, onFailed: (e) => setToast({ title: t.app.removeFailed, detail: e instanceof Error && e.message === "not-yours" ? t.polish.inbox.notYours : e instanceof Error ? e.message : String(e) }),
+  });
 
   // Something added here still on its way (no id yet): Tino says so from the bar. A file is a local blob: until it is up
   const pending = spaceItems.find((i) => !i.id);
@@ -279,7 +290,7 @@ export default function InspoClient({
   // Tino stands in the bottom-right corner wherever he speaks for the page: the home, Polish, the system, and a board
   // with something on it (SearchTino); the theme button leaves that corner and sits after the pill
   const boardTino = searchHere && spaceItems.length > 0;
-  const tinoCorner = space === "home" || boardTino || (!!currentProject && projectView !== "board");
+  const tinoCorner = space === "home" || boardTino || (!!currentProject && projectView !== "board") || inboxPolish;
 
   const { watch, gathering } = useTagWatch({ items: spaceItems, tagJobs, setTagJobs, setTagMap });
   const { bellNews, beatRef, filling } = useLibrarySync({ first, stamp, since, bell, workspace, items, setMirror, setProjects, setLinks, setVotes, withVoteWrites, watch });
@@ -488,7 +499,7 @@ export default function InspoClient({
 
   // Presence: which place of the interface the person is in right now, named as the interface names it
   // (read by the /admin panel, "Where they spend the time"; the words are t.labels.area)
-  const area = currentProject && projectView === "polish" ? "polish"
+  const area = projectView === "polish" ? "polish"
     : panelItem ? "sheet"
     : showAdd ? "add"
     : space === "discover" ? "directory" : space === "skills" ? "skills" : space === "templates" ? (exampleOpen ? "example" : "examples")
@@ -671,7 +682,7 @@ export default function InspoClient({
   }) : [], [space, boardTino, t, spaceItems, commentMap, user, openedAt, tagMap, projects, items, links]); // eslint-disable-line react-hooks/exhaustive-deps
   const grid = (
     <Grid
-      under={!!currentProject && projectView !== "board"}
+      under={(!!currentProject || space === "inbox") && projectView !== "board"}
       corner={boardTino ? <ThemeToggle /> : undefined}
       missed={missed}
       items={boardItems}
@@ -788,11 +799,12 @@ export default function InspoClient({
               On a phone the labels go and the icons stay */}
           <div className="topbar__actions">
             <PillBar className="topbar__switch">
-              {currentProject && (
+              {(currentProject || space === "inbox") && (
                 <>
                   {/* Board, Polish, System: the system's SegmentedControl. The view is set a frame after the click
                       (afterPaint): a view of the project is a heavy render, and the tab answers first */}
-                  <ProjectModes projectView={projectView} polishTab={polishTab} solo={solo} members={members} systemFilled={systemFilled} systemStale={systemStale}
+                  <ProjectModes projectView={projectView} polishTab={currentProject ? polishTab : { left: inboxPolishing.left, under: false, done: EMPTY_DONE }}
+                    solo={solo || !currentProject} members={members} systemFilled={systemFilled} systemStale={systemStale} noSystem={!currentProject}
                     onChange={(i) => { const v = PROJECT_VIEWS[i], wait = leaveView(v); if (wait) window.setTimeout(() => setProjectView(v, true), wait); else afterPaint(() => setProjectView(v, true)); }} />
                   <PillBarSep />
                 </>
@@ -914,7 +926,7 @@ export default function InspoClient({
             onExamples={() => setSpace("templates")}
             onAgent={() => setConnecting(true)}
           />
-        ) : spaceItems.length === 0 && space === "inbox" ? (
+        ) : spaceItems.length === 0 && space === "inbox" && !inboxPolish ? (
           <InboxZero
             projects={projects}
             systems={systems}
@@ -969,13 +981,39 @@ export default function InspoClient({
               onSystem={startSystem}
             />
             )}
+            {inboxPolish && (
+            // The Cajón polished: each card stays in it or is deleted, decided at once (hooks/use-inbox-polish.ts)
+            <PolishView
+              key="inbox"
+              project={null}
+              items={boardItems}
+              imageOf={smallImageOf}
+              largeImageOf={(item) => signedOf(thumbMap[item.web] ?? pageShots[item.web]?.topUrl ?? null) ?? smallImageOf(item)}
+              ratioOf={ratioOf}
+              textOf={(item) => (item.id ? textBodies[item.id] : "") || item.note}
+              noteOf={(item) => captionFor(item, item.id ? commentMap[item.id] : undefined, authorImages[item.addedBy])}
+              commentsOf={(item) => (item.id ? commentMap[item.id]?.length ?? 0 : 0)}
+              active={!panelItem && !showAdd}
+              votes={inboxPolishing.votes}
+              me={user.id}
+              myName={user.name}
+              members={members}
+              canClose={false}
+              onVote={inboxPolishing.vote}
+              onClose={async () => 0}
+              onRestore={inboxPolishing.restore}
+              onOpenItem={(item) => openItem(item)}
+              onBoard={() => setProjectView("board")}
+              onSystem={() => {}}
+            />
+            )}
           </>
         )}
         {/* The music is in the corner of every view. The boards and Polish have it in their zoom's pill; the others
             have nothing to zoom, and the pill is the music alone */}
         {!(space !== "templates" && space !== "discover" && space !== "skills" && space !== "home" && items.length > 0
           && !(currentProject && projectView === "system")
-          && ((currentProject && projectView === "polish") || !(spaceItems.length === 0 && (currentProject || space === "inbox"))))
+          && (projectView === "polish" || !(spaceItems.length === 0 && (currentProject || space === "inbox"))))
           && (space === "home" ? (
             // The home gives its bottom-right corner to Tino: the theme button comes to this one, after the pill
             <div className="board-zoom home-corner">
@@ -1067,3 +1105,5 @@ export default function InspoClient({
 }
 
 const EMPTY_AREAS: SystemArea[] = [];
+const EMPTY_ITEMS: InspoItem[] = [];
+const EMPTY_DONE = new Set<string>();

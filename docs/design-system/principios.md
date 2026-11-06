@@ -33,3 +33,4 @@ El gusto de Criterio en frases que se pueden aplicar. Cada una enlaza la decisi�
 
 18. **Lo que escribe un modelo no puede sonar a modelo.** Sin rayas (— – --) ni puntos medios (·) entre elementos, comillas rectas (" ") y nunca angulares (« »), sin recuentos ni píxeles innecesarios, en el idioma de la app. La skill de criterio.md "Evitar AI Slop" (`lib/md-skills-more.ts`) recoge el resto. → [decisión](decisiones/2026-11-04-comillas-rectas-nunca-angulares.md)
 19. **Microcopy corto y en dos idiomas**: inglés por defecto, castellano segundo, siempre a la vez. → [UI bilingüe](decisiones/2026-09-23-ui-bilingue-i18n.md)
+20. **Etiquetas y opciones en una sola línea.** Si no caben, se acorta el texto y el detalle va al tooltip; la UI, fina. → [decisión](decisiones/2026-11-06-anadir-ensena-las-seis-entradas-como-la-extension.md)
