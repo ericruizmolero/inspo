@@ -1,7 +1,7 @@
 ---
 title: El favicon es Tino, el mismo de la landing
 date: 2026-11-03
-status: vigente
+status: sustituida
 kind: diseño
 supersedes: la parte del favicon de "La criatura es el logotipo y el favicon, y nada más por ahora" (2026-10-07)
 ---

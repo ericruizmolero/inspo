@@ -628,11 +628,11 @@ const TINO_FILES = [
   { href: "/app-icon-512.png", name: "tino-app-icon-512.png", label: "PNG 512", what: "Icono de la app instalada" },
 ];
 const TINO_TRAITS: [string, string][] = [
-  ["Forma", "Tino de perfil en silueta: dos orejas (la de atrás inclinada −12°), el cuerpo como una gota ancha y el visor, una raya que mira a la derecha"],
-  ["Tinta", "#1B1B18 sobre papel #EDE6D6; el visor en #F6F1E6"],
-  ["En oscuro", "El SVG se invierte solo: cuerpo #EDE6D6, visor #141412"],
-  ["Trazo", "Orejas con contorno de 2,4 y unión redonda; visor de 6,2 con extremos redondos"],
-  ["Lienzo", "63 × 63, centrado; los PNG llevan fondo de papel, el SVG va transparente"],
+  ["Forma", "Tino de perfil en píxeles: dos orejas en punta, el cuerpo como una gota ancha y el visor, una raya hueca que mira a la derecha"],
+  ["Tinta", "#1B1B18 sobre papel #EDE6D6; el visor es un hueco, se ve el fondo"],
+  ["En oscuro", "El SVG se invierte solo: Tino en #EDE6D6"],
+  ["Píxel", "El dibujo de Eric: 22 × 20 píxeles centrados en 24 × 24; se escala sin perder la forma"],
+  ["Lienzo", "24 × 24; los PNG de 180 y 512 llevan margen y fondo de papel, el SVG va transparente"],
 ];
 
 /** The live favicon: app/icon.svg read as served, drawn in both themes, with its traits and every file to download. */

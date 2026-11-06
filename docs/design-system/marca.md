@@ -17,17 +17,17 @@ Tino plano, el mismo dibujo que el favicon, es `Logo` (`components/Logo.tsx`, qu
 
 ## Favicon e iconos
 
-El favicon no es la criatura sino Tino, el mismo SVG que la landing (`marca/conejo-icono.svg`): de perfil, orejas cortas, sin baldosa, en tinta y en papel con el tema oscuro del sistema. `app/icon.svg`, y en su versión clara `app/favicon.ico` (16 a 64) e `app/icon.png` (256); `app/apple-icon.png` (180) y `public/app-icon-512.png` (el del manifiesto) sobre papel. En la barra de Chrome y en la cabecera del popup, la extensión es Tino solo, en blanco y con el ojo recortado, sin baldosa (`tino-white-16/32/48.png`); si el sistema está en claro, el popup cambia el de la barra por el de tinta (`tino-ink-*`). La baldosa de papel (`icon16` a `icon128`) queda para donde el fondo es claro: la página de extensiones, la tienda y la píldora de los tableros. → [decisión](decisiones/2026-11-06-el-icono-de-la-extension-es-tino-solo-en-blanco.md) En Claude, el logo del conector MCP sale del favicon. → [decisión](decisiones/2026-11-03-el-favicon-es-tino-el-mismo-de-la-landing.md)
+El favicon no es la criatura sino Tino en píxeles, el dibujo de Eric (desde el 2026-11-06; antes el SVG liso de la landing), el mismo en la app, la extensión y la web de marketing → [decisión](decisiones/2026-11-06-tino-en-pixeles-en-todas-partes.md): de perfil, orejas en punta, sin baldosa, en tinta y en papel con el tema oscuro del sistema. `app/icon.svg`, y en su versión clara `app/favicon.ico` (16 a 64) e `app/icon.png` (256); `app/apple-icon.png` (180) y `public/app-icon-512.png` (el del manifiesto) sobre papel. En la barra de Chrome y en la cabecera del popup, la extensión es Tino solo, en blanco y con el ojo recortado, sin baldosa (`tino-white-16/32/48.png`); si el sistema está en claro, el popup cambia el de la barra por el de tinta (`tino-ink-*`). La baldosa de papel (`icon16` a `icon128`) queda para donde el fondo es claro: la página de extensiones, la tienda y la píldora de los tableros. → [decisión](decisiones/2026-11-06-el-icono-de-la-extension-es-tino-solo-en-blanco.md) En Claude, el logo del conector MCP sale del favicon. → [decisión](decisiones/2026-11-03-el-favicon-es-tino-el-mismo-de-la-landing.md)
 
 | Rasgo | Valor |
 | --- | --- |
-| Forma | Silueta de perfil: dos orejas (la de atrás inclinada −12°), el cuerpo como una gota ancha y el visor, una raya que mira a la derecha |
-| Tinta | `#1B1B18` sobre papel `#EDE6D6`; el visor en `#F6F1E6` |
-| En oscuro | El SVG se invierte solo (`prefers-color-scheme`): cuerpo `#EDE6D6`, visor `#141412` |
-| Trazo | Orejas con contorno de 2,4 y unión redonda; visor de 6,2 con extremos redondos |
-| Lienzo | 63 × 63; los PNG llevan fondo de papel, el SVG va transparente |
+| Forma | Silueta de perfil en píxeles: dos orejas en punta, el cuerpo como una gota ancha y el visor, una raya hueca que mira a la derecha |
+| Tinta | `#1B1B18` sobre papel `#EDE6D6`; el visor es un hueco |
+| En oscuro | El SVG se invierte solo (`prefers-color-scheme`): Tino en `#EDE6D6` |
+| Píxel | El dibujo de Eric (`icon (1).svg`, hecho con Arrow): 22 × 20 píxeles, ajustados a su rejilla y centrados en 24 × 24. Escalado sin `crispEdges`, para que a cualquier tamaño los píxeles salgan iguales |
+| Lienzo | 24 × 24; `apple-icon` (180) y el de 512 con margen, sobre papel; el SVG va transparente |
 
-Dentro de la app, el mismo dibujo es `TinoMark` (`components/TinoMark.tsx`): el SVG en línea, en `currentColor`, con el visor recortado por una máscara, para que siga el tema de la app y no el del sistema. `Logo` lo usa en todos sus sitios. → [decisión](decisiones/2026-11-03-el-logotipo-es-tino-como-el-favicon.md)
+Dentro de la app, el mismo dibujo es `TinoMark` (`components/TinoMark.tsx`): el mismo trazado de píxeles en línea, en `currentColor`, con el visor como hueco, para que siga el tema de la app y no el del sistema. `Logo` lo usa en todos sus sitios. → [decisión](decisiones/2026-11-03-el-logotipo-es-tino-como-el-favicon.md)
 
 ## Tino en la librería
 
