@@ -33,7 +33,7 @@ export default function ShareDialog({ projectId, onClose }: { projectId: string;
   const modes = ["clean", "full"] as const;
   return (
     <Dialog open onOpenChange={(o) => { if (!o) onClose(); }}>
-      <DialogWindow className="bshare" bar={s.open} heading={s.title} closeLabel={t.common.close}>
+      <DialogWindow className="bshare" heading={s.title} closeLabel={t.common.close}>
         <div className="bshare__body">
           <DialogDescription className="bimp__lead">{s.lead}</DialogDescription>
           <div className="bshare__modes">

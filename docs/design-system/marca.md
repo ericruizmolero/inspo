@@ -48,7 +48,7 @@ El nombre es **criterio.design**, en minúscula. `Wordmark` lo escribe en displa
 | --- | --- | --- |
 | Papel | `--paper` | El suelo claro, el botón por defecto |
 | Tinta | `--ink` | El texto y el borde de todo control |
-| Moss | `--moss` | La biblioteca: anillo al día, barra de las ventanas |
+| Moss | `--moss` | La biblioteca: anillo al día, barra de `TipWindow` (los diálogos no la llevan) |
 | Ember | `--ember` | El único punto cálido: la acción principal |
 
 La marca es la misma en Board y en Paper. → [Color](fundamentos/color.md)

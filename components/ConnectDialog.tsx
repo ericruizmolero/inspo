@@ -43,7 +43,7 @@ export default function ConnectDialog({ onClose, workspaceId, start = "mcp" }: {
 
   return (
     <Dialog open onOpenChange={(o) => { if (!o) onClose(); }}>
-      <DialogWindow className="mcpc" bar={s.open} heading={both ? s.connectors : s.title} closeLabel={t.common.close}>
+      <DialogWindow className="mcpc" heading={both ? s.connectors : s.title} closeLabel={t.common.close}>
         <div className="mcpc__body">
           {both && (
             <SegmentedControl tone="paper" className="mcpc__ways" label={s.connectors} active={WAYS.indexOf(way)} onChange={(i) => setWay(WAYS[i])}

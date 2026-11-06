@@ -1,7 +1,7 @@
 ---
 title: Las ventanas de aviso y confirmación llevan barra moss y siguen al tema
 date: 2026-10-07
-status: vigente
+status: sustituida
 kind: diseño
 supersedes: "los menús son ventanas de papel siempre" (misma tarde)
 ---

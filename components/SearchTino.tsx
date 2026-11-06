@@ -60,7 +60,7 @@ export function useSearchingLine(busy: boolean, total: number): string {
   return useAfter(busy, SLOW_MS) ? t.tino.searchSlow : t.tino.searching(total);
 }
 
-export default function SearchTino({ report, busy, typing, focused, failed, total, chips, onClose, onAct, saving = null, nudges = [], scope, quiet = false, idle }: {
+export default function SearchTino({ report, busy, typing, focused, failed, total, chips, onClose, onAct, saving = null, nudges = [], scope, quiet = false, idle, max }: {
   report: SearchReport | null;
   /** Something added is still on its way (a file uploading, a link or a text saving): he says so while it lasts */
   saving?: "upload" | "save" | null;
@@ -88,6 +88,8 @@ export default function SearchTino({ report, busy, typing, focused, failed, tota
   quiet?: boolean;
   /** What he says when asked with nothing pending (boardIdle): how the board stands. By default, what to ask him */
   idle?: TinoNudge;
+  /** How many nudges a visit goes through (HomeTino) */
+  max?: number;
 }) {
   const { t } = useT();
   const tino = useRef<TinoApi>(null);
@@ -128,7 +130,7 @@ export default function SearchTino({ report, busy, typing, focused, failed, tota
     onClose: !asking && !saving ? onClose : undefined,
   } : null;
   // Searching, he says it while a search is on even with nothing to say yet: the nudges wait
-  return <HomeTino className="board-tino" tinoRef={tino} nudges={nudges} scope={scope} speak={speak} face={mood} quiet={quiet || !!report || typing || asking}
+  return <HomeTino className="board-tino" tinoRef={tino} nudges={nudges} max={max} scope={scope} speak={speak} face={mood} quiet={quiet || !!report || typing || asking}
     idle={idle ?? { key: "idle", title: t.tino.board.idleTitle, text: t.tino.board.idleText, mood: "watching" }} />;
 }
 

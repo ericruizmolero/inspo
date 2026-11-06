@@ -23,7 +23,7 @@ function Picker({ onClose }: { onClose: () => void }) {
   const room = MAX - img.files.length;
   return (
     <Dialog open onOpenChange={(o) => { if (!o) onClose(); }}>
-      <DialogWindow className="bmo-pick modal--lg" bar={t.brand.imagery.examples} heading={t.brand.imagery.pick} closeLabel={t.common.close}
+      <DialogWindow className="bmo-pick modal--lg" heading={t.brand.imagery.pick} closeLabel={t.common.close}
         footer={<>
           <span className="bmo-pick__count">{t.brand.imagery.picked(picked.length, room)}</span>
           <Button variant="primary" onClick={() => { set({ itemIds: picked.slice(0, room) }); onClose(); }}>{t.brand.done}</Button>

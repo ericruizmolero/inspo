@@ -288,6 +288,8 @@ export interface TagView {
   keywords: string[];
   /** Who made it, from its metadata: author, studio or publication, @handle */
   credits: string[];
+  /** v5 SIGNALS it shows, across every area ("g:serif-display") */
+  signals: string[];
 }
 
 /** A tag as people type it: lowercase, single spaces, no leading #, 40 characters at most */
@@ -305,12 +307,14 @@ export function viewOf(t: InspoTags | undefined, user: UserTags | undefined = t?
     traits: keep("t", TAGS.filter((x) => (t.tags[x.key] ?? 0) >= TAG_THRESHOLD).map((x) => x.key)),
     keywords: keep("k", [...new Set([...(t.keywords ?? []), ...(user?.added ?? [])])]),
     credits: keep("a", [...new Set([t.meta?.author, t.meta?.publisher, t.meta?.handle].filter((x): x is string => !!x))]),
+    signals: keep("g", [...new Set(Object.values(t.areas ?? {}).flatMap((a) => a?.signals ?? []))]),
   };
 }
 
-/** "s:pricing" → { field: "sections", key: "pricing" }. "k:…" is a keyword, "a:…" a credit. A bare key is a trait (TAGS). */
-export function facetOf(sel: string): { field: FacetField | "keywords" | "credits" | null; key: string } {
+/** "s:pricing" → { field: "sections", key: "pricing" }. "k:…" is a keyword, "a:…" a credit, "g:…" a v5 signal. A bare key is a trait (TAGS). */
+export function facetOf(sel: string): { field: FacetField | "keywords" | "credits" | "signals" | null; key: string } {
   const m = sel.match(/^([a-z]):(.+)$/);
+  if (m?.[1] === "g") return { field: "signals", key: m[2] };
   if (m?.[1] === "k") return { field: "keywords", key: m[2] };
   if (m?.[1] === "a") return { field: "credits", key: m[2] };
   const f = m && FACETS.find((x) => x.prefix === m[1]);

@@ -1014,9 +1014,10 @@ select.cr-input { appearance: none; padding-right: 32px; cursor: pointer;
    A post from X without media reads as the post: its author's face, name and handle, then what it says.
    A site that gave no og:image nor screenshot: its domain, its name and what it says about itself. Flat,
    nothing drawn: no watermark letter, no tint (principle 1) */
-/* The post starts at the top of its square like a text does (Eric, 08-10: nothing moves under the pointer, and the
-   action rows over it are fine). No mask on the words (a short post would fade whole): only a post cut by its card
-   (.is-cut, measured in InspoCard.tsx useCut) gets a fade over its last visible line; one that fits reads whole */
+/* The post starts at the top of its card like a text does (Eric, 08-10: nothing moves under the pointer, and the
+   action rows over it are fine), and the card is as tall as its words (Eric, 06-11: like a pasted text's; measured in
+   InspoCard.tsx usePostFit, 0.45 to 1.4 times its width). No mask on the words (a short post would fade whole): only
+   a post longer than that (.is-cut, InspoCard.tsx useCut) gets a fade over its last visible line */
 .tile__text--post { gap: 10px; }
 .tile__text--post .tile__text-body { flex: 0 1 auto; -webkit-mask-image: none; mask-image: none; }
 .tile__text--post.is-cut::before {
@@ -1404,7 +1405,7 @@ video.vp__media { object-fit: contain; }
 .cmdk-item__hint { margin-left: auto; font-variant-numeric: tabular-nums; font-size: var(--fs-label); color: var(--muted); flex-shrink: 0; }
 
 /* Confirmations: the question, what happens, two answers */
-/* Confirm: a small window (bar, question, answers). The padding is the window body's */
+/* Confirm: a small window (question, answers). The padding is the window body's */
 .modal--confirm { max-width: 420px; }
 .modal--confirm .modal-window__body { gap: 8px; }
 .modal--confirm .modal__footer { margin-top: 12px; }
@@ -1753,14 +1754,10 @@ video.vp__media { object-fit: contain; }
 .guest__cost a:hover { text-decoration-color: var(--text); }
 .guest__example { width: 100%; max-width: 600px; margin: var(--space-7) 0 0; display: flex; flex-direction: column; gap: var(--space-2); }
 .guest__example figcaption { color: var(--text-2); }
-.guest__window.cr-window { width: 100%; }
-.guest__window .cr-window-body { padding: 0; }
+.guest__window.mdv { width: 100%; max-width: none; }
+.guest__window .mdv-bar { min-height: 44px; }
 /* The file as it is: monospace is for literal data, and this is the file */
-.guest__md {
-  margin: 0; max-height: 360px; overflow: auto; padding: var(--space-4);
-  font-family: var(--font-mono); font-size: var(--fs-small); line-height: var(--lh-small);
-  white-space: pre-wrap; overflow-wrap: anywhere; color: var(--text);
-}
+.guest__md { margin: 0; max-height: 360px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; }
 .guest__md:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
 
 .page { max-width: 640px; margin: 0 auto; padding: 24px 16px 64px; display: flex; flex-direction: column; gap: 20px; }

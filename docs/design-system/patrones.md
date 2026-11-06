@@ -72,3 +72,94 @@ Ver principio 18. Además: en el idioma del equipo, frases que se lean de golpe,
 ## Páginas públicas
 
 Sin IA, sin descargas de blobs ni análisis de imágenes al renderizar. Lo precomputado va en build, script o segundo plano. → [login instantáneo](decisiones/2026-09-22-login-sin-trabajo-pesado.md)
+
+## Tino toma la iniciativa
+
+Tino no espera a que le pregunten: en cada vista mira lo que pasa ahí y empuja hacia lo siguiente que sirve, con un botón que lleva justo a ese sitio. Lo que dice sale de los datos reales de esa vista, nunca de una plantilla. → [proactivo con el proyecto](decisiones/2026-11-04-tino-siempre-en-la-esquina-y-proactivo-con-el-proyecto.md), [nunca se encoge de hombros](decisiones/2026-11-06-tino-nunca-se-encoge-de-hombros-y-en-el-inbox-empuja-a-un-proyecto.md)
+
+### Reglas comunes
+
+- **Dónde.** Siempre en la esquina de abajo a la derecha (`TinoCorner`), en globo. En teléfono no sale (menos de 801 px).
+- **Uno cada vez.** Un globo sin pedir por visita. Si hay varios, "1 / 4" pasa al siguiente; como mucho 4 por visita (6 en el Inbox).
+- **Qué va primero.** Lo urgente siempre delante (alguien del equipo te habla). El resto se turna de una visita a otra (`seed`), para no abrir siempre con lo mismo.
+- **Callarlo.** "Luego" calla ese aviso el resto de la visita; la × cierra el globo. Valen solo en su vista (`scope`): cerrar el del Inicio no calla el del tablón. Un clic en Tino lo vuelve a abrir con todo, también lo pospuesto.
+- **Una sola vez.** Un hito o una explicación (`once`) se dice una vez en la vida y no vuelve (`localStorage`). Lo que pasó mientras no estabas (`happened`) solo se dice al volver tras 5 días o más.
+- **Pulsado sin nada pendiente.** Nunca "nada que objetar": cuenta cómo está la vista y propone algo con su botón (`boardIdle`, `inboxIdle`, `systemIdle`).
+- **Silenciado.** El interruptor de la pastilla (`TinoSwitch`) lo duerme: se hunde y no dice nada sin pedir. Lo que la persona le pide (una búsqueda) lo contesta igual.
+- **Dentro de un proyecto habla de ese proyecto.** Nunca de la bandeja ni de otros proyectos.
+- **Un respiro.** Tras 40 minutos activos, por turnos: música, cambiar de tema, Recursos o estirar; nunca dos a menos de 30 minutos (`components/tino-break.ts`). Va por encima de lo pospuesto, nunca por encima de lo que la persona está haciendo.
+- **Habla con datos, no con obviedades.** Lo que dice del gusto de un tablón se compara con lo normal antes de decirse: lo que tiene casi cualquier web (centrado, grotesca neutra) no es un hallazgo. → [decisión](decisiones/2026-11-06-tino-dice-lo-que-el-tablon-tiene-mas-que-lo-normal-no-lo-mas-repetido.md)
+
+### Inicio
+
+Los arma `ProjectChooser.tsx` (`nudges`), en este orden:
+
+| Cuándo | Qué dice | Botón |
+| --- | --- | --- |
+| Queda un primer paso por hacer | "Vamos a por tu primer criterio.md." con la lista de pasos y cuántos van | El del paso (nombrar proyecto pone el cursor en la caja; el último, Conectar) |
+| 15 o más en la bandeja y alguna de más de 7 días | "15 referencias en la bandeja. Alguna lleva ahí un tiempo." | Ordenarlas conmigo |
+| Vuelves tras 5 días y un tablón tuvo una pasada mientras tanto | "Mira quién ha vuelto." / "X ha seguido procesando mientras no estabas." | Enséñamelo |
+| Un tablón pasa de 10, 25 o 50 (una vez por tablón y nivel) | "X ya tiene 25 referencias." | Sin botón |
+| Un proyecto vacío y otro con referencias | "X está vacío. En Y tienes 12 referencias para empezar." | Enséñamelas |
+
+Mientras la persona escribe el nombre de un proyecto, eso va por encima de todo: "Sigue. Busco lo que encaje en tus 3 proyectos."
+
+### Tablón
+
+`boardNudges` (`components/board-nudges.ts`), desde `SearchTino`. Mientras algo se está guardando, eso va antes que todo ("Lo estoy guardando. Ya está en el tablón.").
+
+| Cuándo | Qué dice | Botón |
+| --- | --- | --- |
+| **Primero siempre:** un comentario de otra persona esta semana que no has contestado | "Andoni en X: '…'" | Contestar (abre la ficha) |
+| Pulido en equipo: te quedan votos, o gestionas y hay votos por cerrar | "El equipo está puliendo. Te quedan 3 por votar." | Votar / Cerrarlo |
+| Sin primera pasada y menos de 8 | "5 referencias. Con 3 más ya veo por dónde vas." | Añadir más |
+| Sin primera pasada y 8 o más | "Hay de sobra para la primera pasada." | Hacer la primera pasada |
+| Referencias nuevas que el sistema no ha leído | "2 referencias nuevas que el sistema aún no ha leído." | Ponerlo al día |
+| Áreas del sistema sin ninguna referencia que las apoye | "Nada del tablón habla de iconos y logo." | Añadir referencias |
+| Otra persona añadió esta semana | "Andoni ha añadido 4 referencias esta semana." | Enséñamelas (filtra por persona) |
+| Lo más nuevo de otra persona, sin nota ni comentarios | "Nadie ha dicho ni mu." | Mírala |
+| 12 o más en el tablón (y no hay votación abierta) | "Seguro que alguna ya no te dice nada." | Pulir conmigo |
+| La más vieja (2 semanas o más) sin nota ni comentarios | "X lleva aquí mes y medio y nadie ha dicho nada." | Repásala |
+| Vídeos (2+), posts de X (2+) o textos (1+); uno por visita | "¿Te has fijado?" | Verlos / Leer el copy (filtra el tipo) |
+| 3 o más tuyas sin nota | "Añadiste 5 sin decir por qué." | Empieza por la última |
+| Varias de la misma web | "Hay 3 de stripe.com. ¿Te quedas con la que más dice?" | Compararlas (busca la web) |
+| La última pasada leyó referencias que ninguna área usa | "O sobran o falta un área." | Pulir |
+| Una señal del etiquetado que el tablón tiene mucho más que lo normal: 3 o más, un tercio del tablón y el doble de lo normal (`sharedTag`, `SIGNAL_BASE`) | "3 de las 10 tienen serif de display. Lo normal es 6 de cada 100." | Verlas (filtra por la señal, `g:`) |
+| Con equipo: quien no ha puesto nada en el proyecto | "Alberto aún no ha puesto nada." | Sin botón |
+| Con equipo: semana con 5 o más que dobla a la anterior (una vez por semana) | "El equipo ha añadido 12 esta semana, frente a 4 la anterior." | Sin botón |
+
+Pulsado sin nada pendiente: cuántas hay y la última, de quién, con "Ábrela".
+
+**En el Inbox** (`inboxNudges`), todo empuja lo suelto hacia un proyecto o fuera: la que más lleva sin proyecto (más de 3 días, "Decidirlo"), con 8 o más "Nombrar un proyecto", la señal que un tercio tiene mucho más que lo normal ("Eso ya es medio proyecto."), la suelta con más comentarios ("Leerlos"), la tuya más vieja sin nota (2 semanas), la de otra persona que nadie tocó (1 semana), la que comparte 3 o más etiquetas con el tablón de un proyecto ("Esta tiene casa."), 3 o más guardadas esta semana que no llegaron a un proyecto, y los tipos, sin nota y misma web del tablón. Cada referencia sale en un solo aviso. Pulsado sin nada: cuántas sueltas y "¿a qué proyecto va?" la última.
+
+### Pulido
+
+En Pulido Tino no turna avisos: es quien pregunta. Su globo lleva la pregunta por la carta del frente ("¿Te la quedas?"; la primera, "A ver, a ver. ¿Esta te la quedas?") con Olvidar y Quedármela, "3 / 7" en el título y el pie que explica qué pasa con lo olvidado (`PolishView.tsx`).
+
+- **Antes de olvidar algo que cuesta**, pregunta: si tiene comentarios ("Esta tiene 2 comentarios. Se van con ella.") o es tu idea ("Es tu idea para X."). Con tu idea, una vez por semana, "¿Seguro, campeón?". La salida fácil es quedársela ("Me la quedo" en primario).
+- **Tras cada respuesta** reacciona un momento (1,4 s): "No está mal.", "Si tú lo dices…"; una de cada tres veces calla, para no cansar.
+- **En equipo**: dice qué votó otra persona ("Andoni ya se la queda."); con el equipo dividido, "Andoni se la queda, Alberto la olvida. ¿De qué lado estás?" con un botón por lado y "Luego decido".
+- **Al acabar**, "Ronda hecha. Te quedas 5, olvidas 2."
+- Mira hacia el botón que tienes debajo del puntero.
+
+### Sistema
+
+`systemNudges`, en la esquina de la página Sistema (`SystemDoc`, `scope` propio).
+
+| Cuándo | Qué dice | Botón |
+| --- | --- | --- |
+| Primera visita (una vez en la vida) | "Este es tu criterio.md." y cómo se edita | Sin botón |
+| Primera visita (una vez en la vida) | "Ahora, a construir la landing." | Conectar |
+| Propuestas esperando | "Hay 2 propuestas esperando tu sí o tu no." | Enséñamelas (va a la primera) |
+| Áreas sin decidir | "Quedan 3 áreas sin decidir: color, iconos y logo." | Sin botón |
+| Referencias del tablón que el fichero no ha leído | "Este archivo no las conoce." | Sin botón |
+
+Después se turnan por visita: un área que propuso el modelo y nadie confirmó ("Léela y dime si sí."), un área decidida con 1 o 2 referencias ("Poca cosa para tanta decisión."), un área que cita referencias que ya no están en el tablón, un área sin tocar en 3 semanas ("¿Sigue valiendo?") y lo que se quedó del pulido ("Lo que sobrevivió."); cada una con su botón al área. Pulsado sin nada: sin nada decidido, "Empieza por" la primera área; si no, cuántas hay decididas y la última tocada, con "Ir a".
+
+### Al añadir un aviso nuevo
+
+- Sale de datos de esa vista y se puede comprobar: si la persona lo mira, es verdad.
+- Dice algo que la persona no ha visto ya: comparado con lo normal, con lo que pasó mientras no estaba, con lo que falta. Un recuento solo no basta.
+- Lleva botón al sitio exacto (la ficha, el filtro, el área); sin botón solo si es un reconocimiento o algo que no se arregla con un clic.
+- Su `key` dice qué es y de quién (`old:<id>`), para que "Luego" valga para ese y no para todos; no lleva cifras que cambian solas si "Luego" debe aguantar.
+- La frase en los dos diccionarios (`t.tino` en `lib/i18n/{en,es}/ui.ts`), títulos como grupo de frases con la voz de la hoja de copy, sin rayas ni puntos medios. Y su fila en esta página.

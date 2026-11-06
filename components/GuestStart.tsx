@@ -3,13 +3,14 @@
 import { useRouter } from "next/navigation";
 import EmptyStart from "./EmptyStart";
 import { useT } from "./I18nProvider";
-import { Button, TipWindow } from "@/components/criterio";
+import { Button } from "@/components/criterio";
 import Logo from "@/components/Logo";
 import ThemeToggle from "./ThemeToggle";
 import { PLANS, isPaid, planOf } from "@/lib/plans";
 import { fmtCount, fmtPrice } from "@/lib/i18n/format";
 import { marketingHref } from "@/lib/site";
 import type { ExampleMd } from "@/lib/example-md";
+import "./SystemMarkdown.css";
 
 const FREE = planOf("free");
 const FROM = Math.min(...PLANS.filter(isPaid).map((p) => p.price.month));
@@ -44,9 +45,15 @@ export default function GuestStart({ inviteOnly, example }: { inviteOnly: boolea
         </p>
         <figure className="guest__example">
           <figcaption className="t-small">{t.guest.example}</figcaption>
-          <TipWindow title="criterio.md" onClose={false} className="guest__window">
-            <pre className="guest__md" tabIndex={0} aria-label={example.name}>{example.md}</pre>
-          </TipWindow>
+          {/* The file in the same panel as in a project (.mdv), no moss window: a placeholder until Andoni's landing */}
+          <div className="mdv guest__window">
+            <div className="mdv-bar"><span className="mdv-bar__hint">criterio.md</span></div>
+            <pre className="mdv-doc guest__md" tabIndex={0} aria-label={example.name}>
+              {example.md.split("\n").map((line, i) => (
+                <span key={i} className={/^#{1,6} /.test(line) ? "mdv-h" : undefined}>{line}{"\n"}</span>
+              ))}
+            </pre>
+          </div>
         </figure>
       </EmptyStart>
 

@@ -329,7 +329,7 @@ export default function SystemView({ onConnect, project, system, onSystem, board
         {commentsOpen && <PageComments projectId={project.id} onClose={() => setCommentsOpen(false)} />}
         {answering && (
           <Dialog open onOpenChange={(o) => { if (!o) setAnswering(false); }}>
-            <DialogWindow bar={t.setupQuestions.menu} heading={t.setupQuestions.menu} closeLabel={t.common.close}>
+            <DialogWindow heading={t.setupQuestions.menu} closeLabel={t.common.close}>
               <SetupQuestions projectId={project.id} brief={project.brief} onError={setError} />
             </DialogWindow>
           </Dialog>

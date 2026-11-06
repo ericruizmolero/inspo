@@ -56,7 +56,7 @@ export function boardNudges({ t, count, read, stale, empty, others, talk, vote, 
   /** References the last pass read and no area uses (unusedByAreas) */
   unused?: number;
   /** The tag most of the board shares (sharedTag), already put in words */
-  shared?: { label: string; n: number; total: number; go: () => void } | null;
+  shared?: { label: string; n: number; total: number; per100: number; go: () => void } | null;
   /** Teammates who have added nothing to this board (only with a team) */
   missing?: string[];
   /** This week's additions against the week before, when they doubled (only with a team) */
@@ -105,7 +105,7 @@ export function boardNudges({ t, count, read, stale, empty, others, talk, vote, 
   if (twins && onSearch) list.push({ key: `twins:${twins.host}`, title: b.twinsTitle, text: b.twinsText(twins.n, twins.host), act: b.twinsAct, mood: "judge", go: () => onSearch(twins.host) });
   if (read && unused > 0) list.push({ key: "unused", title: b.unusedTitle, text: b.unusedText(unused), act: b.unusedAct, mood: "suspect", go: onPolish });
   // And what the board says about the taste itself
-  if (shared) list.push({ key: `shared:${shared.label}`, title: b.sharedTitle, text: b.sharedText(shared.n, shared.total, shared.label), act: b.sharedAct, mood: "smug", go: shared.go });
+  if (shared) list.push({ key: `shared:${shared.label}`, title: b.sharedTitle, text: b.sharedText(shared.n, shared.total, shared.label, shared.per100), act: b.sharedAct, mood: "smug", go: shared.go });
   // The team: who is missing here, and a good week said once
   if (missing.length) list.push({ key: `missing:${missing.join("+")}`, title: b.missingTitle, text: b.missingText(said(missing.slice(0, 3), b.and), missing.length), mood: "suspect" });
   if (pace) list.push({ key: `pace:${pace.week}`, once: true, title: b.paceTitle, text: b.paceText(pace.now, pace.before), mood: "admirer" });
@@ -134,18 +134,46 @@ export function unusedByAreas(boardIds: string[], read: string[], evidence: stri
   return boardIds.filter((id) => seen.has(id) && !used.has(id)).length;
 }
 
-/** The tag a good part of the board shares (a trait, a colour, a type, a layout, a keyword): at least 4 references
- *  and a third of the board. As a selector for the search ("dark", "c:blue", "y:serif", "k:…") */
-export function sharedTag(items: InspoItem[], tags: TagMap): { sel: string; n: number } | null {
+/** How often each v5 signal (lib/taxonomy.ts SIGNALS) shows up across every tagged reference, in %: what is
+ *  normal on the web people save. Measured over 741 references on 2026-11-06. A signal missing here is rare (1 %).
+ *  The most repeated tag on a board is almost always one every website has (centred 69 %, neutral grotesk 80 %):
+ *  saying "9 of 10 share 'centred'" was noise (Eric: "no tiene sentido"). What Tino says is what this board has
+ *  far more than normal, the thing the person has not noticed ("llegar a cosas que el usuario no se da cuenta") */
+const SIGNAL_BASE: Record<string, number> = {
+  "grotesk-neutral": 80, "centered-column": 69, "generous-whitespace": 65, "terse-confident": 65, "caps-labels": 62,
+  "line-icons": 47, "light-one-accent": 45, "still-quiet": 45, wordmark: 41, "contained-icons": 39, "ui-screenshots": 35,
+  "abstract-graphics": 35, "benefit-led": 30, "symbol-wordmark": 30, "oversized-headlines": 23, "dark-one-accent": 17,
+  "cool-neutrals": 16, "card-based": 15, "full-bleed-sections": 15, "sans-wordmark": 12, "split-screen": 9, monochrome: 9,
+  "filled-icons": 8, "studio-product-photo": 8, "ui-states": 8, "technical-precise": 7, "flat-illustration": 7,
+  "strict-grid": 7, "gradient-led": 7, "casual-lowercase": 6, "documentary-photo": 6, "serif-display": 6, "grain-texture": 6,
+  pastel: 5, "one-colour-logo": 5, manifesto: 5, "playful-witty": 5, "3d-renders": 4, "saturated-multi": 4,
+  "video-hero": 3, "mono-accents": 3, "condensed-display": 3, "collage-cutouts": 3, "arrows-only": 3,
+  "small-framed-images": 3, "editorial-portraits": 3, "quiet-small-type": 3, "serif-text": 3, "custom-lettering": 3,
+  "emoji-icons": 3, "long-form-editorial": 3, "color-blocking": 2, "warm-personal": 2, "scroll-storytelling": 2,
+  "serif-sans-pair": 2, "black-white-photo": 2, poetic: 2, "geometric-pictograms": 2, "geometric-sans": 2,
+  "symbol-only": 2, "serif-wordmark": 2, "kinetic-type": 2, "formal-corporate": 2,
+};
+
+/** The signal this board has far more than the web at large: at least 3 references and a third of the board, and
+ *  at least twice as common as normal. The most unusual wins. `sel` filters the board ("g:serif-display"), `per100`
+ *  is how many in 100 references carry it normally */
+export function sharedTag(items: InspoItem[], tags: TagMap): { sel: string; n: number; per100: number } | null {
   const by = new Map<string, number>();
+  let read = 0;
   for (const i of items) {
     const v = viewOf(tags[i.web]);
-    if (!v) continue;
-    const sels = [...v.traits, ...v.palette.map((x) => `c:${x}`), ...v.type.map((x) => `y:${x}`), ...v.layout.map((x) => `l:${x}`), ...v.keywords.map((x) => `k:${x}`)];
-    for (const sel of new Set(sels)) by.set(sel, (by.get(sel) ?? 0) + 1);
+    if (!v?.signals.length) continue;
+    read++;
+    for (const g of v.signals) by.set(g, (by.get(g) ?? 0) + 1);
   }
-  const [top] = [...by].sort((a, b) => b[1] - a[1]);
-  return top && top[1] >= 4 && top[1] * 3 >= items.length ? { sel: top[0], n: top[1] } : null;
+  let best: { sel: string; n: number; per100: number; lift: number } | null = null;
+  for (const [g, n] of by) {
+    const per100 = SIGNAL_BASE[g] ?? 1;
+    const lift = (n / read) * 100 / per100;
+    if (n < 3 || n * 3 < read || lift < 2) continue;
+    if (!best || lift > best.lift || (lift === best.lift && n > best.n)) best = { sel: `g:${g}`, n, per100, lift };
+  }
+  return best && { sel: best.sel, n: best.n, per100: best.per100 };
 }
 
 /** Teammates with nothing on this board yet, by first name, other than me */
@@ -338,7 +366,7 @@ export function systemIdle(t: Dict, areas: SystemAreaState[], now: number, onGo:
 /** In the Inbox, when nobody searches: what is loose here pushes towards a project, or out. A teammate talking to
  *  you first; the rest takes turns from one visit to the next (`seed`). Never "nothing to say" (Eric, 06-11: "tiene
  *  que ser proactivo y decirte cosas que te inciten a hacer otras siempre") */
-export function inboxNudges({ t, items, comments, meId, me, now, seed = 0, tags, kindOf, host, parse, onOpen, onKind, onSearch, onFilter, onProject, label }: {
+export function inboxNudges({ t, items, comments, meId, me, now, seed = 0, tags, kindOf, host, parse, onOpen, onKind, onSearch, onFilter, onProject, label, projects = [], onPerson }: {
   t: Dict;
   /** What is in the Inbox */
   items: InspoItem[];
@@ -360,6 +388,10 @@ export function inboxNudges({ t, items, comments, meId, me, now, seed = 0, tags,
   /** Takes the person to where a project is named */
   onProject: () => void;
   label: (sel: string) => string;
+  /** The workspace's projects with their boards, to say which one a loose reference looks like */
+  projects?: { name: string; items: InspoItem[] }[];
+  /** Narrows the Inbox to what that person saved */
+  onPerson?: (who: string) => void;
 }): TinoNudge[] {
   const b = t.tino.board, x = t.tino.inbox;
   const urgent: TinoNudge[] = [];
@@ -375,7 +407,7 @@ export function inboxNudges({ t, items, comments, meId, me, now, seed = 0, tags,
   if (items.length >= FEW_REFS) list.push({ key: "project", title: x.projectTitle, text: x.projectText(items.length), act: x.projectAct, mood: "accomplice", go: onProject });
   // What a good part of them share: that is a project asking to be named
   const top = sharedTag(items, tags);
-  if (top) list.push({ key: `shared:${top.sel}`, title: b.sharedTitle, text: x.sharedText(top.n, items.length, label(top.sel)), act: b.sharedAct, mood: "smug", go: () => onFilter(top.sel) });
+  if (top) list.push({ key: `shared:${top.sel}`, title: b.sharedTitle, text: x.sharedText(top.n, items.length, label(top.sel), top.per100), act: b.sharedAct, mood: "smug", go: () => onFilter(top.sel) });
   const kinds = kindsOf(items, kindOf);
   const worth = (["video", "post", "text"] as const).filter((k) => (kinds[k] ?? 0) >= (k === "text" ? 1 : 2));
   const k = worth.length ? worth[seed % worth.length] : null;
@@ -384,6 +416,33 @@ export function inboxNudges({ t, items, comments, meId, me, now, seed = 0, tags,
   if (noReason) list.push({ key: "why", title: b.whyTitle, text: b.whyText(noReason.n), act: b.whyAct, mood: "skeptic", go: () => onOpen(noReason.item) });
   const twins = sameSite(items, kindOf, host);
   if (twins) list.push({ key: `twins:${twins.host}`, title: b.twinsTitle, text: b.twinsText(twins.n, twins.host), act: b.twinsAct, mood: "judge", go: () => onSearch(twins.host) });
+  // One reference each, never the same one twice: what was talked about and left, what you saved and never said
+  // why, what a teammate saved and nobody touched, what looks like a project that already exists
+  const used = new Set<string>([oldest?.i.id, talk?.item.id].filter((v): v is string => !!v));
+  const pickOne = (xs: InspoItem[]) => xs.find((i) => i.id && !used.has(i.id));
+  const said = (i: InspoItem) => { used.add(i.id!); return refName(t, i.name); };
+  const days = (i: InspoItem) => Math.floor((now - parse(i.date)) / DAY);
+  const talked = (i: InspoItem) => comments[i.id ?? ""]?.filter((c) => c.body.trim()).length ?? 0;
+  const byAge = [...items].filter((i) => parse(i.date) > 0).sort((a, c) => parse(a.date) - parse(c.date));
+  const chat = pickOne([...items].filter((i) => talked(i) > 0).sort((a, c) => talked(c) - talked(a)));
+  if (chat) { const n = talked(chat); list.push({ key: `talked:${chat.id}`, title: x.talkedTitle, text: cap(x.talkedText(said(chat), n)), act: x.talkedAct, mood: "suspect", go: () => onOpen(chat) }); }
+  const mine = pickOne(byAge.filter((i) => i.addedBy === me && !i.note.trim() && !talked(i) && days(i) >= 14));
+  if (mine) { const long = b.howLong(days(mine)); list.push({ key: `mine:${mine.id}`, title: x.mineTitle, text: x.mineText(said(mine), long), act: x.mineAct, mood: "skeptic", go: () => onOpen(mine) }); }
+  const theirs = pickOne(byAge.filter((i) => i.addedBy && i.addedBy !== me && i.addedBy !== "Both" && !talked(i) && days(i) >= 7));
+  if (theirs) { const who = theirs.addedBy.split(" ")[0], long = b.howLong(days(theirs)); list.push({ key: `theirs:${theirs.id}`, title: x.theirsTitle, text: x.theirsText(who, said(theirs), long), act: x.mineAct, mood: "suspect", go: () => onOpen(theirs) }); }
+  // The loose one that shares the most with a project's board: three tags or more in common
+  const selsOf = (i: InspoItem) => { const v = viewOf(tags[i.web]); return v ? [...v.traits, ...v.palette.map((c) => `c:${c}`), ...v.type.map((y) => `y:${y}`), ...v.layout.map((l) => `l:${l}`), ...v.keywords.map((k) => `k:${k}`)] : []; };
+  const boards = projects.filter((p) => p.items.length >= 3).map((p) => ({ name: p.name, sels: new Set(p.items.flatMap(selsOf)) }));
+  let fit: { item: InspoItem; project: string; n: number } | null = null;
+  for (const i of items) {
+    if (!i.id || used.has(i.id)) continue;
+    const mineSels = new Set(selsOf(i));
+    for (const p of boards) { let n = 0; for (const sel of mineSels) if (p.sels.has(sel)) n++; if (n >= 3 && (!fit || n > fit.n)) fit = { item: i, project: p.name, n }; }
+  }
+  if (fit) { const f = fit; list.push({ key: `fits:${f.item.id}`, title: x.fitsTitle, text: cap(x.fitsText(said(f.item), f.project)), act: x.mineAct, mood: "smug", go: () => onOpen(f.item) }); }
+  // This week's saving that went nowhere
+  const week = items.filter((i) => i.addedBy === me && now - parse(i.date) < 7 * DAY && now - parse(i.date) >= 0).length;
+  if (week >= 3 && onPerson) list.push({ key: `week:${week}`, title: x.weekTitle, text: x.weekText(week), act: b.sharedAct, mood: "watching", go: () => onPerson(me) });
   const turn = list.length ? seed % list.length : 0;
   return [...urgent, ...list.slice(turn), ...list.slice(0, turn)];
 }

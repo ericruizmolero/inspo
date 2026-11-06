@@ -694,9 +694,9 @@ function DialogSample() {
     <div className="ds-row">
       <Button onClick={() => setOpen(true)}>Abrir una ventana de diálogo</Button>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogWindow bar="Ejemplo" heading="Una ventana de diálogo" closeLabel="Cerrar"
+        <DialogWindow heading="Una ventana de diálogo" closeLabel="Cerrar"
           footer={<><Button size="s" onClick={() => setOpen(false)}>Déjalo</Button><Button size="s" variant="danger" onClick={() => setOpen(false)}>Sí, borrar</Button></>}>
-          <p className="ds-note">Barra moss, título en display y el pie con las respuestas. Sigue al tema.</p>
+          <p className="ds-note">El título en la cabecera plana, sin barra moss, y el pie con las respuestas. Sigue al tema.</p>
         </DialogWindow>
       </Dialog>
     </div>

@@ -32,6 +32,7 @@ export function filterLabel(f: Filter, t: Dict): string {
       };
       if (field === "credits") return t.panel.byCredit(key);
       if (field === "keywords") return key;
+      if (field === "signals") return (t.taxonomy.signal as Record<string, string>)[key] ?? key;
       return field ? maps[field][key] ?? key : t.taxonomy.tag[key as keyof Dict["taxonomy"]["tag"]] ?? key;
     }
   }

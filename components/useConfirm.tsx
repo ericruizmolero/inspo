@@ -26,7 +26,7 @@ export function useConfirm() {
 
   const dialog = (
     <AlertDialog open={!!ask} onOpenChange={(open) => { if (!open) answer(false); }}>
-      <AlertDialogContent bar={ask?.action}>
+      <AlertDialogContent>
         <AlertDialogTitle>{ask?.title}</AlertDialogTitle>
         {ask?.description && <AlertDialogDescription>{ask.description}</AlertDialogDescription>}
         {ask?.typed && (

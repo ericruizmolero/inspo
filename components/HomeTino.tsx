@@ -108,8 +108,10 @@ export function TinoSwitch() {
  *  was days ago (ms; 0 otherwise) */
 type Visit = { later: string[]; closed: boolean; seen: string[]; awaySince: number };
 
-export default function HomeTino({ nudges, say, speak, face, quiet = false, scope = "", className = "", tinoRef, idle }: {
+export default function HomeTino({ nudges, say, speak, face, quiet = false, scope = "", className = "", tinoRef, idle, max = MAX_NUDGES }: {
   nudges: TinoNudge[];
+  /** How many he goes through in one visit (the Inbox has more to bring up) */
+  max?: number;
   /** What the person started (typing on the home): said over any nudge, every time */
   say?: TinoNudge;
   /** An answer to what the person is doing on the page (a search, an edit): its own balloon, over any nudge and
@@ -144,7 +146,7 @@ export default function HomeTino({ nudges, say, speak, face, quiet = false, scop
     });
   }, [laterKey, closedKey]);
 
-  const left = visit ? nudges.filter((n) => !visit.later.includes(n.key) && !(n.once && visit.seen.includes(n.key)) && !(n.happened && !(visit.awaySince && Date.parse(n.happened) > visit.awaySince))).slice(0, MAX_NUDGES) : [];
+  const left = visit ? nudges.filter((n) => !visit.later.includes(n.key) && !(n.once && visit.seen.includes(n.key)) && !(n.happened && !(visit.awaySince && Date.parse(n.happened) > visit.awaySince))).slice(0, max) : [];
   // Asked (a click on him), he answers even while the page would keep him quiet, and with nothing pending says `idle`
   const [asked, setAsked] = useState(false);
   const pending = visit && !visit.closed && (asked || !quiet);

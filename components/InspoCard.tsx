@@ -71,6 +71,30 @@ function useCut(): [React.RefObject<HTMLParagraphElement | null>, boolean] {
   return [ref, cut];
 }
 
+/** How tall a post's card has to be for its words, as a share of its width: its head, every line of the post and the
+ *  same air under the last line as over the face, measured at the card's real width (its type doesn't scale with it,
+ *  so a sum of characters, as textCardRatio does, would miss). From a one-liner to a tall page, like a text's card;
+ *  past that the words fade under the edge (.is-cut). Null until measured */
+function usePostFit(body: React.RefObject<HTMLParagraphElement | null>): number | null {
+  const [ratio, setRatio] = useState<number | null>(null);
+  useEffect(() => {
+    const el = body.current, box = el?.parentElement;
+    if (!el || !box) return;
+    const read = () => {
+      const w = box.clientWidth;
+      if (!w) return;
+      const pad = parseFloat(getComputedStyle(box).paddingTop) || 0;
+      const r = Math.min(1.4, Math.max(0.45, (el.offsetTop + el.scrollHeight + pad) / w));
+      setRatio((was) => (was !== null && Math.abs(was - r) < 0.005 ? was : Math.round(r * 1000) / 1000));
+    };
+    read();
+    const ro = new ResizeObserver(read);
+    ro.observe(box);
+    return () => ro.disconnect();
+  });
+  return ratio;
+}
+
 /** The author's face as X serves it (asked for without a referrer, as the post's sheet does); the initial if it fails */
 function PostFace({ name, src }: { name: string; src: string | null }) {
   const [failed, setFailed] = useState<string | null>(null);
@@ -344,6 +368,7 @@ export default function InspoCard({ item, text, tags, tagJob, score, reason, man
   const post = usePostWords(isError && kind === "post" ? item.web : null, item.name, tags?.summary);
   // A post longer than its card fades at the bottom; one that fits reads whole to its last line
   const [postBodyRef, postCut] = useCut();
+  const postRatio = usePostFit(postBodyRef);
   // A site with no picture says what it is: the team's note, else what the page says about itself
   // (tags.summary is "title · description", lib/tagger.ts)
   // The note goes under the card, like any other card's (the board keeps room for it): the poster says what the site says
@@ -378,9 +403,9 @@ export default function InspoCard({ item, text, tags, tagJob, score, reason, man
     return () => { el.removeEventListener("load", onLoad, true); el.removeEventListener("loadeddata", onLoad, true); };
   }, [onMeasure, knownRatio]);
 
-  // No picture at all: a text's page is as tall as its words (textCardRatio), a post's square (.tile__text), a site's
-  // 4:3 (.tile__text--site), and the layout hears it
-  const posterRatio = kind === "text" ? textCardRatio(posterNote ?? "") : kind === "post" ? 1 : 0.75;
+  // No picture at all: a text's page is as tall as its words (textCardRatio), a post's as tall as its own (usePostFit,
+  // square until measured), a site's 4:3 (.tile__text--site), and the layout hears it
+  const posterRatio = kind === "text" ? textCardRatio(posterNote ?? "") : kind === "post" ? postRatio ?? 1 : 0.75;
   useEffect(() => {
     if (isError && onMeasure && (knownRatio === undefined || Math.abs(knownRatio - posterRatio) > 0.01)) onMeasure(posterRatio);
   }, [isError, onMeasure, knownRatio, posterRatio]);

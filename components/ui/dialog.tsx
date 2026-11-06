@@ -46,28 +46,23 @@ function DialogDescription({ ...props }: DialogPrimitive.Description.Props) {
   return <DialogPrimitive.Description data-slot="dialog-description" {...props} />
 }
 
-/** A modal in the shape of the system's TipWindow: a moss title bar with a short title and a strong xs close,
- * then the heading in display 700, the body and an optional footer (a Checkbox and/or up to two buttons).
- * Always paper and ink, in both themes. No sprite while the creature stays out. */
+/** A window: the flat modal's header (the title in title-s and a default s close, no moss bar: Eric, 06-11),
+ * the body and an optional footer (a Checkbox and/or up to two buttons). */
 function DialogWindow({
-  bar,
   heading,
   closeLabel,
   footer,
   className,
   children,
   ...props
-}: Omit<DialogPrimitive.Popup.Props, "children"> & { bar: React.ReactNode; heading?: React.ReactNode; closeLabel: string; footer?: React.ReactNode; children?: React.ReactNode }) {
+}: Omit<DialogPrimitive.Popup.Props, "children"> & { heading: React.ReactNode; closeLabel: string; footer?: React.ReactNode; children?: React.ReactNode }) {
   return (
     <DialogContent className={cn("modal--window", className)} {...props}>
-      <header className="cr-window-bar modal-window__bar">
-        <span className="cr-window-title">{bar}</span>
-        <DialogClose render={<IconButton icon="close" label={closeLabel} variant="strong" size="xs" />} />
+      <header className="modal__header">
+        <DialogTitle className="t-title-s">{heading}</DialogTitle>
+        <DialogClose render={<IconButton icon="close" label={closeLabel} variant="default" size="s" />} />
       </header>
-      <div className="modal__body modal-window__body">
-        {heading && <DialogTitle className="cr-window-heading t-title-m">{heading}</DialogTitle>}
-        {children}
-      </div>
+      <div className="modal__body modal-window__body">{children}</div>
       {footer && <div className="cr-window-footer modal-window__footer">{footer}</div>}
     </DialogContent>
   )

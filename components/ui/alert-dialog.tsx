@@ -11,9 +11,9 @@ function AlertDialog({ ...props }: AlertDialogPrimitive.Root.Props) {
   return <AlertDialogPrimitive.Root data-slot="alert-dialog" {...props} />
 }
 
-/** The window shape (like DialogWindow): a moss bar with a short title, then the question and the answers.
- *  No close in the bar: an alert has to be answered. */
-function AlertDialogContent({ className, bar, children, ...props }: AlertDialogPrimitive.Popup.Props & { bar?: React.ReactNode }) {
+/** The window shape (like DialogWindow), no moss bar (Eric, 06-11): the question and the answers.
+ *  No close: an alert has to be answered. */
+function AlertDialogContent({ className, children, ...props }: AlertDialogPrimitive.Popup.Props) {
   return (
     <AlertDialogPrimitive.Portal>
       <AlertDialogPrimitive.Viewport className="modal-backdrop">
@@ -22,7 +22,6 @@ function AlertDialogContent({ className, bar, children, ...props }: AlertDialogP
           className={cn("modal modal--window modal--confirm", className)}
           {...props}
         >
-          {bar != null && <header className="cr-window-bar modal-window__bar"><span className="cr-window-title">{bar}</span></header>}
           <div className="modal__body modal-window__body">{children as React.ReactNode}</div>
         </AlertDialogPrimitive.Popup>
       </AlertDialogPrimitive.Viewport>

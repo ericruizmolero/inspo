@@ -1,0 +1,47 @@
+/* The first time in (components/Welcome.tsx): one column, left aligned, one thing per screen.
+   The content area is one fixed screen: the view scrolls inside itself */
+.scroll { position: absolute; inset: 0; overflow-y: auto; background: var(--bg); }
+.wrap {
+  display: flex; flex-direction: column; align-items: flex-start;
+  width: 100%; max-width: 680px; margin: 0 auto;
+  padding: clamp(96px, 16vh, 168px) 24px 64px; box-sizing: border-box;
+}
+
+/* The steps: a line each, ink up to the one you are on, the border colour after it. Sans, never mono */
+.bar { list-style: none; margin: 0 0 var(--space-7); padding: 0; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: var(--space-3); width: 100%; }
+.step {
+  display: flex; gap: var(--space-2); padding-top: var(--space-3);
+  border-top: 2px solid var(--border);
+  font-size: var(--fs-small); line-height: var(--lh-small); color: var(--text-muted);
+  transition: border-color 350ms var(--ease-out), color 350ms var(--ease-out);
+}
+.on { border-top-color: var(--text); color: var(--text); }
+.step[aria-current="step"] { font-weight: var(--fw-medium); }
+.num { font-variant-numeric: tabular-nums; color: var(--text-muted); }
+
+/* The headline: what to do in ink, why in grey on its own line (Design Zeitgeist) */
+.title { font-size: var(--fs-hero); color: var(--text); }
+.titleMuted { display: block; color: var(--text-muted); }
+.lead { margin-top: var(--space-5); max-width: 520px; font-size: var(--fs-body); line-height: var(--lh-body); color: var(--text-muted); }
+
+/* The house question, the width of the column */
+.prompt.prompt { width: 100%; margin-top: var(--space-6); padding: 8px 8px 8px 22px; gap: var(--space-2); }
+.prompt input { font-size: var(--fs-body); }
+.prompt input:disabled { opacity: 1; }
+.hint { margin-top: var(--space-2); font-size: var(--fs-small); line-height: var(--lh-small); color: var(--text-muted); }
+.error { margin-top: var(--space-2); font-size: var(--fs-small); color: var(--danger); }
+.board { width: 100%; margin-top: var(--space-2); }
+
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); margin-top: var(--space-6); }
+.actions + .hint { margin-top: var(--space-3); }
+.done { display: inline-flex; align-items: center; gap: var(--space-2); font-size: var(--fs-ui); color: var(--text); }
+.done svg { color: var(--moss); }
+
+@media (max-width: 560px) {
+  .wrap { padding-left: 16px; padding-right: 16px; }
+  .bar { margin-bottom: var(--space-6); }
+  /* Only the numbers fit four across on a phone: the step you are on keeps its name */
+  .step span:not(.num) { display: none; }
+  .step[aria-current="step"] span:not(.num) { display: inline; }
+  .prompt.prompt { padding-left: 18px; }
+}

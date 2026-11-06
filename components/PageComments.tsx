@@ -20,7 +20,7 @@ export default function PageComments({ projectId, onClose }: { projectId: string
   };
   return (
     <Dialog open onOpenChange={(o) => { if (!o) onClose(); }}>
-      <DialogWindow bar={s.title} heading={s.title} closeLabel={t.common.close}>
+      <DialogWindow heading={s.title} closeLabel={t.common.close}>
         {error && <p className="cr-field-hint is-error t-small" role="alert">{error}</p>}
         {!list && !error ? <Busy label={s.title} /> : list?.length === 0 ? <p className={`t-small ${p.muted}`}>{s.none}</p> : (
           <ul className={p.list}>

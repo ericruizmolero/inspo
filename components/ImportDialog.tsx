@@ -29,7 +29,7 @@ export default function ImportDialog({ onClose, onImportBoard }: { onClose: () =
 
   return (
     <Dialog open onOpenChange={(o) => { if (!o) onClose(); }}>
-      <DialogWindow className="impd" bar={s.open} heading={s.title} closeLabel={t.common.close}>
+      <DialogWindow className="impd" heading={s.title} closeLabel={t.common.close}>
         <div className="impd__body">
           <DialogDescription className="impd__lead">{s.lead}</DialogDescription>
           <section className="impd__part">

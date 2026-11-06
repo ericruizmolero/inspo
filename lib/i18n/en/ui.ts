@@ -289,6 +289,19 @@ export const ui = {
     read: "Read from the site. Correct it if it is wrong.",
     menu: "Answer the questions",
   },
+  /** The very first time in (components/Welcome.tsx): four steps, the last two optional */
+  welcome: {
+    next: "Next",
+    notNow: "Not now",
+    finish: "Go to my project",
+    optional: "Optional. It stays in Connectors, on the top bar.",
+    steps: {
+      name: { label: "Name", title: "Name what you are making.", why: "One project, one criterio.", lead: "A brand, a landing, a client. You can rename it later.", placeholder: "Landing for Studio North" },
+      first: { label: "First reference", title: "Put the first reference in.", why: "One you would hate to lose.", lead: "Paste a link and Criterio reads it.", placeholder: "A link worth keeping", hint: "Or a board from Pinterest, Are.na or Cosmos." },
+      extension: { label: "Extension", title: "Save from any site.", why: "No more copying links.", lead: "The Chrome extension saves the page you are on, and brings your bookmarks.", install: "Install the extension", connect: "Connect the extension", done: "Extension connected" },
+      agent: { label: "Your AI", title: "Take your criterio to your AI.", why: "It reads it before it builds.", lead: "Connect Claude, ChatGPT or Cursor and they work from your references.", connect: "Connect an AI client", done: "AI client connected" },
+    },
+  },
   firstSteps: {
     title: "First steps",
     count: (n: number, of: number): string => `${n} of ${of}`,
@@ -1145,7 +1158,19 @@ export const ui = {
       projectTitle: ["There's a project in here.", "This wants a name."],
       projectText: (n: number): string => `${n} loose references. Name a project and take the ones that fit.`,
       projectAct: "Name a project",
-      sharedText: (n: number, total: number, label: string): string => `${n} of the ${total} share \u201c${label}\u201d. That's half a project already.`,
+      sharedText: (n: number, total: number, label: string, per100: number): string => `${n} of the ${total} have ${label}, and in what people save it shows up in ${per100} out of 100. That's half a project already.`,
+      talkedTitle: ["All talk, no action.", "Lots of talk."],
+      talkedText: (name: string, n: number): string => `${name} has ${n === 1 ? "a comment" : `${n} comments`} and still no project. If it got people talking, it's onto something.`,
+      talkedAct: "Read them",
+      mineTitle: ["Remember this one?", "You saved this one."],
+      mineText: (name: string, long: string): string => `You saved ${name} ${long} ago and didn't say why. Does it still say something to you?`,
+      mineAct: "Look at it",
+      theirsTitle: ["Nobody has touched it.", "Still here."],
+      theirsText: (who: string, name: string, long: string): string => `${who} saved ${name} ${long} ago. Not a comment, not a project.`,
+      fitsTitle: ["This one has a home.", "I was about to say."],
+      fitsText: (name: string, project: string): string => `${name} looks a lot like what's in ${project}. Taking it there?`,
+      weekTitle: ["Lots of saving, little sorting."],
+      weekText: (n: number): string => `You saved ${n} this week and none has made it to a project.`,
       idleText: (n: number, name: string): string => `${n === 1 ? "1 loose reference" : `${n} loose references`}. The newest is ${name}: which project is it for?`,
     },
     // On a project's board, when nobody is searching (components/board-nudges.ts)
@@ -1215,7 +1240,7 @@ export const ui = {
       unusedText: (n: number): string => `The system read ${n === 1 ? "1 reference it uses" : `${n} references it uses`} for nothing. Either ${n === 1 ? "it's" : "they're"} extra or an area is missing.`,
       unusedAct: "Polish",
       sharedTitle: ["There's a pattern here.", "I'm not saying anything, but."],
-      sharedText: (n: number, total: number, label: string): string => `${n} of the ${total} references share "${label}". That's starting to be a decision.`,
+      sharedText: (n: number, total: number, label: string, per100: number): string => `${n} of the ${total} references have ${label}. The norm is ${per100} in 100: that's a decision already, even if nobody made it.`,
       sharedAct: "See them",
       missingTitle: ["Someone's missing here."],
       missingText: (who: string, n: number): string => `${who} ${n === 1 ? "hasn't" : "haven't"} added anything to this project yet.`,
@@ -1566,6 +1591,9 @@ export const ui = {
     removeTag: (tag: string): string => `Remove ${tag}`,
     tabPage: "Page",
     tabCriterio: "criterio.md",
+    /** The header's link button: copies the reference's address, which pastes with its own picture (lib/share-card.ts) */
+    copyLink: "Copy link",
+    linkCopied: "Link copied",
     views: "Show as",
     criterio: {
       lead: (project: string): string => `What this reference writes in ${project}'s criterio.md. Change it here and it changes there.`,
@@ -1983,6 +2011,8 @@ export const ui = {
     library: "Your team's references in one place: sites, videos and ideas, each with its tags, comments and DESIGN.md.",
     login: "Sign in to criterio.design, your team's inspiration library.",
     designLibrary: "How criterio.design is designed and built: principles, tokens, components and every decision behind them.",
+    /** Under a pasted reference link's title (app/(library)/i/[id]/page.tsx) */
+    sharedRef: (host: string | null): string => host ? `From ${host}, in a team's library on criterio.design` : "In a team's library on criterio.design",
   },
   designLibrary: {
     title: "Design system",

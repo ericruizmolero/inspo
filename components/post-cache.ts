@@ -23,8 +23,10 @@ export function loadPost(web: string): Promise<LoadedPost> {
   let p = inflight.get(web);
   if (!p) {
     p = fetch("/api/post", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ web }) })
-      // The server said no (not in the workspace, X refused it): that is an answer, kept as no post
-      .then((r) => (r.ok ? r.json() : {}))
+      // Only a real answer is kept: X gave the post, or said it has none (200 with post null). A refusal (404 while
+      // the card is still being added, a lost session) keeps nothing, so the sheet or the next card asks again;
+      // kept, a post pasted a second ago read "X no ha dado este post" for the whole session
+      .then((r) => { if (!r.ok) throw new Error(`post ${r.status}`); return r.json(); })
       .then((d: { post?: Post | null; thumb?: string | null }) => {
         const loaded: LoadedPost = { post: d.post ?? null, thumb: d.thumb ?? null };
         posts.set(web, loaded);
@@ -49,9 +51,15 @@ export function usePost(web: string | null): LoadedPost | undefined {
     const had = posts.get(web);
     if (had) { setRead((r) => (r?.web === web ? r : { web, loaded: had })); return; }
     let gone = false;
-    // The request itself failed: no post for now, nothing kept, so the next one asks again
-    loadPost(web).then((loaded) => { if (!gone) setRead({ web, loaded }); }, () => { if (!gone) setRead({ web, loaded: { post: null, thumb: null } }); });
-    return () => { gone = true; };
+    let retry: ReturnType<typeof setTimeout> | undefined;
+    const got = (loaded: LoadedPost) => { if (!gone) setRead({ web, loaded }); };
+    // Refused or failed: no post for now, nothing kept, and asked once more in a moment (a card mounts before the
+    // add that saves its row has finished)
+    loadPost(web).then(got, () => {
+      if (gone) return;
+      retry = setTimeout(() => loadPost(web).then(got, () => got({ post: null, thumb: null })), 3000);
+    });
+    return () => { gone = true; clearTimeout(retry); };
   }, [web]);
   if (!web) return undefined;
   return read?.web === web ? read.loaded : posts.get(web);

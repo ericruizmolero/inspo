@@ -9,6 +9,7 @@ La app vive en `/`. Lo que se ve depende de la query, sin cambiar de página, pa
 | URL | Qué se ve |
 | --- | --- |
 | `/` sin sesión | Portada de invitado (`GuestStart`) |
+| `/` la primera vez | Primera entrada (`Welcome`): nombre, primera referencia, extensión y cliente de IA, los dos últimos opcionales; `/?welcome=1` la fuerza en desarrollo → [decisión](decisiones/2026-11-06-la-primera-entrada-es-un-flujo-de-cuatro-pasos-con-extension-y-mcp-opcionales.md) |
 | `/?in=home` | Inicio: "¿Qué vas a hacer?" y los proyectos |
 | `/?in=inbox` | Inbox: lo que no está en ningún proyecto |
 | `/?in=library` | Toda la biblioteca |
@@ -53,7 +54,8 @@ Se da acceso con `npm run admin -- <correo>`. Las invitaciones también salen de
 | `/privacy`, `/terms`, `/extension/privacy` | Redirección permanente (308, `next.config.ts`) a la misma página de la web de marketing (`MARKETING_URL` en `lib/site.ts`). → [decisión](decisiones/2026-10-11-las-paginas-legales-y-los-recursos-viven-en-la-web-de-marketing.md) |
 | `/unsubscribe?u=&k=&s=` | El enlace de un clic al pie de cada correo del equipo: apaga ese tipo de correo al abrirse, sin sesión (la firma `s` es la prueba, `lib/notify.ts`), y ofrece volver a activarlo. `/api/unsubscribe` recibe el POST del botón "Cancelar suscripción" del cliente de correo (`List-Unsubscribe`) |
 | `/opengraph-image`, `/twitter-image` | Tarjeta para compartir |
-| `/robots.txt` | `app/robots.ts`: abre las públicas y cierra `/api/`, `/i/`, `/settings`, `/admin`, `/library`, `/invite/`, `/extension/`, `/mcp`, `/unsubscribe` y `/.well-known/`. `/s/` queda abierta a propósito: una página cerrada nunca le enseña su `noindex` al rastreador. Una ruta nueva con sesión entra aquí |
+| `/i/[id]` (solo vista previa), `/i/[id]/preview` | Un enlace a una referencia pegado en Telegram, WhatsApp, Slack o X se dibuja con su nombre y su imagen, no con la tarjeta genérica. Solo los robots de vista previa (`lib/preview-bots.ts`) pasan sin sesión y leen los metadatos; una persona sigue yendo al login. `/preview` es la imagen 1200×630 de la propia tarjeta (miniatura elegida, imagen, póster del vídeo, portada del DESIGN.md, og:image de la web o captura; `lib/share-card.ts`). Lo copiado de X, Pinterest, Are.na o Cosmos no sale: un post enseña la imagen de X donde la sirve X, y el resto, la tarjeta genérica. No sale ni nota ni comentario. `noindex` |
+| `/robots.txt` | `app/robots.ts`: abre las públicas y cierra `/api/`, `/i/`, `/settings`, `/admin`, `/library`, `/invite/`, `/extension/`, `/mcp`, `/unsubscribe` y `/.well-known/`. Twitterbot sí entra en `/i/` (X solo dibuja la tarjeta de un enlace si robots.txt le deja). `/s/` queda abierta a propósito: una página cerrada nunca le enseña su `noindex` al rastreador. Una ruta nueva con sesión entra aquí |
 | `/sitemap.xml` | `app/sitemap.ts`: `/` y `/login`, con la URL de `lib/site.ts`. Las páginas legales, los recursos, las skills, los precios y la extensión están en el sitemap de la web de marketing (`marketing-site/src/pages/sitemap.xml.ts`, sale de `PAGES` en `marketing-site/src/i18n.ts`) |
 | `/manifest.webmanifest` | `app/manifest.ts`: nombre, iconos (`/icon.png`, `/apple-icon.png`, `/icon-512.png`) y el color de Board |
 

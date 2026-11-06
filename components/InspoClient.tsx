@@ -56,6 +56,7 @@ import ZoomPill from "./ZoomPill";
 import { cue, gust } from "@/lib/ui-sounds";
 import { cardCopyOf, keyOf } from "@/lib/board";
 import EmptyStart from "./EmptyStart";
+import Welcome from "./Welcome";
 import ProjectStart from "./ProjectStart";
 import { filledOf, unreadOf, type SystemArea, type SystemSummary } from "@/types/system";
 import ProjectChooser from "./ProjectChooser";
@@ -318,6 +319,11 @@ export default function InspoClient({
   // The first steps sit beside the plan meter and are read again with it, and on every move between views
   const [firstSteps, setFirstSteps] = useState<FirstStepsValue | null>(initialFirstSteps);
   const stepsOn = firstSteps !== null;
+  // The very first time in (components/Welcome.tsx): a new account with nothing saved and no project, not arriving
+  // with a site pasted before signing in (?add= saves it on its own). It stays until walked, even once the project
+  // and its first reference exist. In development ?welcome=1 shows it to any account, to review it
+  const [welcome, setWelcome] = useState(() => (initialFirstSteps !== null && items.length === 0 && projects.length === 0 && !sp.get("add"))
+    || (process.env.NODE_ENV !== "production" && sp.get("welcome") === "1"));
   const loadSteps = useCallback(() => { void loadFirstSteps().then((r) => { if (r.ok) setFirstSteps(r.data); }); }, []);
   const loadQuota = useCallback(() => {
     fetch("/api/plan").then((r) => (r.ok ? r.json() : null)).then((q) => { if (q) setQuota(q); }).catch(() => {});
@@ -641,7 +647,7 @@ export default function InspoClient({
       const top = sharedTag(spaceItems, tagMap);
       if (!top) return null;
       const f = { kind: "tag" as const, value: top.sel };
-      return { label: filterLabel(f, t).toLowerCase(), n: top.n, total: spaceItems.length, go: () => setFilters([f]) };
+      return { label: filterLabel(f, t).toLowerCase(), n: top.n, total: spaceItems.length, per100: top.per100, go: () => setFilters([f]) };
     })(),
     onSearch: (words) => setQuery(words),
     // With a team only: who has not put anything here yet, and how this week went against the last
@@ -660,7 +666,9 @@ export default function InspoClient({
     onOpen: (item) => openItem(item), onKind: (k) => setFilters([{ kind: "media", value: k }]), onSearch: (words) => setQuery(words),
     onFilter: (sel) => setFilters([{ kind: "tag", value: sel }]), onProject: () => setSpace("home"),
     label: (sel) => filterLabel({ kind: "tag", value: sel }, t).toLowerCase(),
-  }) : [], [space, boardTino, t, spaceItems, commentMap, user, openedAt, tagMap]); // eslint-disable-line react-hooks/exhaustive-deps
+    projects: projects.map((p) => ({ name: p.name, items: items.filter((i) => i.id && links[i.id]?.includes(p.id)) })),
+    onPerson: (who) => setFilters([{ kind: "person", value: who }]),
+  }) : [], [space, boardTino, t, spaceItems, commentMap, user, openedAt, tagMap, projects, items, links]); // eslint-disable-line react-hooks/exhaustive-deps
   const grid = (
     <Grid
       under={!!currentProject && projectView !== "board"}
@@ -797,7 +805,14 @@ export default function InspoClient({
           </div>
         </header>
 
-        {space === "templates" || space === "discover" || space === "skills" ? (
+        {welcome ? (
+          <Welcome
+            onCreateProject={createProject}
+            onAddUrl={async (web, projectId) => { await addByUrl({ web, type: typeFromUrl(web), note: "" }, projectId); }}
+            onImportBoard={importBoard}
+            onDone={(projectId) => { setWelcome(false); if (projectId) setSpace(projectId); loadSteps(); }}
+          />
+        ) : space === "templates" || space === "discover" || space === "skills" ? (
           // Discover: the examples (whole systems to start a project from), the resources (the places we look) and the skills for agents
           <Discover section={space === "discover" ? "sites" : space} onSection={(s) => setSpace(s === "sites" ? "discover" : s)}
             templates={(head) => <TemplatesView key={workspace.id} workspaceId={workspace.id} head={head} onOpenChange={setExampleOpen} onStarted={(p) => {
@@ -982,7 +997,8 @@ export default function InspoClient({
             onAll={selectAll} onFile={(id, on) => void fileSelection(id, on)} onMove={(id) => void moveSelection(id)} onCreate={createForSelection}
             onRemove={() => void removeSelection()} onDelete={() => void deleteSelection()} onDone={clearSelection} />
         )}
-        {items.length > 0 && ((searchHere && spaceItems.length > 0) || agentSpeaks) && selected.size === 0 && (
+        {/* Neither the bar nor Tino while the first time in is walked: one thing per screen */}
+        {!welcome && items.length > 0 && ((searchHere && spaceItems.length > 0) || agentSpeaks) && selected.size === 0 && (
           <div className="dock">
             {/* What the search counts, over the bar: the system's StatusBar, a cell per fact */}
             {/* While the search reads: how much Tino is going through. What it found, he says himself (SearchTino) */}
@@ -1037,13 +1053,13 @@ export default function InspoClient({
         )}
         {/* Tino in the bottom-right corner, as on the home: he answers the search and, when nobody searches, brings up
             what the board could use next. Outside the dock, whose transform would carry his fixed corner with it */}
-        {boardTino && (
+        {boardTino && !welcome && (
           <SearchTino report={agent ? null : searchReport(filters, query, filtered, space === "inbox" ? 0 : unfiled.length, t)} saving={saving}
             busy={searchBusy || jevBusy || !!agent?.busy} typing={!!query.trim()} onClose={resetFilters}
             focused={searchFocused} failed={searchFailed} total={spaceItems.length}
             chips={askChips.map((k) => ({ key: k, label: k, onPick: () => setFilters([...filters, { kind: "tag", value: `k:${k}` }]) }))}
             onAct={() => { resetFilters(); setSpace("inbox"); }}
-            scope={`:${space}`} quiet={!!agent || selected.size > 0} nudges={currentProject ? boardNudgeList : inboxNudgeList} idle={boardIdleLine} />
+            scope={`:${space}`} quiet={!!agent || selected.size > 0} nudges={currentProject ? boardNudgeList : inboxNudgeList} idle={boardIdleLine} max={currentProject ? undefined : 6} />
         )}
       </SidebarInset>
     </SidebarProvider>

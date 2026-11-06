@@ -299,7 +299,7 @@
 .cr-btn-quiet:hover,.cr-btn-quiet:active,.cr-btn-quiet.is-pressed{background:var(--ib-hover,var(--surface-2,#D9CFBA));box-shadow:none;transform:none}
 .cr-btn-quiet:disabled{background:transparent;border-color:transparent}
 
-/* ---- app: DialogWindow (components/ui/dialog.tsx), a modal in the shape of TipWindow ---- */
+/* ---- app: DialogWindow (components/ui/dialog.tsx): the flat modal header, no moss bar (06-11) ---- */
 /* Always paper and ink, in both themes: inside it the theme roles take their Paper values (TipWindow too) */
 .modal.modal--window,.cr-menu,.cr-tip,.cr-window{
   --bg:var(--paper);--panel:var(--paper-light);--surface:var(--paper-light);--surface-2:var(--disabled);--surface-3:var(--paper-pressed);
@@ -313,8 +313,6 @@
   border:var(--stroke-control) solid var(--control-border);border-radius:var(--radius-md);
   box-shadow:var(--bevel),var(--shadow-modal)
 }
-.modal-window__bar{flex-shrink:0;height:40px;padding:0 8px 0 14px;gap:12px}
-.modal-window__bar .cr-iconbtn{--ib-focus:var(--paper)}
 .modal-window__body.modal__body{padding:20px;gap:16px}
 .modal-window__body .cr-window-heading{margin:0;color:var(--ink)}
 .modal-window__footer{flex-shrink:0;padding:0 20px 20px}
