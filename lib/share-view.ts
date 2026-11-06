@@ -39,7 +39,13 @@ export interface ShareView {
   blocks: CriterioBlock[];
   /** Every stored key the page may load, for the file route */
   keys: Set<string>;
+  /** The project's board, newest first, as the link shows it (its Board tab): each reference by its id in `refs` */
+  board: SharedCard[];
 }
+
+/** One card of the shared board. `note` and `by` only in a link that hands out everything ("full"): a clean link shows
+ *  the references alone. A pasted text carries its words, which are the reference itself */
+export interface SharedCard { id: string; note?: string; by?: string; text?: string }
 
 /**
  * Builds the view of a project for a link. `base` is the link's path (/s/<token>): stored files are rewritten under
@@ -111,7 +117,15 @@ export async function loadShareView(organizationId: string, projectId: string, m
     board: boardIds, talk: activity?.notes ?? {}, origin, skills: skillsOf(system.doc), locale,
     brand, mode, fileHref: (key) => { keys.add(key); return `${origin}${out(key)}`; }, clientCopy,
   });
-  return { name: project.name, system, refs, markdown: blocksToMd(blocks), blocks, keys };
+  // The board, newest on the project first, as the team's board opens
+  const byId = new Map(items.map((i) => [i.id!, i]));
+  const board: SharedCard[] = [...boardIds].reverse().flatMap((id) => {
+    const i = byId.get(id);
+    if (!i) return [];
+    const note = mode === "full" && i.note.trim() ? i.note.trim() : undefined;
+    return [{ id, ...(note ? { note, by: i.addedBy } : {}), ...(texts[id] ? { text: texts[id]!.slice(0, 600) } : {}) }];
+  });
+  return { name: project.name, system, refs, markdown: blocksToMd(blocks), blocks, keys, board };
 }
 
 async function measuresOf(items: { id: string; web: string; colors?: InspoColor[] }[], index: DesignIndex, clientId: string | null): Promise<ProjectMeasures> {

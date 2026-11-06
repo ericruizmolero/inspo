@@ -430,9 +430,12 @@ export const routes: Record<string, Surface> = {
   "page:app/s/[token]/page.tsx": {
     probe: async (fx) => {
       const { default: Page } = await import("@/app/s/[token]/page");
-      await expectPageRefused(fx, () => Page({ params: Promise.resolve({ token: "A".repeat(22) }) } as never), "an unknown token");
-      const page = await Page({ params: Promise.resolve({ token: fx.a.shareToken }) } as never);
-      expect(JSON.stringify(page), "the link's page names nothing of the project it does not share").not.toContain(fx.a.unshared);
+      await expectPageRefused(fx, () => Page({ params: Promise.resolve({ token: "A".repeat(22) }), searchParams: Promise.resolve({}) } as never), "an unknown token");
+      // Both tabs: the brand and the board (which lists the project's references, lib/share-view.ts board)
+      for (const view of ["system", "board"]) {
+        const page = await Page({ params: Promise.resolve({ token: fx.a.shareToken }), searchParams: Promise.resolve({ view }) } as never);
+        expect(JSON.stringify(page), `the link's ${view} names nothing of the project it does not share`).not.toContain(fx.a.unshared);
+      }
     },
   },
 

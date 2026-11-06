@@ -1111,6 +1111,8 @@ export const ui = {
     wake: "Wake Tino",
     talk: "Talk to Tino",
     later: "Later",
+    /** A reference he asks about is still wanted: he does not ask about it again */
+    keep: "It stays",
     next: "Next",
     /** Which of the nudges this is, and how many: "2 of 4" */
     pageOf: (at: number, of: number): string => `${at} of ${of}`,
@@ -2439,9 +2441,10 @@ export const ui = {
     fill: "Fill the brand",
     fillHint: "Turns the decisions into values: colors, faces, curves, voice. Sections you edited by hand stay.",
     share: {
-      open: "Share", title: "Share the brand", lead: "Anyone with the link sees the presentation and can copy criterio.md. Search engines do not list it. Turn a link off and it stops working.",
-      mode: "What the link's criterio.md carries", clean: "Clean", cleanHint: "Decisions, values, references by name. No team conversation, no names.",
-      full: "Everything", fullHint: "The same file the team reads, with comments and who saved what.",
+      open: "Share", title: "Share the project", lead: "Anyone with the link sees the board and the brand, and can copy criterio.md. Search engines do not list it. Turn a link off and it stops working.",
+      mode: "What the link shows", clean: "Clean", cleanHint: "The references alone on the board. In criterio.md, decisions, values and references by name. No team conversation, no names.",
+      full: "Everything", fullHint: "On the board, who saved each reference and their note. The same criterio.md the team reads, with comments.",
+      views: "Project views", boardEmpty: "This project\u2019s board is empty.",
       label: "Who it is for (optional)", labelPlaceholder: "For the client", make: "Create a link", copy: "Copy criterio.md", copyLink: "Copy link", copied: "Copied", download: "Download .md",
       revoke: "Turn off", untitled: "Unnamed link", none: "No links yet.", made: (who: string, when: string): string => `By ${who}, ${when}`, viewed: (when: string): string => `opened ${when}`, never: "not opened yet",
       forAgents: "Building with an AI agent? Paste criterio.md into it: it carries every decision and value on this page.",

@@ -21,13 +21,17 @@ export async function generateMetadata({ params }: PageProps<"/s/[token]">): Pro
   return { title: { absolute: title }, description: view?.system.brand?.intro.headline || view?.system.summary.slice(0, 160) || undefined, robots, referrer: "no-referrer", openGraph: { title } };
 }
 
-export default async function Page({ params }: PageProps<"/s/[token]">) {
+export default async function Page({ params, searchParams }: PageProps<"/s/[token]">) {
   const { token } = await params;
+  const asked = (await searchParams).view;
   const share = await resolveShare(token);
   if (!share) notFound();
   const locale = await getLocale();
   const view = await loadShareView(share.organizationId, share.projectId, share.mode, locale, `/s/${token}`, await requestOrigin());
   if (!view) notFound();
   after(() => markViewed(share.id));
-  return <SharePage token={token} name={view.name} system={view.system} refs={view.refs} markdown={view.markdown} />;
+  // The tab asked for in the address, else the brand when there is one (links made before the board was shared opened
+  // on it), else the board
+  const open = asked === "board" || asked === "system" ? asked : view.system.brand ? "system" : "board";
+  return <SharePage token={token} name={view.name} system={view.system} refs={view.refs} markdown={view.markdown} board={view.board} view={open} />;
 }

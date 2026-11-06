@@ -1101,6 +1101,8 @@ export const ui: typeof EnUi = {
     wake: "Despertar a Tino",
     talk: "Hablar con Tino",
     later: "Luego",
+    /** A reference he asks about is still wanted: he does not ask about it again */
+    keep: "Se queda",
     next: "Siguiente",
     /** Which of the nudges this is, and how many: "2 de 4" */
     pageOf: (at: number, of: number): string => `${at} de ${of}`,
@@ -2420,9 +2422,10 @@ export const ui: typeof EnUi = {
     fill: "Rellenar la marca",
     fillHint: "Convierte las decisiones en valores: colores, fuentes, curvas, voz. Las secciones que editaste a mano se quedan.",
     share: {
-      open: "Compartir", title: "Compartir la marca", lead: "Quien tenga el enlace ve la presentación y puede copiar criterio.md. Los buscadores no lo listan. Si desactivas un enlace, deja de funcionar.",
-      mode: "Qué lleva el criterio.md del enlace", clean: "Limpio", cleanHint: "Decisiones, valores, referencias por nombre. Sin la conversación del equipo ni nombres.",
-      full: "Todo", fullHint: "El mismo archivo que lee el equipo, con comentarios y quién guardó qué.",
+      open: "Compartir", title: "Compartir el proyecto", lead: "Quien tenga el enlace ve el tablón y la marca, y puede copiar criterio.md. Los buscadores no lo listan. Si desactivas un enlace, deja de funcionar.",
+      mode: "Qué enseña el enlace", clean: "Limpio", cleanHint: "Las referencias solas en el tablón. En criterio.md, decisiones, valores y referencias por nombre. Sin la conversación del equipo ni nombres.",
+      full: "Todo", fullHint: "En el tablón, quién guardó cada referencia y su nota. El mismo criterio.md que lee el equipo, con comentarios.",
+      views: "Vistas del proyecto", boardEmpty: "El tablón de este proyecto está vacío.",
       label: "Para quién es (opcional)", labelPlaceholder: "Para el cliente", make: "Crear un enlace", copy: "Copiar criterio.md", copyLink: "Copiar enlace", copied: "Copiado", download: "Descargar .md",
       revoke: "Desactivar", untitled: "Enlace sin nombre", none: "Aún no hay enlaces.", made: (who: string, when: string): string => `De ${who}, ${when}`, viewed: (when: string): string => `abierto ${when}`, never: "aún sin abrir",
       forAgents: "¿Construyes con un agente de IA? Pégale criterio.md: lleva cada decisión y valor de esta página.",

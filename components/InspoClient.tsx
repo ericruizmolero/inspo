@@ -61,7 +61,7 @@ import Welcome from "./Welcome";
 import ProjectStart from "./ProjectStart";
 import { filledOf, unreadOf, type SystemArea, type SystemSummary } from "@/types/system";
 import ProjectChooser from "./ProjectChooser";
-import { TinoSwitch } from "./HomeTino";
+import { TinoSwitch, settled } from "./HomeTino";
 import SearchTino, { searchReport, useSearchingLine } from "./SearchTino";
 import { assignSystemArea, loadSystem } from "@/app/actions/system";
 import WorkspaceMenu from "./WorkspaceMenu";
@@ -91,6 +91,7 @@ const ItemPanel = dynamic(loadItemPanel, { ssr: false });
 const CommentsPanel = dynamic(loadCommentsPanel, { ssr: false });
 const SystemView = dynamic(() => import("./SystemView"), { ssr: false });
 const PolishView = dynamic(() => import("./PolishView"), { ssr: false });
+const ShareDialog = dynamic(() => import("./brand/ShareDialog"), { ssr: false });
 const RefCriterio = dynamic(() => import("./RefCriterio"), { ssr: false });
 const CommandPalette = dynamic(() => import("./CommandPalette"), { ssr: false });
 // Discover and its examples only show in their own space (still server-rendered when a link lands there),
@@ -343,6 +344,8 @@ export default function InspoClient({
   useEffect(() => { if (stepsOn) loadSteps(); }, [space, projectView, stepsOn, loadSteps]);
   const [connecting, setConnecting] = useState(false);
   const [exampleOpen, setExampleOpen] = useState(false);
+  // The project whose share links are open (components/brand/ShareDialog.tsx), from its tab's menu
+  const [sharing, setSharing] = useState<string | null>(null);
   const stepsList = firstSteps && (
     <FirstSteps steps={firstSteps} onConnect={() => setConnecting(true)}
       onHide={() => { setFirstSteps(null); void hideFirstStepsList(); }} />
@@ -651,7 +654,7 @@ export default function InspoClient({
     vote: !solo && polishTab && [...polishVotes.values()].some((vs) => vs.some((v) => v.userId !== user.id && !v.closedAt))
       ? { left: polishTab.left, toClose: canManage && polishTab.under && polishTab.left === 0 } : null,
     quietRef: quietReference(spaceItems, commentMap, user.name || user.email, parseDate, openedAt),
-    kinds: kindsOf(spaceItems, mediaKindOf), oldRef: oldReference(spaceItems, commentMap, parseDate, openedAt), seed: visitSeed,
+    kinds: kindsOf(spaceItems, mediaKindOf), oldRef: oldReference(spaceItems, commentMap, parseDate, openedAt, settled), seed: visitSeed,
     onKind: (k) => setFilters([{ kind: "media", value: k }]),
     noReason: withoutReason(spaceItems, user.name || user.email, mediaKindOf, parseDate),
     twins: sameSite(spaceItems, mediaKindOf, hostOf),
@@ -675,7 +678,7 @@ export default function InspoClient({
     [currentProject, boardTino, space, t, spaceItems, tinoPicture]); // eslint-disable-line react-hooks/exhaustive-deps
   // In the Inbox: what is loose pushes towards a project, or out (components/board-nudges.ts)
   const inboxNudgeList = useMemo(() => space === "inbox" && boardTino ? inboxNudges({
-    t, items: spaceItems, comments: commentMap, meId: user.id, me: user.name || user.email, now: openedAt, seed: visitSeed, pictureOf: tinoPicture,
+    t, items: spaceItems, comments: commentMap, meId: user.id, me: user.name || user.email, now: openedAt, seed: visitSeed, pictureOf: tinoPicture, settled,
     tags: tagMap, kindOf: mediaKindOf, host: hostOf, parse: parseDate,
     onOpen: (item) => openItem(item), onKind: (k) => setFilters([{ kind: "media", value: k }]), onSearch: (words) => setQuery(words),
     onFilter: (sel) => setFilters([{ kind: "tag", value: sel }]), onProject: () => setSpace("home"),
@@ -789,7 +792,7 @@ export default function InspoClient({
           <Island user={user} workspace={workspace} workspaces={workspaces} isAdmin={isAdmin}
             items={items} links={links} projects={projects} systems={systems} space={space} onSpace={setSpace} bellNews={bellNews}
             onCreateProject={createProject} onRenameProject={renameProject} onDeleteProject={deleteProject}
-            onDuplicateProject={duplicateProject} onMoveProject={moveProject}
+            onDuplicateProject={duplicateProject} onMoveProject={moveProject} onShareProject={(p) => setSharing(p.id)}
             members={members} onPerson={(name) => {
               // What someone saved is looked at inside a project: the open one, or the one being worked in
               if (!currentProject) { const to = saveTarget(); if (to) setParams({ in: to, view: "board" }); }
@@ -1038,6 +1041,7 @@ export default function InspoClient({
             onAll={selectAll} onFile={(id, on) => void fileSelection(id, on)} onMove={(id) => void moveSelection(id)} onCreate={createForSelection}
             onRemove={() => void removeSelection()} onDelete={() => void deleteSelection()} onDone={clearSelection} />
         )}
+        {sharing && <ShareDialog projectId={sharing} onClose={() => setSharing(null)} />}
         {/* Neither the bar nor Tino while the first time in is walked: one thing per screen */}
         {!welcome && items.length > 0 && ((searchHere && spaceItems.length > 0) || agentSpeaks) && selected.size === 0 && (
           <div className="dock">

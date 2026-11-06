@@ -454,9 +454,9 @@ La marca aplicada en los sitios donde vivirá, dibujada en vivo con sus propios 
 `BrandImport` · `components/brand/BrandImport.tsx`
 Traer una marca que ya existe de tres formas: su web (se mide y se lee), sus ficheros (logos, fuentes, fotos, un PDF de guía) o el texto de sus guías. Lo que entra es un punto de partida; los ficheros se reparten por su nombre ("mark", "white"…). Es el modal plano (`DialogContent`, cabecera con el título en `t-title-s` y cerrar `IconButton` default s), no una ventana moss: es un formulario. Las tres formas en un `SegmentedControl` de papel s; la web y "Traerla" en una fila, como en Importar; en Archivos y Guía el botón va a la derecha. → [decisión](decisiones/2026-10-12-traer-una-marca-es-el-modal-plano-sin-barra-moss.md)
 
-### Compartir la marca
-`ShareDialog` · `SharePage` · `components/brand/` · `app/s/[token]/`
-Un enlace de solo lectura con la presentación y el criterio.md para copiar o descargar, más un zip con logos, iconos y tokens. Cada enlace lleva el fichero completo o uno limpio, sin nombres ni comentarios del equipo, para gente de fuera. Sin sesión: el token es la prueba; no se indexa y no manda referer.
+### Compartir el proyecto
+`ShareDialog` · `SharePage` · `ShareBoard` · `components/brand/` · `app/s/[token]/` · `.share-head`, `.sboard`
+Un enlace de solo lectura con dos pestañas, Tablón y Sistema. El tablón son las referencias en columnas, lo más reciente primero, y cada una abre su original. El sistema es la presentación y el criterio.md para copiar o descargar, más un zip con logos, iconos y tokens. Abre en la marca si la hay, si no en el tablón (`?view=`). Se crea desde Sistema o desde el menú ⌄ de la pestaña del proyecto en la Isla. → [decisión](decisiones/2026-11-06-el-enlace-del-proyecto-comparte-tambien-el-tablon.md) Cada enlace es completo o limpio, para gente de fuera: el limpio no lleva nombres ni comentarios del equipo en el fichero, y en el tablón enseña solo las referencias; el completo añade quién guardó cada una y su nota. Sin sesión: el token es la prueba; no se indexa y no manda referer.
 
 ### Conectores
 `Connectors` · `components/Connectors.tsx` · `.connectors__menu`

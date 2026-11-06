@@ -96,7 +96,7 @@ function NewProject({ onCreate, onDone }: { onCreate: (name: string, about: stri
 }
 
 export default function Island({ user, workspace, workspaces, isAdmin, items, links, projects, systems = {}, members = [], space, onSpace, bellNews = "",
-  onCreateProject, onRenameProject, onDeleteProject, onDuplicateProject, onMoveProject, onPerson, quota, onMenuOpen }: {
+  onCreateProject, onRenameProject, onDeleteProject, onDuplicateProject, onMoveProject, onShareProject, onPerson, quota, onMenuOpen }: {
   user: SessionUser; workspace: Workspace; workspaces: Workspace[]; isAdmin: boolean;
   items: InspoItem[]; links: ProjectLinks; projects: Project[];
   /** Each project's system: a ring on its tab says how much of it is decided */
@@ -117,6 +117,8 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
   onDuplicateProject: (project: Project) => void;
   /** To another of the person's workspaces (lib/project-move.ts) */
   onMoveProject: (project: Project, to: Workspace) => void;
+  /** A public link to the project: its board and its brand, read only (components/brand/ShareDialog.tsx) */
+  onShareProject?: (project: Project) => void;
   quota: QuotaView | null;
 }) {
   const { t, locale } = useT();
@@ -353,6 +355,7 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
               <PopoverContent align="start" className="cr-menu">
                 <MenuItem onClick={() => { setOptionsOpen(false); setNaming(p.id); }}>{t.projects.rename}</MenuItem>
                 <MenuItem onClick={() => { setOptionsOpen(false); onDuplicateProject(p); }}>{t.projects.duplicate}</MenuItem>
+                {onShareProject && <MenuItem onClick={() => { setOptionsOpen(false); onShareProject(p); }}>{t.brand.share.open}</MenuItem>}
                 {/* Another of the person's spaces: a sketch made in private goes to the team */}
                 {workspaces.length > 1 && <>
                   <Separator />
