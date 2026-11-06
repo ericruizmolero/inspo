@@ -19,10 +19,11 @@ import "./HomeTino.css";
  *  `who` names where it comes from over the title (the first steps and how far along they are); without it, Tino.
  *  Without `act` there is no button (a milestone is only said). `once`: said once ever (a milestone per board and
  *  level). `happened` (ISO): something that happened while the person was away, said only on the first visit after
- *  some days away and only if it happened after the last one */
+ *  some days away and only if it happened after the last one. `keep`: a second button that settles it for good ("It
+ *  stays": the old reference he asks about is still wanted), so he never brings that one up again on this machine */
 export type TinoNudge = {
   key: string; who?: string; title: string | readonly string[]; text: ReactNode; mood: TinoMood;
-  act?: string; go?: () => void; once?: boolean; happened?: string;
+  act?: string; go?: () => void; once?: boolean; keep?: string; happened?: string;
   /** The picture of the reference it talks about: drawn by the words, which then say "this one" instead of its title */
   thumb?: string;
 };
@@ -51,6 +52,9 @@ function useTinoOn() {
 const read = (store: () => Storage, key: string) => { try { return store().getItem(key); } catch { return null; } };
 const write = (store: () => Storage, key: string, value: string) => { try { store().setItem(key, value); } catch { /* no storage */ } };
 const session = () => sessionStorage, local = () => localStorage;
+/** A nudge settled for good (said once, or answered "It stays"): the nudge lists skip what it is about, so he asks
+ *  about another one instead */
+export const settled = (key: string) => (JSON.parse(read(local, SEEN_KEY) ?? "[]") as string[]).includes(key);
 
 /** The visit before this page load (ms; 0 the first time), read once and stamped with now: a second mount (React's
  *  check in development, the home opened again) must not read the stamp the first one wrote */
@@ -148,7 +152,7 @@ export default function HomeTino({ nudges, say, speak, face, quiet = false, scop
     });
   }, [laterKey, closedKey]);
 
-  const left = visit ? nudges.filter((n) => !visit.later.includes(n.key) && !(n.once && visit.seen.includes(n.key)) && !(n.happened && !(visit.awaySince && Date.parse(n.happened) > visit.awaySince))).slice(0, max) : [];
+  const left = visit ? nudges.filter((n) => !visit.later.includes(n.key) && !((n.once || n.keep) && visit.seen.includes(n.key)) && !(n.happened && !(visit.awaySince && Date.parse(n.happened) > visit.awaySince))).slice(0, max) : [];
   // Asked (a click on him), he answers even while the page would keep him quiet, and with nothing pending says `idle`
   const [asked, setAsked] = useState(false);
   // He never opens his balloon on his own: in every view he starts silent, watching when he has something to say,
@@ -185,6 +189,13 @@ export default function HomeTino({ nudges, say, speak, face, quiet = false, scop
     setAsked(false);
     tino.current?.set("descarta");
   };
+  // "It stays": settled for good, and he goes on to the next thing
+  const settle = (key: string) => {
+    const seen = JSON.parse(read(local, SEEN_KEY) ?? "[]") as string[];
+    if (!seen.includes(key)) write(local, SEEN_KEY, JSON.stringify([...seen, key]));
+    setVisit((v) => v && { ...v, seen: [...v.seen, key] });
+    tino.current?.set("aprueba");
+  };
   const wake = () => {
     tino.current?.jump(1);
     if (!on) { setOn(true); return; }
@@ -205,6 +216,7 @@ export default function HomeTino({ nudges, say, speak, face, quiet = false, scop
         onClose: shown === say ? undefined : close,
         actions: shown === say ? null : <>
           {shown.act && <Button size="s" onClick={() => { tino.current?.set("aprueba"); shown.go?.(); }}>{shown.act}</Button>}
+          {shown.keep && <Button size="s" variant="quiet" onClick={() => settle(shown.key)}>{shown.keep}</Button>}
           <Button size="s" variant="quiet" onClick={() => putOff(shown.key)}>{t.tino.later}</Button>
           {paged && (
             <button type="button" className="tino-corner__next" aria-label={t.tino.next} onClick={() => setAt((i) => (i % left.length) + 1)}>

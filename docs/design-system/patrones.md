@@ -84,6 +84,7 @@ Tino no espera a que le pregunten: en cada vista mira lo que pasa ahí y empuja 
 - **Uno cada vez.** Si hay varios, "2 de 4 ›" pasa al siguiente (cifra suelta en gris, sin pastilla → [decisión](decisiones/2026-11-06-el-paginador-de-tino-es-una-cifra-suelta.md)); como mucho 4 por visita (6 en el Inbox).
 - **Qué va primero.** Lo urgente siempre delante (alguien del equipo te habla). El resto se turna de una visita a otra (`seed`), para no abrir siempre con lo mismo.
 - **Callarlo.** "Luego" calla ese aviso el resto de la visita; la × cierra el globo. Valen solo en su vista (`scope`): cerrar el del Inicio no calla el del tablón. Un clic en Tino lo vuelve a abrir con todo, también lo pospuesto.
+- **Se queda.** Cuando pregunta por una referencia vieja ("¿Te acuerdas de esta?"), "Se queda" la da por buena y no vuelve a preguntar por ella; la siguiente vez pregunta por otra.
 - **Una sola vez.** Un hito o una explicación (`once`) se dice una vez en la vida y no vuelve (`localStorage`). Lo que pasó mientras no estabas (`happened`) solo se dice al volver tras 5 días o más.
 - **Pulsado sin nada pendiente.** Nunca "nada que objetar": cuenta cómo está la vista y propone algo con su botón (`boardIdle`, `inboxIdle`, `systemIdle`).
 - **Silenciado.** El interruptor de la pastilla (`TinoSwitch`) lo duerme: se hunde y no dice nada sin pedir. Lo que la persona le pide (una búsqueda) lo contesta igual.

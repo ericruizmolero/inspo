@@ -6,7 +6,7 @@ Cómo decide Tino qué decir sin que nadie le pregunte: de dónde saca cada avis
 
 1. **Cada vista arma su lista.** Al abrirse, la vista mira sus datos (referencias, comentarios, votos, áreas del sistema) con la hora fija de apertura (`openedAt`) y llama a su función: `nudges` en `ProjectChooser.tsx` (Inicio), `boardNudges` (tablón), `inboxNudges` (Inbox) y `systemNudges` (Sistema), las tres últimas en `components/board-nudges.ts`. Cada aviso es un `TinoNudge`: `key`, `title` (una frase o un grupo de frases), `text`, `mood` (la cara), y si lleva botón `act` y `go`.
 2. **Lo urgente delante, lo demás por turnos.** La función separa lo urgente (un comentario sin contestar en tablón e Inbox; en Sistema, todo lo fijo: cómo funciona, propuestas, áreas sin decidir) del resto. El resto rota: empieza en la posición `seed % n` y sigue en orden, dando la vuelta. `seed` es un número al azar entre 0 y 999 que se saca al montar la vista (`visitSeed`), así cada visita abre con otra cosa. Dentro de un grupo que elige uno (los tipos, las áreas del Sistema), el mismo `seed` elige cuál.
-3. **`HomeTino` filtra.** Quita lo pospuesto en esta visita y vista (`later`), lo de una sola vez ya dicho (`once`), y lo que pasó mientras no estabas (`happened`) si no vienes de 5 días o más fuera o si pasó antes de tu última visita. Se queda con los primeros 4 (6 en el Inbox, prop `max`).
+3. **`HomeTino` filtra.** Quita lo pospuesto en esta visita y vista (`later`), lo de una sola vez ya dicho (`once`) y lo que ya se quedó (`keep`), y lo que pasó mientras no estabas (`happened`) si no vienes de 5 días o más fuera o si pasó antes de tu última visita. Se queda con los primeros 4 (6 en el Inbox, prop `max`).
 4. **Elige qué se ve ahora**, en este orden y solo el primero que haya:
    - `speak`: la respuesta a lo que la persona hace (una búsqueda, una edición). Sale aunque Tino esté apagado, porque lo ha pedido.
    - `say`: lo que la persona ha empezado (escribir un nombre en el Inicio, algo que se está guardando en el tablón).
@@ -22,6 +22,7 @@ Cómo decide Tino qué decir sin que nadie le pregunte: de dónde saca cada avis
 | La persona | Pasa | Gesto de Tino |
 | --- | --- | --- |
 | Pulsa el botón del aviso | Ejecuta `go` (abre la ficha, filtra, lleva al área) | `aprueba` |
+| "Se queda" (solo en los que preguntan por una referencia vieja: `keep`) | Esa referencia queda dada por buena para siempre en esta máquina (`criterio:tino-seen`) y Tino pasa al siguiente; la próxima vez pregunta por otra ([decisión](../decisiones/2026-11-06-tino-no-vuelve-a-preguntar-por-la-que-se-queda.md)) | `aprueba` |
 | "Luego" | Ese aviso queda pospuesto el resto de la visita en esa vista y el globo se cierra | `descarta` |
 | × | Se cierra el globo; lo pendiente sigue ahí para cuando lo pulse | Ninguno |
 | "2 de 4 ›" | Pasa al siguiente de la lista | Ninguno |
@@ -39,7 +40,7 @@ En el respiro, "Luego", la × y su botón lo dan por dicho: vuelve el contador a
 | `criterio:tino` | `localStorage` | `off` si está apagado | Siempre |
 | `criterio:tino-later<scope>` | `sessionStorage` | Las `key` pospuestas con "Luego" en esa vista | La pestaña |
 | `criterio:tino-closed<scope>` | `sessionStorage` | Si el globo de esa vista se cerró | La pestaña |
-| `criterio:tino-seen` | `localStorage` | Las `key` de una sola vez ya dichas | Siempre |
+| `criterio:tino-seen` | `localStorage` | Las `key` de una sola vez ya dichas y las respondidas con "Se queda" (`settled`, que `oldReference` e `inboxNudges` usan para saltárselas) | Siempre |
 | `criterio:tino-visit` | `localStorage` | La hora de la última visita, para `happened` | Siempre |
 | `criterio:tino-line:<tipo>` | `localStorage` | Qué frase del grupo salió la última vez | Siempre |
 | `criterio:tino-active` | `sessionStorage` | Tiempo activo desde el último respiro | La pestaña |
@@ -110,7 +111,7 @@ Cada número que decide cuándo habla, con su sitio. Para afinar, se cambia aqu�
 | `others:<quién>:<n>` | `othersThisWeek` | Quien más ha añadido esta semana, sin contarte | Enséñamelas | smug |
 | `quiet:<id>` | `quietReference` | Lo más nuevo de otra persona esta semana, sin nota ni comentarios | Mírala | suspect |
 | `polish` | recuento | 12 o más y sin votación abierta | Pulir conmigo | judge |
-| `old:<id>` | `oldReference` | La más vieja, de 14 días o más, sin nota ni comentarios | Repásala | skeptic |
+| `old:<id>` | `oldReference` | La más vieja, de 14 días o más, sin nota ni comentarios, que no se haya quedado ya | Repásala, Se queda | skeptic |
 | `kind:<tipo>` | `kindsOf` | Un tipo con bastantes; si hay varios, el `seed` elige uno | Verlos / Leer el copy | accomplice |
 | `why` | `withoutReason` | 3 o más tuyas sin nota (los textos no cuentan) | Empieza por la última | skeptic |
 | `twins:<web>` | `sameSite` | La web con más referencias, si son 2 o más | Compararlas | judge |
@@ -133,8 +134,8 @@ Pulsado sin nada (`boardIdle`): cuántas hay y la última, de quién, con "Ábre
 | `shared:<señal>` | La señal fuera de lo normal ("Eso ya es medio proyecto.") | Verlas | smug |
 | `kind:<tipo>` · `why` · `twins:<web>` | Como en el tablón | Como en el tablón | |
 | `talked:<id>` | La suelta con más comentarios | Leerlos | suspect |
-| `mine:<id>` | La tuya más vieja, 14 días o más, sin nota ni comentarios | Mírala | skeptic |
-| `theirs:<id>` | La más vieja de otra persona, 7 días o más, sin comentarios | Mírala | suspect |
+| `mine:<id>` | La tuya más vieja, 14 días o más, sin nota ni comentarios | Mírala, Se queda | skeptic |
+| `theirs:<id>` | La más vieja de otra persona, 7 días o más, sin comentarios | Mírala, Se queda | suspect |
 | `fits:<id>` | La que más etiquetas comparte con un tablón (3 o más) | Mírala | smug |
 | `week:<n>` | 3 o más guardadas por ti esta semana que siguen aquí | Verlas | watching |
 

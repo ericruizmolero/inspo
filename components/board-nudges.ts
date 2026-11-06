@@ -95,7 +95,7 @@ export function boardNudges({ t, count, read, stale, empty, others, talk, vote, 
   if (top) list.push({ key: `others:${top.who}:${top.n}`, title: b.othersTitle, text: b.othersText(top.who, top.n), act: b.othersAct, mood: "smug", go: () => onPerson(top.who) });
   if (quietRef) { const n = named(t, quietRef.item, pictureOf); list.push({ key: `quiet:${quietRef.item.id}`, title: b.quietTitle, text: b.quietText(quietRef.who, n.name), thumb: n.thumb, act: b.quietAct, mood: "suspect", go: () => onOpen(quietRef.item) }); }
   if (count >= MANY_REFS && !vote) list.push({ key: "polish", title: b.polishTitle, text: b.polishText(count), act: b.polishAct, mood: "judge", go: onPolish });
-  if (oldRef) { const n = named(t, oldRef.item, pictureOf); list.push({ key: `old:${oldRef.item.id}`, title: b.oldTitle, text: cap(b.oldText(n.name, b.howLong(oldRef.days))), thumb: n.thumb, act: b.oldAct, mood: "skeptic", go: () => onOpen(oldRef.item) }); }
+  if (oldRef) { const n = named(t, oldRef.item, pictureOf); list.push({ key: `old:${oldRef.item.id}`, title: b.oldTitle, text: cap(b.oldText(n.name, b.howLong(oldRef.days))), thumb: n.thumb, act: b.oldAct, keep: t.tino.keep, mood: "skeptic", go: () => onOpen(oldRef.item) }); }
   // What the board holds that is worth a look of its own: one kind per visit, never all of them in a row
   if (onKind && kinds) {
     const worth = (["video", "post", "text"] as const).filter((k) => (kinds[k] ?? 0) >= (k === "text" ? 1 : 2));
@@ -206,9 +206,10 @@ export function kindsOf(items: InspoItem[], kindOf: (web: string) => MediaKind):
 }
 
 /** The oldest reference on the board, two weeks or more, with no note and no comment: worth going over again */
-export function oldReference(items: InspoItem[], comments: CommentMap, parse: (d: string) => number, now: number): { item: InspoItem; days: number } | null {
+export function oldReference(items: InspoItem[], comments: CommentMap, parse: (d: string) => number, now: number, settled?: (key: string) => boolean): { item: InspoItem; days: number } | null {
   const found = items
-    .filter((i) => i.id && !i.note.trim() && !comments[i.id]?.some((c) => c.body.trim()))
+    // One answered "It stays" is not asked about again (HomeTino, `keep`)
+    .filter((i) => i.id && !settled?.(`old:${i.id}`) && !i.note.trim() && !comments[i.id]?.some((c) => c.body.trim()))
     .map((i) => ({ i, when: parse(i.date) }))
     .filter(({ when }) => when > 0 && now - when > OLD_MS)
     .sort((a, b) => a.when - b.when)[0];
@@ -375,10 +376,12 @@ export function systemIdle(t: Dict, areas: SystemAreaState[], now: number, onGo:
 /** In the Inbox, when nobody searches: what is loose here pushes towards a project, or out. A teammate talking to
  *  you first; the rest takes turns from one visit to the next (`seed`). Never "nothing to say" (Eric, 06-11: "tiene
  *  que ser proactivo y decirte cosas que te inciten a hacer otras siempre") */
-export function inboxNudges({ t, items, comments, meId, me, now, seed = 0, tags, kindOf, host, parse, onOpen, onKind, onSearch, onFilter, onProject, label, projects = [], onPerson, pictureOf }: {
+export function inboxNudges({ t, items, comments, meId, me, now, seed = 0, tags, kindOf, host, parse, onOpen, onKind, onSearch, onFilter, onProject, label, projects = [], onPerson, pictureOf, settled }: {
   t: Dict;
   /** A reference's small picture, when it has one: Tino shows it and says "this one" */
   pictureOf?: (item: InspoItem) => string | null;
+  /** A nudge answered "It stays" for good (HomeTino's `settled`): that reference is not asked about again */
+  settled?: (key: string) => boolean;
   /** What is in the Inbox */
   items: InspoItem[];
   comments: CommentMap;
@@ -438,10 +441,10 @@ export function inboxNudges({ t, items, comments, meId, me, now, seed = 0, tags,
   const byAge = [...items].filter((i) => parse(i.date) > 0).sort((a, c) => parse(a.date) - parse(c.date));
   const chat = pickOne([...items].filter((i) => talked(i) > 0).sort((a, c) => talked(c) - talked(a)));
   if (chat) { const n = talked(chat); list.push({ key: `talked:${chat.id}`, title: x.talkedTitle, text: cap(x.talkedText(said(chat), n)), thumb: thumbOf(chat), act: x.talkedAct, mood: "suspect", go: () => onOpen(chat) }); }
-  const mine = pickOne(byAge.filter((i) => i.addedBy === me && !i.note.trim() && !talked(i) && days(i) >= 14));
-  if (mine) { const long = b.howLong(days(mine)); list.push({ key: `mine:${mine.id}`, title: x.mineTitle, text: x.mineText(said(mine), long), thumb: thumbOf(mine), act: x.mineAct, mood: "skeptic", go: () => onOpen(mine) }); }
-  const theirs = pickOne(byAge.filter((i) => i.addedBy && i.addedBy !== me && i.addedBy !== "Both" && !talked(i) && days(i) >= 7));
-  if (theirs) { const who = theirs.addedBy.split(" ")[0], long = b.howLong(days(theirs)); list.push({ key: `theirs:${theirs.id}`, title: x.theirsTitle, text: x.theirsText(who, said(theirs), long), thumb: thumbOf(theirs), act: x.mineAct, mood: "suspect", go: () => onOpen(theirs) }); }
+  const mine = pickOne(byAge.filter((i) => i.addedBy === me && !settled?.(`mine:${i.id}`) && !i.note.trim() && !talked(i) && days(i) >= 14));
+  if (mine) { const long = b.howLong(days(mine)); list.push({ key: `mine:${mine.id}`, title: x.mineTitle, text: x.mineText(said(mine), long), thumb: thumbOf(mine), act: x.mineAct, keep: t.tino.keep, mood: "skeptic", go: () => onOpen(mine) }); }
+  const theirs = pickOne(byAge.filter((i) => i.addedBy && i.addedBy !== me && !settled?.(`theirs:${i.id}`) && i.addedBy !== "Both" && !talked(i) && days(i) >= 7));
+  if (theirs) { const who = theirs.addedBy.split(" ")[0], long = b.howLong(days(theirs)); list.push({ key: `theirs:${theirs.id}`, title: x.theirsTitle, text: x.theirsText(who, said(theirs), long), thumb: thumbOf(theirs), act: x.mineAct, keep: t.tino.keep, mood: "suspect", go: () => onOpen(theirs) }); }
   // The loose one that shares the most with a project's board: three tags or more in common
   const selsOf = (i: InspoItem) => { const v = viewOf(tags[i.web]); return v ? [...v.traits, ...v.palette.map((c) => `c:${c}`), ...v.type.map((y) => `y:${y}`), ...v.layout.map((l) => `l:${l}`), ...v.keywords.map((k) => `k:${k}`)] : []; };
   const boards = projects.filter((p) => p.items.length >= 3).map((p) => ({ name: p.name, sels: new Set(p.items.flatMap(selsOf)) }));
