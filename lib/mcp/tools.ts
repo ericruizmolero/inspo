@@ -137,7 +137,7 @@ export const TOOLS: Tool[] = [
   tool({
     name: "record_learning", title: "Record what was learned",
     description: [
-      "Keeps one thing learned working with the person: something they corrected, chose or made clear (\"no gradients on the hero\", \"prices always with VAT\"), so the next session starts from it. Written straight in, with no approval; criterio.md shows it under what was learned, newest first.",
+      "Keeps one thing learned working with the person: something they corrected, chose, turned down or made clear (\"no gradients on the hero\", \"prices always with VAT\"), so the next session starts from it. Written straight in, with no approval; criterio.md shows it under what was learned, newest first.",
       "One short sentence each, concrete and in the language of the project's criterio.md, with no reference to this conversation. It does not change what an area decides: when the person settles an area, use propose_decision for that.",
     ].join("\n"),
     input: z.object({
@@ -146,6 +146,7 @@ export const TOOLS: Tool[] = [
       area: z.enum(SYSTEM_AREAS).optional().describe("The area it is about, when it is about one."),
       section: z.enum(SECTION_KINDS).optional().describe("The kind of section it is about, when it is about one. It holds for every landing of the project."),
       pick: z.boolean().optional().describe("True when the person chose between two versions: the note says which, what was rejected, and why."),
+      rejected: z.boolean().optional().describe("True when the note is something the person turned down (\"no video on the hero\"), with why: criterio.md lists it as rejected so no agent offers it again."),
     }),
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
     run: (i, ctx, origin) => recordLearning(ctx, origin, i),

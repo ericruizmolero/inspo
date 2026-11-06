@@ -85,12 +85,12 @@ export async function setSummary(organizationId: string, projectId: string, summ
 
 /** Something an agent learned with the person, kept on top of the list. Prepended in one statement, so two agents
  *  writing at once both stay; the list is cut to LEARNED_MAX on the way in */
-export async function addLearning(organizationId: string, projectId: string, input: { note: string; area?: SystemArea; section?: string; pick?: boolean; by?: string; via?: string }): Promise<SystemLearning> {
+export async function addLearning(organizationId: string, projectId: string, input: { note: string; area?: SystemArea; section?: string; pick?: boolean; rejected?: boolean; by?: string; via?: string }): Promise<SystemLearning> {
   await projectRow(organizationId, projectId);
   const note = String(input.note ?? "").replace(/\s+/g, " ").trim().slice(0, LEARNING_NOTE_MAX);
   if (!note) throw new HttpError(400, (await getErrors()).badBody);
   const now = new Date();
-  const entry: SystemLearning = { id: newId(), note, at: now.toISOString(), ...(input.area && AREA_SET.has(input.area) ? { area: input.area } : {}), ...(input.section ? { section: input.section } : {}), ...(input.pick ? { pick: true as const } : {}), ...(input.by ? { by: input.by.slice(0, 120) } : {}), ...(input.via ? { via: input.via.slice(0, 80) } : {}) };
+  const entry: SystemLearning = { id: newId(), note, at: now.toISOString(), ...(input.area && AREA_SET.has(input.area) ? { area: input.area } : {}), ...(input.section ? { section: input.section } : {}), ...(input.pick ? { pick: true as const } : {}), ...(input.rejected ? { rejected: true as const } : {}), ...(input.by ? { by: input.by.slice(0, 120) } : {}), ...(input.via ? { via: input.via.slice(0, 80) } : {}) };
   await ensureHead(organizationId, projectId, now);
   const list = sql`(jsonb_build_array(${JSON.stringify(entry)}::jsonb) || coalesce(${S.learned}, '[]'::jsonb))`;
   await db.update(S).set({

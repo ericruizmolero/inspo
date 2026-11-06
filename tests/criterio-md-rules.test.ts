@@ -144,9 +144,38 @@ test("the starting questions list what is still open, by id and with the areas e
   expect(md).toContain("**Already answered (3)**");
   expect(md).toContain("- `goal`: «Book a demo, through a calendar»");
   expect(md).toContain("- **Color:** No gradients on the hero. _(Eric with Claude, 2026-11-04)_");
-  expect(md).toContain("Then ask the open questions under **Starting questions** (20)");
+  expect(md).toContain("Then **Starting questions** (20 open): the 3 that block one at a time");
   expect(md).not.toMatch(/—|–/);
+  // By how to handle them: what only the person knows first, then what can be looked up, then what the agent proposes
+  const q = md.slice(md.indexOf("## Starting questions"), md.indexOf("## What was learned"));
+  const ask = q.indexOf("**Ask them, one at a time"), confirm = q.indexOf("**Look for them first"), propose = q.indexOf("**Propose an answer");
+  expect(ask).toBeGreaterThan(-1);
+  expect(ask).toBeLessThan(confirm);
+  expect(confirm).toBeLessThan(propose);
+  expect(q.slice(ask, confirm)).toContain("`audience`");
+  expect(q.slice(confirm, propose)).toContain("`current-site`");
+  expect(q.slice(propose)).toContain("`first-seconds`");
+  // The first reply has a shape, and with no direction picked the plan offers some
+  expect(md).toContain("**Your first reply**, before building anything:");
+  expect(md).toContain("No direction is chosen yet");
+  // The file ends on the short list, and every part an agent reads alone carries it
+  const ids2 = blocks.flatMap((b) => (b.kind === "section" ? [b.id] : []));
+  expect(ids2[ids2.length - 1]).toBe("before");
+  expect(partMd(blocks, "guide")).toContain("## Before you hand anything over");
+  expect(partMd(blocks, "color")).toContain("## Before you hand anything over");
   // The first read carries them; a client's copy carries no learnings
   expect(partMd(blocks, "guide")).toContain("## What was learned");
   expect(criterioBlocks({ ...i, brief, mode: "clean" }).some((b) => b.kind === "section" && b.id === "learned")).toBe(false);
+});
+
+test("what the person turned down is kept apart, and a picked direction stops the plan offering more", () => {
+  const i = input();
+  i.system.learned = [
+    { id: "l2", note: "Video on the hero, because it pulls the eye off the product.", area: "imagery", rejected: true, by: "Eric", at: "2026-11-05T10:00:00Z" },
+    { id: "l1", note: "Direction B: big serif and a still photo.", section: "hero", pick: true, by: "Eric", at: "2026-11-04T10:00:00Z" },
+  ];
+  const md = blocksToMd(criterioBlocks({ ...i, locale: "en" }));
+  expect(md).toContain("- **Turned down · Imagery:** Video on the hero, because it pulls the eye off the product.");
+  expect(md).not.toContain("No direction is chosen yet");
+  expect(md).toContain("5. Write the plan in three to five lines");
 });

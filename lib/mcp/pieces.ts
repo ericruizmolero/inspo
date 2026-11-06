@@ -477,12 +477,12 @@ export async function startSetup(ctx: McpCtx, origin: string, input: { project?:
  * Something learned with the person (a correction, a choice, a preference), kept with the project's system: the
  * next session reads it under "What was learned". Straight in: it changes no decision, which only propose_decision does.
  */
-export async function recordLearning(ctx: McpCtx, origin: string, input: { project: string; note: string; area?: string; section?: string; pick?: boolean }) {
+export async function recordLearning(ctx: McpCtx, origin: string, input: { project: string; note: string; area?: string; section?: string; pick?: boolean; rejected?: boolean }) {
   const project = await resolveProject(ctx, input.project);
   const note = oneLine(input.note, LEARNING_NOTE_MAX);
   if (!note) throw new HttpError(400, "The note is empty.");
   if (input.area && !(SYSTEM_AREAS as readonly string[]).includes(input.area)) throw new HttpError(400, `"${input.area}" is not an area. The areas are: ${SYSTEM_AREAS.join(", ")}.`);
-  const entry = await addLearning(project.workspace.id, project.id, { note, area: input.area as SystemArea | undefined, section: input.section, pick: input.pick, by: ctx.user.name || ctx.user.email, via: ctx.via });
+  const entry = await addLearning(project.workspace.id, project.id, { note, area: input.area as SystemArea | undefined, section: input.section, pick: input.pick, rejected: input.rejected, by: ctx.user.name || ctx.user.email, via: ctx.via });
   versionAfterWrite(ctx, origin, project);
   return {
     saved: true, id: entry.id, project: project.name, ...(entry.area ? { area: entry.area } : {}),

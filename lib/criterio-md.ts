@@ -18,7 +18,7 @@ import { hostOf, readableDomain } from "@/lib/url";
 import { brandTokenLines, brandIntroLines, brandCssLines, type BrandMdStrings } from "@/lib/brand-md";
 import type { BrandSpec } from "@/types/brand";
 import { readBrief, type KeepPart, type Platform, type PriceRange } from "@/types/brief";
-import { PLAYBOOK_QUESTIONS, QUESTION_GROUPS, QUESTION_GROUP_NAMES, questionText } from "@/lib/playbook-questions";
+import { PLAYBOOK_QUESTIONS, SETUP_ROLES, questionText } from "@/lib/playbook-questions";
 import type { RefMeasured } from "@/lib/ref-measured";
 import type { RefComposition } from "@/types/inspo";
 import { compositionPatterns, isPage, type CompositionPattern } from "@/lib/composition-core";
@@ -97,9 +97,11 @@ export interface CriterioMdInput {
     /** "Start here": the walk the agent takes the person on, written from what the project has (lib/criterio-md.ts guideKeys) */
     guide: { heading: string; setupOpen: string; lines: (k: GuideMdKeys) => string[] };
     /** "Starting questions": the questions still open, which the agent asks in phase 1 (lib/playbook-questions.ts) */
-    questions: { heading: string; intro: string; decides: string; none: string; answered: (n: number) => string; inBrief: string };
-    /** "What was learned": what agents wrote down with the person (types/system.ts SystemLearning) */
-    learned: { heading: string; intro: string; with: (who: string, app: string) => string };
+    questions: { heading: string; intro: string; tiers: Record<QuestionTier, string>; decides: string; none: string; answered: (n: number) => string; inBrief: string };
+    /** "What was learned": what agents wrote down with the person (types/system.ts SystemLearning); `rejected` heads what they turned down */
+    learned: { heading: string; intro: string; with: (who: string, app: string) => string; rejected: string };
+    /** The short list the file ends on, so the rules are read again last (a long file's middle is read worst) */
+    before: { heading: string; lines: (k: BeforeMdKeys) => string[] };
     /** "The landing": each landing planned, its goal and its sections in order (types/landing.ts) */
     landing: { heading: string; goal: string; proof: string; cta: string };
     /** Every area's never lines gathered in one place, for the reader who reads one list before building */
@@ -118,6 +120,19 @@ export interface CriterioMdInput {
 /** The file's own labels, for the "use" section to name the marks as the file writes them */
 export interface UseMdKeys { never: string; evidence: string; tokens: string; refs: string; required: string; guidance: string; measured: string; client: string | null }
 
+/** The closing list's names for the parts it points back to */
+export interface BeforeMdKeys { never: string; rejects: string | null; learned: string }
+
+/** How the agent handles a starting question: "ask" one at a time (only the person knows it), "confirm" what it can
+ *  look up first, "propose" an answer itself. Read off the setup's roles (lib/playbook-questions.ts SETUP_ROLES), so the
+ *  setup and the file sort the questions the same way */
+export type QuestionTier = "ask" | "confirm" | "propose";
+const QUESTION_TIERS: readonly QuestionTier[] = ["ask", "confirm", "propose"];
+export const questionTier = (id: string): QuestionTier => {
+  const role = SETUP_ROLES[id];
+  return role === "stops" || role === "core" ? "ask" : role === "read" ? "confirm" : "propose";
+};
+
 /** What "Start here" is written from: what the board can already hold up, and what is still to decide */
 export interface GuideMdKeys {
   project: string;
@@ -135,6 +150,10 @@ export interface GuideMdKeys {
   questions: string | null; openQuestions: number;
   /** What was learned's heading, when anything was */
   learned: string | null;
+  /** How many open questions only the person can answer, asked one at a time */
+  blocking: number;
+  /** The person already chose a direction between versions (a learning with pick): no need to offer directions */
+  picked: boolean;
 }
 
 export interface BriefMdStrings {
@@ -224,20 +243,28 @@ function measuredLines(m: RefMeasured | undefined, s: CriterioMdInput["strings"]
   return out;
 }
 
+/** A question's first sentence: what it asks, without the examples and the follow-up */
+const firstSentence = (text: string) => /^.+?[?.](?=\s|$)/.exec(text)?.[0] ?? text;
+
 /** Starting questions: the open ones by group, each with its id (what answer_question takes) and the areas its answer
  *  decides; then, in a line or a few, what is already answered (by the brief's fields, or an answer kept for it) */
-function startingQuestions(stored: unknown, hasRefs: boolean, lang: "en" | "es", area: (k: SystemArea) => string, s: CriterioMdInput["strings"]["questions"]): { open: string[]; lines: string[] } {
+function startingQuestions(stored: unknown, hasRefs: boolean, lang: "en" | "es", area: (k: SystemArea) => string, s: CriterioMdInput["strings"]["questions"]): { open: string[]; blocking: number; lines: string[] } {
   const brief = readBrief(stored);
   const answers = brief?.answers ?? {};
   const fromBrief = PLAYBOOK_QUESTIONS.filter((q) => !answers[q.id] && brief && q.fromBrief?.(brief));
   const kept = PLAYBOOK_QUESTIONS.filter((q) => answers[q.id]);
   const open = PLAYBOOK_QUESTIONS.filter((q) => !answers[q.id] && !fromBrief.includes(q));
   const lines = [`> ${s.intro}`, ""];
-  for (const g of QUESTION_GROUPS) {
-    const qs = open.filter((q) => q.group === g);
+  // By how to handle them, not by topic: the few only the person can answer first, so the session does not open on 23 questions
+  for (const t of QUESTION_TIERS) {
+    const qs = open.filter((q) => questionTier(q.id) === t);
     if (!qs.length) continue;
-    lines.push(`**${QUESTION_GROUP_NAMES[g][lang]}**`, "");
-    for (const q of qs) lines.push(`- \`${q.id}\` ${questionText(q, lang, hasRefs)}${q.feeds.length ? ` _${s.decides}: ${q.feeds.map(area).join(", ")}_` : ""}`);
+    lines.push(`**${s.tiers[t]}**`, "");
+    // Asked one at a time, a question goes whole; one the agent looks up or answers itself only needs naming
+    for (const q of qs) {
+      const text = questionText(q, lang, hasRefs);
+      lines.push(`- \`${q.id}\` ${t === "ask" || (hasRefs && q.withBoard) ? text : firstSentence(text)}${q.feeds.length ? ` _${s.decides}: ${q.feeds.map(area).join(", ")}_` : ""}`);
+    }
     lines.push("");
   }
   if (!open.length) lines.push(s.none, "");
@@ -248,7 +275,7 @@ function startingQuestions(stored: unknown, hasRefs: boolean, lang: "en" | "es",
     for (const q of kept) lines.push(`- \`${q.id}\`: ${quote(answers[q.id].text, 160)}`);
   }
   while (lines[lines.length - 1] === "") lines.pop();
-  return { open: open.map((q) => q.id), lines };
+  return { open: open.map((q) => q.id), blocking: open.filter((q) => questionTier(q.id) === "ask").length, lines };
 }
 
 export function criterioBlocks({ project, system, items: allItems, labels, strings, client, about, brief, board = [], talk: allTalk = {}, origin = "", skills = [], locale, brand, mode = "full", fileHref, links = {}, clientCopy = [] }: CriterioMdInput): CriterioBlock[] {
@@ -313,7 +340,7 @@ export function criterioBlocks({ project, system, items: allItems, labels, strin
   // What agents learned with the person, newest first. A record of the team's sessions: a client's copy goes without it
   const learnedLines = clean ? [] : (system.learned ?? []).map((l) => {
     const who = l.by && l.via ? strings.learned.with(l.by, l.via) : l.by ?? l.via ?? "";
-    return `- ${l.area ? `**${title(l.area, labels[l.area])}:** ` : ""}${l.section ? `(${l.section}) ` : ""}${one(l.note)} _(${[who, l.at.slice(0, 10)].filter(Boolean).join(", ")})_`;
+    return `- ${l.rejected ? `**${strings.learned.rejected}${l.area ? ` · ${title(l.area, labels[l.area])}` : ""}:** ` : l.area ? `**${title(l.area, labels[l.area])}:** ` : ""}${l.section ? `(${l.section}) ` : ""}${one(l.note)} _(${[who, l.at.slice(0, 10)].filter(Boolean).join(", ")})_`;
   });
   const guideLines = strings.guide.lines({
     project, open,
@@ -327,6 +354,7 @@ export function criterioBlocks({ project, system, items: allItems, labels, strin
     why: strings.why, never: strings.never, client: client?.name ?? null,
     questions: asked.open.length ? title("questions", strings.questions.heading) : null, openQuestions: asked.open.length,
     learned: learnedLines.length ? title("learned", strings.learned.heading) : null,
+    blocking: asked.blocking, picked: (system.learned ?? []).some((l) => l.pick),
   });
   blocks.push({ kind: "section", id: "guide", heading: title("guide", strings.guide.heading), lines: setup.complete ? guideLines : [strings.guide.setupOpen, "", ...guideLines] });
   blocks.push({ kind: "section", id: "questions", heading: title("questions", strings.questions.heading), lines: asked.lines });
@@ -482,6 +510,8 @@ export function criterioBlocks({ project, system, items: allItems, labels, strin
     while (lines[lines.length - 1] === "") lines.pop();
     blocks.push({ kind: "section", id: "refs", heading: title("refs", `${strings.refs} (${refs.length})`), lines: doc.refs ? doc.refs.split("\n") : lines, edited: !!doc.refs });
   }
+  // The rules once more, last: the file opens with the walk and ends with this, so a long file is held at both ends
+  blocks.push({ kind: "section", id: "before", heading: title("before", strings.before.heading), lines: strings.before.lines({ never: strings.never, rejects: rejected.length ? title("rejects", strings.rejects.heading) : null, learned: title("learned", strings.learned.heading) }) });
   return blocks;
 }
 
@@ -603,16 +633,16 @@ export type CriterioPart = (typeof CRITERIO_PARTS)[number];
 export const isCriterioPart = (x: unknown): x is CriterioPart => (CRITERIO_PARTS as readonly unknown[]).includes(x);
 
 /** One part of the file as Markdown. "decisions" leaves out every reference's own entry and the texts, whole; "guide"
- *  is the head, Start here, the starting questions, what was learned, How to use this file and every Never, the first read; an area's name gives that area
- *  under the file's head and its "How to use this file", so a single area still says what binds */
+ *  is the head, Start here, the starting questions, what was learned, How to use this file, every Never and the closing list, the first read;
+ *  an area's name gives that area under the file's head, its "How to use this file" and the closing list, so a single area still says what binds */
 export function partMd(blocks: CriterioBlock[], part: CriterioPart = "all"): string {
   if (part === "all") return blocksToMd(blocks);
   const section = (b: CriterioBlock, ...ids: string[]) => b.kind === "section" && ids.includes(b.id);
   return blocksToMd(blocks.filter((b) => part === "decisions"
     ? b.kind !== "section" || !["refs", "content"].includes(b.id)
     : part === "guide"
-      ? b.kind === "head" || section(b, "guide", "questions", "learned", "landing", "use", "rejects")
-      : b.kind === "head" || section(b, "use") || (b.kind === "area" && b.area === part)));
+      ? b.kind === "head" || section(b, "guide", "questions", "learned", "landing", "use", "rejects", "before")
+      : b.kind === "head" || section(b, "use", "before") || (b.kind === "area" && b.area === part)));
 }
 
 export function renderCriterioMd(input: CriterioMdInput): string {
