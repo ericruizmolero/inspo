@@ -313,6 +313,14 @@ export const routes: Record<string, Surface> = {
       await expect(GET(request(`/p/${fx.a.project}`), { params: Promise.resolve({ id: fx.a.project }) }), "B reaching A's project goes home, with nothing of it in the address").rejects.toMatchObject({ kind: "redirect", url: "/" });
     },
   },
+  "route:app/w/[id]/route.ts#GET": {
+    probe: async (fx) => {
+      asB(fx);
+      const { GET } = await import("@/app/w/[id]/route");
+      await expect(GET(request(`/w/${fx.a.team}`), { params: Promise.resolve({ id: fx.a.team }) }), "B reaching A's workspace goes home, with nothing of it in the address").rejects.toMatchObject({ kind: "redirect", url: "/" });
+    },
+  },
+  "route:app/(library)/i/[id]/preview/route.ts#GET": { exempt: "takes no session on purpose: a pasted link's picture for Telegram or Slack, where the item id is the proof (as /s/ tokens). It serves only the picture of the card, never a copy from X, Pinterest, Are.na or Cosmos (staysInside), and no note, comment or workspace (lib/share-card.ts)" },
   "mcp:start_setup": { probe: async (fx) => { await refusedTool(fx, "start_setup", { project: fx.a.project }); } },
   "mcp:list_projects": {
     probe: async (fx) => {

@@ -139,7 +139,8 @@ test("claude.ai's reader, which passes on only text, gets a signed picture in wo
 });
 
 test("robots.txt lets fetchers reach file links and nothing else under /api/", () => {
-  const rules = robots().rules as { allow: string[]; disallow: string[] };
+  // The rule for everyone (Twitterbot has its own, to draw a pasted reference link's card)
+  const rules = [robots().rules].flat().find((r) => r.userAgent === "*") as { allow: string[]; disallow: string[] };
   expect(rules.allow).toContain("/api/files/");
   expect(rules.disallow).toContain("/api/");
 });
