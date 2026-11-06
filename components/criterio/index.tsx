@@ -5,9 +5,9 @@
 // The creature (Creature, Profile, Sprite) is left out for now: the wordmark is plain type, and Balloon,
 // TipWindow and EmptyState take no drawing.
 
-import { useEffect, useId, useLayoutEffect, useRef, useState, type ButtonHTMLAttributes, type CSSProperties, type InputHTMLAttributes, type ReactNode, type Ref, type TextareaHTMLAttributes } from "react";
+import { forwardRef, useEffect, useId, useLayoutEffect, useRef, useState, type ButtonHTMLAttributes, type CSSProperties, type InputHTMLAttributes, type ReactNode, type Ref, type TextareaHTMLAttributes } from "react";
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUUpLeft, ArrowUp, ArrowUpRight, Bell, CalendarBlank, CaretDown, CaretLeft, CaretRight, Chat, ChatCircle, Check, Compass, Copy, CornersIn, CornersOut, DotsThree, DownloadSimple, EnvelopeSimple, FileMd, FileText, FilmStrip, Folder, FunnelSimple, Gauge, Gear, House, Info, Lightbulb, LinkSimple, LockSimple, MagnifyingGlass, Minus, MonitorPlay, Moon, PaperPlaneTilt, Pause, PencilSimple, Play, Plug, PlugsConnected, Plus, Pulse, PushPin, Quotes, Shuffle, SidebarSimple, SlidersHorizontal, Smiley, Sparkle, SpeakerHigh, SpeakerSlash, SquaresFour, Sun, Tornado, TextAlignLeft, Trash, UploadSimple, User, Users, X, Image as ImageIcon } from "@phosphor-icons/react/ssr";
-import type { Icon as PhosphorIcon, IconWeight } from "@phosphor-icons/react";
+import type { Icon as PhosphorIcon, IconProps, IconWeight } from "@phosphor-icons/react";
 import { Liquid } from "@/components/ui/liquid";
 import "./criterio.css";
 
@@ -30,15 +30,17 @@ export function Wordmark({ size = 24, tone = "ink", className }: { size?: number
 
 /** The Cajón (the Inbox): a drawer pulled out a little, drawn on Phosphor's 256 grid with its regular stroke (16)
  *  and round joins, so it sits with the rest. Ours, not Phosphor's: the tray was too square (Eric, 06-11) */
-function Cajon({ size = 18, className }: { size?: number | string; weight?: IconWeight; className?: string }) {
+// A forwardRef with Phosphor's own type, so it stands in the same map as the rest
+const Cajon = forwardRef<SVGSVGElement, IconProps>(function Cajon({ size = 18, className, weight: _weight, mirrored: _mirrored, alt: _alt, color: _color, ...rest }, ref) {
+  void _weight; void _mirrored; void _alt; void _color;
   return (
-    <svg width={size} height={size} viewBox="0 0 256 256" fill="none" stroke="currentColor" strokeWidth={16} strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden focusable="false">
+    <svg ref={ref} width={size} height={size} viewBox="0 0 256 256" fill="none" stroke="currentColor" strokeWidth={16} strokeLinecap="round" strokeLinejoin="round" className={className} {...rest}>
       <path d="M48 104V88a32 32 0 0 1 32-32h96a32 32 0 0 1 32 32v16" />
       <rect x="32" y="104" width="192" height="104" rx="36" />
       <path d="M104 152h48" />
     </svg>
   );
-}
+}) as PhosphorIcon;
 
 const ICONS = {
   home: House,
