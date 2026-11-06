@@ -12,6 +12,7 @@ import type { TinoApi } from "./tino/engine";
 import { moodProps, type TinoMood } from "./tino/moods";
 import { Balloon, Button, Icon } from "@/components/criterio";
 import { useT } from "./I18nProvider";
+import { useTinoBreak } from "./tino-break";
 import "./HomeTino.css";
 
 /** One thing Tino can bring up. `title` is a pool of lines: one is picked at random, never the one said last time.
@@ -147,7 +148,11 @@ export default function HomeTino({ nudges, say, speak, face, quiet = false, scop
   // Asked (a click on him), he answers even while the page would keep him quiet, and with nothing pending says `idle`
   const [asked, setAsked] = useState(false);
   const pending = visit && !visit.closed && (asked || !quiet);
-  const shown = on && !speak ? say ?? (pending && left.length ? left[at % left.length] : pending && asked ? idle : undefined) : undefined;
+  // After a good while of work, now and then a break (music, the theme, Resources, a stretch): over what was put
+  // away, never over what the person is doing or another of his windows (components/tino-break.ts)
+  const pause = useTinoBreak(t);
+  const breather = !quiet ? pause.nudge ?? undefined : undefined;
+  const shown = on && !speak ? say ?? breather ?? (pending && left.length ? left[at % left.length] : pending && asked ? idle : undefined) : undefined;
 
   const title = useLine(shown?.key, shown?.title);
   // A once-only nudge is spent the moment it is said
@@ -159,11 +164,13 @@ export default function HomeTino({ nudges, say, speak, face, quiet = false, scop
   }, [spent]);
 
   const close = () => {
+    if (shown === breather) { pause.done(); return; }
     setVisit((v) => v && { ...v, closed: true });
     write(session, closedKey, "1");
     setAsked(false);
   };
   const putOff = (key: string) => {
+    if (shown === breather) { pause.done(); tino.current?.set("descarta"); return; }
     const later = [...(visit?.later ?? []), key];
     setVisit((v) => v && { ...v, later, closed: true });
     write(session, laterKey, JSON.stringify(later));
@@ -183,7 +190,7 @@ export default function HomeTino({ nudges, say, speak, face, quiet = false, scop
   };
 
   const mood: TinoMood = speak && face ? face : !on ? "asleep" : shown ? shown.mood : face ?? (left.length ? "watching" : "asleep");
-  const paged = shown && shown !== idle && !say && left.length > 1;
+  const paged = shown && shown !== idle && shown !== breather && !say && left.length > 1;
   return (
     <TinoCorner tinoRef={tino} mood={mood} muted={!on && !speak} bodyLabel={on ? t.tino.talk : t.tino.wake} onBody={wake} className={className}
       say={speak ?? (shown && {

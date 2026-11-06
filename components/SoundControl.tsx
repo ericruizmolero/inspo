@@ -143,6 +143,13 @@ function toggle() {
   emit();
   play(A.on);
 }
+/** Whether the music is on, for Tino's break (components/tino-break.ts) */
+export const musicOn = () => A.on;
+/** Turns the music on from somewhere other than its button (Tino's break): a click, so the browser lets it play */
+export function startMusic() {
+  if (A.on) return;
+  toggle();
+}
 /** A button of the music is on screen. Returns what to call when it no longer is */
 function hold(): () => void {
   A.holders++;

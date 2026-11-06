@@ -18,7 +18,7 @@ import BoardCard, { type GridActions } from "./BoardCard";
 import AgentCard from "./AgentCard";
 import Toast, { type ToastNote } from "./Toast";
 import GatherBar, { StartButton } from "./GatherBar";
-import { boardNudges, boardIdle, kindsOf, missingFrom, paceOf, oldReference, othersThisWeek, quietReference, sameSite, sharedTag, unansweredTalk, unusedByAreas, withoutReason } from "./board-nudges";
+import { boardNudges, boardIdle, inboxNudges, inboxIdle, kindsOf, missingFrom, paceOf, oldReference, othersThisWeek, quietReference, sameSite, sharedTag, unansweredTalk, unusedByAreas, withoutReason } from "./board-nudges";
 import InboxZero from "./InboxZero";
 import SelectBar from "./SelectBar";
 import { refInfoOf } from "@/lib/ref-info";
@@ -651,8 +651,17 @@ export default function InspoClient({
     onPerson: (who) => setFilters([{ kind: "person", value: who }]),
     onOpen: (item) => openItem(item),
   }) : [], [currentProject, boardTino, t, spaceItems, currentSystem, systemStale, user, openedAt, commentMap, solo, polishTab, polishVotes, canManage, tagMap, members]); // eslint-disable-line react-hooks/exhaustive-deps
-  const boardIdleLine = useMemo(() => currentProject && boardTino ? boardIdle(t, spaceItems, parseDate, (item) => openItem(item)) : undefined,
-    [currentProject, boardTino, t, spaceItems]); // eslint-disable-line react-hooks/exhaustive-deps
+  const boardIdleLine = useMemo(() => !boardTino ? undefined : currentProject ? boardIdle(t, spaceItems, parseDate, (item) => openItem(item))
+    : space === "inbox" ? inboxIdle(t, spaceItems, parseDate, (item) => openItem(item)) : undefined,
+    [currentProject, boardTino, space, t, spaceItems]); // eslint-disable-line react-hooks/exhaustive-deps
+  // In the Inbox: what is loose pushes towards a project, or out (components/board-nudges.ts)
+  const inboxNudgeList = useMemo(() => space === "inbox" && boardTino ? inboxNudges({
+    t, items: spaceItems, comments: commentMap, meId: user.id, me: user.name || user.email, now: openedAt, seed: visitSeed,
+    tags: tagMap, kindOf: mediaKindOf, host: hostOf, parse: parseDate,
+    onOpen: (item) => openItem(item), onKind: (k) => setFilters([{ kind: "media", value: k }]), onSearch: (words) => setQuery(words),
+    onFilter: (sel) => setFilters([{ kind: "tag", value: sel }]), onProject: () => setSpace("home"),
+    label: (sel) => filterLabel({ kind: "tag", value: sel }, t).toLowerCase(),
+  }) : [], [space, boardTino, t, spaceItems, commentMap, user, openedAt, tagMap]); // eslint-disable-line react-hooks/exhaustive-deps
   const grid = (
     <Grid
       under={!!currentProject && projectView !== "board"}
@@ -1035,7 +1044,7 @@ export default function InspoClient({
             focused={searchFocused} failed={searchFailed} total={spaceItems.length}
             chips={askChips.map((k) => ({ key: k, label: k, onPick: () => setFilters([...filters, { kind: "tag", value: `k:${k}` }]) }))}
             onAct={() => { resetFilters(); setSpace("inbox"); }}
-            scope={`:${space}`} quiet={!!agent || selected.size > 0} nudges={boardNudgeList} idle={boardIdleLine} />
+            scope={`:${space}`} quiet={!!agent || selected.size > 0} nudges={currentProject ? boardNudgeList : inboxNudgeList} idle={boardIdleLine} />
         )}
       </SidebarInset>
     </SidebarProvider>
