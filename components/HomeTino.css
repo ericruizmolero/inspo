@@ -1,10 +1,12 @@
-/* Tino in the corner (TinoCorner in components/HomeTino.tsx), on the home and in Polish: the plush peeks out of the
-   bottom-right corner, cut by the window's edge, and its balloon stands over it with the tail pointing down at it. The theme button moves to the opposite
-   corner on the home, after the pill (InspoClient). A phone has no room for it. */
-.tino-corner { position: fixed; right: 24px; bottom: 0; z-index: 12; display: flex; flex-direction: column; align-items: flex-end; pointer-events: none; }
+/* Tino in the corner (TinoCorner in components/HomeTino.tsx), on the home and in Polish: the plush stands whole in the
+   bottom-right corner, as far off the window's bottom edge as the music pill on the left (16px; Eric, 06-11), and its
+   balloon stands over it with the tail pointing down at it. The theme button moves to the opposite corner on the home,
+   after the pill (InspoClient). A phone has no room for it. */
+/* The model leaves 16px of air under the plush inside its 140px box: the box sits on the edge, the plush 16px off it */
+.tino-corner { position: fixed; right: 24px; bottom: env(safe-area-inset-bottom); z-index: 12; display: flex; flex-direction: column; align-items: flex-end; pointer-events: none; }
 .tino-corner > * { pointer-events: auto; }
-.tino-corner__body { display: block; width: 140px; height: 128px; margin-bottom: env(safe-area-inset-bottom); padding: 0; border: 0; background: none; overflow: hidden; cursor: pointer; border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
-/* Whole, Tino stands 140 high; the window's edge keeps its base */
+.tino-corner__body { display: block; width: 140px; height: 140px; padding: 0; border: 0; background: none; overflow: hidden; cursor: pointer; border-radius: var(--radius-lg); }
+/* Whole, Tino stands 140 high */
 .tino-corner__body .tino { width: 140px; height: 140px; }
 .tino-corner__body .tino { transition: transform 400ms var(--ease-out); }
 /* Muted: he sinks until only the ears and the visor show, and sleeps */
@@ -22,13 +24,14 @@
 .tino-corner__say .cr-actions { align-items: center; margin-top: 12px; }
 .tino-corner__close { position: absolute; top: 10px; right: 10px; }
 /* Which of them, and the next: plain text on the butter, its own small pill */
+/* "2 de 4 ›": loose figures in grey, no pill (Eric, 06-11: "el / no me convence"); ink on hover */
 .tino-corner__next {
-  display: inline-flex; align-items: center; gap: 2px; height: 34px; margin-left: auto; padding: 0 8px 0 12px;
-  border: 0; border-radius: var(--radius-pill); background: color-mix(in srgb, var(--on-butter) 8%, transparent);
-  color: var(--on-butter); font: inherit; font-size: var(--fs-small); font-variant-numeric: tabular-nums; cursor: pointer;
-  transition: background-color 150ms ease, transform 120ms var(--ease-out);
+  display: inline-flex; align-items: center; gap: 4px; height: 34px; margin-left: auto; padding: 0 2px 0 8px;
+  border: 0; background: none; border-radius: var(--radius-s);
+  color: color-mix(in srgb, var(--on-butter) 55%, transparent); font: inherit; font-size: var(--fs-label); font-variant-numeric: tabular-nums; cursor: pointer;
+  transition: color 150ms ease, transform 120ms var(--ease-out);
 }
-@media (hover: hover) and (pointer: fine) { .tino-corner__next:hover { background: color-mix(in srgb, var(--on-butter) 14%, transparent); } }
+@media (hover: hover) and (pointer: fine) { .tino-corner__next:hover { color: var(--on-butter); } }
 .tino-corner__next:active { transform: scale(0.96); }
 .tino-corner__next:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 @keyframes tino-corner-say { from { opacity: 0; transform: translateY(8px) scale(0.98); transform-origin: 85% 100%; } }

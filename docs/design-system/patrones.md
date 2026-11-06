@@ -80,7 +80,8 @@ Tino no espera a que le pregunten: en cada vista mira lo que pasa ahí y empuja 
 ### Reglas comunes
 
 - **Dónde.** Siempre en la esquina de abajo a la derecha (`TinoCorner`), en globo. En teléfono no sale (menos de 801 px).
-- **Uno cada vez.** Un globo sin pedir por visita. Si hay varios, "1 / 4" pasa al siguiente; como mucho 4 por visita (6 en el Inbox).
+- **Callado hasta que le pulsas.** En cada vista entra sin hablar; lo suyo lo dice al pulsarle. Por su cuenta solo sale lo que responde a la persona (una búsqueda, algo guardándose) y el respiro. → [decisión](decisiones/2026-11-06-tino-entra-callado-y-habla-cuando-le-pulsas.md)
+- **Uno cada vez.** Si hay varios, "2 de 4 ›" pasa al siguiente (cifra suelta en gris, sin pastilla → [decisión](decisiones/2026-11-06-el-paginador-de-tino-es-una-cifra-suelta.md)); como mucho 4 por visita (6 en el Inbox).
 - **Qué va primero.** Lo urgente siempre delante (alguien del equipo te habla). El resto se turna de una visita a otra (`seed`), para no abrir siempre con lo mismo.
 - **Callarlo.** "Luego" calla ese aviso el resto de la visita; la × cierra el globo. Valen solo en su vista (`scope`): cerrar el del Inicio no calla el del tablón. Un clic en Tino lo vuelve a abrir con todo, también lo pospuesto.
 - **Una sola vez.** Un hito o una explicación (`once`) se dice una vez en la vida y no vuelve (`localStorage`). Lo que pasó mientras no estabas (`happened`) solo se dice al volver tras 5 días o más.
@@ -88,6 +89,7 @@ Tino no espera a que le pregunten: en cada vista mira lo que pasa ahí y empuja 
 - **Silenciado.** El interruptor de la pastilla (`TinoSwitch`) lo duerme: se hunde y no dice nada sin pedir. Lo que la persona le pide (una búsqueda) lo contesta igual.
 - **Dentro de un proyecto habla de ese proyecto.** Nunca de la bandeja ni de otros proyectos.
 - **Un respiro.** Tras 40 minutos activos, por turnos: música, cambiar de tema, Recursos o estirar; nunca dos a menos de 30 minutos (`components/tino-break.ts`). Va por encima de lo pospuesto, nunca por encima de lo que la persona está haciendo.
+- **Majo, nunca chulo.** Tino es majo y agradable: nada de "campeón", "crack" o "jefe", ni frases que traten a la persona por encima del hombro. La ironía, con la situación, nunca con la persona. → [decisión](decisiones/2026-11-06-en-el-cajon-olvidar-es-un-toque-y-sin-campeon.md)
 - **Habla con datos, no con obviedades.** Lo que dice del gusto de un tablón se compara con lo normal antes de decirse: lo que tiene casi cualquier web (centrado, grotesca neutra) no es un hallazgo. → [decisión](decisiones/2026-11-06-tino-dice-lo-que-el-tablon-tiene-mas-que-lo-normal-no-lo-mas-repetido.md)
 
 ### Las tripas

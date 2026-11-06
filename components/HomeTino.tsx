@@ -149,7 +149,10 @@ export default function HomeTino({ nudges, say, speak, face, quiet = false, scop
   const left = visit ? nudges.filter((n) => !visit.later.includes(n.key) && !(n.once && visit.seen.includes(n.key)) && !(n.happened && !(visit.awaySince && Date.parse(n.happened) > visit.awaySince))).slice(0, max) : [];
   // Asked (a click on him), he answers even while the page would keep him quiet, and with nothing pending says `idle`
   const [asked, setAsked] = useState(false);
-  const pending = visit && !visit.closed && (asked || !quiet);
+  // He never opens his balloon on his own: in every view he starts silent, watching when he has something to say,
+  // and says it when clicked (Eric, 06-11: "de primeras en la primera view Tino tiene que estar sin hablar"). What
+  // the person started (`say`), answers (`speak`) and the break after a long while still come by themselves
+  const pending = visit && asked;
   // After a good while of work, now and then a break (music, the theme, Resources, a stretch): over what was put
   // away, never over what the person is doing or another of his windows (components/tino-break.ts)
   const pause = useTinoBreak(t);
@@ -203,7 +206,7 @@ export default function HomeTino({ nudges, say, speak, face, quiet = false, scop
           <Button size="s" variant="quiet" onClick={() => putOff(shown.key)}>{t.tino.later}</Button>
           {paged && (
             <button type="button" className="tino-corner__next" aria-label={t.tino.next} onClick={() => setAt((i) => (i % left.length) + 1)}>
-              {(at % left.length) + 1} / {left.length}<Icon name="chevron-right" size={14} />
+              {t.tino.pageOf((at % left.length) + 1, left.length)}<Icon name="chevron-right" size={12} />
             </button>
           )}
         </>,

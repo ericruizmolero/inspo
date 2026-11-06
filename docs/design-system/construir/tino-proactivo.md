@@ -11,9 +11,9 @@ Cómo decide Tino qué decir sin que nadie le pregunte: de dónde saca cada avis
    - `speak`: la respuesta a lo que la persona hace (una búsqueda, una edición). Sale aunque Tino esté apagado, porque lo ha pedido.
    - `say`: lo que la persona ha empezado (escribir un nombre en el Inicio, algo que se está guardando en el tablón).
    - el respiro (`useTinoBreak`), si toca y la esquina no está callada.
-   - el aviso de turno (`left[at]`), si la visita no cerró el globo y la esquina no está callada, o si la persona pulsó a Tino.
+   - el aviso de turno (`left[at]`), solo si la persona pulsó a Tino: en ninguna vista abre el globo por su cuenta ([decisión](../decisiones/2026-11-06-tino-entra-callado-y-habla-cuando-le-pulsas.md)).
    - `idle`, si la persona pulsó a Tino y no queda nada.
-5. **La esquina se calla** (`quiet`) mientras la persona está a otra cosa: en el tablón, con el agente trabajando, con referencias seleccionadas, con una búsqueda escrita o su respuesta en pantalla; en el antiguo dock del Sistema, mientras escribe o espera. Callada no dice nada sin pedir, pero pulsarla contesta igual.
+5. **La esquina se calla** (`quiet`) mientras la persona está a otra cosa: en el tablón, con el agente trabajando, con referencias seleccionadas, con una búsqueda escrita o su respuesta en pantalla. Callada no saca ni el respiro; pulsarla contesta igual. Con avisos pendientes pone cara de `watching`; sin nada, `asleep`.
 6. **La frase.** Si `title` es un grupo, sale una al azar y nunca la misma que la última vez para ese tipo de aviso (lo que va antes del primer `:` de la `key`); se recuerda en `localStorage`. Todo entra letra a letra ([Tino escribe](../componentes.md#tino-escribe)).
 
 ## Qué hace cada gesto
@@ -23,9 +23,9 @@ Cómo decide Tino qué decir sin que nadie le pregunte: de dónde saca cada avis
 | Pulsa el botón del aviso | Ejecuta `go` (abre la ficha, filtra, lleva al área) | `aprueba` |
 | "Luego" | Ese aviso queda pospuesto el resto de la visita en esa vista y el globo se cierra | `descarta` |
 | × | Se cierra el globo; lo pendiente sigue ahí para cuando lo pulse | Ninguno |
-| "1 / 4" | Pasa al siguiente de la lista | Ninguno |
+| "2 de 4 ›" | Pasa al siguiente de la lista | Ninguno |
 | Pulsa a Tino hablando | Pasa al siguiente, si hay más de uno | Salta |
-| Pulsa a Tino callado | Vuelve a abrir con todo, también lo pospuesto; sin nada, `idle` | Salta |
+| Pulsa a Tino callado | Abre con todo, también lo pospuesto; sin nada, `idle` | Salta |
 | Pulsa a Tino dormido | Lo despierta (vuelve a estar encendido) | Salta |
 | El interruptor de la pastilla (`TinoSwitch`) | Lo duerme o lo despierta en todas las vistas | `asleep` |
 
@@ -75,7 +75,6 @@ Cada número que decide cuándo habla, con su sitio. Para afinar, se cambia aqu�
 | Tiene casa | 3 o más etiquetas en común con un tablón de 3 o más | `inboxNudges` | "Esta tiene casa." |
 | Guardadas sin proyecto | 3 o más esta semana | `inboxNudges` | "Esta semana has guardado 3 y ninguna ha llegado a un proyecto." |
 | `REACT_MS` · `SILENT_EVERY` | 1,4 s · calla 1 de cada 3 | `PolishView.tsx` | Cuánto dura su reacción en Pulido y cada cuánto calla |
-| "¿Seguro, campeón?" | una vez por semana | `CHAMP_KEY` en `PolishView.tsx` | Al olvidar tu propia idea |
 | `BREAK_AFTER_MS` · `GAP_MS` | 40 min activos · 30 min de reloj | `tino-break.ts` | Cuándo propone un respiro |
 | `TICK_MS` · `IDLE_MS` | 15 s · 90 s | `tino-break.ts` | Cada cuánto cuenta el tiempo y cuánto sin tocar deja de ser "activo" |
 | Ancho mínimo | 801 px | `HomeTino.css` | Por debajo, la esquina no sale |
@@ -144,11 +143,13 @@ Pulsado sin nada (`inboxIdle`): cuántas sueltas hay y "¿a qué proyecto va?" l
 
 Aquí no hay rueda: Tino es quien pregunta por la carta del frente (`PolishView.tsx`). Su globo lleva la pregunta, Olvidar y Quedármela, "3 / 7" y el pie.
 
-- **Qué pregunta**, por este orden: si está confirmando un olvido caro, `sure` ("Esta tiene 2 comentarios. Se van con ella." o "Es tu idea para X."; con tu idea, una vez por semana, "¿Seguro, campeón?"); si el equipo está dividido, `split` ("Andoni se la queda, Alberto la olvida. ¿De qué lado estás?"); la primera carta de la ronda, `start` ("A ver, a ver…"); si no, `ask`.
+- **Olvidar es un toque**, siempre: también con comentarios o tu idea, y Deshacer queda debajo ([decisión](../decisiones/2026-11-06-en-el-cajon-olvidar-es-un-toque-y-sin-campeon.md)).
+- **Qué pregunta**, por este orden: si el equipo está dividido, `split` ("Andoni se la queda, Alberto la olvida. ¿De qué lado estás?"); la primera carta de la ronda, `start` ("A ver, a ver…"); si no, `ask`.
 - **Qué cuenta debajo**: lo que votó otra persona ("Andoni ya se la queda.").
-- **Tras cada respuesta** reacciona 1,4 s; una de cada tres veces calla (`SILENT_EVERY`). Tras confirmar un olvido caro siempre dice algo (`afterForget`, `afterKeep`).
+- **Tras cada respuesta** reacciona 1,4 s; una de cada tres veces calla (`SILENT_EVERY`). La reacción solo cambia la frase: el globo es el mismo toda la ronda y Olvidar y Conservar no se van, así la siguiente se decide al momento (Eric, 06-11: "tarda en salir el siguiente olvidar").
 - **Al acabar**: "Ronda hecha. Te quedas 5, olvidas 2."
 - Mira hacia el botón bajo el puntero (`look`).
+- Olvidar y Conservar llevan dentro su tecla, ← y →, plana (`.polish-tino__key`): el teclado hace lo mismo.
 
 ### Sistema
 

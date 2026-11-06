@@ -213,4 +213,7 @@ html[data-distill="polish"] .polish:not([data-ghost]) .polish__sky { animation: 
 /* No × in Polish: the figure on the title's right reaches the edge */
 .polish-tino .cr-balloon-title { padding-right: 0; }
 .polish-tino__btn { flex: 1; justify-content: center; gap: 8px; }
+/* The keyboard's arrows on the buttons, flat (the search's "/"): ← forgets, → keeps (Eric, 06-11: "que sepa que se
+   puede hacer con las arrows del ordenador") */
+.polish-tino__btn .polish-tino__key { background: none; box-shadow: none; border-color: color-mix(in srgb, currentColor 28%, transparent); color: inherit; opacity: 0.7; font-weight: var(--fw-medium); }
 @media (min-width: 801px) { .polish__choice { display: none; } }
