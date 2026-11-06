@@ -126,6 +126,24 @@ export default function ItemPanel({ item, isSite, page, criterio, thread, onClos
 
   const views = criterio ? ["page", "criterio"] as const : null;
 
+  // The reference's own address, in the project it is open in
+  const [copied, setCopied] = useState(false);
+  useEffect(() => { setCopied(false); }, [url]);
+  const copyLink = async () => {
+    if (!item.id) return;
+    const link = new URL(`/i/${encodeURIComponent(item.id)}`, window.location.origin);
+    const inProject = new URLSearchParams(window.location.search).get("in");
+    if (inProject) link.searchParams.set("in", inProject);
+    // A frame without clipboard permission (an embedded preview) falls back to the old copy command
+    const ok = await navigator.clipboard.writeText(link.href).then(() => true, () => {
+      const area = Object.assign(document.createElement("textarea"), { value: link.href });
+      area.style.cssText = "position:fixed;opacity:0";
+      document.body.append(area); area.select();
+      const done = document.execCommand("copy"); area.remove(); return done;
+    });
+    if (ok) { setCopied(true); setTimeout(() => setCopied(false), 1500); }
+  };
+
   return (
     <div className={`ip-layer${navigable ? " has-nav" : ""}`}>
       <div ref={dimRef} className="ip-dim" onClick={leave} aria-hidden />
@@ -155,6 +173,9 @@ export default function ItemPanel({ item, isSite, page, criterio, thread, onClos
               items={[{ label: t.panel.tabPage }, { label: t.panel.tabCriterio }]}
               active={views.indexOf(view)} onChange={(i) => setView(views[i])} />
           )}
+          {/* Its address to paste elsewhere: Telegram or Slack draw it with its own name and picture (lib/share-card.ts) */}
+          <IconButton icon={copied ? "check" : "link"} variant="quiet" size="m" className="ip-bar__share"
+            label={copied ? t.panel.linkCopied : t.panel.copyLink} onClick={() => void copyLink()} />
           {/* A phone: the conversation sits under the page, this takes you to it */}
           <IconButton icon="comment" variant="quiet" size="m" className="ip-bar__talk" label={t.card.comments} onClick={toThread} />
           <IconButton icon="close" variant="quiet" size="m" className="ip-bar__close" label={t.common.close} onClick={leave} />

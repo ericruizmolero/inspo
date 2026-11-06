@@ -5,6 +5,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getSessionCookie } from "better-auth/cookies";
 import { LANG_COOKIE, LANG_COOKIE_MAX_AGE, DEFAULT_LOCALE, isLocale, localeFromHeader } from "@/lib/i18n/locale";
 import { INVITE_COOKIE, INVITE_COOKIE_MAX_AGE } from "@/lib/invite-cookie";
+import { PREVIEW_BOT } from "@/lib/preview-bots";
 import { SIGNED_IN_COOKIE, SIGNED_IN_COOKIE_MAX_AGE, signedInCookieDomain } from "@/lib/signed-in-cookie";
 
 // The home page (/) is public too: signed out it shows the start canvas (app/page.tsx)
@@ -103,6 +104,10 @@ export function proxy(request: NextRequest) {
   if (pathname.startsWith("/api/files/~") || (pathname.startsWith("/api/files/") && request.nextUrl.searchParams.has("t"))) return next();
 
   if (signedIn) return withLang(next());
+
+  // A reference's link pasted in Telegram, WhatsApp, Slack…: the preview app reads its name and picture
+  // (lib/share-card.ts), and its picture is open to anyone. A person still goes to the login
+  if (/^\/i\/[\w-]+\/preview$/.test(pathname) || (/^\/i\/[\w-]+$/.test(pathname) && PREVIEW_BOT.test(request.headers.get("user-agent") ?? ""))) return next();
 
   if (pathname.startsWith("/api/")) {
     // Signed out there's no user locale: answer with the cookie it brings, or English
