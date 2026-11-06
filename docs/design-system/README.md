@@ -15,7 +15,7 @@ Está pensado para que lo lea primero un agente. Por eso cada regla dice **qué 
 | Introducción | [Cómo usar](README.md), [Mapa de la app](mapa.md), [Atajos de teclado](atajos.md) | Al llegar al proyecto |
 | Fundamentos | [Principios](principios.md), [Tokens](fundamentos.md) y una página por familia: [Color](fundamentos/color.md), [Tipografía](fundamentos/tipografia.md), [Espaciado](fundamentos/espaciado.md), [Radios y sombras](fundamentos/radios-y-sombras.md), [Movimiento](fundamentos/movimiento.md), [Iconos](fundamentos/iconos.md), [Pantalla, capas y foco](fundamentos/pantalla.md) | Antes de diseñar o escribir CSS |
 | Componentes | [Botones](botones.md), [Marca](marca.md), [Catálogo](componentes.md) | Antes de crear una pieza nueva |
-| Construir | [Patrones](patrones.md), [Montar el proyecto](construir/montar.md), [Textos e idiomas](construir/textos-e-idiomas.md), [Añadir una página](construir/pagina-nueva.md), [Añadir un componente](construir/componente-nuevo.md), [Buenas prácticas](construir/buenas-practicas.md) | Al montar algo |
+| Construir | [Patrones](patrones.md), [El criterio.md](construir/criterio-md.md), [Montar el proyecto](construir/montar.md), [Textos e idiomas](construir/textos-e-idiomas.md), [Añadir una página](construir/pagina-nueva.md), [Añadir un componente](construir/componente-nuevo.md), [Buenas prácticas](construir/buenas-practicas.md) | Al montar algo |
 | Mantenimiento | [Mantenimiento técnico](mantenimiento.md), [Desarrollo](desarrollo.md), [Stack tecnológico](stack.md), [Seguridad y políticas](seguridad.md), [Decisiones](decisiones/README.md) | Al cambiar algo de base, al tocar un servicio o una clave, o para saber por qué algo es así |
 
 ## Reglas del sistema
