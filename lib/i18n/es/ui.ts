@@ -2422,7 +2422,7 @@ export const ui: typeof EnUi = {
     fill: "Rellenar la marca",
     fillHint: "Convierte las decisiones en valores: colores, fuentes, curvas, voz. Las secciones que editaste a mano se quedan.",
     share: {
-      open: "Compartir", title: "Compartir el proyecto", lead: "Quien tenga el enlace ve el tablón y la marca, y puede copiar criterio.md. Los buscadores no lo listan. Si desactivas un enlace, deja de funcionar.",
+      open: "Compartir", title: "Compartir el proyecto", lead: "Quien tenga el enlace ve el tablón y la marca, sin poder tocar nada.",
       mode: "Qué enseña el enlace", clean: "Limpio", cleanHint: "Las referencias solas en el tablón. En criterio.md, decisiones, valores y referencias por nombre. Sin la conversación del equipo ni nombres.",
       full: "Todo", fullHint: "En el tablón, quién guardó cada referencia y su nota. El mismo criterio.md que lee el equipo, con comentarios.",
       views: "Vistas del proyecto", boardEmpty: "El tablón de este proyecto está vacío.",

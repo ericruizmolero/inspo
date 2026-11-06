@@ -457,6 +457,7 @@ Traer una marca que ya existe de tres formas: su web (se mide y se lee), sus fic
 ### Compartir el proyecto
 `ShareDialog` · `SharePage` · `ShareBoard` · `components/brand/` · `app/s/[token]/` · `.share-head`, `.sboard`
 Un enlace de solo lectura con dos pestañas, Tablón y Sistema. El tablón son las referencias en columnas, lo más reciente primero, y cada una abre su original. El sistema es la presentación y el criterio.md para copiar o descargar, más un zip con logos, iconos y tokens. Abre en la marca si la hay, si no en el tablón (`?view=`). Se crea desde Sistema o desde el menú ⌄ de la pestaña del proyecto en la Isla. → [decisión](decisiones/2026-11-06-el-enlace-del-proyecto-comparte-tambien-el-tablon.md) Cada enlace es completo o limpio, para gente de fuera: el limpio no lleva nombres ni comentarios del equipo en el fichero, y en el tablón enseña solo las referencias; el completo añade quién guardó cada una y su nota. Sin sesión: el token es la prueba; no se indexa y no manda referer.
+- El diálogo (`ShareDialog`, `.bshare`) importa `brand.css` por sí mismo: abierto desde el menú del tablón, donde la marca nunca se ha cargado, salía sin estilos (06-11). La entradilla es una frase: quien tenga el enlace ve el tablón y la marca, sin poder tocar nada.
 
 ### Conectores
 `Connectors` · `components/Connectors.tsx` · `.connectors__menu`

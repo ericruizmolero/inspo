@@ -8,6 +8,9 @@ import { Busy, Button, Chip, Icon, SegmentedControl } from "@/components/criteri
 import { loadShares, makeShare, stopShare } from "@/app/actions/share";
 import { timeAgo } from "@/lib/i18n/format";
 import type { ShareLink } from "@/lib/share";
+// Its styles (.bshare, .bimp__lead, .bimp__hint) live with the brand's: imported here too, since the dialog also
+// opens from a project tab's menu on the board, where the brand page never loaded them
+import "./brand.css";
 
 export default function ShareDialog({ projectId, onClose }: { projectId: string; onClose: () => void }) {
   const { t, locale } = useT();
