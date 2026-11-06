@@ -566,10 +566,10 @@
     "message": "Espacio"
   },
   "inbox": {
-    "message": "Inbox"
+    "message": "Cajón"
   },
   "inboxOption": {
-    "message": "Inbox (aún no hay proyectos)"
+    "message": "Cajón (aún no hay proyectos)"
   },
   "whereLoading": {
     "message": "Buscando los proyectos de $WS$…",

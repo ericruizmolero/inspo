@@ -25,7 +25,7 @@ export default function AgentCard({ agent, projects, onConfirm, onCancel, onClos
     const area = d.area ? areas[d.area] ?? d.area : "";
     switch (d.kind) {
       case "search": return did.search(d.text ?? "");
-      case "go": return did.go(d.go?.area ? `${areas[d.go.area] ?? d.go.area}${d.project ? ` (${d.project})` : ""}` : d.project ?? (d.go?.space === "inbox" ? "Inbox" : d.go?.space === "library" ? t.sidebar.all : ""));
+      case "go": return did.go(d.go?.area ? `${areas[d.go.area] ?? d.go.area}${d.project ? ` (${d.project})` : ""}` : d.project ?? (d.go?.space === "inbox" ? t.projects.inbox : d.go?.space === "library" ? t.sidebar.all : ""));
       case "file": return did.file(d.n ?? 0, d.project ?? "", d.on !== false);
       case "assign": return did.assign(d.n ?? 0, area, d.on !== false);
       case "decide": return did.decide(area);

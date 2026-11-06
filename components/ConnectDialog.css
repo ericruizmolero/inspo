@@ -12,6 +12,8 @@
 .mcpc__row .cr-btn { flex-shrink: 0; }
 /* The clients: the system's SegmentedControl, paper tone, as it is */
 .mcpc__tabs.cr-seg { align-self: flex-start; max-width: 100%; flex-wrap: wrap; }
+/* Conectores whole (from the account menu): the two ways in, above everything; the extension's guide sits in the window as on its page (.page__body has no padding of its own) */
+.mcpc__ways.cr-seg { align-self: flex-start; max-width: 100%; }
 .mcpc__steps { list-style: decimal; margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 10px; font-size: var(--fs-ui); line-height: var(--lh-body); color: var(--text-2); }
 .mcpc__steps li::marker { color: var(--text-2); }
 .mcpc__apps { display: flex; flex-direction: column; gap: 4px; }

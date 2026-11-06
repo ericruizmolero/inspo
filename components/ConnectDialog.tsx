@@ -1,7 +1,8 @@
 "use client";
 // Connecting an AI client to criterio: the connector's address, how to paste it into Claude, ChatGPT, Claude Code
 // or Cursor, and the apps this person already let in (lib/mcp). The client signs in through the consent page
-// (/mcp/authorize); nothing is typed here but the address.
+// (/mcp/authorize); nothing is typed here but the address. Opened from the account menu (with `workspaceId`) it is
+// Conectores whole: two tabs, the MCP connector and the Chrome extension's install guide (Eric, 06-11).
 import { useEffect, useState } from "react";
 import { useT } from "./I18nProvider";
 import { Dialog, DialogDescription, DialogWindow } from "@/components/ui/dialog";
@@ -9,13 +10,19 @@ import { disconnectApp, loadConnections } from "@/app/actions/mcp";
 import { timeAgo } from "@/lib/i18n/format";
 import type { McpConnection } from "@/lib/mcp/oauth";
 import { Busy, Button, Card, SegmentedControl } from "@/components/criterio";
+import InstallGuide from "@/app/extension/install/InstallGuide";
+import manifest from "@/extension/chrome/manifest.json";
 import "./ConnectDialog.css";
 
 type Client = "claude" | "chatgpt" | "code" | "cursor";
 const CLIENTS: Client[] = ["claude", "chatgpt", "code", "cursor"];
 const CLIENT_KEY = "criterio.mcp.client";
 
-export default function ConnectDialog({ onClose }: { onClose: () => void }) {
+type Way = "mcp" | "extension";
+const WAYS: Way[] = ["mcp", "extension"];
+
+/** `workspaceId`: the extension's guide comes too, as a second tab (it makes the key for that workspace) */
+export default function ConnectDialog({ onClose, workspaceId, start = "mcp" }: { onClose: () => void; workspaceId?: string; start?: Way }) {
   const { t, locale } = useT();
   const s = t.mcp;
   const [client, setClient] = useState<Client>("claude");
@@ -31,11 +38,18 @@ export default function ConnectDialog({ onClose }: { onClose: () => void }) {
   // What goes in the client's own box, where it is not the address alone
   const snippet = client === "code" ? `/plugin marketplace add ericruizmolero/inspo\n/plugin install criterio@criterio\n/criterio:setup` : client === "cursor" ? JSON.stringify({ mcpServers: { criterio: { url } } }, null, 2) : null;
   const steps = s.steps[client];
+  const [way, setWay] = useState<Way>(start);
+  const both = !!workspaceId;
 
   return (
     <Dialog open onOpenChange={(o) => { if (!o) onClose(); }}>
-      <DialogWindow className="mcpc" bar={s.open} heading={s.title} closeLabel={t.common.close}>
+      <DialogWindow className="mcpc" bar={s.open} heading={both ? s.connectors : s.title} closeLabel={t.common.close}>
         <div className="mcpc__body">
+          {both && (
+            <SegmentedControl tone="paper" className="mcpc__ways" label={s.connectors} active={WAYS.indexOf(way)} onChange={(i) => setWay(WAYS[i])}
+              items={[{ label: s.open }, { label: s.extension }]} />
+          )}
+          {both && way === "extension" ? <InstallGuide currentId={workspaceId!} latest={manifest.version} /> : <>
           <DialogDescription className="bimp__lead">{s.lead}</DialogDescription>
           <section className="mcpc__uses">
             <h3 className="t-label">{s.uses.title}</h3>
@@ -79,6 +93,7 @@ export default function ConnectDialog({ onClose }: { onClose: () => void }) {
             )}
           </section>
           {error && <p className="sysv-error" role="alert">{error}</p>}
+          </>}
         </div>
       </DialogWindow>
     </Dialog>

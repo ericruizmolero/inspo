@@ -170,7 +170,7 @@ export default function WorkspaceMenu({ user, workspace, workspaces, isAdmin = f
       </PopoverContent>
       </Popover>
       <CreateTeamDialog open={creating} onOpenChange={setCreating} />
-      {connecting && <ConnectDialog onClose={() => setConnecting(false)} />}
+      {connecting && <ConnectDialog workspaceId={workspace.id} onClose={() => setConnecting(false)} />}
     </div>
   );
 }

@@ -60,11 +60,12 @@ const imagesOf = (image: unknown): string[] =>
 /**
  * Saves up to MAX_PER_BATCH things (the caller checks the count) and files them. Results keep the order of `items`.
  * With `projectId`, what is new goes there and so does what the workspace already had (a reference can be in
- * several projects). Without it, only what is new is filed, in the project this person was working in.
+ * several projects). Without it, only what is new is filed, in the project this person was working in; with `inbox`
+ * (the person picked the Inbox) nothing is filed, and it stays in the Inbox.
  * `source` names the import in the logs ("pinterest", "arena", "bookmarks").
  * Past the plan's room, what is new comes in up to the cap and the rest is "full": `full` is then what the person reads.
  */
-export async function addMany({ workspaceId, user }: Who, items: NewRef[], opts: { source: string; projectId?: string | null }): Promise<{ results: AddResult[]; added: InspoItem[]; full: string | null }> {
+export async function addMany({ workspaceId, user }: Who, items: NewRef[], opts: { source: string; projectId?: string | null; inbox?: boolean }): Promise<{ results: AddResult[]; added: InspoItem[]; full: string | null }> {
   const { source } = opts;
   const plan = planOf(await planIn(workspaceId));
   // References left before the cap, taken before the work that makes one: five run at once, and a count
@@ -132,8 +133,8 @@ export async function addMany({ workspaceId, user }: Who, items: NewRef[], opts:
     }
   });
 
-  // Nothing lives outside a project: what came in goes to the one picked (with what was here already),
-  // or to the one this person was working in when none was picked or it went away
+  // What came in goes to the project picked (with what was here already), or to the one this person was working in
+  // when none was picked or it went away. The Inbox, picked on purpose, keeps it (Eric, 06-11: it was filed anyway)
   const ids = added.map((i) => i.id).filter((x): x is string => !!x);
   const picked = opts.projectId || null;
   const here = picked ? results.filter((r) => r.status === "existed" && r.id).map((r) => r.id as string) : [];
@@ -142,7 +143,7 @@ export async function addMany({ workspaceId, user }: Who, items: NewRef[], opts:
     filed = await fileItems(workspaceId, picked, [...ids, ...here], user.id).then(() => true)
       .catch((err) => { log.warn("add_many.picked_project_failed", { ref: picked, err }); return false; });
   }
-  if (!filed && ids.length) {
+  if (!filed && ids.length && !opts.inbox) {
     const projectId = await activeProjectFor(workspaceId, user.id).catch((err) => { log.warn("add_many.active_project_unknown", { err }); return null; });
     if (projectId) await fileItems(workspaceId, projectId, ids, user.id).catch((e) => void recordFailure("action", "file in project", e, { ref: projectId }));
   }

@@ -481,7 +481,7 @@ const kindOf = (it) => { if (it.text) return "text"; if (it.image) return "image
 function startRun(source, scope = { limit: MAX_IMPORT, since: null }) {
   const src = SOURCES[source];
   const run = {
-    source, project: src.board ? null : project(), workspace: ws(), limit: scope.limit, since: scope.since, older: 0, tabId: null, total: 0, queue: [], seen: new Set(), sending: false, more: true, stopped: false, capped: false, partial: false, ended: false,
+    source, project: src.board ? null : project(), workspace: ws(), workspaceId: state.workspace?.id || null, limit: scope.limit, since: scope.since, older: 0, tabId: null, total: 0, queue: [], seen: new Set(), sending: false, more: true, stopped: false, capped: false, partial: false, ended: false,
     // A board waits for its project before the first batch
     ready: !src.board, naming: false, boardUrl: "",
     counts: { found: 0, added: 0, existed: 0, invalid: 0, error: 0 },
@@ -537,7 +537,7 @@ function startRun(source, scope = { limit: MAX_IMPORT, since: null }) {
       const size = this.queue.slice(0, BATCH).some((it) => it.image) ? BATCH_IMAGES : BATCH;
       const batch = this.queue.splice(0, size);
       try {
-        const r = await api("/items/batch", { method: "POST", body: JSON.stringify({ items: batch, source: this.source, projectId: this.project?.id }) });
+        const r = await api("/items/batch", { method: "POST", body: JSON.stringify({ items: batch, source: this.source, ...(this.project ? { projectId: this.project.id } : SOURCES[this.source].board ? {} : { inbox: true }) }) });
         (r.results || []).forEach((res, i) => {
           if (res.status === "full") return;
           const status = res.status in this.counts ? res.status : "error";
@@ -577,8 +577,10 @@ function startRun(source, scope = { limit: MAX_IMPORT, since: null }) {
       else if (this.counts.found) note($("progress-msg"), this.project ? t("nothingNewIn", [this.workspace, this.project.name]) : t("nothingNew", [this.workspace]), "ok");
       else note($("progress-msg"), t("nothingFound"));
       $("btn-stop").hidden = true;
-      // The project it went to when there is one; the app's own landing otherwise
-      $("btn-open").href = state.base + (this.project ? `/?in=${encodeURIComponent(this.project.id)}` : "/");
+      // Where it went, in the workspace it went to: /p/ and /w/ make that workspace the active one first, since the
+      // person may be in another in the app (a project's board, or the workspace's Inbox)
+      $("btn-open").href = state.base + (this.project ? `/p/${encodeURIComponent(this.project.id)}?view=board`
+        : this.workspaceId ? `/w/${encodeURIComponent(this.workspaceId)}?in=inbox` : "/?in=inbox");
       $("btn-open").textContent = t(this.project ? "openProject" : "openLibrary"); $("btn-open").hidden = false;
       $("btn-again").hidden = false;
     },

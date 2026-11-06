@@ -9,7 +9,7 @@ export const labels: typeof EnLabels = {
   },
   area: {
     home: "Inicio",
-    inbox: "Inbox",
+    inbox: "Cajón",
     board: "Tablón",
     polish: "Pulido",
     system: "Sistema",

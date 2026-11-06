@@ -48,6 +48,7 @@ Se da acceso con `npm run admin -- <correo>`. Las invitaciones también salen de
 | --- | --- |
 | `/login` | Acceso con collage fijo; con sesión, salta a `next` |
 | `/invite/[id]` | Aceptar una invitación (pasa el proxy, pero la página pide sesión) |
+| `/p/[id]`, `/w/[id]` | Direcciones de fuera de la app: un proyecto (`/p/`, lo que da un agente o un correo) o el Inbox de un espacio (`/w/`, "Abrir la librería" tras importar con la extensión). Hacen activo ese espacio si es otro de la persona y abren `?in=` (el proyecto, o `inbox` por defecto); uno que no es suyo va a la portada sin decir nada |
 | `/s/[token]` | La marca de un proyecto compartida por enlace, de solo lectura, con criterio.md para copiar o descargar. El token es la prueba; no se indexa: la página lo dice en sus metadatos y todo `/s/*` (también `md`, `download`, `f`, `font`, `fonts`) lleva `X-Robots-Tag: noindex, nofollow` desde `next.config.ts` |
 | `/privacy`, `/terms`, `/extension/privacy` | Redirección permanente (308, `next.config.ts`) a la misma página de la web de marketing (`MARKETING_URL` en `lib/site.ts`). → [decisión](decisiones/2026-10-11-las-paginas-legales-y-los-recursos-viven-en-la-web-de-marketing.md) |
 | `/unsubscribe?u=&k=&s=` | El enlace de un clic al pie de cada correo del equipo: apaga ese tipo de correo al abrirse, sin sesión (la firma `s` es la prueba, `lib/notify.ts`), y ofrece volver a activarlo. `/api/unsubscribe` recibe el POST del botón "Cancelar suscripción" del cliente de correo (`List-Unsubscribe`) |

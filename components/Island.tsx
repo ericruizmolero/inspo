@@ -282,6 +282,8 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
   const tab = (id: string, name: string, n: number, fixed?: boolean) => (
     <a key={id} href={hrefOf(id)} className={`island__tab${space === id ? " is-on" : ""}`} aria-current={space === id ? "page" : undefined}
       data-tip={name.length > LONG_NAME ? name : undefined} data-fixed={fixed || undefined} onClick={go(id)}>
+      {/* The Cajón (the Inbox) is the one tab with an icon, a drawer: it is not a project (Eric, 06-11) */}
+      {id === "inbox" && <Icon name="inbox" size={16} />}
       {label(name, n, fixed ? undefined : id)}
     </a>
   );

@@ -14,7 +14,7 @@ Las tres importan de `@phosphor-icons/react/ssr`, que funciona igual en componen
 
 ## Reglas
 
-- Ningún `<svg>` dibujado a mano para un icono: se añade el glifo de Phosphor a una de las tres puertas.
+- Ningún `<svg>` dibujado a mano para un icono: se añade el glifo de Phosphor a una de las tres puertas. La única excepción es `inbox`, el Cajón (`Cajon` en `components/criterio/index.tsx`), dibujado en la rejilla de 256 de Phosphor con trazo 16 y uniones redondas. → [decisión](../decisiones/2026-11-06-el-inbox-se-llama-cajon-y-lleva-un-cajon-dibujado.md)
 - Peso `regular` siempre. Excepciones deliberadas: `fill` en `play` y en el brillo de Polish; `bold` en las marcas de casilla de 10 a 14 px.
 - Fuera de Phosphor solo quedan las marcas de terceros (Google, Apple, X, Pinterest) y los dibujos que no son iconos (anillos, gráficas, miniaturas de área, curvas).
 - Un icono va siempre con texto o con un `label` que es también su tooltip (`IconButton`).
