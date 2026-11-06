@@ -8,8 +8,9 @@ import { criterioVersionFile, criterioVersions } from "@/app/actions/system";
 import { timeAgo } from "@/lib/i18n/format";
 import { lineDiff } from "@/lib/line-diff";
 import type { CriterioVersionRow } from "@/lib/criterio-versions";
-import type { SystemArea } from "@/types/system";
-import { Busy, Button, Icon, IconButton } from "@/components/criterio";
+import { SYSTEM_AREAS, type SystemArea } from "@/types/system";
+import { Avatar, Busy, Button, Icon, IconButton, toneFor } from "@/components/criterio";
+import { areaIcon } from "./area-icons";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useT } from "./I18nProvider";
 import { Line } from "./SystemMarkdown";
@@ -29,12 +30,26 @@ function useRowText() {
   const how = (via: string) => via === "copy" ? s.via.copy : via === "download" ? s.via.download : via === "result" ? s.via.result : via === "edit" ? s.via.edit
     : via.startsWith("mcp-write") ? s.via.mcpWrite(via.replace(/^mcp-write:?/, "") || "MCP") : s.via.mcp(via.replace(/^mcp:?/, "") || "MCP");
   const areas = (keys: string[]) => keys.map((k) => t.system.areas[k as SystemArea] ?? k).join(", ");
+  const areaName = (k: string) => t.system.areas[k as SystemArea] ?? k;
   return {
     s,
+    how: (r: CriterioVersionRow) => how(r.via),
+    areaName,
+    /** What changed, short: the names up to two, then how many (the icons beside say which) */
+    areasShort: (r: CriterioVersionRow) => r.n === 1 ? s.first : !r.changed.length ? s.same
+      : r.changed.length >= SYSTEM_AREAS.length ? s.allAreas : r.changed.length <= 2 ? areas(r.changed) : s.someAreas(r.changed.length),
     when: (r: CriterioVersionRow) => timeAgo(r.at, locale, t),
     who: (r: CriterioVersionRow) => r.byName ? s.by(r.byName, how(r.via)) : how(r.via),
     what: (r: CriterioVersionRow) => r.n === 1 ? s.first : r.changed.length ? s.changed(areas(r.changed)) : s.same,
   };
+}
+
+/** Who made a version: their photo or initial; an agent with no person behind is a square with its client's initial */
+export function VersionFace({ row, size = 24 }: { row: CriterioVersionRow; size?: number }) {
+  const agent = row.via.replace(/^mcp(-write)?:?/, "") || "MCP";
+  if (!row.byName) return <Avatar square tone="chrome" size={size} name={agent} initials={agent.slice(0, 1).toUpperCase()} className="vpk-face" />;
+  const initials = row.byName.split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+  return <Avatar src={row.byImage} tone={toneFor(row.byName)} size={size} name={row.byName} initials={initials} className="vpk-face" />;
 }
 
 /** The head's label as the trigger: the version and how many areas are decided, opening the list */
@@ -42,7 +57,7 @@ export function VersionPicker({ label, rows, current, viewing, onPick }: {
   label: string; rows: CriterioVersionRow[] | null; current: number; viewing: number | null; onPick: (n: number | null) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const { s, when, who, what } = useRowText();
+  const { s, when, how, areaName, areasShort } = useRowText();
   // The live file is a version of its own until it leaves: shown on top when it is ahead of the last one kept
   const live = !rows?.length || rows[0].n !== current;
   const pick = (n: number | null) => { setOpen(false); onPick(n); };
@@ -51,22 +66,34 @@ export function VersionPicker({ label, rows, current, viewing, onPick }: {
       <PopoverTrigger className="vpk-trigger spage-muted spage-label" data-tip={s.pick}>
         {label}<Icon name="chevron-down" size={14} />
       </PopoverTrigger>
+      {/* The team's history: a face per version on a thread that runs down the left, who and how in one line, the
+          areas they touched as their icons (Eric, 06-11: "a Alberto le puedes acompañar con su fotito") */}
       <PopoverContent align="end" className="cr-menu vpk-menu">
         <ol className="vpk-list">
           {live && (
-            <li><button type="button" className={`vpk-row${viewing === null ? " is-on" : ""}`} aria-pressed={viewing === null} onClick={() => pick(null)}>
-              <span className="vpk-row__head"><b>v{current}</b><span className="vpk-row__tag">{s.now}</span></span>
-              <span className="vpk-row__what">{s.nowWhat}</span>
+            <li className="vpk-item"><button type="button" className={`vpk-row${viewing === null ? " is-on" : ""}`} aria-pressed={viewing === null} onClick={() => pick(null)}>
+              <span className="vpk-rail vpk-rail--file"><Icon name="file-md" size={18} /></span>
+              <span className="vpk-row__main">
+                <span className="vpk-row__who"><b>{s.nowWhat}</b></span>
+              </span>
+              <span className="vpk-row__meta"><b>v{current}</b><span>{s.now}</span></span>
             </button></li>
           )}
           {rows?.map((r, i) => {
             const isNow = !live && i === 0;
             const on = isNow ? viewing === null : viewing === r.n;
+            const all = r.changed.length >= SYSTEM_AREAS.length;
             return (
-              <li key={r.n}><button type="button" className={`vpk-row${on ? " is-on" : ""}`} aria-pressed={on} onClick={() => pick(isNow ? null : r.n)}>
-                <span className="vpk-row__head"><b>v{r.n}</b>{isNow && <span className="vpk-row__tag">{s.now}</span>}<span className="vpk-row__when">{when(r)}</span></span>
-                <span className="vpk-row__what">{who(r)}</span>
-                <span className="vpk-row__what">{what(r)}</span>
+              <li key={r.n} className="vpk-item"><button type="button" className={`vpk-row${on ? " is-on" : ""}`} aria-pressed={on} onClick={() => pick(isNow ? null : r.n)}>
+                <span className="vpk-rail"><VersionFace row={r} /></span>
+                <span className="vpk-row__main">
+                  <span className="vpk-row__who">{r.byName ? <><b>{r.byName}</b> {how(r)}</> : <b>{how(r)}</b>}</span>
+                  <span className="vpk-row__areas">
+                    {r.n > 1 && !all && r.changed.map((k) => <span key={k} className="vpk-area" data-tip={areaName(k)}>{areaIcon(k as SystemArea, 14)}</span>)}
+                    <span className="vpk-row__areas-text">{areasShort(r)}</span>
+                  </span>
+                </span>
+                <span className="vpk-row__meta"><b>v{r.n}</b><span>{isNow ? s.now : when(r)}</span></span>
               </button></li>
             );
           })}
@@ -139,6 +166,7 @@ export function VersionView({ projectId, projectName, n, rows, onPick }: {
       <div className="sdoc-page sdoc-page--md">
       <div className="vpk-bar">
         <IconButton icon="chevron-left" variant="quiet" size="s" label={s.prev} disabled={prev === null} onClick={() => prev !== null && onPick(prev)} />
+        {row && <VersionFace row={row} size={28} />}
         <div className="vpk-bar__text">
           <p className="vpk-bar__title">{s.viewing(n)}{row && <span className="vpk-bar__when"> {when(row)}</span>}</p>
           {row && <p className="vpk-bar__what">{who(row)}. {what(row)}{ready && ready.before !== null ? `. ${s.diff(added, removed)}` : ""}</p>}

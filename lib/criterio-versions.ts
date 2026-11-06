@@ -29,6 +29,8 @@ export interface CriterioVersionRow {
   n: number;
   changed: string[];
   byName: string | null;
+  /** That person's photo, matched by name among the workspace's members (versions keep the name only) */
+  byImage: string | null;
   via: string;
   at: string;
 }
@@ -131,7 +133,15 @@ export async function versionAfterEdit(ctx: { workspace: { id: string }; user: {
 export async function listVersions(organizationId: string, projectId: string): Promise<CriterioVersionRow[]> {
   const rows = await db.select({ n: V.n, changed: V.changed, byName: V.byName, via: V.via, at: V.createdAt }).from(V)
     .where(and(eq(V.organizationId, organizationId), eq(V.projectId, projectId))).orderBy(desc(V.n));
-  return rows.map((r) => ({ ...r, at: r.at.toISOString() }));
+  // The team's faces next to what each one changed: a version keeps the name, the member with that name gives the photo
+  const U = schema.user, M = schema.member;
+  const faces = new Map<string, string>();
+  if (rows.some((r) => r.byName)) {
+    for (const p of await db.select({ name: U.name, image: U.image }).from(M).innerJoin(U, eq(U.id, M.userId)).where(eq(M.organizationId, organizationId))) {
+      if (p.image && !faces.has(p.name)) faces.set(p.name, p.image);
+    }
+  }
+  return rows.map((r) => ({ ...r, byImage: r.byName ? faces.get(r.byName) ?? null : null, at: r.at.toISOString() }));
 }
 
 /** One version's file */

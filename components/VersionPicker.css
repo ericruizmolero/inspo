@@ -3,16 +3,29 @@
 .vpk-trigger { border: 0; background: none; padding: 2px 4px; margin-left: -4px; border-radius: var(--radius-md); cursor: pointer; font: inherit; color: var(--text-2); }
 .vpk-trigger:hover, .vpk-trigger[data-popup-open] { background: var(--surface-2); color: var(--text); }
 .vpk-trigger:focus-visible { outline: 2px solid var(--text); outline-offset: 1px; }
-.vpk-menu { width: 300px; }
-.vpk-list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 2px; max-height: 60vh; overflow: auto; }
-.vpk-row { display: flex; flex-direction: column; gap: 2px; width: 100%; padding: 8px 10px; border: 0; border-radius: var(--radius-md); background: none; color: var(--text); text-align: left; cursor: pointer; font: inherit; }
+.vpk-menu { width: 340px; }
+.vpk-list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; max-height: 60vh; overflow: auto; }
+/* The thread: a 1 px line from one face to the next, behind the rows, so the list reads as the team's history */
+.vpk-item { position: relative; }
+.vpk-item:not(:last-child)::before { content: ""; position: absolute; left: 22px; top: 32px; bottom: -10px; width: 1px; background: var(--border); pointer-events: none; z-index: 0; }
+.vpk-row { position: relative; z-index: 1; display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; column-gap: 10px; align-items: start; width: 100%; padding: 8px 10px; border: 0; border-radius: var(--radius-md); background: none; color: var(--text); text-align: left; cursor: pointer; font: inherit; }
 .vpk-row:hover, .vpk-row.is-on { background: var(--surface-2); }
 .vpk-row:focus-visible { outline: 2px solid var(--text); outline-offset: -2px; }
-.vpk-row__head { display: flex; align-items: baseline; gap: 8px; font-size: var(--fs-ui); }
-.vpk-row__head b { font-weight: var(--fw-medium); }
-.vpk-row__tag { font-size: var(--fs-small); color: var(--text-2); }
-.vpk-row__when { margin-left: auto; font-size: var(--fs-small); color: var(--muted); }
-.vpk-row__what { font-size: var(--fs-small); line-height: var(--lh-small); color: var(--text-2); }
+.vpk-rail { display: flex; justify-content: center; height: 24px; align-items: center; }
+/* The face sits on the menu's ground so the thread stops at its edge */
+.vpk-face { box-shadow: 0 0 0 2px var(--menu-ground, var(--surface)); }
+.vpk-row:hover .vpk-face, .vpk-row.is-on .vpk-face { box-shadow: 0 0 0 2px var(--surface-2); }
+/* The live file, not kept yet: the file's own icon, quiet (Eric, 06-11: an ember dot that breathed was "AI slop") */
+.vpk-rail--file { color: var(--text-2); }
+.vpk-row__main { display: flex; flex-direction: column; gap: 3px; min-width: 0; padding-top: 3px; }
+.vpk-row__who { font-size: var(--fs-small); line-height: var(--lh-small); color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vpk-row__who b { font-weight: var(--fw-semibold); color: var(--text); }
+.vpk-row__areas { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; font-size: var(--fs-label); line-height: 1.3; color: var(--muted); }
+.vpk-area { display: inline-flex; color: var(--text-2); }
+.vpk-row__areas-text { margin-left: 2px; }
+.vpk-area + .vpk-row__areas-text { margin-left: 4px; }
+.vpk-row__meta { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; padding-top: 3px; font-size: var(--fs-label); line-height: var(--lh-small); color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.vpk-row__meta b { font-size: var(--fs-small); font-weight: var(--fw-medium); color: var(--text); }
 
 /* In the live file's frame (.sdoc, .sdoc-toc, .sdoc-page): only the parts' landing under the head is its own */
 .vpk-line { scroll-margin-top: 92px; }
