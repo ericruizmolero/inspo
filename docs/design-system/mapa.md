@@ -8,7 +8,7 @@ La app vive en `/`. Lo que se ve depende de la query, sin cambiar de página, pa
 
 | URL | Qué se ve |
 | --- | --- |
-| `/` sin sesión | Portada de invitado (`GuestStart`) |
+| `/` sin sesión | Redirige a la landing de criterio.design (`/es/` en castellano, `/` en inglés). Solo si no hay cookie de sesión: con una caducada se queda en la portada de invitado (`GuestStart`) para no entrar en bucle con el Worker, que manda a la app a quien tiene la cookie `criterio_signed_in`. → [decisión](decisiones/2026-11-06-la-app-sin-sesion-lleva-a-la-landing-nueva.md) |
 | `/` la primera vez | Primera entrada (`Welcome`): nombre, primera referencia, extensión y cliente de IA, los dos últimos opcionales; `/?welcome=1` la fuerza en desarrollo → [decisión](decisiones/2026-11-06-la-primera-entrada-es-un-flujo-de-cuatro-pasos-con-extension-y-mcp-opcionales.md) |
 | `/?in=home` | Inicio: "¿Qué vas a hacer?" y los proyectos |
 | `/?in=inbox` | Inbox: lo que no está en ningún proyecto |
