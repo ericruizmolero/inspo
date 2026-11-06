@@ -1,7 +1,7 @@
 ---
 title: El botón "Conectores" se queda siempre en la barra superior, también con todo conectado
 date: 2026-10-06
-status: vigente
+status: sustituida
 kind: diseño
 supersedes: La parte de "se va cuando los dos están conectados" de El menú Conectores de la barra superior (06-10, por la mañana)
 ---

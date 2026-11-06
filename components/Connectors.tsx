@@ -1,25 +1,22 @@
 "use client";
-// The ways into criterio from outside, in one place on the top bar: the browser extension, the MCP connector
-// for AI clients, and Import (a board or the bookmarks someone already has). A menu with the three, the first two
-// ticked once connected. The button stays when both are: it is the
-// only place to see the apps let in and cut one off, and an AI client that drops the connector does not tell us,
-// so "connected" here can outlive the connection (Eric, 06-10).
+// The ways into criterio from outside, on the top bar: the browser extension and the MCP connector for AI clients,
+// each ticked once connected. Once every one it offers is connected the button goes, with the separator before
+// "+" (Eric, 06-11): it is a way to connect, and there is nothing left to connect. Import left it the same day: a
+// board is pasted in Add, and the bookmarks are the extension's own import.
 import { Fragment, useEffect, useState } from "react";
 import Link from "next/link";
-import { Icon, MenuItem } from "@/components/criterio";
+import { Icon, MenuItem, PillBarSep } from "@/components/criterio";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
 import { useT } from "./I18nProvider";
 import { sectionIcon } from "./section-icons";
 import ConnectDialog from "./ConnectDialog";
-import ImportDialog from "./ImportDialog";
-import type { ImportBoard } from "./BoardImport";
 import { canInstall, useExtension } from "@/hooks/use-extension";
 import { loadConnections } from "@/app/actions/mcp";
 
 /** `row`: a row of the phone sheet (components/Sidebar.tsx) instead of the top bar button; the menu is the same.
- *  `onImportBoard`: the board import of the library (InspoClient), shared with the first run and Add. */
-export default function Connectors({ row = false, onImportBoard }: { row?: boolean; onImportBoard: ImportBoard }) {
+ *  On the top bar it brings its own separator before "+", so it goes with the button */
+export default function Connectors({ row = false }: { row?: boolean }) {
   const { t } = useT();
   const s = t.mcp;
   const { info } = useExtension();
@@ -29,9 +26,12 @@ export default function Connectors({ row = false, onImportBoard }: { row?: boole
   const [apps, setApps] = useState<number | null>(null);
   const [open, setOpen] = useState(false);
   const [connecting, setConnecting] = useState(false);
-  const [importing, setImporting] = useState(false);
   useEffect(() => { if (!connecting) void loadConnections().then((r) => { if (r.ok) setApps(r.data.length); }); }, [connecting]);
   const mcpDone = (apps ?? 0) > 0;
+  // Every way in it offers is connected: nothing left here. Until the server says how many apps are let in it
+  // waits, so the button comes in once instead of flashing out for someone fully connected
+  const extDone = !installable || !!info?.connected;
+  if (apps === null || (mcpDone && extDone && !connecting)) return null;
   const Wrap = row ? SidebarMenuItem : Fragment;
   return (
     <Wrap>
@@ -59,13 +59,10 @@ export default function Connectors({ row = false, onImportBoard }: { row?: boole
           <MenuItem icon="cable" checked={mcpDone} onClick={() => { setOpen(false); setConnecting(true); }}>
             {s.open}{mcpDone && <span className="cr-visually-hidden">, {s.connectedOne}</span>}
           </MenuItem>
-          <MenuItem icon="import" onClick={() => { setOpen(false); setImporting(true); }}>
-            {t.imports.open}
-          </MenuItem>
         </PopoverContent>
       </Popover>
       {connecting && <ConnectDialog onClose={() => setConnecting(false)} />}
-      {importing && <ImportDialog onClose={() => setImporting(false)} onImportBoard={onImportBoard} />}
+      {!row && <PillBarSep />}
     </Wrap>
   );
 }

@@ -1,7 +1,7 @@
 ---
 title: Importar vive en el menú Conectores, como tercera fila, hasta que Alberto diga dónde
 date: 2026-10-08
-status: vigente
+status: sustituida
 kind: diseño
 ---
 **Contexto.** Importar un tablero de Are.na, Pinterest o Cosmos solo se podía pegando su dirección en el primer arranque o en Añadir, y nadie lo descubría ahí. Los marcadores de X y del navegador solo se traían desde el popup de la extensión. Se pidió una sección "Importar" en la web que junte las dos cosas. Dónde ponerla no lo ha decidido nadie todavía: esto es el sitio por defecto, pendiente de que Alberto lo confirme o lo mueva.

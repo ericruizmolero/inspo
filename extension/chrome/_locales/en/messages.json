@@ -887,5 +887,47 @@
   },
   "commentBlocked": {
     "message": "The browser does not let extensions run on this page."
+  },
+  "importPaneLead": {
+    "message": "Bring in what you already saved elsewhere. It opens in a tab, and you pick the project it goes to."
+  },
+  "importRowX": {
+    "message": "Bookmarks on X"
+  },
+  "importRowXWhat": {
+    "message": "The posts in your Bookmarks"
+  },
+  "importRowPinterest": {
+    "message": "Pinterest boards"
+  },
+  "importRowPinterestWhat": {
+    "message": "A whole board, a secret one too"
+  },
+  "importRowArena": {
+    "message": "Are.na channels"
+  },
+  "importRowArenaWhat": {
+    "message": "A channel and its blocks"
+  },
+  "importRowCosmos": {
+    "message": "Cosmos clusters"
+  },
+  "importRowCosmosWhat": {
+    "message": "A whole cluster"
+  },
+  "importRowBrowser": {
+    "message": "Chrome bookmarks"
+  },
+  "importRowBrowserWhat": {
+    "message": "One folder or all your bookmarks"
+  },
+  "whereOk": {
+    "message": "Use this destination"
+  },
+  "whereChange": {
+    "message": "Change"
+  },
+  "whereFirst": {
+    "message": "First choose where it goes, above."
   }
 }

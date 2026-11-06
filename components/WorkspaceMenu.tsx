@@ -6,6 +6,7 @@ import Link from "next/link";
 import { authClient } from "@/lib/auth-client";
 import type { Workspace, SessionUser } from "@/lib/workspace-core";
 import CreateTeamDialog from "./CreateTeamDialog";
+import ConnectDialog from "./ConnectDialog";
 import { setActiveWorkspace, useWorkspaceSwitch } from "./workspace-switch";
 import { useT } from "./I18nProvider";
 import { sectionIcon } from "./section-icons";
@@ -78,6 +79,8 @@ export default function WorkspaceMenu({ user, workspace, workspaces, isAdmin = f
   const { t } = useT();
   const [open, setOpen] = useState(false);
   const [creating, setCreating] = useState(false);
+  // The connected apps, to see them and cut one off: always here, since the top bar's Conectores goes once all is connected
+  const [connecting, setConnecting] = useState(false);
   const [busy, setBusy] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const router = useRouter();
@@ -151,6 +154,7 @@ export default function WorkspaceMenu({ user, workspace, workspaces, isAdmin = f
           <Link className="cr-menu-item" role="menuitem" href="/settings/invite" prefetch={false} onClick={() => setOpen(false)}>
             {sectionIcon("invite")}<span className="cr-menu-label">{t.ws.invite}</span>
           </Link>
+          <MenuItem icon="plug" onClick={() => { setOpen(false); setConnecting(true); }}>{t.mcp.connectors}</MenuItem>
           {isAdmin && (
             <Link className="cr-menu-item" role="menuitem" href="/admin" onClick={() => setOpen(false)}>
               {I.activity}<span className="cr-menu-label">{t.ws.appActivity}</span>
@@ -166,6 +170,7 @@ export default function WorkspaceMenu({ user, workspace, workspaces, isAdmin = f
       </PopoverContent>
       </Popover>
       <CreateTeamDialog open={creating} onOpenChange={setCreating} />
+      {connecting && <ConnectDialog onClose={() => setConnecting(false)} />}
     </div>
   );
 }

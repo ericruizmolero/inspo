@@ -181,8 +181,33 @@ h1, p { margin: 0; }
 .input--note[hidden] { display: none; }
 
 /* Import row: what is saved elsewhere, one tap away under Save */
-.import-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding-top: 2px; }
-.import-row__label { flex-basis: 100%; font-size: var(--fs-label); color: var(--chrome-text-muted); }
+/* The two tabs: the app's PillBar and SegmentedControl on chrome (.cr-pillbar, .cr-seg-item) */
+.seg { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 5px; background: var(--chrome); border: 1px solid var(--chrome-border); border-radius: 14px; }
+.seg__item {
+  min-height: 34px; padding: 0 12px; border: 0; border-radius: var(--radius-md); background: none; cursor: pointer;
+  font: inherit; font-size: var(--fs-small); font-weight: var(--fw-medium, 500); color: var(--chrome-muted);
+  transition: background-color 150ms ease, color 150ms ease;
+}
+.seg__item:hover:not(.is-active) { color: var(--chrome-text); }
+.seg__item.is-active { background: var(--chrome-raised); color: var(--paper); }
+.seg__item:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.card[hidden] { display: none; }
+
+/* Import: one row per place, a quiet list on chrome; the whole row is the button */
+.sources { display: flex; flex-direction: column; gap: 2px; }
+.source-row {
+  display: grid; grid-template-columns: 20px 1fr 14px; align-items: center; gap: 10px; width: 100%;
+  padding: 10px 8px; border: 0; border-radius: var(--radius-md); background: none; cursor: pointer; text-align: left;
+  font: inherit; color: var(--chrome-text); transition: background-color 150ms ease;
+}
+.source-row:hover { background: var(--chrome-raised); }
+.source-row:focus-visible { outline: 2px solid var(--focus); outline-offset: 0; }
+.source-row[hidden] { display: none; }
+.source-row__icon, .source-row__go { display: inline-flex; color: var(--chrome-muted); }
+.source-row__text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.source-row__name { font-size: var(--fs-small); font-weight: var(--fw-medium, 500); color: var(--paper); }
+.source-row__what { font-size: var(--fs-label); color: var(--chrome-muted); }
+@media (prefers-reduced-motion: reduce) { .seg__item, .source-row { transition: none; } }
 .btn--small { min-height: 32px; padding: 0 12px; font-size: var(--fs-small); gap: 6px; }
 .btn--small svg { flex-shrink: 0; }
 

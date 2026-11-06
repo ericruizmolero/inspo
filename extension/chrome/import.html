@@ -4,13 +4,14 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>criterio.design</title>
+  <link rel="icon" href="icons/tino.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="popup.css" />
   <link rel="stylesheet" href="import.css" />
 </head>
 <body class="page">
   <main id="app" class="app import" data-view="loading">
     <header class="top">
-      <img class="logo" src="icons/icon48.png" alt="" width="22" height="22" draggable="false" />
+      <img class="logo" src="icons/tino-white-48.png" alt="" width="22" height="22" draggable="false" />
       <span class="brand">criterio.design</span>
     </header>
 
@@ -47,22 +48,29 @@
         </div>
         <p class="where__sum" id="where-sum" aria-live="polite"></p>
         <p class="hint" id="where-msg"></p>
+        <div class="row">
+          <button class="btn btn--primary" id="btn-where-ok" data-i18n="whereOk" disabled>Use this destination</button>
+          <button class="btn" id="btn-where-change" data-i18n="whereChange" hidden>Change</button>
+        </div>
       </section>
 
       <section class="source" id="src-x">
         <h2 class="source__title" data-i18n="xTitle">From X</h2>
         <p class="hint" data-i18n="xLead">Opens your bookmarks on x.com in a new tab and scrolls through them; each post found is saved here. Keep that tab open until it finishes. You need to be signed in to X in this browser.</p>
-        <label class="select">
-          <span class="select__label" data-i18n="howMany">How many</span>
-          <select id="x-limit" class="limit" data-periods></select>
-          <svg width="10" height="10" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z"></path></svg>
-        </label>
-        <p class="hint" data-i18n="xNewestFirst"></p>
-        <p class="hint" id="x-msg"></p>
-        <div class="row">
-          <button class="btn" id="btn-x" data-i18n="importX" disabled>Import from X</button>
-          <span class="hint" data-i18n="xPermission">Chrome asks for permission to read x.com; it is only used while importing.</span>
-        </div>
+        <p class="hint step-lock" data-i18n="whereFirst">First choose where it goes, above.</p>
+        <fieldset class="step" id="x-step" disabled>
+          <label class="select">
+            <span class="select__label" data-i18n="howMany">How many</span>
+            <select id="x-limit" class="limit" data-periods></select>
+            <svg width="10" height="10" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z"></path></svg>
+          </label>
+          <p class="hint" data-i18n="xNewestFirst"></p>
+          <p class="hint" id="x-msg"></p>
+          <div class="row">
+            <button class="btn btn--primary" id="btn-x" data-i18n="importX" disabled>Import from X</button>
+            <span class="hint" data-i18n="xPermission">Chrome asks for permission to read x.com; it is only used while importing.</span>
+          </div>
+        </fieldset>
       </section>
       <section class="source" id="src-board">
         <h2 class="source__title" data-i18n="boardTitle">From a board</h2>
@@ -82,6 +90,7 @@
       <section class="source" id="src-browser">
         <h2 class="source__title" data-i18n="browserTitle">From this browser</h2>
         <p class="hint" data-i18n="browserLead">Pick the folders. Only web pages are imported; the folder names stay here.</p>
+        <p class="hint step-lock" data-i18n="whereFirst">First choose where it goes, above.</p>
         <div class="tree" id="tree"></div>
         <p class="hint" id="browser-msg"></p>
         <div class="row">

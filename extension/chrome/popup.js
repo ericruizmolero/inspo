@@ -55,6 +55,12 @@ async function startComment() {
   } catch { note($("tab-msg"), t("commentBlocked"), "error"); }
 }
 
+// The toolbar icon is Tino alone, in white for Chrome's dark bar. On a light bar white would vanish, so the popup,
+// which can tell, swaps it for ink; it stays until Chrome restarts
+if (matchMedia("(prefers-color-scheme: light)").matches) {
+  chrome.action?.setIcon({ path: { 16: "icons/tino-ink-16.png", 32: "icons/tino-ink-32.png" } }).catch(() => {});
+}
+
 async function load() {
   $("btn-comment")?.addEventListener("click", () => void startComment());
   document.documentElement.lang = chrome.i18n.getUILanguage();
@@ -176,6 +182,7 @@ async function loadTab() {
 async function showMedia() {
   app.dataset.mode = "media";
   $("extras").hidden = true;
+  $("tabs").hidden = true;
   const img = $("shot-img");
   // The image itself when it can be shown from here; the cut piece of the tab otherwise (and for a video, its frame)
   const src = media.kind === "image" && /^(https?|data):/.test(media.src || "") ? media.src : media.frame;
@@ -295,26 +302,64 @@ $("btn-save").addEventListener("click", save);
 // ⌘/Ctrl+Enter in the note saves, as in the app's comment box
 $("tab-note").addEventListener("keydown", (e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && !$("btn-save").disabled) save(); });
 $("btn-disconnect").addEventListener("click", () => disconnect(true));
+// The two tabs: Save (what is open) and Import (what is saved elsewhere)
+function showPane(pane) {
+  for (const b of document.querySelectorAll(".seg__item")) {
+    const on = b.dataset.pane === pane;
+    b.classList.toggle("is-active", on); b.setAttribute("aria-selected", String(on)); b.tabIndex = on ? 0 : -1;
+  }
+  $("pane-save").hidden = pane !== "save";
+  $("pane-import").hidden = pane !== "import";
+}
+for (const b of document.querySelectorAll(".seg__item")) b.addEventListener("click", () => showPane(b.dataset.pane));
+$("tabs").addEventListener("keydown", (e) => {
+  if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+  const next = $("tab-save").classList.contains("is-active") ? "import" : "save";
+  showPane(next); $(`tab-${next}`).focus();
+});
+
+// Every place to import from, named in words and drawn with a plain icon (never the platform's logo). A board
+// opens the import page on its address field; X and the browser on their own section
+const ICON = (d) => `<svg width="18" height="18" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="${d}"></path></svg>`;
+const SOURCES = [
+  { id: "x", name: "importRowX", what: "importRowXWhat", icon: "M184,32H72A16,16,0,0,0,56,48V224a8,8,0,0,0,12.24,6.78L128,193.43l59.77,37.35A8,8,0,0,0,200,224V48A16,16,0,0,0,184,32Zm0,177.57-51.77-32.35a8,8,0,0,0-8.48,0L72,209.57V48H184Z" },
+  { id: "pinterest", name: "importRowPinterest", what: "importRowPinterestWhat", icon: "M235.32,81.37,174.63,20.69a16,16,0,0,0-22.63,0L98.37,74.49c-10.66-3.34-35-7.37-60.4,13.14a16,16,0,0,0-1.29,23.78L85,159.71,42.34,202.34a8,8,0,0,0,11.32,11.32L96.29,171l48.29,48.29A16,16,0,0,0,155.9,224c.38,0,.75,0,1.13,0a15.93,15.93,0,0,0,11.64-6.33c19.64-26.1,17.75-47.32,13.19-60L235.33,104A16,16,0,0,0,235.32,81.37ZM224,92.69h0l-57.27,57.46a8,8,0,0,0-1.49,9.22c9.46,18.93-1.8,38.59-9.34,48.62L48,100.08c12.08-9.74,23.64-12.31,32.48-12.31A40.13,40.13,0,0,1,96.81,91a8,8,0,0,0,9.25-1.51L163.32,32,224,92.68Z" },
+  { id: "arena", name: "importRowArena", what: "importRowArenaWhat", icon: "M104,40H56A16,16,0,0,0,40,56v48a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16V56A16,16,0,0,0,104,40Zm0,64H56V56h48v48Zm96-64H152a16,16,0,0,0-16,16v48a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16V56A16,16,0,0,0,200,40Zm0,64H152V56h48v48Zm-96,32H56a16,16,0,0,0-16,16v48a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16V152A16,16,0,0,0,104,136Zm0,64H56V152h48v48Zm96-64H152a16,16,0,0,0-16,16v48a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16V152A16,16,0,0,0,200,136Zm0,64H152V152h48v48Z" },
+  { id: "cosmos", name: "importRowCosmos", what: "importRowCosmosWhat", icon: "M245.11,60.68c-7.65-13.19-27.84-16.16-58.5-8.66A95.93,95.93,0,0,0,32,128a98,98,0,0,0,.78,12.31C5.09,169,5.49,186,10.9,195.32,16,204.16,26.64,208,40.64,208a124.11,124.11,0,0,0,28.79-4A95.93,95.93,0,0,0,224,128a97.08,97.08,0,0,0-.77-12.25c12.5-13,20.82-25.35,23.65-35.92C248.83,72.51,248.24,66.07,245.11,60.68ZM128,48a80.11,80.11,0,0,1,78,62.2c-17.06,16.06-40.15,32.53-62.07,45.13C116.38,171.14,92.48,181,73.42,186.4A79.94,79.94,0,0,1,128,48ZM24.74,187.29c-1.46-2.51-.65-7.24,2.22-13a79.05,79.05,0,0,1,10.29-15.05,96,96,0,0,0,18,31.32C38,193.46,27.24,191.61,24.74,187.29ZM128,208a79.45,79.45,0,0,1-38.56-9.94,370,370,0,0,0,62.43-28.86c21.58-12.39,40.68-25.82,56.07-39.08A80.07,80.07,0,0,1,128,208ZM231.42,75.69c-1.7,6.31-6.19,13.53-12.63,21.13a95.69,95.69,0,0,0-18-31.35c14.21-2.35,27.37-2.17,30.5,3.24C232.19,70.28,232.24,72.63,231.42,75.69Z" },
+  { id: "browser", name: "importRowBrowser", what: "importRowBrowserWhat", icon: "M160,56H64A16,16,0,0,0,48,72V224a8,8,0,0,0,12.65,6.51L112,193.83l51.36,36.68A8,8,0,0,0,176,224V72A16,16,0,0,0,160,56Zm0,152.46-43.36-31a8,8,0,0,0-9.3,0L64,208.45V72h96ZM208,40V192a8,8,0,0,1-16,0V40H88a8,8,0,0,1,0-16H192A16,16,0,0,1,208,40Z" },
+];
+const CARET = ICON("M181.66,133.66l-80,80a8,8,0,0,1-11.32-11.32L164.69,128,90.34,53.66a8,8,0,0,1,11.32-11.32l80,80A8,8,0,0,1,181.66,133.66Z");
 // Importing takes a while and the popup closes on its own: it happens in a tab of its own (import.html),
 // opened on the source that was tapped
 const openImport = (source) => async () => { await chrome.tabs.create({ url: chrome.runtime.getURL(`import.html?source=${source}`) }); window.close(); };
-$("btn-import-x").addEventListener("click", openImport("x"));
-// Safari has no bookmarks API
-if (chrome.bookmarks) $("btn-import-browser").addEventListener("click", openImport("browser")); else $("btn-import-browser").hidden = true;
-// On a board of Are.na, Pinterest or Cosmos: "Import this board". Chrome asks for that platform here,
-// on the click, and the import page starts on its own; without a board it opens on the address field.
+$("sources").replaceChildren(...SOURCES.map((x) => {
+  const b = document.createElement("button");
+  b.type = "button"; b.className = "source-row"; b.id = `src-${x.id}`;
+  b.innerHTML = `<span class="source-row__icon">${ICON(x.icon)}</span><span class="source-row__text"><span class="source-row__name"></span><span class="source-row__what"></span></span><span class="source-row__go">${CARET}</span>`;
+  b.querySelector(".source-row__name").textContent = t(x.name);
+  b.querySelector(".source-row__what").textContent = t(x.what);
+  // Safari has no bookmarks API
+  if (x.id === "browser" && !chrome.bookmarks) b.hidden = true;
+  b.addEventListener("click", openImport(x.id));
+  return b;
+}));
+// On a board of Are.na, Pinterest or Cosmos: "Import this board" first. Chrome asks for that platform here,
+// on the click, and the import page starts on its own
 const { BOARDS, boardOf, hostsOf } = globalThis.CriterioBoards;
 const tabBoard = () => (tab?.url ? boardOf(tab.url) : null);
-$("btn-import-board").addEventListener("click", async () => {
+$("btn-import-this").addEventListener("click", async () => {
   const board = tabBoard();
-  if (!board) return openImport("board")();
+  if (!board) return;
   try { await chrome.permissions.request({ origins: hostsOf(board.source) }); } catch { /* the import page asks again */ }
   return openImport(`${board.source}&url=${encodeURIComponent(board.url)}`)();
 });
+/** Standing on a board, the popup opens on Import with that board first */
 function showBoardOffer() {
   const board = tabBoard();
-  $("btn-import-board").textContent = t(board ? "importThisBoard" : "importBoardShort");
-  $("btn-import-board").title = board ? BOARDS[board.source].name : "";
+  $("btn-import-this").hidden = !board;
+  if (!board) return;
+  $("btn-import-this").textContent = `${t("importThisBoard")} (${BOARDS[board.source].name})`;
+  showPane("import");
 }
 
 // If the key arrives while the popup is open (connect tab), it refreshes itself

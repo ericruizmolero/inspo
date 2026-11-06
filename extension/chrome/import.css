@@ -83,6 +83,13 @@ body.page { width: auto; min-height: 100vh; background: var(--board); font-size:
 .where__sum { font-size: var(--fs-chrome); line-height: var(--lh-small); color: var(--chrome-text-muted); text-wrap: pretty; }
 .where__sum strong { font-weight: var(--fw-semibold); color: var(--paper); }
 .where__sum:empty { display: none; }
+/* Once the destination is confirmed the fields fold away: only the sentence and "Change" stay */
+.where.is-set .where__fields { display: none; }
+/* A source's controls wait for the destination: a fieldset with no frame of its own, dimmed while locked */
+.step { display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 0; border: 0; min-width: 0; }
+.step:disabled { opacity: 0.45; }
+.step-lock { color: var(--ember-glow) !important; }
+.import:has(.where.is-set) .step-lock { display: none; }
 .import .select { height: 40px; }
 
 /* The confirmation (design system: dialog window): moss bar with the short title, heading in

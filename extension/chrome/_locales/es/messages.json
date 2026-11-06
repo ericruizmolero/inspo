@@ -887,5 +887,47 @@
   },
   "commentBlocked": {
     "message": "El navegador no deja usar extensiones en esta página."
+  },
+  "importPaneLead": {
+    "message": "Trae lo que ya tienes guardado en otros sitios. Se abre en una pestaña y eliges a qué proyecto va."
+  },
+  "importRowX": {
+    "message": "Guardados de X"
+  },
+  "importRowXWhat": {
+    "message": "Los posts que tienes en Guardados"
+  },
+  "importRowPinterest": {
+    "message": "Tableros de Pinterest"
+  },
+  "importRowPinterestWhat": {
+    "message": "Un tablero entero, también uno secreto"
+  },
+  "importRowArena": {
+    "message": "Canales de Are.na"
+  },
+  "importRowArenaWhat": {
+    "message": "Un canal con sus bloques"
+  },
+  "importRowCosmos": {
+    "message": "Clústeres de Cosmos"
+  },
+  "importRowCosmosWhat": {
+    "message": "Un clúster entero"
+  },
+  "importRowBrowser": {
+    "message": "Marcadores de Chrome"
+  },
+  "importRowBrowserWhat": {
+    "message": "Una carpeta o todos tus marcadores"
+  },
+  "whereOk": {
+    "message": "Usar este destino"
+  },
+  "whereChange": {
+    "message": "Cambiar"
+  },
+  "whereFirst": {
+    "message": "Primero elige dónde va, arriba."
   }
 }

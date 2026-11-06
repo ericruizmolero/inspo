@@ -3,12 +3,13 @@
 <head>
   <meta charset="utf-8" />
   <title>criterio.design</title>
+  <link rel="icon" href="icons/tino.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="popup.css" />
 </head>
 <body>
   <main id="app" class="app" data-view="loading">
     <header class="top">
-      <img class="logo" src="icons/icon48.png" alt="" width="22" height="22" draggable="false" />
+      <img class="logo" src="icons/tino-white-48.png" alt="" width="22" height="22" draggable="false" />
       <span class="brand">criterio.design</span>
       <label class="chip" id="ws-chip" hidden>
         <select id="ws-select" aria-label="Workspace"></select>
@@ -36,7 +37,12 @@
     <!-- With key: what is about to be saved (the tab, or the image or video right-clicked in it),
          shown as it will look in the library, then the board's add form: note, project, areas -->
     <section class="view" data-view="tab">
-      <div class="card">
+      <!-- Two tabs, the app's ViewSwitcher on chrome: save what is open, or bring in what is saved elsewhere -->
+      <div class="seg" role="tablist" id="tabs">
+        <button class="seg__item is-active" role="tab" id="tab-save" aria-selected="true" aria-controls="pane-save" data-pane="save" data-i18n="save">Save</button>
+        <button class="seg__item" role="tab" id="tab-import" aria-selected="false" aria-controls="pane-import" data-pane="import" data-i18n="importLabel">Import</button>
+      </div>
+      <div class="card" id="pane-save" role="tabpanel" aria-labelledby="tab-save">
         <div class="shot" id="shot" hidden><img id="shot-img" alt="" hidden /></div>
         <div class="site">
           <span class="site__icon">
@@ -74,16 +80,16 @@
           <button class="btn btn--block" id="btn-comment" data-i18n="commentPage">Comment on this page</button>
           <a class="btn btn--block" id="btn-open" target="_blank" rel="noopener" hidden data-i18n="viewOn">View on criterio.design</a>
         </div>
-        <!-- Only with the tab: how to save one image or video, and bringing in what is saved elsewhere -->
+        <!-- Only with the tab: how to save one image or video -->
         <div class="extras" id="extras">
           <p class="hint" data-i18n="rightClickHint">Right-click any image or video to save only that.</p>
-          <div class="import-row">
-            <span class="import-row__label" data-i18n="importLabel">Import</span>
-            <button class="btn btn--small" id="btn-import-board" data-i18n="importBoardShort">A board</button>
-            <button class="btn btn--small" id="btn-import-x" data-i18n="importXShort">Bookmarks on X</button>
-            <button class="btn btn--small" id="btn-import-browser" data-i18n="importBrowserShort">Chrome bookmarks</button>
-          </div>
         </div>
+      </div>
+      <!-- Import: one row per place, named in words (never their logos). On a board, importing that one comes first -->
+      <div class="card" id="pane-import" role="tabpanel" aria-labelledby="tab-import" hidden>
+        <p class="hint" data-i18n="importPaneLead">Bring in what you already saved elsewhere.</p>
+        <button class="btn btn--primary btn--block" id="btn-import-this" hidden></button>
+        <div class="sources" id="sources"></div>
       </div>
     </section>
 

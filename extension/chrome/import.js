@@ -30,7 +30,7 @@ const app = $("app");
 const setView = (v) => { app.dataset.view = v; };
 const note = (el, text, kind) => { el.textContent = text || ""; el.className = "hint" + (kind ? ` is-${kind}` : ""); };
 const ws = () => state.workspace?.name || t("yourLibrary");
-/** The project picked for this import ({ id, name }), or null: the Inbox, when the workspace has no project yet */
+/** The project picked for this import ({ id, name }), or null: the Inbox, always the first option */
 const project = () => { const o = $("project-select").selectedOptions[0]; return o?.value ? { id: o.value, name: o.textContent } : null; };
 /** The project's name for a sentence, or "Inbox" */
 const projectName = () => project()?.name || t("inbox");
@@ -43,6 +43,7 @@ function scopeOf(sel) {
 
 let state = { key: null, base: DEFAULT_BASE, workspace: null, workspaces: [], user: null };
 let ready = false; // the destination is known: the workspace's projects are loaded
+let whereSet = false; // the person confirmed it (lockSteps)
 
 // A 429 is the server's import limit: wait as long as it says and send the same thing again
 const api = async (path, init = {}, tries = 5) => {
@@ -140,11 +141,12 @@ async function readProjects() {
   try {
     const r = await api("/projects");
     if (forWs !== state.workspace?.id) return; // the workspace changed meanwhile: that load's answer is on its way
+    // The Inbox first, always: an import need not go to a project (Eric, 06-11)
+    const inbox = document.createElement("option"); inbox.value = ""; inbox.textContent = t("inbox");
     const opts = r.projects.map((p) => { const o = document.createElement("option"); o.value = p.id; o.textContent = p.name; return o; });
-    if (!opts.length) { const o = document.createElement("option"); o.value = ""; o.textContent = t("inboxOption"); opts.push(o); }
-    sel.replaceChildren(...opts);
+    sel.replaceChildren(inbox, ...opts);
     if (r.active) sel.value = r.active;
-    sel.disabled = r.projects.length === 0;
+    sel.disabled = false;
     setReady(true);
   } catch (e) {
     if (forWs !== state.workspace?.id) return;
@@ -155,10 +157,35 @@ async function readProjects() {
 
 function setReady(on) {
   ready = on;
-  $("btn-x").disabled = !on;
+  $("btn-where-ok").disabled = !on;
   $("btn-board").disabled = !on;
+  lockSteps();
+}
+
+// The destination comes first: X and the browser's bookmarks (which land in the picked project or the Inbox)
+// open up only once it is confirmed, before even how many is chosen (Eric, 06-11). A board goes to a project
+// with its own name, so it does not wait
+function lockSteps() {
+  const open = ready && whereSet;
+  $("x-step").disabled = !open;
+  $("btn-x").disabled = !open;
+  $("where").classList.toggle("is-set", whereSet);
+  $("btn-where-ok").hidden = whereSet;
+  $("btn-where-change").hidden = !whereSet;
   updateSelected();
 }
+$("btn-where-ok").addEventListener("click", () => {
+  whereSet = true; lockSteps();
+  // On to the source this page was opened for, or X
+  const to = $(`src-${opened.source || "x"}`) || $("src-x");
+  to.scrollIntoView({ block: "start", behavior: "smooth" });
+  to.querySelector("select:not(:disabled), .btn:not(:disabled)")?.focus();
+});
+$("btn-where-change").addEventListener("click", () => {
+  whereSet = false; lockSteps();
+  $("where").scrollIntoView({ block: "start", behavior: "smooth" });
+  $("project-select").focus();
+});
 
 /** The sentence under the fields: "Everything you import lands in Project, in Workspace." */
 function sayWhere() {
@@ -278,7 +305,7 @@ function selectedBookmarks() {
 function updateSelected() {
   const n = selectedBookmarks().length;
   $("selected-count").textContent = n ? t("selectedCount", [String(n)]) : "";
-  $("btn-browser").disabled = n === 0 || !ready;
+  $("btn-browser").disabled = n === 0 || !ready || !whereSet;
 }
 
 $("btn-browser").addEventListener("click", async () => {
@@ -396,6 +423,8 @@ async function opened(params) {
   }
   const section = $(`src-${BOARDS[source] ? "board" : source}`);
   if (!section) return;
+  // X and the bookmarks ask where first: the page stays on the destination, and goes on to the source once it is set
+  if (!BOARDS[source]) { opened.source = source; $("where").scrollIntoView({ block: "start" }); $("project-select").focus(); return; }
   section.scrollIntoView({ block: "start" });
   const btn = section.querySelector(".btn");
   if (BOARDS[source] && !$("board-url").value) $("board-url").focus(); else if (btn && !btn.disabled) btn.focus();

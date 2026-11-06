@@ -171,9 +171,10 @@ The popup and the import page use the Criterio design system: its tokens are cop
 system themes, with beveled paper buttons and the ember Save; the area pills stay dark and quiet,
 only a picked one fills with paper. Geist, the one typeface, is bundled in `chrome/fonts`, so nothing
 loads at runtime. The popup shows the tab as it will look in the library: the shot, the favicon, the title and the address. The
-icons in `chrome/icons` are Tino, the favicon's drawing (`app/icon.svg`, its light version), in ink on a paper
-tile with rounded corners (radius 22% of the side), so he reads on light and dark toolbars; regenerate them from
-that file with sharp when the mark changes.
+toolbar icon and the popup's header are Tino alone, the favicon's drawing (`app/icon.svg`), in white with the eye
+cut out and no tile (`chrome/icons/tino-white-*`); on a light system the popup swaps the toolbar's for ink
+(`tino-ink-*`). The paper tile (`icon16` to `icon128`) stays where the ground is light: Chrome's extensions page,
+the store and the board button. Regenerate them all from that file when the mark changes.
 
 ## Try it in Chrome (developer mode)
 

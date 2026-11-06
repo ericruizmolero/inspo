@@ -12,7 +12,6 @@ import { fmtGb } from "@/lib/room";
 import FeedbackEntry from "./FeedbackEntry";
 import ThemeToggle from "./ThemeToggle";
 import Connectors from "./Connectors";
-import type { ImportBoard } from "./BoardImport";
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupLabel,
   SidebarHeader, SidebarMenu, SidebarMenuAction, SidebarMenuBadge, SidebarMenuButton, SidebarMenuItem, useSidebar,
@@ -97,8 +96,6 @@ export interface SidebarProps {
   /** Each project's system, for the ring that says how much of it is decided */
   systems?: Record<string, SystemSummary>;
   onCreateProject: (name: string) => Promise<Project | null>;
-  /** A board pasted in Import (Conectores): the same import as the first run and Add */
-  onImportBoard: ImportBoard;
   onRenameProject: (id: string, name: string) => void;
   onDeleteProject: (project: Project) => void;
 }
@@ -211,7 +208,7 @@ export function PlanMeter({ quota, compact }: { quota: QuotaView; /** Head, bar 
 /** Everything under the workspace: add, the whole library, the projects and the plan.
  *  Shared by the docked column and the phone sheet. The team lives in Settings › Members. */
 function SidebarNav({ quota, steps, items, onPick,
-  space, onSpace, projects, links, systems = {}, onCreateProject, onRenameProject, onDeleteProject, onImportBoard }: Omit<SidebarProps, "brand"> & {
+  space, onSpace, projects, links, systems = {}, onCreateProject, onRenameProject, onDeleteProject }: Omit<SidebarProps, "brand"> & {
   /** Called after any choice (the phone sheet closes) */
   onPick?: () => void;
 }) {
@@ -265,7 +262,7 @@ function SidebarNav({ quota, steps, items, onPick,
 
       <SidebarFooter className="app-sidebar__footer">
         {/* The ways in from outside (an AI client over MCP), as on the island's right pill */}
-        <SidebarMenu><Connectors row onImportBoard={onImportBoard} /></SidebarMenu>
+        <SidebarMenu><Connectors row /></SidebarMenu>
         <FeedbackEntry onPick={onPick} />
         <ThemeToggle row />
         {/* A step taken from here closes the sheet, like any other choice in it */}
