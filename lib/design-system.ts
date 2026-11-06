@@ -49,6 +49,7 @@ export const DS_GROUPS: { label: string; lead: string; pages: { slug: string; fi
     lead: "Cómo montamos páginas, componentes y flujos.",
     pages: [
       { slug: "patrones", file: "patrones.md", icon: "patterns" },
+      { slug: "tino-proactivo", file: "construir/tino-proactivo.md", icon: "feedback" },
       { slug: "criterio-md", file: "construir/criterio-md.md", icon: "page" },
       { slug: "montar", file: "construir/montar.md", icon: "extension" },
       { slug: "textos-e-idiomas", file: "construir/textos-e-idiomas.md", icon: "language" },
