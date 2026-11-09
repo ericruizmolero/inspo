@@ -12,3 +12,5 @@ kind: producto
 **Por qué.** Eric (06-11): "tiene que haber mensaje de que si que quieres conservar que ya no te salga más ese mensaje". Usamos "Se queda" porque es la misma palabra del Pulido del Cajón ("se queda / se borra"); esto es interpretación nuestra.
 
 **Cómo aplicarlo.** Un aviso que pregunta si algo sigue valiendo lleva `keep`, y la función que lo elige se salta lo `settled`. Se recuerda por máquina, no en la base de datos, como el resto de lo que Tino ya ha dicho.
+
+**Ampliación (06-11, misma tarde).** Eric: "donde decido que se queda? es que quiero ir descartando mensajes de Tino para limpiar mensajes, y luego ya saldrán más claro". Ahora todo aviso se puede descartar para siempre: "Ya lo sé" (`t.tino.drop`) en los generales, guardado como `<scope>|<key>` para que valga solo en esa vista, y "Se queda" en los que hablan de una referencia (`old`, `quiet`, `loose`, `talked`, `mine`, `theirs`, `fits`), que valen en todas partes y hacen que Tino elija otra la vez siguiente.

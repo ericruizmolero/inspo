@@ -1113,6 +1113,8 @@ export const ui = {
     later: "Later",
     /** A reference he asks about is still wanted: he does not ask about it again */
     keep: "It stays",
+    /** Any other nudge: he does not say it again */
+    drop: "I know",
     next: "Next",
     /** Which of the nudges this is, and how many: "2 of 4" */
     pageOf: (at: number, of: number): string => `${at} of ${of}`,

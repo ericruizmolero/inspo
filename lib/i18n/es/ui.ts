@@ -1103,6 +1103,8 @@ export const ui: typeof EnUi = {
     later: "Luego",
     /** A reference he asks about is still wanted: he does not ask about it again */
     keep: "Se queda",
+    /** Any other nudge: he does not say it again */
+    drop: "Ya lo sé",
     next: "Siguiente",
     /** Which of the nudges this is, and how many: "2 de 4" */
     pageOf: (at: number, of: number): string => `${at} de ${of}`,

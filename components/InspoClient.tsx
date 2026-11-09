@@ -653,7 +653,7 @@ export default function InspoClient({
     // The team's polish only: alone, the "polish" nudge already says it
     vote: !solo && polishTab && [...polishVotes.values()].some((vs) => vs.some((v) => v.userId !== user.id && !v.closedAt))
       ? { left: polishTab.left, toClose: canManage && polishTab.under && polishTab.left === 0 } : null,
-    quietRef: quietReference(spaceItems, commentMap, user.name || user.email, parseDate, openedAt),
+    quietRef: quietReference(spaceItems, commentMap, user.name || user.email, parseDate, openedAt, settled),
     kinds: kindsOf(spaceItems, mediaKindOf), oldRef: oldReference(spaceItems, commentMap, parseDate, openedAt, settled), seed: visitSeed,
     onKind: (k) => setFilters([{ kind: "media", value: k }]),
     noReason: withoutReason(spaceItems, user.name || user.email, mediaKindOf, parseDate),

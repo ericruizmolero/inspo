@@ -93,7 +93,7 @@ export function boardNudges({ t, count, read, stale, empty, others, talk, vote, 
   if (read && empty.length) list.push({ key: `gaps:${empty.join("+")}`, title: b.gapsTitle, text: b.gapsText(said(empty.slice(0, 3).map((a) => t.system.areas[a].toLowerCase()), b.and)), act: b.gapsAct, mood: "suspect", go: onAdd });
   const top = others[0];
   if (top) list.push({ key: `others:${top.who}:${top.n}`, title: b.othersTitle, text: b.othersText(top.who, top.n), act: b.othersAct, mood: "smug", go: () => onPerson(top.who) });
-  if (quietRef) { const n = named(t, quietRef.item, pictureOf); list.push({ key: `quiet:${quietRef.item.id}`, title: b.quietTitle, text: b.quietText(quietRef.who, n.name), thumb: n.thumb, act: b.quietAct, mood: "suspect", go: () => onOpen(quietRef.item) }); }
+  if (quietRef) { const n = named(t, quietRef.item, pictureOf); list.push({ key: `quiet:${quietRef.item.id}`, title: b.quietTitle, text: b.quietText(quietRef.who, n.name), thumb: n.thumb, act: b.quietAct, keep: t.tino.keep, mood: "suspect", go: () => onOpen(quietRef.item) }); }
   if (count >= MANY_REFS && !vote) list.push({ key: "polish", title: b.polishTitle, text: b.polishText(count), act: b.polishAct, mood: "judge", go: onPolish });
   if (oldRef) { const n = named(t, oldRef.item, pictureOf); list.push({ key: `old:${oldRef.item.id}`, title: b.oldTitle, text: cap(b.oldText(n.name, b.howLong(oldRef.days))), thumb: n.thumb, act: b.oldAct, keep: t.tino.keep, mood: "skeptic", go: () => onOpen(oldRef.item) }); }
   // What the board holds that is worth a look of its own: one kind per visit, never all of them in a row
@@ -257,9 +257,9 @@ export function unansweredTalk(items: InspoItem[], comments: CommentMap, meId: s
 }
 
 /** The newest reference of the last week a teammate added that has no note and no comment: nobody has said a word */
-export function quietReference(items: InspoItem[], comments: CommentMap, me: string, parse: (d: string) => number, now: number): { item: InspoItem; who: string } | null {
+export function quietReference(items: InspoItem[], comments: CommentMap, me: string, parse: (d: string) => number, now: number, settled?: (key: string) => boolean): { item: InspoItem; who: string } | null {
   const found = items
-    .filter((i) => i.id && i.addedBy && i.addedBy !== me && i.addedBy !== "Both" && !i.note.trim() && !comments[i.id]?.some((c) => c.body.trim()))
+    .filter((i) => i.id && !settled?.(`quiet:${i.id}`) && i.addedBy && i.addedBy !== me && i.addedBy !== "Both" && !i.note.trim() && !comments[i.id]?.some((c) => c.body.trim()))
     .map((i) => ({ i, when: parse(i.date) }))
     .filter(({ when }) => when > 0 && now - when < RECENT_MS)
     .sort((a, b) => b.when - a.when)[0];
@@ -413,10 +413,10 @@ export function inboxNudges({ t, items, comments, meId, me, now, seed = 0, tags,
   const talk = unansweredTalk(items, comments, meId, now);
   if (talk) { const n = named(t, talk.item, pictureOf); urgent.push({ key: `talk:${talk.id}`, title: b.talkTitle, text: b.talkText(talk.who, n.name, talk.body), thumb: n.thumb, act: b.talkAct, mood: "accomplice", go: () => onOpen(talk.item) }); }
   // The one that has been loose the longest: to a project or out
-  const dated = items.filter((i) => i.id).map((i) => ({ i, when: parse(i.date) })).filter(({ when }) => when > 0);
+  const dated = items.filter((i) => i.id && !settled?.(`loose:${i.id}`)).map((i) => ({ i, when: parse(i.date) })).filter(({ when }) => when > 0);
   const oldest = [...dated].sort((a, c) => a.when - c.when)[0];
   const DAY = 24 * 3600 * 1000;
-  if (oldest && now - oldest.when > 3 * DAY) { const n = named(t, oldest.i, pictureOf); list.push({ key: `loose:${oldest.i.id}`, title: x.looseTitle, text: cap(x.looseText(n.name, b.howLong(Math.floor((now - oldest.when) / DAY)))), thumb: n.thumb, act: x.looseAct, mood: "skeptic", go: () => onOpen(oldest.i) }); }
+  if (oldest && now - oldest.when > 3 * DAY) { const n = named(t, oldest.i, pictureOf); list.push({ key: `loose:${oldest.i.id}`, title: x.looseTitle, text: cap(x.looseText(n.name, b.howLong(Math.floor((now - oldest.when) / DAY)))), thumb: n.thumb, act: x.looseAct, keep: t.tino.keep, mood: "skeptic", go: () => onOpen(oldest.i) }); }
   // Enough loose for a project of their own
   if (items.length >= FEW_REFS) list.push({ key: "project", title: x.projectTitle, text: x.projectText(items.length), act: x.projectAct, mood: "accomplice", go: onProject });
   // What a good part of them share: that is a project asking to be named
@@ -439,8 +439,8 @@ export function inboxNudges({ t, items, comments, meId, me, now, seed = 0, tags,
   const days = (i: InspoItem) => Math.floor((now - parse(i.date)) / DAY);
   const talked = (i: InspoItem) => comments[i.id ?? ""]?.filter((c) => c.body.trim()).length ?? 0;
   const byAge = [...items].filter((i) => parse(i.date) > 0).sort((a, c) => parse(a.date) - parse(c.date));
-  const chat = pickOne([...items].filter((i) => talked(i) > 0).sort((a, c) => talked(c) - talked(a)));
-  if (chat) { const n = talked(chat); list.push({ key: `talked:${chat.id}`, title: x.talkedTitle, text: cap(x.talkedText(said(chat), n)), thumb: thumbOf(chat), act: x.talkedAct, mood: "suspect", go: () => onOpen(chat) }); }
+  const chat = pickOne([...items].filter((i) => talked(i) > 0 && !settled?.(`talked:${i.id}`)).sort((a, c) => talked(c) - talked(a)));
+  if (chat) { const n = talked(chat); list.push({ key: `talked:${chat.id}`, title: x.talkedTitle, text: cap(x.talkedText(said(chat), n)), thumb: thumbOf(chat), act: x.talkedAct, keep: t.tino.keep, mood: "suspect", go: () => onOpen(chat) }); }
   const mine = pickOne(byAge.filter((i) => i.addedBy === me && !settled?.(`mine:${i.id}`) && !i.note.trim() && !talked(i) && days(i) >= 14));
   if (mine) { const long = b.howLong(days(mine)); list.push({ key: `mine:${mine.id}`, title: x.mineTitle, text: x.mineText(said(mine), long), thumb: thumbOf(mine), act: x.mineAct, keep: t.tino.keep, mood: "skeptic", go: () => onOpen(mine) }); }
   const theirs = pickOne(byAge.filter((i) => i.addedBy && i.addedBy !== me && !settled?.(`theirs:${i.id}`) && i.addedBy !== "Both" && !talked(i) && days(i) >= 7));
@@ -450,11 +450,11 @@ export function inboxNudges({ t, items, comments, meId, me, now, seed = 0, tags,
   const boards = projects.filter((p) => p.items.length >= 3).map((p) => ({ name: p.name, sels: new Set(p.items.flatMap(selsOf)) }));
   let fit: { item: InspoItem; project: string; n: number } | null = null;
   for (const i of items) {
-    if (!i.id || used.has(i.id)) continue;
+    if (!i.id || used.has(i.id) || settled?.(`fits:${i.id}`)) continue;
     const mineSels = new Set(selsOf(i));
     for (const p of boards) { let n = 0; for (const sel of mineSels) if (p.sels.has(sel)) n++; if (n >= 3 && (!fit || n > fit.n)) fit = { item: i, project: p.name, n }; }
   }
-  if (fit) { const f = fit; list.push({ key: `fits:${f.item.id}`, title: x.fitsTitle, text: cap(x.fitsText(said(f.item), f.project)), thumb: thumbOf(f.item), act: x.mineAct, mood: "smug", go: () => onOpen(f.item) }); }
+  if (fit) { const f = fit; list.push({ key: `fits:${f.item.id}`, title: x.fitsTitle, text: cap(x.fitsText(said(f.item), f.project)), thumb: thumbOf(f.item), act: x.mineAct, keep: t.tino.keep, mood: "smug", go: () => onOpen(f.item) }); }
   // This week's saving that went nowhere
   const week = items.filter((i) => i.addedBy === me && now - parse(i.date) < 7 * DAY && now - parse(i.date) >= 0).length;
   if (week >= 3 && onPerson) list.push({ key: `week:${week}`, title: x.weekTitle, text: x.weekText(week), act: b.sharedAct, mood: "watching", go: () => onPerson(me) });
