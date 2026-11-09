@@ -1,0 +1,13 @@
+---
+title: Las preguntas de gusto van antes de construir y las capturas van al tablero
+date: 2026-11-09
+status: vigente
+kind: producto
+---
+**Contexto.** Eric hizo un rediseño entero con un agente conectado a Criterio por MCP. La conclusión de esa sesión: los «Nunca» y lo aprendido funcionaron, pero casi todas las decisiones importantes salieron de reacciones a algo ya construido («esto es AI slop», «parece un pulpo», «no se ve dónde hacer hover»). Las referencias que movieron el diseño llegaron a mitad de camino, y las capturas pegadas en el chat no se podían subir al tablero. Además: no se podían quitar referencias duplicadas, `set_outline` obligaba a reescribir el plan entero, el proyecto no se encontraba tras renombrarlo y una propuesta devolvió un error vacío.
+
+**Decisión.** En `lib/playbook-questions.ts` hay dos preguntas nuevas, `wow` (el momento wow y qué tiene que sentir quien lo ve) y `piece-refs` (una referencia para cada pieza que carga con la página: el 3D o las imágenes principales, el movimiento, los botones). `avoid` pasa a «¿Qué no queréis ver bajo ningún concepto?». `first-seconds`, `wow`, `avoid` y `piece-refs` entran en `SETUP_ROLES` como `core`, así que se preguntan en la puesta en marcha, en la app (`SetupQuestions`) y por el MCP, y lo que la persona no quiere ver se guarda además con `record_learning` y `rejected: true`. El «Empieza aquí» de criterio.md (`lib/i18n/{en,es}/ui.ts`) pide en el plan lo que se entiende en 5 segundos en cada sección y dónde está el momento wow, una referencia antes de construir cada pieza clave, enseñar las opciones lado a lado guardando la elegida con `pick`, apuntar cada reacción en el momento y subir al tablero las capturas pegadas. En el conector: `add_reference` acepta `image` en base64, `remove_reference` saca referencias del tablero sin borrarlas de la biblioteca, `set_outline` acepta `changes` para tocar una sección, la línea del repo lleva el id del proyecto y ningún error vuelve vacío.
+
+**Por qué.** De la conclusión de la sesión: «Las preguntas llegan tarde, o no llegan» y «Ese falta un punch que dices es justo lo que nadie preguntó al principio». Eric dio el sí a empezar por las fricciones, las capturas y las preguntas. Quedan para después, sin decidir: un modo de sesión de trabajo con decisiones provisionales, comparar variantes dentro de la app y una revisión visual contra las referencias.
+
+**Cómo aplicarlo.** Lo que hoy sale de reaccionar a algo construido se convierte en una pregunta de arranque o en una línea del «Empieza aquí». Una pregunta que debe hacerse antes de construir va a `SETUP_ROLES` como `core`. Lo que la persona enseña con una imagen va al tablero como imagen.

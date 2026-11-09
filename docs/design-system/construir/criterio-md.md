@@ -36,11 +36,11 @@ El núcleo abre y el cierre repite lo esencial al final, porque un modelo lee pe
 
 ## Las preguntas de arranque, por quién puede responderlas
 
-Las 23 de `PLAYBOOK_QUESTIONS` salen por nivel, no por tema. El nivel es `questionTier`, sacado de `SETUP_ROLES`, para que la puesta en marcha y el fichero ordenen igual.
+Las 25 de `PLAYBOOK_QUESTIONS` salen por nivel, no por tema. El nivel es `questionTier`, sacado de `SETUP_ROLES`, para que la puesta en marcha y el fichero ordenen igual.
 
 | Nivel | Rol en `SETUP_ROLES` | Preguntas | Cómo se hacen |
 | --- | --- | --- | --- |
-| Preguntar | `stops`, `core` | `goal`, `audience`, `why-us`, `proof` | Una a una, con el texto entero |
+| Preguntar | `stops`, `core` | `goal`, `audience`, `first-seconds`, `why-us`, `proof`, `wow`, `piece-refs`, `avoid` (desde el 2026-11-09, ver [la decisión](../decisiones/2026-11-09-las-preguntas-de-gusto-van-antes-de-construir-y-las-capturas-al-tablero.md)) | Una a una, con el texto entero |
 | Confirmar | `read` | `offer`, `current-site`, `product`, `markets`, `brand-material`, `competitors`, `platforms-stack` | Se buscan en la web, las referencias o el repo y se confirman en un solo mensaje |
 | Proponer | sin rol | el resto | La IA propone y la persona confirma; solo su primera frase |
 

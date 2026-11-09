@@ -23,7 +23,7 @@ test("the link shows only the open questions, and asking twice gives the same ad
   expect(await clientAskToken(team.ws.id, project, team.user.id)).toBe(token);
   const view = await clientAskView(token, "en");
   expect(view!.project).toBe("Acme");
-  expect(view!.questions.map((q) => q.id)).toEqual(["goal", "audience", "why-us", "proof"]);
+  expect(view!.questions.map((q) => q.id)).toEqual(["goal", "audience", "first-seconds", "why-us", "proof", "wow", "piece-refs", "avoid"]);
   expect(Object.keys(view!)).toEqual(["project", "questions"]);
 });
 
@@ -32,7 +32,7 @@ test("the client's answers are saved as theirs, and they close the goal", async 
   expect(await submitClientAnswers(token, { goal: "Book a demo", proof: "Forty clients" })).toBe("saved");
   const brief = await briefOf();
   expect(brief?.answers?.goal).toMatchObject({ text: "Book a demo", source: "client" });
-  expect(setupState(await setupFacts(team.ws.id, project)).ask).toEqual(["audience", "why-us"]);
+  expect(setupState(await setupFacts(team.ws.id, project)).ask).toEqual(["audience", "first-seconds", "why-us", "wow", "piece-refs", "avoid"]);
 });
 
 test("a link writes only open questions, never a field or an answered one, and only once", async () => {

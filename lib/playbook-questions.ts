@@ -62,6 +62,8 @@ export const PLAYBOOK_QUESTIONS: readonly PlaybookQuestion[] = [
   { id: "proof", group: "unique", feeds: ["layout", "imagery"],
     text: { en: "What proof backs it: figures, clients, testimonials, cases, awards or press? Say too what can be published and what cannot.", es: "¿Con qué pruebas podemos respaldarlo: cifras, clientes, testimonios, casos, premios o prensa? Indicad también qué podemos publicar y qué no." } },
 
+  { id: "wow", group: "structure", feeds: ["layout", "motion", "imagery"],
+    text: { en: "What is the page's wow moment, and what should whoever sees it feel?", es: "¿Cuál es el momento wow de la página y qué tiene que sentir quien la ve?" } },
   { id: "sections", group: "structure", feeds: ["layout"],
     text: { en: "Which sections or contents must appear (product, how it works, pricing, team, cases, FAQ…)? Any you would rather leave out? If you are not sure, we propose the structure.", es: "¿Qué secciones o contenidos tenéis claro que deben aparecer (por ejemplo: producto, cómo funciona, precios, equipo, casos, preguntas frecuentes)? ¿Hay alguno que prefiráis dejar fuera? Si no lo tenéis claro, os proponemos nosotros la estructura." } },
 
@@ -70,12 +72,15 @@ export const PLAYBOOK_QUESTIONS: readonly PlaybookQuestion[] = [
   { id: "likes", group: "brand", feeds: ["typography", "color", "layout", "motion", "imagery"],
     text: { en: "Which sites do you like, and what do you like about each? They need not be from your sector.", es: "¿Qué webs os gustan y qué os gusta de cada una? No tienen que ser de vuestro sector." },
     withBoard: { en: "Show the board's references, by their codes, and ask what they like about each one.", es: "Enseña las referencias del tablero, por sus códigos, y pregunta qué les gusta de cada una." } },
+  { id: "piece-refs", group: "brand", feeds: ["imagery", "motion", "layout"],
+    text: { en: "For the pieces that will carry the page (the 3D or main pictures, the motion, the buttons), what reference do you have for each? A screenshot is enough.", es: "Para las piezas que van a cargar con la página (el 3D o las imágenes principales, el movimiento, los botones), ¿qué referencia tenéis de cada una? Basta una captura." },
+    withBoard: { en: "Name the pieces that will carry the page (the 3D or main pictures, the motion, the buttons) and ask which reference on the board, by its code, or which new one, shows how each should be.", es: "Nombra las piezas que van a cargar con la página (el 3D o las imágenes principales, el movimiento, los botones) y pregunta qué referencia del tablero, por su código, o qué otra nueva, enseña cómo debe ser cada una." } },
   { id: "traits", group: "brand", feeds: ["voice", "typography", "color", "motion"], fromBrief: (b) => b.traits.length > 0,
     text: { en: "Three words for the brand.", es: "Tres palabras para la marca." } },
   { id: "never-say", group: "brand", feeds: ["voice"], fromBrief: (b) => !!b.neverSay.trim(),
     text: { en: "Something the brand would never say.", es: "Algo que la marca nunca diría." } },
   { id: "avoid", group: "brand", feeds: ["color", "imagery", "voice"], fromBrief: (b) => !!b.competitorsNote.trim(),
-    text: { en: "What would you like to avoid? A style, a colour, a kind of image, or something your competitors do.", es: "¿Qué os gustaría evitar? Puede ser un estilo, un color, un tipo de imagen o algo que hagan vuestros competidores." } },
+    text: { en: "What do you not want to see under any circumstances? A style, a colour, a kind of image, or something your competitors do.", es: "¿Qué no queréis ver bajo ningún concepto? Puede ser un estilo, un color, un tipo de imagen o algo que hagan vuestros competidores." } },
   { id: "competitors", group: "brand", feeds: [], fromBrief: (b) => b.competitors.length > 0,
     text: { en: "Who are your main competitors? Two or three sites.", es: "¿Quiénes son vuestros principales competidores? Dos o tres webs." } },
 
@@ -94,7 +99,9 @@ export const PLAYBOOK_QUESTIONS: readonly PlaybookQuestion[] = [
  *  page's structure. "core": asked, and it can stay open as a marked gap. "read": the agent looks for it on the site or
  *  in the repo and the person confirms it. The rest are never asked in the setup: the file lists them to go deeper */
 export const SETUP_ROLES: Readonly<Record<string, "stops" | "core" | "read">> = {
-  goal: "stops", audience: "core", "why-us": "core", proof: "core",
+  // What came out of reactions to something built in the first real session (2026-11-09) is asked before building:
+  // the 5 seconds, the wow, what never to see and a reference for each piece that carries the page
+  goal: "stops", audience: "core", "why-us": "core", proof: "core", "first-seconds": "core", wow: "core", avoid: "core", "piece-refs": "core",
   offer: "read", "current-site": "read", product: "read", markets: "read", "brand-material": "read", competitors: "read", "platforms-stack": "read",
 };
 

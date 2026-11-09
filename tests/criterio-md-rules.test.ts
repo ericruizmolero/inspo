@@ -144,7 +144,7 @@ test("the starting questions list what is still open, by id and with the areas e
   expect(md).toContain("**Already answered (3)**");
   expect(md).toContain("- `goal`: «Book a demo, through a calendar»");
   expect(md).toContain("- **Color:** No gradients on the hero. _(Eric with Claude, 2026-11-04)_");
-  expect(md).toContain("Then **Starting questions** (20 open): the 3 that block one at a time");
+  expect(md).toContain("Then **Starting questions** (22 open): the 7 that block one at a time");
   expect(md).not.toMatch(/—|–/);
   // By how to handle them: what only the person knows first, then what can be looked up, then what the agent proposes
   const q = md.slice(md.indexOf("## Starting questions"), md.indexOf("## What was learned"));
@@ -154,7 +154,8 @@ test("the starting questions list what is still open, by id and with the areas e
   expect(confirm).toBeLessThan(propose);
   expect(q.slice(ask, confirm)).toContain("`audience`");
   expect(q.slice(confirm, propose)).toContain("`current-site`");
-  expect(q.slice(propose)).toContain("`first-seconds`");
+  expect(q.slice(ask, confirm), "asked before building since 2026-11-09").toContain("`first-seconds`");
+  expect(q.slice(propose)).toContain("`launch`");
   // The first reply has a shape, and with no direction picked the plan offers some
   expect(md).toContain("**Your first reply**, before building anything:");
   expect(md).toContain("No direction is chosen yet");

@@ -20,10 +20,10 @@ test("each step waits for what closes it, in the path's order", () => {
 test("only goal stops the setup, and it is asked first", () => {
   const s = setupState({ ...empty, project: true, brand: true, brief: brief({ answers: { audience: said() } }) });
   expect(s.next).toBe("questions");
-  expect(s.ask).toEqual(["goal", "why-us", "proof"]);
+  expect(s.ask).toEqual(["goal", "first-seconds", "why-us", "proof", "wow", "piece-refs", "avoid"]);
   const t = setupState({ ...empty, project: true, brand: true, refs: 1, brief: brief({ answers: { goal: said() } }) });
   expect(t.next).toBe("criterio");
-  expect(t.ask).toEqual(["audience", "why-us", "proof"]);
+  expect(t.ask).toEqual(["audience", "first-seconds", "why-us", "proof", "wow", "piece-refs", "avoid"]);
 });
 
 test("an answer the agent read or brought is not the person's until confirmed, and is confirmed, never asked again", () => {
