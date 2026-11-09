@@ -3,16 +3,16 @@
 .chooser { position: absolute; inset: 0; overflow-y: auto; display: flex; justify-content: center; padding: clamp(96px, 18vh, 200px) 24px 120px; background: var(--bg); }
 .chooser__inner { width: 100%; max-width: 1060px; height: max-content; display: flex; flex-direction: column; align-items: center; }
 
-/* The system's PromptInput in its two-line shape: the name, and under it (once there is a name) how it should feel.
-   The send sits on the first line; it turns ember once there is a name */
-.chooser__box.cr-prompt { width: 100%; max-width: 640px; margin-top: var(--space-6); padding: 10px 10px 10px 24px; gap: 0; }
-.chooser__box .cr-prompt-row { position: relative; }
+/* The system's PromptInput in one line: only the name. The send turns ember once there is one. Positioned, so the
+   examples taking turns sit inside it (in one line the PromptInput's row is display: contents) */
+.chooser__box.cr-prompt { width: 100%; max-width: 640px; margin-top: var(--space-6); padding: 10px 10px 10px 24px; gap: 0; position: relative; }
 .chooser__box .chooser__name { font-size: var(--fs-body); }
 .chooser__box .chooser__name:disabled { opacity: 1; }
 .chooser__box .cr-prompt-send:disabled:not(.is-ready) { cursor: default; }
 .chooser__box .cr-prompt-below { padding: 0; font-size: inherit; color: inherit; }
 /* The examples taking turns where the placeholder would be, letter by letter (ProjectChooser's Examples) */
-.chooser__example { position: absolute; top: 0; left: 0; right: 104px; height: 100%; display: flex; align-items: center; overflow: hidden; white-space: nowrap; color: var(--chrome-muted); font-size: var(--fs-body); pointer-events: none; }
+/* One line: the row is display: contents, so the examples sit on the box itself, inside its padding */
+.chooser__example { position: absolute; top: 0; left: 24px; right: 114px; height: 100%; display: flex; align-items: center; overflow: hidden; white-space: nowrap; color: var(--chrome-muted); font-size: var(--fs-body); pointer-events: none; }
 .chooser__char { display: inline-block; will-change: transform, opacity; }
 .chooser__more { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.3s var(--ease-out); }
 .chooser__more.is-open { grid-template-rows: 1fr; }
@@ -24,7 +24,7 @@
 .chooser__key.cr-key { flex: none; background: none; box-shadow: none; color: var(--chrome-muted); border-color: var(--chrome-border); }
 @media (hover: none) {
   .chooser__key.cr-key { display: none; }
-  .chooser__example { right: 56px; }
+  .chooser__example { right: 66px; }
 }
 
 /* A few ways back to work under the box: Chips on chrome, one row that wraps */
@@ -73,6 +73,7 @@
   .chooser__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-5) 12px; }
   .chooser__grid .cr-boardcard-mosaic { padding: 6px; gap: 4px; }
   .chooser__box.cr-prompt { padding-left: 18px; }
+  .chooser__box .chooser__example { left: 18px; }
   /* The order stays on the heading's line: the tally goes under the title instead */
   .chooser__head { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; }
   .chooser__tally { grid-column: 1; grid-row: 2; }
