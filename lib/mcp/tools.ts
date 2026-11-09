@@ -16,6 +16,7 @@ import { TINO_APP_URI } from "./tino-app";
 import { TINO_VOICE } from "./tools-voice";
 import { ContextInput, bringContext } from "./context";
 import { REF_ROLES } from "@/types/suggestions";
+import { uploadLink } from "./upload";
 
 /** A landing's section, as set_outline takes it */
 const Section = z.object({
@@ -32,7 +33,7 @@ const piece = {
   project: Project,
   url: z.string().max(2000).optional().describe("A public address: a site, a page, a video, a post on X, or an image file. Pass one of url, text or image."),
   text: z.string().max(40_000).optional().describe("Words to keep whole, in Markdown: copy, a brief, guidelines, notes. Pass one of url, text or image."),
-  image: z.string().max(3_900_000).optional().describe("A picture as base64 (PNG, WebP or JPEG, under about 2.5 MB: scale a bigger one down first): a capture the person pasted in the conversation, a file on your disk, a render you made. Pass one of url, text or image."),
+  image: z.string().max(3_900_000).optional().describe("A small picture as base64 (PNG, WebP or JPEG). Every character goes through you, so only for a tiny one; for a capture or any file on disk, use upload_link. Pass one of url, text or image."),
   title: z.string().max(80).optional().describe("A short name for it. Optional for a url (its site's name is used) and for a text (its first line is); give an image one."),
   note: z.string().max(500).optional().describe("One or two sentences in the person's own words on why it is there and what to take from it. The team reads this first."),
 };
@@ -106,7 +107,7 @@ export const TOOLS: Tool[] = [
     name: "add_reference", title: "Add a reference",
     description: [
       "Saves a reference on a project's board: something that inspires or informs the project. A url (a site, a video, a post, an image file), a text kept whole, or a picture's bytes. It is saved under the person's name, marked as coming from this app.",
-      "When the person pastes or drops a picture in the conversation to show what they mean (a capture of a site, a button, a render), save it as image with a note on what it shows: otherwise it is lost when the conversation ends. Pictures move a design more than text: bring them early.",
+      "When the person pastes or drops a picture in the conversation to show what they mean (a capture of a site, a button, a render), it goes on the board with a note on what it shows, or it is lost when the conversation ends: a file on your disk goes through upload_link, never as base64. Pictures move a design more than text: bring them early.",
       "When the person asked for it, it goes on the board at once. When you bring it on your own (from your research, from earlier in the conversation), pass suggested: it waits on the board, marked, for the team to accept or dismiss, so no yes is needed first. Give each a note saying why it is there. To bring a lot at once, use bring_context.",
       "areas: the areas of the system it brings something to, when that is clear. A reference changes no decision by itself; to change what an area says, use propose_decision.",
     ].join("\n"),
@@ -118,6 +119,20 @@ export const TOOLS: Tool[] = [
     }),
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
     run: (i, ctx, origin) => addPiece(ctx, origin, i),
+  }),
+  tool({
+    name: "upload_link", title: "Get a link to upload pictures",
+    description: [
+      "An address to send pictures to from your shell, straight onto a project's board: captures the person pasted in the conversation, screenshots of what you built, renders, any image file on your disk. One call gives a link for many files; send each with curl as `how` says, with its title and a note on why it is there. The bytes never go through you, so use this for any picture bigger than a few KB instead of add_reference with image.",
+      "As add_reference: when the person asked for the pictures to be kept they go on the board at once; when you bring them on your own, pass suggested and they wait for the team. If you cannot run commands, ask the person to drag the pictures into the app.",
+    ].join("\n"),
+    input: z.object({
+      project: Project,
+      suggested: z.boolean().optional().describe("True when you bring them on your own and the person did not ask for them: they wait for the team's yes or no."),
+      role: z.enum(REF_ROLES).optional().describe("With suggested, what they are to the project."),
+    }),
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
+    run: (i, ctx, origin) => uploadLink(ctx, origin, i),
   }),
   tool({
     name: "remove_reference", title: "Remove references from the board",
@@ -272,5 +287,6 @@ export const INSTRUCTIONS = [
   "You never rewrite criterio.md. You add pieces: references (add_reference), proposals for what an area should say (propose_decision), which wait for the team's yes or no in the app, a brand's values (bring_brand), which the team edits or hands back in the app, the person's answers to the starting questions (answer_question) and what you learned with them (record_learning), which go straight in.",
   "Two ways to work. In a conversation, ask one thing at a time and save what the person says. When you arrive with context already worked out (research, a brief, references, answers, a plan from your own work or another conversation), bring it all with bring_context, without asking piece by piece: it waits as suggestions the team reviews in the app. Then say in a line or two what you left and what is missing, and talk little.",
   "To see a reference's picture, call read_reference with its id (list_references maps R1, R2… to ids): the picture comes inside the answer. Do not fetch the file links in criterio.md to look at a picture; they may be blocked where you run.",
+  "A picture the person pastes or drops in the conversation goes on the board through upload_link (curl from your shell), never as base64 through you.",
   "What you write straight in is only what the person asked for or agreed to. What you bring on your own goes in as a suggestion (bring_context, or add_reference with suggested).",
 ].join("\n");

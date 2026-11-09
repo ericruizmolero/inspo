@@ -1025,7 +1025,7 @@ export const ui = {
             "",
             "### 3. Build in parts",
             "",
-            "The top first, what is seen in the first seconds: as a rule, the brand, one headline, one supporting line, one action and one dominant image. Show it, iterate with the person, then go on to the next part. When you show options, show them side by side and save which one won and why with record_learning, pick: true. Each reaction of the person (\"this is AI slop\", \"I can't tell what to hover\") is a learning: save it with record_learning as it comes, not at the end. A picture the person pastes to show what they mean goes on the board with add_reference (image), or it is lost.",
+            "The top first, what is seen in the first seconds: as a rule, the brand, one headline, one supporting line, one action and one dominant image. Show it, iterate with the person, then go on to the next part. When you show options, show them side by side and save which one won and why with record_learning, pick: true. Each reaction of the person (\"this is AI slop\", \"I can't tell what to hover\") is a learning: save it with record_learning as it comes, not at the end. A picture the person pastes to show what they mean goes on the board through upload_link, or it is lost.",
             "",
             "**Avoid by default**, unless the brand or a decision asks for it, because it is what everything generated converges on, and it erases the brand:",
             "",

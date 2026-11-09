@@ -5,6 +5,7 @@
 // no guide go through it) in a project called "Prueba MCP" (made if missing), as Claude would. Cleans up its client
 // and grant at the end; what --write saved stays, as it would in the app. Not a test framework: look at the output.
 //   npm run check:mcp -- [--write] [server url, default http://localhost:3837]
+import { readFileSync } from "node:fs";
 import { config as loadEnv } from "dotenv";
 loadEnv({ path: ".env.local" }); loadEnv();
 import { createHash, randomBytes } from "crypto";
@@ -73,7 +74,7 @@ async function main() {
   const icon = ((init.result?.serverInfo as Json)?.icons as { src: string }[] | undefined)?.[0]?.src ?? "";
   ok("server icon is public", (await fetch(icon, { redirect: "manual" }).catch(() => null))?.headers.get("content-type") === "image/png", icon);
   const tools = ((await rpc("tools/list")).result?.tools as Json[]) ?? [];
-  ok("tools/list", tools.length === 19, tools.map((t) => t.name).join(", "));
+  ok("tools/list", tools.length === 20, tools.map((t) => t.name).join(", "));
   const bring = tools.find((t) => t.name === "bring_brand")?.inputSchema as { properties?: Record<string, unknown> } | undefined;
   ok("bring_brand schema has the brand's sections", !!bring?.properties?.color && !!bring?.properties?.logo, Object.keys(bring?.properties ?? {}).join(", "));
   const imagery = bring?.properties?.imagery as { properties?: Record<string, unknown> } | undefined;
@@ -119,6 +120,19 @@ async function main() {
       ok("remove_reference", !gone.isError && gone.text.includes(picId), gone.text.replace(/\s+/g, " ").slice(0, 100));
       const listed = await call("list_references", { project: project.id });
       ok("removed is off the board", !listed.text.includes(picId));
+    }
+    // A real capture, too big for base64 through the model: the link takes it from the shell
+    const link = await call("upload_link", { project: project.id });
+    ok("upload_link", !link.isError && link.text.includes("/api/mcp/upload/"), link.text.replace(/\s+/g, " ").slice(0, 80));
+    if (!link.isError) {
+      const at = (JSON.parse(link.text) as Json).upload_url as string;
+      const shot = readFileSync("public/app-icon-512.png");
+      const up = await fetch(`${at}?title=${encodeURIComponent("Captura subida")}&note=${encodeURIComponent("Prueba del enlace de subida")}&areas=layout`, { method: "POST", body: shot, headers: { "Content-Type": "image/png" } });
+      const saved = await up.json() as Json;
+      ok("a picture sent to the link is on the board", up.ok && !!saved.id, JSON.stringify(saved).slice(0, 100));
+      if (saved.id) await call("remove_reference", { project: project.id, ids: [saved.id as string] });
+      const forged = await fetch(at.replace(/\.[^.]+$/, ".forged"), { method: "POST", body: shot });
+      ok("a forged link is refused", forged.status === 403, String(forged.status));
     }
     const plan = await call("set_outline", { project: project.id, name: "check-mcp", goal: "Pedir una demo", sections: [{ kind: "hero", job: "Decir qué es" }, { kind: "cta", job: "Pedir la demo" }] });
     ok("set_outline (whole)", !plan.isError, plan.text.replace(/\s+/g, " ").slice(0, 80));

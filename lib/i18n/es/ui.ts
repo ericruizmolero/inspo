@@ -1015,7 +1015,7 @@ export const ui: typeof EnUi = {
             "",
             "### 3. Construir por partes",
             "",
-            "Primero lo de arriba, lo que se ve en los primeros segundos: como pauta, la marca, un titular, una frase de apoyo, una acción y una imagen dominante. Enséñalo, itera con la persona y sigue con la parte siguiente. Cuando enseñes opciones, ponlas lado a lado y guarda cuál ganó y por qué con record_learning, pick: true. Cada reacción de la persona («esto es AI slop», «no se ve dónde hacer hover») es un aprendizaje: guárdalo con record_learning en el momento, no al final. Una imagen que la persona pegue para enseñar lo que quiere va al tablero con add_reference (image), o se pierde.",
+            "Primero lo de arriba, lo que se ve en los primeros segundos: como pauta, la marca, un titular, una frase de apoyo, una acción y una imagen dominante. Enséñalo, itera con la persona y sigue con la parte siguiente. Cuando enseñes opciones, ponlas lado a lado y guarda cuál ganó y por qué con record_learning, pick: true. Cada reacción de la persona («esto es AI slop», «no se ve dónde hacer hover») es un aprendizaje: guárdalo con record_learning en el momento, no al final. Una imagen que la persona pegue para enseñar lo que quiere va al tablero con upload_link, o se pierde.",
             "",
             "**Por defecto, evita**, salvo que la marca o una decisión lo pidan, porque es a lo que converge todo lo generado y borra la marca:",
             "",

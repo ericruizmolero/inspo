@@ -341,6 +341,11 @@ export const routes: Record<string, Surface> = {
       expect(await onBoard(fx.a.project), "A's board is unchanged").toBe(before);
     },
   },
+  "mcp:upload_link": {
+    probe: async (fx) => {
+      await refusedTool(fx, "upload_link", { project: fx.a.project });
+    },
+  },
   "mcp:remove_reference": {
     probe: async (fx) => {
       const before = await onBoard(fx.a.project);
@@ -500,6 +505,7 @@ export const routes: Record<string, Surface> = {
   "route:app/.well-known/oauth-protected-resource/[[...rest]]/route.ts#GET": { exempt: "public OAuth discovery document" },
   "route:app/.well-known/openid-configuration/route.ts#GET": { exempt: "public OAuth discovery document" },
   "route:app/api/mcp/register/route.ts#POST": { exempt: "OAuth dynamic client registration: makes a client that opens nothing until a person approves it" },
+  "route:app/api/mcp/upload/[token]/route.ts#POST": { exempt: "Takes a picture with a link upload_link signed for one project and its person; the project is resolved again as that person, so a member who left, or another workspace, finds nothing (check:mcp tries a forged link)" },
   "route:app/api/mcp/token/route.ts#POST": { exempt: "OAuth token exchange: acts only on the grant whose one-time code or refresh token is presented" },
   "route:app/api/mcp/revoke/route.ts#POST": { exempt: "OAuth revocation: acts only on the grant whose token is presented" },
   "route:app/api/cron/morning/route.ts#GET": { exempt: "cron: Bearer CRON_SECRET (lib/cron-auth.ts), no session and no workspace id from a person" },
