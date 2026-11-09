@@ -3,6 +3,7 @@
 // to the Inbox, what they disagree on stays unless whoever closes decides it. A workspace of one person has
 // nobody to agree with: there a vote is settled as it is cast.
 import "server-only";
+import { boardChanged } from "./board-versions";
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import { db, schema } from "./db";
 import { getErrors } from "./i18n";
@@ -34,6 +35,7 @@ async function onBoard(organizationId: string, projectId: string, itemIds: strin
 async function leaveBoard(organizationId: string, projectId: string, itemIds: string[]): Promise<void> {
   if (!itemIds.length) return;
   await db.delete(PI).where(and(eq(PI.organizationId, organizationId), eq(PI.projectId, projectId), inArray(PI.itemId, itemIds)));
+  await boardChanged(organizationId, projectId, { removed: itemIds }, { via: "polish" });
 }
 
 async function isSolo(organizationId: string): Promise<boolean> {

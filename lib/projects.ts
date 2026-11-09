@@ -9,6 +9,7 @@ import type { Project, ProjectLinks, ProjectRoles } from "@/types/inspo";
 import { isRefRole } from "@/types/suggestions";
 import { deleteProjectBrandFiles, projectBrandPrefix } from "./brand-files";
 import { assertProjectRoom } from "./quota";
+import { boardChanged } from "./board-versions";
 
 const P = schema.project;
 const PI = schema.projectItem;
@@ -100,7 +101,8 @@ export async function activeProjectFor(organizationId: string, userId: string): 
 }
 
 /** Files items in a project. Both have to belong to the workspace; already filed is not an error. */
-export async function fileItems(organizationId: string, projectId: string, itemIds: string[], userId: string): Promise<void> {
+/** `quiet`: the caller keeps the board's version itself (a restore) */
+export async function fileItems(organizationId: string, projectId: string, itemIds: string[], userId: string, opts: { quiet?: boolean } = {}): Promise<void> {
   if (!itemIds.length) return;
   const [p] = await db.select({ id: P.id }).from(P).where(and(eq(P.organizationId, organizationId), eq(P.id, projectId))).limit(1);
   if (!p) throw new HttpError(404, (await getErrors()).projectNotFound);
@@ -115,13 +117,15 @@ export async function fileItems(organizationId: string, projectId: string, itemI
   // Back on a board a closed polish had taken it off: who forgot it then no longer counts, it is voted again
   const V = schema.polishVote;
   await db.delete(V).where(and(eq(V.projectId, projectId), eq(V.vote, "forget"), sql`${V.closedAt} is not null`, inArray(V.itemId, own.map((r) => r.id))));
+  if (!opts.quiet) await boardChanged(organizationId, projectId, { added: own.map((r) => r.id) }, { id: userId });
 }
 
-export async function unfileItems(organizationId: string, projectId: string, itemIds: string[]): Promise<void> {
+export async function unfileItems(organizationId: string, projectId: string, itemIds: string[], opts: { quiet?: boolean; userId?: string } = {}): Promise<void> {
   if (!itemIds.length) return;
   await db.delete(PI).where(and(eq(PI.organizationId, organizationId), eq(PI.projectId, projectId), inArray(PI.itemId, itemIds)));
   // Taken off by hand, not by the polish: what was voted about it there goes with it (lib/polish-votes.ts)
   const V = schema.polishVote;
   await db.delete(V).where(and(eq(V.organizationId, organizationId), eq(V.projectId, projectId), inArray(V.itemId, itemIds)));
+  if (!opts.quiet) await boardChanged(organizationId, projectId, { removed: itemIds }, opts.userId ? { id: opts.userId } : undefined);
 }
 

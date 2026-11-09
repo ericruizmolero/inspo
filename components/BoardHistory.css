@@ -1,0 +1,10 @@
+/* The board's version history (components/BoardHistory.tsx): the rows and the bar are the system's versions'
+   (.vpk-*, components/VersionPicker.css); only what the board adds is here */
+.bh-title { margin: 0; padding: 8px 10px 6px; font-size: var(--fs-small); font-weight: var(--fw-semibold); color: var(--text); }
+.bh-empty { margin: 0; padding: 4px 10px 10px; font-size: var(--fs-small); line-height: var(--lh-small); color: var(--text-2); }
+.bh-pad { padding: 4px 10px 10px; }
+.bh-start { display: inline-flex; align-items: center; justify-content: center; color: var(--text-2); }
+/* Over the cards, on the board's ground, so the cards scroll under it as under the suggested line */
+.bh-bar { padding: 4px 0; background: var(--bg); }
+/* What came into the board in the version looked at, as Sheets marks a change: an ember ring, no fill */
+.bh-fresh > * { outline: 2px solid var(--ember, #E8622C); outline-offset: 3px; border-radius: var(--radius-md); }

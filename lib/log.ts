@@ -16,7 +16,7 @@ import { newId } from "./workspace-core";
 
 type Level = "info" | "warn" | "error";
 export type FailureKind = (typeof schema.FAILURE_KINDS)[number];
-interface Who { userId?: string | null; organizationId?: string | null }
+interface Who { userId?: string | null; organizationId?: string | null; /** The door a write came through, when not the app ("mcp:Claude") */ via?: string }
 
 // Who each request is for, filled once the session is known (requireCtx, the MCP and extension auth). Keyed on
 // the request's headers object, which Next hands out once per request; React's cache is not scoped to a request
@@ -31,6 +31,12 @@ async function requestHeaders() {
 export async function logAs(who: Who) {
   const h = await requestHeaders();
   if (h) people.set(h, { ...people.get(h), ...who });
+}
+
+/** Who the request is for and through which door, for what a write records (lib/board-versions.ts) */
+export async function requestPerson(): Promise<Who> {
+  const h = await requestHeaders();
+  return h ? people.get(h) ?? {} : {};
 }
 
 async function requestInfo(): Promise<{ requestId?: string; route?: string } & Who> {

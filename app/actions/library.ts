@@ -152,7 +152,7 @@ export async function setFiled(projectId: string, itemIds: string[], on: boolean
   return withCtx(async (ctx) => {
     const ids = Array.isArray(itemIds) ? itemIds.map(String).slice(0, 500) : [];
     if (on) await fileItems(ctx.workspace.id, String(projectId), ids, ctx.user.id);
-    else await unfileItems(ctx.workspace.id, String(projectId), ids);
+    else await unfileItems(ctx.workspace.id, String(projectId), ids, { userId: ctx.user.id });
   });
 }
 

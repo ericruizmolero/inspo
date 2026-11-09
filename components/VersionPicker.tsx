@@ -16,6 +16,7 @@ import { useT } from "./I18nProvider";
 import { Line } from "./SystemMarkdown";
 import "./SystemDoc.css";
 import "./VersionPicker.css";
+import "./BoardHistory.css";
 
 /** The project's versions, newest first, read again whenever the head's number moves */
 export function useVersions(projectId: string, current: number | null): CriterioVersionRow[] | null {
@@ -52,15 +53,51 @@ export function VersionFace({ row, size = 24 }: { row: CriterioVersionRow; size?
   return <Avatar src={row.byImage} tone={toneFor(row.byName)} size={size} name={row.byName} initials={initials} className="vpk-face" />;
 }
 
+/** The versions' list: the live file on top when it is ahead of the last one kept, then each version with its face,
+ *  who and how, the areas it touched and when */
+function VersionList({ rows, current, viewing, onPick }: { rows: CriterioVersionRow[] | null; current: number; viewing: number | null; onPick: (n: number | null) => void }) {
+  const { s, when, how, areaName, areasShort } = useRowText();
+  // The live file is a version of its own until it leaves: shown on top when it is ahead of the last one kept
+  const live = !rows?.length || rows[0].n !== current;
+  return (
+    <ol className="vpk-list">
+      {live && (
+        <li className="vpk-item"><button type="button" className={`vpk-row${viewing === null ? " is-on" : ""}`} aria-pressed={viewing === null} onClick={() => onPick(null)}>
+          <span className="vpk-rail vpk-rail--file"><Icon name="file-md" size={18} /></span>
+          <span className="vpk-row__main">
+            <span className="vpk-row__who"><b>{s.nowWhat}</b></span>
+          </span>
+          <span className="vpk-row__meta"><b>v{current}</b><span>{s.now}</span></span>
+        </button></li>
+      )}
+      {rows?.map((r, i) => {
+        const isNow = !live && i === 0;
+        const on = isNow ? viewing === null : viewing === r.n;
+        const all = r.changed.length >= SYSTEM_AREAS.length;
+        return (
+          <li key={r.n} className="vpk-item"><button type="button" className={`vpk-row${on ? " is-on" : ""}`} aria-pressed={on} onClick={() => onPick(isNow ? null : r.n)}>
+            <span className="vpk-rail"><VersionFace row={r} /></span>
+            <span className="vpk-row__main">
+              <span className="vpk-row__who">{r.byName ? <><b>{r.byName}</b> {how(r)}</> : <b>{how(r)}</b>}</span>
+              <span className="vpk-row__areas">
+                {r.n > 1 && !all && r.changed.map((k) => <span key={k} className="vpk-area" data-tip={areaName(k)}>{areaIcon(k as SystemArea, 14)}</span>)}
+                <span className="vpk-row__areas-text">{areasShort(r)}</span>
+              </span>
+            </span>
+            <span className="vpk-row__meta"><b>v{r.n}</b><span>{isNow ? s.now : when(r)}</span></span>
+          </button></li>
+        );
+      })}
+    </ol>
+  );
+}
+
 /** The head's label as the trigger: the version and how many areas are decided, opening the list */
 export function VersionPicker({ label, rows, current, viewing, onPick }: {
   label: string; rows: CriterioVersionRow[] | null; current: number; viewing: number | null; onPick: (n: number | null) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const { s, when, how, areaName, areasShort } = useRowText();
-  // The live file is a version of its own until it leaves: shown on top when it is ahead of the last one kept
-  const live = !rows?.length || rows[0].n !== current;
-  const pick = (n: number | null) => { setOpen(false); onPick(n); };
+  const { s } = useRowText();
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger className="vpk-trigger spage-muted spage-label" data-tip={s.pick}>
@@ -69,35 +106,26 @@ export function VersionPicker({ label, rows, current, viewing, onPick }: {
       {/* The team's history: a face per version on a thread that runs down the left, who and how in one line, the
           areas they touched as their icons (Eric, 06-11: "a Alberto le puedes acompañar con su fotito") */}
       <PopoverContent align="end" className="cr-menu vpk-menu">
-        <ol className="vpk-list">
-          {live && (
-            <li className="vpk-item"><button type="button" className={`vpk-row${viewing === null ? " is-on" : ""}`} aria-pressed={viewing === null} onClick={() => pick(null)}>
-              <span className="vpk-rail vpk-rail--file"><Icon name="file-md" size={18} /></span>
-              <span className="vpk-row__main">
-                <span className="vpk-row__who"><b>{s.nowWhat}</b></span>
-              </span>
-              <span className="vpk-row__meta"><b>v{current}</b><span>{s.now}</span></span>
-            </button></li>
-          )}
-          {rows?.map((r, i) => {
-            const isNow = !live && i === 0;
-            const on = isNow ? viewing === null : viewing === r.n;
-            const all = r.changed.length >= SYSTEM_AREAS.length;
-            return (
-              <li key={r.n} className="vpk-item"><button type="button" className={`vpk-row${on ? " is-on" : ""}`} aria-pressed={on} onClick={() => pick(isNow ? null : r.n)}>
-                <span className="vpk-rail"><VersionFace row={r} /></span>
-                <span className="vpk-row__main">
-                  <span className="vpk-row__who">{r.byName ? <><b>{r.byName}</b> {how(r)}</> : <b>{how(r)}</b>}</span>
-                  <span className="vpk-row__areas">
-                    {r.n > 1 && !all && r.changed.map((k) => <span key={k} className="vpk-area" data-tip={areaName(k)}>{areaIcon(k as SystemArea, 14)}</span>)}
-                    <span className="vpk-row__areas-text">{areasShort(r)}</span>
-                  </span>
-                </span>
-                <span className="vpk-row__meta"><b>v{r.n}</b><span>{isNow ? s.now : when(r)}</span></span>
-              </button></li>
-            );
-          })}
-        </ol>
+        <VersionList rows={rows} current={current} viewing={viewing} onPick={(n) => { setOpen(false); onPick(n); }} />
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+/** What the System view hands the top bar, so the history clock opens criterio.md's versions there (Eric, 09-11:
+ *  "que valga tanto para tablón como para sistema ahí") */
+export interface SystemHistory { rows: CriterioVersionRow[] | null; current: number; viewing: number | null; pick: (n: number | null) => void }
+
+/** The top bar's history clock on the System view: the same list as the head's label, from the clock */
+export function SystemHistoryButton({ history }: { history: SystemHistory }) {
+  const [open, setOpen] = useState(false);
+  const { t } = useT();
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger render={<IconButton icon="history" label={t.boardVersions.pick} variant="quiet" active={history.viewing !== null} className="bh-trigger" />} />
+      <PopoverContent align="end" className="cr-menu vpk-menu">
+        <p className="bh-title">{t.system.mdView.versions.title}</p>
+        <VersionList rows={history.rows} current={history.current} viewing={history.viewing} onPick={(n) => { setOpen(false); history.pick(n); }} />
       </PopoverContent>
     </Popover>
   );

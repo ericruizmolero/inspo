@@ -361,7 +361,7 @@ export async function removeReferences(ctx: McpCtx, origin: string, input: { pro
   const filed = ids.length ? await db.select({ id: PI.itemId, name: T.name }).from(PI).innerJoin(T, eq(T.id, PI.itemId))
     .where(and(eq(PI.organizationId, org), eq(PI.projectId, project.id), inArray(PI.itemId, ids))) : [];
   const missing = ids.filter((i) => !filed.some((f) => f.id === i));
-  await unfileItems(org, project.id, filed.map((f) => f.id));
+  await unfileItems(org, project.id, filed.map((f) => f.id), { userId: ctx.user.id });
   if (filed.length) versionAfterWrite(ctx, origin, project);
   return {
     removed: filed.map((f) => ({ id: f.id, name: f.name })), project: project.name,

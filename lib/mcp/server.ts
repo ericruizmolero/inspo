@@ -43,7 +43,7 @@ const RESOURCE = /^criterio:\/\/projects\/([\w-]{1,60})\/criterio\.md$/;
 async function callTool(params: Record<string, unknown> | undefined, ctx: McpCtx, origin: string) {
   const tool = TOOLS.find((t) => t.name === params?.name);
   if (!tool) return null;
-  await logAs({ userId: ctx.user.id });
+  await logAs({ userId: ctx.user.id, via: `mcp:${ctx.via}` });
   if (!tool.annotations.readOnlyHint && !(await allow(`mcp:writes:${ctx.user.id}`, WRITES_PER_MINUTE, 60_000))) return text("Too many changes in a minute. Wait a moment and go on.", true);
   const input = tool.input.safeParse(params?.arguments ?? {});
   if (!input.success) return text(`The arguments are not right:\n${z.prettifyError(input.error)}`, true);

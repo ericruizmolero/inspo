@@ -334,7 +334,7 @@ export async function runActions(ctx: Ctx, actions: AgentAction[], usage: UsageC
         }
         case "file":
           if (a.on) await fileItems(org, a.project, a.items, author.id);
-          else { await unfileItems(org, a.project, a.items); await dropEvidence(org, a.project, a.items); }
+          else { await unfileItems(org, a.project, a.items, { userId: author.id }); await dropEvidence(org, a.project, a.items); }
           line.n = a.items.length; line.items = a.items; line.project = names.get(a.project); line.on = a.on; projectsTouched = true; systemsTouched = true;
           if (a.on) line.undo = [{ kind: "file", items: a.items, project: a.project, on: false }];
           break;

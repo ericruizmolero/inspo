@@ -6,7 +6,7 @@ import { addPiece } from "@/lib/mcp/pieces";
 import { UPLOAD_FILES, UPLOAD_MAX_BYTES, UPLOAD_MINUTES, ctxOfGrant, readUploadToken } from "@/lib/mcp/upload";
 import { HttpError } from "@/lib/workspace-core";
 import { allow } from "@/lib/rate-limit";
-import { log, recordFailure } from "@/lib/log";
+import { log, logAs, recordFailure } from "@/lib/log";
 
 export const maxDuration = 120; // the picture is stored, then tagged once answered
 
@@ -35,6 +35,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ token: 
     if (body.length > UPLOAD_MAX_BYTES) throw new HttpError(413, `The picture is over ${UPLOAD_MAX_BYTES / 1024 / 1024} MB: scale it down and send it again.`);
     const q = new URL(req.url).searchParams;
     const ctx = await ctxOfGrant(grant);
+    await logAs({ userId: ctx.user.id, via: `mcp:${ctx.via}` });
     const out = await addPiece(ctx, originOf(req), {
       project: grant.p, image: body.toString("base64"),
       title: q.get("title") ?? undefined, note: q.get("note") ?? undefined,

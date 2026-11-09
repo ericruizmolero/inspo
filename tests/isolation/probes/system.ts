@@ -32,6 +32,13 @@ const bEvidence = async (fx: Fixture, area: string) =>
 const aFiles = (fx: Fixture) => [...files.keys()].filter((k) => k.startsWith(`inspo/${fx.a.team}/`)).sort();
 
 /** A version of A's criterio.md and a result built from it, both holding A's secret, for B to try to read */
+/** A version of A's board with nothing on it, so restoring it would empty the board; dropped after */
+async function aBoardVersion(fx: Fixture) {
+  const id = `${fx.a.project}-bv`;
+  await db.insert(schema.boardVersion).values({ id, organizationId: fx.a.team, projectId: fx.a.project, n: 1, itemIds: [], via: "app", createdAt: new Date() }).onConflictDoNothing();
+  return async () => { await db.delete(schema.boardVersion).where(eq(schema.boardVersion.id, id)); };
+}
+
 async function aVersionAndResult(fx: Fixture) {
   const now = new Date(), tag = `${fx.a.project}-v${Math.random().toString(36).slice(2, 8)}`;
   await db.insert(schema.criterioVersion).values({ id: tag, organizationId: fx.a.team, projectId: fx.a.project, n: 1, markdown: `# ${fx.a.secret}`, hash: tag, via: "copy", createdAt: now });
@@ -344,6 +351,41 @@ export const system: Record<string, Surface> = {
       expect(await a.json(), "no face of A's board").toEqual({ faces: {} });
       const mixed = await GET(request(`/api/system/fonts?projectId=${fx.b.project}&ids=${fx.a.item}`));
       expect(await mixed.json(), "A's reference named on B's board").toEqual({ faces: {} });
+    },
+  },
+  "action:app/actions/board-versions.ts#boardVersions": {
+    probe: async (fx) => {
+      const drop = await aBoardVersion(fx);
+      try {
+        asB(fx);
+        const { boardVersions } = await import("@/app/actions/board-versions");
+        const r = await boardVersions(fx.a.project);
+        expectNoSecret(fx, r, "the versions of A's board");
+        if (r.ok) expect(r.data, "B lists none of A's board versions").toEqual([]);
+      } finally { await drop(); }
+    },
+  },
+  "action:app/actions/board-versions.ts#boardVersionAt": {
+    probe: async (fx) => {
+      const drop = await aBoardVersion(fx);
+      try {
+        asB(fx);
+        const { boardVersionAt } = await import("@/app/actions/board-versions");
+        expectRefused(fx, await boardVersionAt(fx.a.project, 1), "a version of A's board");
+      } finally { await drop(); }
+    },
+  },
+  "action:app/actions/board-versions.ts#restoreBoard": {
+    probe: async (fx) => {
+      const drop = await aBoardVersion(fx);
+      const board = async () => (await db.select({ id: schema.projectItem.itemId }).from(schema.projectItem).where(eq(schema.projectItem.projectId, fx.a.project))).map((r) => r.id).sort();
+      try {
+        const before = await board();
+        asB(fx);
+        const { restoreBoard } = await import("@/app/actions/board-versions");
+        expectRefused(fx, await restoreBoard(fx.a.project, 1), "restoring A's board");
+        expect(await board(), "A's board is unchanged").toEqual(before);
+      } finally { await drop(); }
     },
   },
   "action:app/actions/system.ts#criterioVersions": {

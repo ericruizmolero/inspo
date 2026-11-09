@@ -13,7 +13,7 @@ import SkillsMenu from "./SkillsMenu";
 import { NO_SKILLS, skillsOf, MD_SKILL_EXCLUSIVE, type MdSkill } from "@/lib/md-skill-ids";
 import ImproveModal from "./ImproveModal";
 import PageComments from "./PageComments";
-import { VersionPicker, VersionView, useVersions } from "./VersionPicker";
+import { VersionPicker, VersionView, useVersions, type SystemHistory } from "./VersionPicker";
 import { readBrief, type Brief } from "@/types/brief";
 import { loadSystem, decideSystemArea, setSystemNever, saveDocPart, criterioVersionNow } from "@/app/actions/system";
 import { useT } from "./I18nProvider";
@@ -50,6 +50,8 @@ function useView(): [View, (v: View) => void] {
 }
 
 interface Props {
+  /** The versions of criterio.md, for the top bar's history clock; null when there are none to show */
+  onHistory?: (history: SystemHistory | null) => void;
   project: Project;
   system: ProjectSystem | null;
   onSystem: (system: ProjectSystem) => void;
@@ -106,7 +108,7 @@ function ClientChip({ client, imageOf, onPick }: { client: InspoItem; imageOf: (
   );
 }
 
-export default function SystemView({ onConnect, project, system, onSystem, board, library, imageOf, onOpenBoard, focusArea, focusRef, onOpenChange, onClient, onOpenItem, refInfo, onText, onTextTitle, onAddSite, onBrief, kept }: Props) {
+export default function SystemView({ onHistory, onConnect, project, system, onSystem, board, library, imageOf, onOpenBoard, focusArea, focusRef, onOpenChange, onClient, onOpenItem, refInfo, onText, onTextTitle, onAddSite, onBrief, kept }: Props) {
   const { t, locale } = useT();
   const setSystem = onSystem;
   const [running, setRunning] = useState(false);
@@ -252,6 +254,11 @@ export default function SystemView({ onConnect, project, system, onSystem, board
   // A version picked in the head's list takes the page's place until "Back to now" (components/VersionPicker.tsx)
   const [viewing, setViewing] = useState<number | null>(null);
   const versions = useVersions(project.id, version);
+  // The top bar's history clock opens these same versions (components/VersionPicker.tsx SystemHistoryButton)
+  useEffect(() => {
+    onHistory?.(version !== null ? { rows: versions, current: version, viewing, pick: setViewing } : null);
+  }, [onHistory, versions, version, viewing]);
+  useEffect(() => () => onHistory?.(null), [onHistory]);
   const [notice, setNotice] = useState("");
   useEffect(() => { if (!notice) return; const tm = setTimeout(() => setNotice(""), 6000); return () => clearTimeout(tm); }, [notice]);
   // The brand as a presentation: its values edited where they stand, saved section by section

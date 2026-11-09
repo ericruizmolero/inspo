@@ -6,7 +6,7 @@ Un solo juego: Phosphor, peso `regular`, `currentColor`. → [decisión](../deci
 
 | Puerta | Fichero | Para qué |
 | --- | --- | --- |
-| `Icon`, `IconName` | `components/criterio/index.tsx` | Lo genérico: home, plus, close, search, folder, trash, copy, check, bell, smile (reaccionar a un comentario), arrow-right… `sparkle` es solo para lo que hace la IA; la pestaña de Tablón lleva `pin` (la chincheta), la de Pulido `tornado`, el tornado de cartas que se ve al entrar, y la de Sistema `file-md`, el criterio.md que sale de ella. → [decisión](../decisiones/2026-11-04-pulido-lleva-el-icono-del-tornado.md) |
+| `Icon`, `IconName` | `components/criterio/index.tsx` | Lo genérico: home, plus, close, search, folder, trash, copy, check, bell, smile (reaccionar a un comentario), arrow-right… `sparkle` es solo para lo que hace la IA; la pestaña de Tablón lleva `pin` (la chincheta), la de Pulido `tornado`, el tornado de cartas que se ve al entrar, y la de Sistema `file-md`, el criterio.md que sale de ella. → [decisión](../decisiones/2026-11-04-pulido-lleva-el-icono-del-tornado.md) `history` (el reloj con la flecha hacia atrás, el de Google Sheets) abre las versiones del Tablón o del Sistema. → [decisión](../decisiones/2026-11-09-el-tablero-tiene-historial-de-versiones-como-sheets-y-el-reloj-vale-para-sistema.md) |
 | `areaIcon` | `components/area-icons.tsx` | Las 8 áreas del Sistema |
 | `sectionIcon` | `components/section-icons.tsx` | Las secciones de Ajustes, Admin y esta librería |
 

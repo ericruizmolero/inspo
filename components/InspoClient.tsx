@@ -7,6 +7,9 @@ import { useState, useMemo, useEffect, useLayoutEffect, useRef, useCallback } fr
 import type { InspoItem, Project, ProjectLinks, ProjectRoles, PolishVote, ItemsPage } from "@/types/inspo";
 import type { SuggestedRef } from "@/types/suggestions";
 import SuggestedLine, { SUGGESTED_LINE_H, type Pending } from "./SuggestedLine";
+import { SystemHistoryButton, type SystemHistory } from "./VersionPicker";
+import { BoardHistoryButton, BoardVersionBar, BOARD_VERSION_BAR_H, useBoardVersions } from "./BoardHistory";
+import { boardVersionAt, restoreBoard } from "@/app/actions/board-versions";
 import { answerSuggestions, pendingSuggestions } from "@/app/actions/suggestions";
 import { COLORS, viewOf } from "@/lib/taxonomy";
 import { filterKey, newestFirst, parseDate } from "@/lib/search-query";
@@ -295,6 +298,40 @@ export default function InspoClient({
     const list = items.filter((i) => i.id ? !!links[i.id]?.includes(space) || here.has(i.id) : i.pendingIn === space);
     return list.some((i) => i.id && own[i.id] === "brief") ? [...list].sort((a, b) => Number(own[b.id!] === "brief") - Number(own[a.id!] === "brief")) : list;
   }, [items, links, space, suggested, roles, waitingIds]);
+  // The board's version history (components/BoardHistory.tsx): a version picked shows the board as it was, with what
+  // came in marked, until "Back to now". Read again whenever the board's references change
+  const boardKey = useMemo(() => currentProject ? spaceItems.filter((i) => i.id && links[i.id]?.includes(currentProject.id)).map((i) => i.id).join(",") : "", [currentProject, spaceItems, links]);
+  const boardRows = useBoardVersions(currentProject && projectView === "board" ? currentProject.id : null, boardKey);
+  const [boardAt, setBoardAt] = useState<{ n: number; ids: string[]; added: Set<string> } | null>(null);
+  const [restoring, setRestoring] = useState(false);
+  // criterio.md's versions, handed up by the System view so the same clock opens them there
+  const [systemHistory, setSystemHistory] = useState<SystemHistory | null>(null);
+  useEffect(() => { setBoardAt(null); }, [space, projectView]);
+  const pickBoardVersion = useCallback((n: number | null) => {
+    if (n === null || !currentProject) { setBoardAt(null); return; }
+    const row = boardRows?.find((r) => r.n === n);
+    void boardVersionAt(currentProject.id, n).then((r) => {
+      if (!r.ok) { setToast({ title: t.boardVersions.failed, detail: r.error }); return; }
+      setBoardAt({ n, ids: r.data, added: new Set(row?.added ?? []) });
+    });
+  }, [currentProject, boardRows, t]);
+  const restoreBoardVersion = async () => {
+    if (!boardAt || !currentProject) return;
+    const pid = currentProject.id, n = boardAt.n;
+    setRestoring(true);
+    const r = await restoreBoard(pid, n);
+    setRestoring(false);
+    if (!r.ok) { setToast({ title: t.boardVersions.failed, detail: r.error }); return; }
+    const keep = new Set(r.data.itemIds);
+    setLinks((l) => {
+      const next = { ...l };
+      for (const [id, ps] of Object.entries(next)) if (ps.includes(pid) && !keep.has(id)) next[id] = ps.filter((x) => x !== pid);
+      for (const id of keep) if (!next[id]?.includes(pid)) next[id] = [...(next[id] ?? []), pid];
+      return next;
+    });
+    setBoardAt(null);
+    setToast({ title: t.boardVersions.restored(n), detail: r.data.missing ? t.boardVersions.missing(r.data.missing) : "", ok: true });
+  };
   // The current board's waiting references, by item
   const suggestedHere = useMemo(() => new Map(suggested.filter((x) => x.projectId === space).map((x) => [x.itemId, x])), [suggested, space]);
   // Polish in the Cajón: kept stays, forgotten is deleted on leaving Polish (hooks/use-inbox-polish.ts)
@@ -424,8 +461,9 @@ export default function InspoClient({
   // found nothing leaves the board as it was: he says so in his balloon (SearchTino)
   const missed = filtering && searchHere && !searchBusy && filtered.length === 0;
   const boardItems = useMemo(
-    () => (filtering && !missed ? filtered : [...spaceItems].sort(newestFirst)),
-    [filtering, missed, filtered, spaceItems],
+    () => boardAt ? items.filter((i) => i.id && boardAt.ids.includes(i.id)).sort(newestFirst)
+      : (filtering && !missed ? filtered : [...spaceItems].sort(newestFirst)),
+    [boardAt, items, filtering, missed, filtered, spaceItems],
   );
   // The references either side of the open one, in the board's order (a search walks its results).
   // Opened from Polish it is that one alone: the tornado is the slider there
@@ -757,9 +795,10 @@ export default function InspoClient({
       fitKey={fitKey}
       focusKey={panelItem ? keyOf(panelItem) : null}
       handleRef={gridRef}
-      renderCard={renderCard}
-      head={waitingHere && projectView === "board" ? <SuggestedLine pending={waitingHere} onAnswer={answerPending} /> : undefined}
-      headHeight={SUGGESTED_LINE_H}
+      renderCard={boardAt ? (item, level) => item.id && boardAt.added.has(item.id) ? <div className="bh-fresh" style={{ display: "contents" }}>{renderCard(item, level)}</div> : renderCard(item, level) : renderCard}
+      head={boardAt && boardRows && projectView === "board" ? <BoardVersionBar n={boardAt.n} rows={boardRows} restoring={restoring} onPick={pickBoardVersion} onRestore={() => void restoreBoardVersion()} />
+        : waitingHere && projectView === "board" ? <SuggestedLine pending={waitingHere} onAnswer={answerPending} /> : undefined}
+      headHeight={boardAt ? BOARD_VERSION_BAR_H : SUGGESTED_LINE_H}
     />
   );
   return (
@@ -876,6 +915,9 @@ export default function InspoClient({
               )}
               {/* The ways in from outside (the extension, an AI client over MCP), beside the other way of adding. It brings
                   its own separator and goes, with it, once both are connected */}
+              {/* The board's version history, where Sheets keeps it: beside the ways in, only on a project's board */}
+              {currentProject && projectView === "board" && <BoardHistoryButton rows={boardRows} viewing={boardAt?.n ?? null} onPick={pickBoardVersion} />}
+              {currentProject && projectView === "system" && systemHistory && <SystemHistoryButton history={systemHistory} />}
               <Connectors />
               <IconButton icon="plus" label={t.app.add} variant="quiet" className="topbar__add" onClick={() => setShowAdd(true)} />
             </PillBar>
@@ -937,6 +979,7 @@ export default function InspoClient({
           {grid}
           <SystemView
             key={currentProject.id}
+            onHistory={setSystemHistory}
             onConnect={() => setConnecting(true)}
             project={currentProject}
             system={fullSystems[currentProject.id] ?? null}

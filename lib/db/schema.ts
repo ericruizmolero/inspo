@@ -733,6 +733,30 @@ export const extKey = pgTable("ext_key", {
 
 export const SYSTEM_AREA_KEYS = ["typography", "color", "layout", "motion", "iconography", "logo", "imagery", "voice"] as const;
 
+/** A project's board as it stood after each change, so the team can see how it moved and go back to one: which
+ *  references were on it, and what came in and went out against the version before (lib/board-versions.ts) */
+export const boardVersion = pgTable("board_version", {
+  id: text("id").primaryKey(),
+  organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
+  projectId: text("project_id").notNull().references(() => project.id, { onDelete: "cascade" }),
+  /** 1, 2, 3… within the project */
+  n: integer("n").notNull(),
+  /** The references on the board, oldest first */
+  itemIds: jsonb("item_ids").$type<string[]>().notNull().default([]),
+  added: jsonb("added").$type<string[]>().notNull().default([]),
+  removed: jsonb("removed").$type<string[]>().notNull().default([]),
+  /** Who changed it (null for the board as it was before the first change), and how: "app", "polish", "restore",
+   *  or "mcp:<client>" for an agent */
+  byName: text("by_name"),
+  byId: text("by_id").references(() => user.id, { onDelete: "set null" }),
+  via: text("via").notNull(),
+  /** When this version was last written: changes by the same person and door within minutes are one version */
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
+}, (t) => [
+  uniqueIndex("board_version_project_n_idx").on(t.projectId, t.n),
+  index("board_version_org_idx").on(t.organizationId),
+]);
+
 /** criterio.md as it left the app (copied, downloaded, read whole over MCP), one row each time it had changed since
  *  the last: the file's history as the agents got it (lib/criterio-versions.ts) */
 export const criterioVersion = pgTable("criterio_version", {
