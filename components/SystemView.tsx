@@ -13,7 +13,7 @@ import SkillsMenu from "./SkillsMenu";
 import { NO_SKILLS, skillsOf, MD_SKILL_EXCLUSIVE, type MdSkill } from "@/lib/md-skill-ids";
 import ImproveModal from "./ImproveModal";
 import PageComments from "./PageComments";
-import { VersionPicker, VersionView, useVersions, type SystemHistory } from "./VersionPicker";
+import { VersionView, useVersions, type SystemHistory } from "./VersionPicker";
 import { readBrief, type Brief } from "@/types/brief";
 import { loadSystem, decideSystemArea, setSystemNever, saveDocPart, criterioVersionNow } from "@/app/actions/system";
 import { useT } from "./I18nProvider";
@@ -251,7 +251,7 @@ export default function SystemView({ onHistory, onConnect, project, system, onSy
     router.replace(window.location.pathname + (p.size ? `?${p}` : ""), { scroll: false });
   }, [router]);
   const [view, setView] = useView();
-  // A version picked in the head's list takes the page's place until "Back to now" (components/VersionPicker.tsx)
+  // A version picked from the history clock takes the page's place until "Back to now" (components/VersionPicker.tsx)
   const [viewing, setViewing] = useState<number | null>(null);
   const versions = useVersions(project.id, version);
   // The top bar's history clock opens these same versions (components/VersionPicker.tsx SystemHistoryButton)
@@ -290,13 +290,11 @@ export default function SystemView({ onHistory, onConnect, project, system, onSy
   // "Improve with AI" is the first step while nothing is decided: the row's primary then. After, the "…" holds it
   const firstStep = board.length > 0 && filled === 0;
   const runningLabel = phase === "brand" ? t.brand.drawing : t.system.running;
-  // Only the version (Eric, 04-11: "el puntito es ai slop, pon Versión 1 y ya")
-  const head = version === null ? "" : t.system.headVersion(version);
   const actions = (
     <div className="spage-head__actions">
       {!filled && !running && <p className="spage-muted">{board.length ? t.system.runHint(board.length) : t.system.noBoard}</p>}
-      {running && !firstStep ? <p className="spage-muted spage-label" role="status"><Busy label={runningLabel} /> {runningLabel}</p>
-        : filled > 0 && head && version !== null && <VersionPicker label={head} rows={versions} current={version} viewing={viewing} onPick={setViewing} />}
+      {/* The versions open from the top bar's history clock, as the board's (Eric, 09-11: "ya no necesitamos" the head's list) */}
+      {running && !firstStep && <p className="spage-muted spage-label" role="status"><Busy label={runningLabel} /> {runningLabel}</p>}
       {firstStep ? (
         <Button variant="primary" size="s" onClick={() => setImproving(true)} disabled={running} data-tip={t.system.improveHint}>
           {running ? <><Busy label={runningLabel} /> {runningLabel}</> : <><Icon name="sparkle" size={16} /> {t.system.improve}</>}

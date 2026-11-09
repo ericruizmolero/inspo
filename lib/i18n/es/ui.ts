@@ -553,7 +553,6 @@ export const ui: typeof EnUi = {
     button: "Sistema",
     improve: "Mejorar con IA",
     improveHint: "Elige qu\u00e9 quieres mejorar antes de que la IA se ponga.",
-    headVersion: (n: number): string => `Versión ${n}`,
     headDecided: (n: number, of: number): string => `${n} de ${of} decididas`,
     improveModal: {
       bar: "Mejorar",

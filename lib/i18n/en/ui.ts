@@ -563,7 +563,6 @@ export const ui = {
     improve: "Improve with AI",
     improveHint: "Choose what to improve before the AI starts.",
     // The page's head, before Brief: the version criterio.md carries now, and how many areas say something
-    headVersion: (n: number): string => `Version ${n}`,
     headDecided: (n: number, of: number): string => `${n} of ${of} decided`,
     improveModal: {
       bar: "Improve",

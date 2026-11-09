@@ -1,6 +1,6 @@
 "use client";
-// criterio.md's versions where the version is named: the head's "System v3 · 8 of 8 decided" opens every version, and
-// picking one shows that file in place of the page, with what it brought in and took out against the one before.
+// criterio.md's versions: the top bar's history clock opens every version (SystemHistoryButton; the head's
+// "Version 31" list left on 09-11, Eric: "ya no necesitamos"), and picking one shows that file in place of the page, with what it brought in and took out against the one before.
 // Arrows (and ← →) walk from the first to the latest; "Back to now" returns to the live file. Replaces VersionsModal
 // (Eric, 04-11: "un desplegable o algo que puedas ver todas las versiones, clickar en ellas y verlas cambiadas").
 import { useEffect, useMemo, useState } from "react";
@@ -92,31 +92,11 @@ function VersionList({ rows, current, viewing, onPick }: { rows: CriterioVersion
   );
 }
 
-/** The head's label as the trigger: the version and how many areas are decided, opening the list */
-export function VersionPicker({ label, rows, current, viewing, onPick }: {
-  label: string; rows: CriterioVersionRow[] | null; current: number; viewing: number | null; onPick: (n: number | null) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const { s } = useRowText();
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger className="vpk-trigger spage-muted spage-label" data-tip={s.pick}>
-        {label}<Icon name="chevron-down" size={14} />
-      </PopoverTrigger>
-      {/* The team's history: a face per version on a thread that runs down the left, who and how in one line, the
-          areas they touched as their icons (Eric, 06-11: "a Alberto le puedes acompañar con su fotito") */}
-      <PopoverContent align="end" className="cr-menu vpk-menu">
-        <VersionList rows={rows} current={current} viewing={viewing} onPick={(n) => { setOpen(false); onPick(n); }} />
-      </PopoverContent>
-    </Popover>
-  );
-}
-
 /** What the System view hands the top bar, so the history clock opens criterio.md's versions there (Eric, 09-11:
  *  "que valga tanto para tablón como para sistema ahí") */
 export interface SystemHistory { rows: CriterioVersionRow[] | null; current: number; viewing: number | null; pick: (n: number | null) => void }
 
-/** The top bar's history clock on the System view: the same list as the head's label, from the clock */
+/** The top bar's history clock on the System view: criterio.md's versions, as the board's clock opens the board's */
 export function SystemHistoryButton({ history }: { history: SystemHistory }) {
   const [open, setOpen] = useState(false);
   const { t } = useT();

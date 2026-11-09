@@ -1,8 +1,5 @@
 /* criterio.md's versions (components/VersionPicker.tsx): the head's label opens the list; a version picked takes the
  * page's place with what it changed marked. Hierarchy by weight and colour, no boxes around the rows (gusto: fewer borders) */
-.vpk-trigger { border: 0; background: none; padding: 2px 4px; margin-left: -4px; border-radius: var(--radius-md); cursor: pointer; font: inherit; color: var(--text-2); }
-.vpk-trigger:hover, .vpk-trigger[data-popup-open] { background: var(--surface-2); color: var(--text); }
-.vpk-trigger:focus-visible { outline: 2px solid var(--text); outline-offset: 1px; }
 .vpk-menu { width: 340px; }
 .vpk-list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; max-height: 60vh; overflow: auto; }
 /* The thread: a 1 px line from one face to the next, behind the rows, so the list reads as the team's history */
