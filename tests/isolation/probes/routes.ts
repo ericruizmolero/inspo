@@ -349,6 +349,16 @@ export const routes: Record<string, Surface> = {
       expect((await db.select({ n: count() }).from(C).where(eq(C.projectId, fx.a.project)))[0].n, "A's project has no new proposal").toBe(before);
     },
   },
+  "mcp:bring_context": {
+    probe: async (fx) => {
+      const S = schema.projectSuggestion;
+      const briefOf = async () => (await db.select({ brief: schema.project.brief }).from(schema.project).where(eq(schema.project.id, fx.a.project)))[0].brief;
+      const before = await briefOf();
+      await refusedTool(fx, "bring_context", { project: fx.a.project, brief: "probe", answers: [{ question: "goal", answer: "probe" }] });
+      expect(await briefOf(), "A's brief is unchanged").toEqual(before);
+      expect((await db.select({ n: count() }).from(S).where(eq(S.projectId, fx.a.project)))[0].n, "nothing waits on A's project").toBe(0);
+    },
+  },
   "mcp:answer_question": {
     probe: async (fx) => {
       const briefOf = async () => (await db.select({ brief: schema.project.brief }).from(schema.project).where(eq(schema.project.id, fx.a.project)))[0].brief;

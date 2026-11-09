@@ -399,6 +399,21 @@ export const actions: Record<string, Surface> = {
       expectRefused(fx, await saveProjectAnswer(fx.a.project, "goal", "x"), "B answering on A's project");
     },
   },
+  "action:app/actions/suggestions.ts#answerSuggestions": {
+    probe: async (fx) => {
+      asB(fx);
+      const { answerSuggestions } = await import("@/app/actions/suggestions");
+      expectRefused(fx, await answerSuggestions(fx.a.project, true, { all: true }), "B accepting what waits on A's project");
+      expectRefused(fx, await answerSuggestions(fx.a.project, false, { all: true }), "B dismissing what waits on A's project");
+    },
+  },
+  "action:app/actions/suggestions.ts#pendingSuggestions": {
+    probe: async (fx) => {
+      asB(fx);
+      const { pendingSuggestions } = await import("@/app/actions/suggestions");
+      expectRefused(fx, await pendingSuggestions(fx.a.project), "B reading what waits on A's project");
+    },
+  },
   "action:app/actions/client-ask.ts#makeClientAsk": {
     probe: async (fx) => {
       asB(fx);

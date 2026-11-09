@@ -9,7 +9,7 @@ import { HttpError, newId } from "./workspace-core";
 import { addReference, type Piece, type Who } from "./add";
 import { findByWeb, deleteItems } from "./items";
 import { fileItems } from "./projects";
-import { assignEvidence, answerDraftOutline, getSystem } from "./system/areas";
+import { assignEvidence, answerDraftOutline, getSystem, projectRow } from "./system/areas";
 import { confirmAnswers, saveAnswers, setClientBrand } from "./brief";
 import { rewriteText } from "./text-refs";
 import { sha256 } from "./hash";
@@ -112,6 +112,8 @@ export interface Answering { refs?: string[]; answers?: string[]; outlines?: str
 
 /** Everything an agent left on a project that waits for the team */
 export async function pendingOf(organizationId: string, projectId: string) {
+  // Only a project of this workspace: anything else is refused, not answered empty
+  await projectRow(organizationId, projectId);
   const [refs, [row], system] = await Promise.all([
     db.select({ id: S.id }).from(S).where(and(eq(S.organizationId, organizationId), eq(S.projectId, projectId), eq(S.kind, "reference"), eq(S.state, "open"))),
     db.select({ brief: P.brief }).from(P).where(and(eq(P.organizationId, organizationId), eq(P.id, projectId))).limit(1),
@@ -185,6 +187,7 @@ export async function dismissSuggestions(organizationId: string, projectId: stri
 
 /** The answers and drafted plans waiting on a project, whole, for the app to show */
 export async function pendingBody(organizationId: string, projectId: string) {
+  await projectRow(organizationId, projectId);
   const [[row], system] = await Promise.all([
     db.select({ brief: P.brief }).from(P).where(and(eq(P.organizationId, organizationId), eq(P.id, projectId))).limit(1),
     getSystem(organizationId, projectId),
