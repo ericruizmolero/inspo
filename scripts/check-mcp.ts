@@ -73,13 +73,13 @@ async function main() {
   const icon = ((init.result?.serverInfo as Json)?.icons as { src: string }[] | undefined)?.[0]?.src ?? "";
   ok("server icon is public", (await fetch(icon, { redirect: "manual" }).catch(() => null))?.headers.get("content-type") === "image/png", icon);
   const tools = ((await rpc("tools/list")).result?.tools as Json[]) ?? [];
-  ok("tools/list", tools.length === 10, tools.map((t) => t.name).join(", "));
+  ok("tools/list", tools.length === 19, tools.map((t) => t.name).join(", "));
   const bring = tools.find((t) => t.name === "bring_brand")?.inputSchema as { properties?: Record<string, unknown> } | undefined;
   ok("bring_brand schema has the brand's sections", !!bring?.properties?.color && !!bring?.properties?.logo, Object.keys(bring?.properties ?? {}).join(", "));
   const imagery = bring?.properties?.imagery as { properties?: Record<string, unknown> } | undefined;
   ok("bring_brand takes the imagery's pictures and a file as base64", !!imagery?.properties?.images && JSON.stringify(bring?.properties?.logo).includes('"data":{') && !JSON.stringify(bring).includes('"$ref"'));
   const prompts = ((await rpc("prompts/list")).result?.prompts as Json[]) ?? [];
-  ok("prompts/list", prompts.length === 5, prompts.map((p) => p.name).join(", "));
+  ok("prompts/list", prompts.length === 6, prompts.map((p) => p.name).join(", "));
   const projects = JSON.parse((await call("list_projects", {})).text) as Json[];
   ok("list_projects", Array.isArray(projects), `${projects.length} projects in ${workspaces.map((w) => w.name).join(", ")}`);
   if (projects[0]) {
@@ -107,6 +107,25 @@ async function main() {
     ok("add_reference (url)", !ref.isError, ref.text.replace(/\s+/g, " ").slice(0, 100));
     const txt = await call("add_reference", { project: project.id, text: "# Tono\n\nHablamos de tú. Frases cortas.", note: "Prueba del conector", areas: ["voice"] });
     ok("add_reference (text)", !txt.isError, txt.text.replace(/\s+/g, " ").slice(0, 100));
+    // A capture pasted in the conversation: a 1x1 PNG, as base64
+    const png = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
+    const pic = await call("add_reference", { project: project.id, image: png, title: "Captura del botón", note: "Prueba del conector: así quiero el hover." });
+    ok("add_reference (image)", !pic.isError, pic.text.replace(/\s+/g, " ").slice(0, 100));
+    const picId = pic.isError ? null : (JSON.parse(pic.text) as Json).id as string;
+    const notPng = await call("add_reference", { project: project.id, image: Buffer.from("not a picture").toString("base64") });
+    ok("an image that is not one is refused", notPng.isError && notPng.text.includes("PNG"), notPng.text.slice(0, 80));
+    if (picId) {
+      const gone = await call("remove_reference", { project: project.id, ids: [picId] });
+      ok("remove_reference", !gone.isError && gone.text.includes(picId), gone.text.replace(/\s+/g, " ").slice(0, 100));
+      const listed = await call("list_references", { project: project.id });
+      ok("removed is off the board", !listed.text.includes(picId));
+    }
+    const plan = await call("set_outline", { project: project.id, name: "check-mcp", goal: "Pedir una demo", sections: [{ kind: "hero", job: "Decir qué es" }, { kind: "cta", job: "Pedir la demo" }] });
+    ok("set_outline (whole)", !plan.isError, plan.text.replace(/\s+/g, " ").slice(0, 80));
+    const changed = await call("set_outline", { project: project.id, name: "check-mcp", changes: [{ at: 2, insert: true, section: { kind: "faq", job: "Quitar dudas" } }] });
+    ok("set_outline (changes) keeps the rest", !changed.isError && changed.text.includes('"sections": 3'), changed.text.replace(/\s+/g, " ").slice(0, 80));
+    const byLine = await call("list_references", { project: `Un nombre viejo (${project.id})` });
+    ok("a project is found by the id in the repo line", !byLine.isError);
     const prop = await call("propose_decision", { project: project.id, area: "voice", decision: `Hablamos de tú, con frases cortas. (prueba ${Date.now()})`, why: "Prueba del conector", never: ["Tratar de usted"], reason: "check:mcp --write" });
     ok("propose_decision", !prop.isError && prop.text.includes('"proposed": true'));
     const empty = await call("propose_decision", { project: project.id, area: "voice", decision: "   " });

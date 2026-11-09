@@ -341,6 +341,13 @@ export const routes: Record<string, Surface> = {
       expect(await onBoard(fx.a.project), "A's board is unchanged").toBe(before);
     },
   },
+  "mcp:remove_reference": {
+    probe: async (fx) => {
+      const before = await onBoard(fx.a.project);
+      await refusedTool(fx, "remove_reference", { project: fx.a.project, ids: [fx.a.item] });
+      expect(await onBoard(fx.a.project), "A's board is unchanged").toBe(before);
+    },
+  },
   "mcp:propose_decision": {
     probe: async (fx) => {
       const C = schema.systemAreaComment;

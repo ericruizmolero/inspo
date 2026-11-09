@@ -84,7 +84,7 @@ test("setup starts with the drawing and hands over the repo's line", async () =>
   expect(first.tino.drawing).toContain("████████");
   await tool("create_project", { name: "Acme" });
   const known = await tool("start_setup", { project: "Acme" });
-  expect(known.repo_line.line).toBe("criterio project: Acme");
+  expect(known.repo_line.line).toMatch(/^criterio project: Acme \([\w-]+\)$/);
   expect(known.tino.drawing, "a project that already exists gets him too").toContain("████████");
 });
 

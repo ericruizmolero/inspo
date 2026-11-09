@@ -11,7 +11,9 @@ import { z } from "zod";
 import { and, asc, eq, inArray, isNull } from "drizzle-orm";
 import { db, schema } from "../db";
 import { HttpError, type Workspace } from "../workspace-core";
-import { loadProjects, createProject } from "../projects";
+import { createHash } from "node:crypto";
+import { loadProjects, createProject, unfileItems } from "../projects";
+import { imageTypeOf } from "../brand-files";
 import { loadSystems, getSystem } from "../system/areas";
 import { loadShareView } from "../share-view";
 import { recordVersion } from "../criterio-versions";
@@ -51,6 +53,7 @@ import { TINO_VOICE } from "./tools-voice";
 import type { LandingSection } from "@/types/landing";
 import type { AnswerSource } from "@/types/brief";
 import { addLearning, saveOutline } from "../system/areas";
+import { changedSections, type OutlineChange } from "../outline-changes";
 import { PLAYBOOK_QUESTIONS, openQuestions, questionById, questionText } from "../playbook-questions";
 import { SYSTEM_AREAS, cleanDecision, NEVER_MAX, LEARNING_NOTE_MAX, type SystemArea } from "@/types/system";
 import { BRIEF_LIMITS, readBrief } from "@/types/brief";
@@ -94,9 +97,12 @@ export async function resolveProject(ctx: McpCtx, ref: string): Promise<{ id: st
     .where(and(inArray(P.organizationId, ctx.workspaces.map((w) => w.id)), isNull(P.template)));
   const low = key.toLowerCase();
   let hits = rows.filter((r) => r.id === key);
+  // "Name (id)", as the repo line writes it: the id still finds the project after a rename
+  if (!hits.length) hits = rows.filter((r) => key.includes(r.id));
   if (!hits.length) hits = rows.filter((r) => r.name.toLowerCase() === low);
   if (!hits.length) hits = rows.filter((r) => r.name.toLowerCase().includes(low));
-  if (!hits.length) throw new HttpError(404, `No project matches "${key}". Call list_projects to see the ones there are.`);
+  // A name kept from before a rename (in the repo line, in an earlier chat) finds nothing: say which ones there are
+  if (!hits.length) throw new HttpError(404, `No project matches "${key}". It may have been renamed. The projects are: ${rows.map((r) => `${r.name} (${r.id})`).join(", ") || "none"}. Pass the id, and update the repo line if it names the old one.`);
   if (hits.length > 1) throw new HttpError(409, `Several projects match "${key}": ${hits.map((h) => `${h.name} (${h.id})`).join(", ")}. Pass the id.`);
   return { id: hits[0].id, name: hits[0].name, workspace: ctx.workspaces.find((w) => w.id === hits[0].organizationId)! };
 }
@@ -245,8 +251,10 @@ export interface NewPiece {
   project: string;
   /** A site, a video, a post, or a picture's own address: one of this or `text` */
   url?: string;
-  /** Words kept whole (Markdown): one of this or `url` */
+  /** Words kept whole (Markdown): one of this, `url` or `image` */
   text?: string;
+  /** A picture's bytes as base64 (a capture pasted in the conversation, a file on disk): one of this, `url` or `text` */
+  image?: string;
   title?: string;
   /** Why it is there, in the person's words: the first thing its card says */
   note?: string;
@@ -259,8 +267,13 @@ export interface NewPiece {
 }
 
 /** What a url or a text becomes in the library. A picture's own address is downloaded here */
-export async function pieceOf(project: { workspace: Workspace }, input: { url?: string; text?: string; title?: string }): Promise<Piece> {
+export async function pieceOf(project: { workspace: Workspace }, input: { url?: string; text?: string; image?: string; title?: string }): Promise<Piece> {
   const org = project.workspace.id;
+  if (input.image?.trim()) {
+    const { body, type } = imageBytes(input.image);
+    await assertRoom(project.workspace, { items: 1 });
+    return { kind: "image", url: await putFile(newMediaKey(org, type), body, type, org), name: oneLine(input.title, 80) || "Image" };
+  }
   if (input.text?.trim()) {
     const text = cleanText(input.text);
     const title = oneLine(input.title, TEXT_TITLE_MAX) || titleOf(text);
@@ -278,12 +291,22 @@ export async function pieceOf(project: { workspace: Workspace }, input: { url?: 
     : { kind: "url", web, name: oneLine(input.title, 80) };
 }
 
+/** A picture handed over as base64: the type is what the bytes say, never what the agent says */
+function imageBytes(data: string): { body: Buffer; type: string } {
+  const body = Buffer.from(data.replace(/^data:[^,]*,/, "").replace(/\s+/g, ""), "base64");
+  const type = imageTypeOf(body);
+  if (!type) throw new HttpError(415, "The image is not a PNG, WebP or JPEG.");
+  if (body.length > MAX_MEDIA_BYTES) throw new HttpError(413, "The image is too large.");
+  return { body, type };
+}
+
 /** A reference an agent brings on its own: it waits on the board for the team (lib/suggestions.ts) */
-export async function suggestPiece(ctx: McpCtx, project: { id: string; workspace: Workspace }, input: { url?: string; text?: string; title?: string; note?: string; areas?: readonly string[]; role?: RefRole | null; origin?: string; key?: string }): Promise<Brought> {
+export async function suggestPiece(ctx: McpCtx, project: { id: string; workspace: Workspace }, input: { url?: string; text?: string; image?: string; title?: string; note?: string; areas?: readonly string[]; role?: RefRole | null; origin?: string; key?: string }): Promise<Brought> {
   const web = input.url?.trim() ? normalizeWebUrl(input.url) : null;
   if (input.url?.trim() && !web) throw new HttpError(400, `"${input.url}" is not an address that can be saved.`);
   const text = input.text?.trim() ? cleanText(input.text) : undefined;
-  const key = web ? `url:${webKeyOf(web)}` : textKey(input.key || oneLine(input.title, TEXT_TITLE_MAX) || titleOf(text ?? ""));
+  // The same picture brought twice is one suggestion: its key is its bytes
+  const key = web ? `url:${webKeyOf(web)}` : input.image?.trim() ? `image:${createHash("sha256").update(imageBytes(input.image).body).digest("hex").slice(0, 32)}` : textKey(input.key || oneLine(input.title, TEXT_TITLE_MAX) || titleOf(text ?? ""));
   return suggestReference(project.workspace.id, project.id, {
     key, web: web && !IMAGE_FILE.test(new URL(web).pathname) ? web : undefined, text,
     build: () => pieceOf(project, input), note: input.note, role: input.role ?? null, areas: cleanAreas(input.areas), origin: input.origin,
@@ -298,8 +321,7 @@ export async function addPiece(ctx: McpCtx, origin: string, input: NewPiece) {
   const project = await resolveProject(ctx, input.project);
   const org = project.workspace.id;
   const author = authorOf(ctx);
-  const hasUrl = !!input.url?.trim(), hasText = !!input.text?.trim();
-  if (hasUrl === hasText) throw new HttpError(400, "Pass exactly one of url or text.");
+  if ([input.url, input.text, input.image].filter((x) => x?.trim()).length !== 1) throw new HttpError(400, "Pass exactly one of url, text or image.");
   const note = oneLine(input.note, 500);
   const areas = cleanAreas(input.areas);
   if (input.suggested) {
@@ -324,6 +346,27 @@ export async function addPiece(ctx: McpCtx, origin: string, input: NewPiece) {
     id: itemId, name: item.name, project: project.name,
     ...(existed ? { already_in_library: true } : {}),
     ...(areas.length ? { areas } : {}),
+    url: projectUrl(origin, project.id),
+  };
+}
+
+/**
+ * Takes references off a project's board: a duplicate, one brought by mistake. Each stays in the workspace's
+ * library (and on any other board), so it can be filed again; what was voted on it in this project goes.
+ */
+export async function removeReferences(ctx: McpCtx, origin: string, input: { project: string; ids: readonly string[] }) {
+  const project = await resolveProject(ctx, input.project);
+  const org = project.workspace.id;
+  const ids = [...new Set(input.ids.map((i) => String(i).trim()).filter(Boolean))];
+  const filed = ids.length ? await db.select({ id: PI.itemId, name: T.name }).from(PI).innerJoin(T, eq(T.id, PI.itemId))
+    .where(and(eq(PI.organizationId, org), eq(PI.projectId, project.id), inArray(PI.itemId, ids))) : [];
+  const missing = ids.filter((i) => !filed.some((f) => f.id === i));
+  await unfileItems(org, project.id, filed.map((f) => f.id));
+  if (filed.length) versionAfterWrite(ctx, origin, project);
+  return {
+    removed: filed.map((f) => ({ id: f.id, name: f.name })), project: project.name,
+    ...(missing.length ? { not_on_this_board: missing } : {}),
+    status: filed.length ? "Off the board; still in the library. The codes R1, R2… of the ones after them move up: call list_references again before citing one." : "None of these was on the board.",
     url: projectUrl(origin, project.id),
   };
 }
@@ -523,7 +566,7 @@ export async function startSetup(ctx: McpCtx, origin: string, input: { project?:
     project: project.name, url: projectUrl(origin, project.id), ...(await setupStep(project.workspace.id, project.id)),
     ...(input.ask_client ? { client_link: `${origin}/a/${await clientAskToken(project.workspace.id, project.id, ctx.user.id)}` } : {}),
     waiting: await waiting(project.workspace.id, project.id),
-    repo_line: { line: `criterio project: ${project.name}`, do: "In a repo that does not have this line, ask once, and after a yes add it to AGENTS.md or CLAUDE.md, so a later session here finds the project. Another repo can copy the line to share this criterio." },
+    repo_line: { line: `criterio project: ${project.name} (${project.id})`, do: "In a repo that does not have this line, ask once, and after a yes add it to AGENTS.md or CLAUDE.md, so a later session here finds the project. The id keeps finding it after a rename; if the line names it otherwise, fix the line. Another repo can copy the line to share this criterio." },
   };
 }
 
@@ -546,10 +589,17 @@ export async function recordLearning(ctx: McpCtx, origin: string, input: { proje
   };
 }
 
-/** A landing's plan, whole, by name. A plan and not a decision, so it goes straight in, and criterio.md shows it */
-export async function setOutline(ctx: McpCtx, origin: string, input: { project: string; name: string; goal: string; sections: LandingSection[]; built?: { url?: string } }) {
+/** A landing's plan by name: whole, or changed section by section. A plan and not a decision, so it goes straight in */
+export async function setOutline(ctx: McpCtx, origin: string, input: { project: string; name: string; goal?: string; sections?: LandingSection[]; changes?: OutlineChange[]; built?: { url?: string } }) {
   const project = await resolveProject(ctx, input.project);
-  const outline = await saveOutline(project.workspace.id, project.id, { name: input.name, goal: input.goal, sections: input.sections, built: input.built ? { via: ctx.via, ...input.built } : undefined });
+  const known = ((await getSystem(project.workspace.id, project.id)).outlines ?? []).find((o) => o.name.toLowerCase() === input.name.trim().toLowerCase());
+  if (input.sections && input.changes?.length) throw new HttpError(400, "Pass sections (the whole plan) or changes (to the saved one), not both.");
+  if (!input.sections && !known) throw new HttpError(404, `There is no plan "${input.name}" yet: pass its goal and all its sections.`);
+  const goal = input.goal?.trim() || known?.goal;
+  if (!goal) throw new HttpError(400, "The plan needs its goal.");
+  const sections = input.sections ?? changedSections(known!.sections, input.changes ?? []);
+  if (!sections.length) throw new HttpError(400, "A plan needs at least one section.");
+  const outline = await saveOutline(project.workspace.id, project.id, { name: known?.name ?? input.name, goal, sections, built: input.built ? { via: ctx.via, ...input.built } : undefined });
   versionAfterWrite(ctx, origin, project);
   return { saved: true, project: project.name, outline: outline.name, sections: outline.sections.length, url: projectUrl(origin, project.id), setup: await setupStep(project.workspace.id, project.id) };
 }

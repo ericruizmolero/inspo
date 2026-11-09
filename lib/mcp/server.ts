@@ -57,7 +57,11 @@ async function callTool(params: Record<string, unknown> | undefined, ctx: McpCtx
   } catch (e) {
     // What the libraries refuse on purpose (not found, already there, not allowed) is for the model to read and
     // act on; anything else is ours, and says nothing of how the app is built
-    if (e instanceof HttpError) return text(e.message, true);
+    // Never an empty answer: a refusal with no words leaves the model (and the person) with nothing to act on
+    if (e instanceof HttpError) {
+      if (!e.message.trim()) void recordFailure("mcp", `${tool.name}:empty`, e);
+      return text(e.message.trim() || `criterio refused this (${e.status}) without saying why. Check the arguments against the tool's description and try once more.`, true);
+    }
     void recordFailure("mcp", tool.name, e);
     return text("Something failed in criterio. Try again in a moment.", true);
   }

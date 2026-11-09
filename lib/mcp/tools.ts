@@ -6,7 +6,7 @@ import "server-only";
 import { z } from "zod";
 import { SYSTEM_AREAS } from "@/types/system";
 import type { McpCtx } from "./auth";
-import { CRITERIO_SECTIONS, ProjectArg as Project, QUESTION_IDS, addPiece, answerQuestion, listProjects, listReferences, newProject, proposeDecision, readCriterio, readReference, measureSite, recordLearning, runPass, setOutline, startSetup, checkLandingPage, listComments, resolveComment } from "./pieces";
+import { CRITERIO_SECTIONS, ProjectArg as Project, QUESTION_IDS, addPiece, answerQuestion, listProjects, listReferences, newProject, proposeDecision, readCriterio, readReference, measureSite, recordLearning, runPass, removeReferences, setOutline, startSetup, checkLandingPage, listComments, resolveComment } from "./pieces";
 import { OUTLINE_SECTIONS_MAX, OUTLINE_TEXT_MAX, SECTION_KINDS } from "@/types/landing";
 import { SKIPPABLE } from "../setup-core";
 import { LEARNING_NOTE_MAX } from "@/types/system";
@@ -17,13 +17,23 @@ import { TINO_VOICE } from "./tools-voice";
 import { ContextInput, bringContext } from "./context";
 import { REF_ROLES } from "@/types/suggestions";
 
+/** A landing's section, as set_outline takes it */
+const Section = z.object({
+  kind: z.enum(SECTION_KINDS).describe("The kind of section."),
+  job: z.string().min(1).max(OUTLINE_TEXT_MAX).describe("What this section does for the goal."),
+  proof: z.string().max(OUTLINE_TEXT_MAX).optional().describe("What backs it, from the project's answers. Never invented."),
+  cta: z.string().max(OUTLINE_TEXT_MAX).optional().describe("The action it asks for."),
+  refs: z.array(z.string().max(60)).max(12).default([]).describe("The ids of the references it draws from (list_references)."),
+});
+
 const Areas = z.array(z.enum(SYSTEM_AREAS)).max(SYSTEM_AREAS.length).optional();
 
 const piece = {
   project: Project,
-  url: z.string().max(2000).optional().describe("A public address: a site, a page, a video, a post on X, or an image file. Pass this or text, not both."),
-  text: z.string().max(40_000).optional().describe("Words to keep whole, in Markdown: copy, a brief, guidelines, notes. Pass this or url, not both."),
-  title: z.string().max(80).optional().describe("A short name for it. Optional for a url (its site's name is used) and for a text (its first line is)."),
+  url: z.string().max(2000).optional().describe("A public address: a site, a page, a video, a post on X, or an image file. Pass one of url, text or image."),
+  text: z.string().max(40_000).optional().describe("Words to keep whole, in Markdown: copy, a brief, guidelines, notes. Pass one of url, text or image."),
+  image: z.string().max(3_900_000).optional().describe("A picture as base64 (PNG, WebP or JPEG, under about 2.5 MB: scale a bigger one down first): a capture the person pasted in the conversation, a file on your disk, a render you made. Pass one of url, text or image."),
+  title: z.string().max(80).optional().describe("A short name for it. Optional for a url (its site's name is used) and for a text (its first line is); give an image one."),
   note: z.string().max(500).optional().describe("One or two sentences in the person's own words on why it is there and what to take from it. The team reads this first."),
 };
 
@@ -95,7 +105,8 @@ export const TOOLS: Tool[] = [
   tool({
     name: "add_reference", title: "Add a reference",
     description: [
-      "Saves a reference on a project's board: something that inspires or informs the project. A url (a site, a video, a post, an image file) or a text kept whole. It is saved under the person's name, marked as coming from this app.",
+      "Saves a reference on a project's board: something that inspires or informs the project. A url (a site, a video, a post, an image file), a text kept whole, or a picture's bytes. It is saved under the person's name, marked as coming from this app.",
+      "When the person pastes or drops a picture in the conversation to show what they mean (a capture of a site, a button, a render), save it as image with a note on what it shows: otherwise it is lost when the conversation ends. Pictures move a design more than text: bring them early.",
       "When the person asked for it, it goes on the board at once. When you bring it on your own (from your research, from earlier in the conversation), pass suggested: it waits on the board, marked, for the team to accept or dismiss, so no yes is needed first. Give each a note saying why it is there. To bring a lot at once, use bring_context.",
       "areas: the areas of the system it brings something to, when that is clear. A reference changes no decision by itself; to change what an area says, use propose_decision.",
     ].join("\n"),
@@ -107,6 +118,13 @@ export const TOOLS: Tool[] = [
     }),
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
     run: (i, ctx, origin) => addPiece(ctx, origin, i),
+  }),
+  tool({
+    name: "remove_reference", title: "Remove references from the board",
+    description: "Takes references off a project's board: duplicates, or one brought by mistake. Only when the person asks or agrees; say which ones first. Each stays in the workspace's library and on any other board, so it can come back. The codes R1, R2… of the ones after it move up: list_references again before citing one.",
+    input: z.object({ project: Project, ids: z.array(z.string().min(1).max(60)).min(1).max(30).describe("The references' ids, from list_references.") }),
+    annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: false },
+    run: (i, ctx, origin) => removeReferences(ctx, origin, i),
   }),
   tool({
     name: "propose_decision", title: "Propose a decision",
@@ -182,21 +200,21 @@ export const TOOLS: Tool[] = [
   tool({
     name: "set_outline", title: "Plan a landing",
     description: [
-      "Saves a landing's plan: its goal and its sections in order. The same name replaces that plan, whole; a project can hold several landings. It is a plan, not a decision, so it goes straight in, and criterio.md shows it under the landing.",
+      "Saves a landing's plan: its goal and its sections in order. With sections, the same name replaces that plan, whole; with changes, only the sections named change and the rest stay (change one section, put one in, take one out). A project can hold several landings. It is a plan, not a decision, so it goes straight in, and criterio.md shows it under the landing.",
       "A landing exists to move a visitor to one action, so start from the goal. Each section's job says what it does for that action, in a sentence: explains the problem, removes a doubt, proves the claim, asks for the action. A section with no job towards the goal is cut, however good it looks. Taste comes from the project's decisions, not from this plan.",
       "When the landing is built, call it again with built, and its address if it has one.",
     ].join("\n"),
     input: z.object({
       project: Project,
       name: z.string().min(1).max(80).describe("The landing's name: home, demo, a campaign."),
-      goal: z.string().min(1).max(OUTLINE_TEXT_MAX).describe("The one thing someone should do after seeing the page."),
-      sections: z.array(z.object({
-        kind: z.enum(SECTION_KINDS).describe("The kind of section."),
-        job: z.string().min(1).max(OUTLINE_TEXT_MAX).describe("What this section does for the goal."),
-        proof: z.string().max(OUTLINE_TEXT_MAX).optional().describe("What backs it, from the project's answers. Never invented."),
-        cta: z.string().max(OUTLINE_TEXT_MAX).optional().describe("The action it asks for."),
-        refs: z.array(z.string().max(60)).max(12).default([]).describe("The ids of the references it draws from (list_references)."),
-      })).min(1).max(OUTLINE_SECTIONS_MAX),
+      goal: z.string().min(1).max(OUTLINE_TEXT_MAX).optional().describe("The one thing someone should do after seeing the page. Needed for a new plan; with changes, only to change it."),
+      sections: z.array(Section).min(1).max(OUTLINE_SECTIONS_MAX).optional().describe("The whole plan, in order. Pass this or changes."),
+      changes: z.array(z.object({
+        at: z.number().int().min(1).max(OUTLINE_SECTIONS_MAX + 1).describe("The section's place in the saved plan, 1 for the first. Every place counts as the plan was before these changes."),
+        section: Section.optional().describe("The section that goes there: it replaces the one at that place, or with insert goes before it."),
+        insert: z.boolean().optional().describe("Put section in at this place instead of replacing; one past the last adds it at the end."),
+        remove: z.boolean().optional().describe("Take the section at this place out."),
+      })).min(1).max(OUTLINE_SECTIONS_MAX).optional().describe("Changes to the saved plan, leaving the other sections as they are. Pass this or sections."),
       built: z.object({ url: z.string().max(2000).optional() }).optional().describe("Set when the landing exists."),
     }),
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
