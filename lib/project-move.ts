@@ -181,6 +181,8 @@ export async function moveProject(from: string, id: string, to: string, user: { 
     // Parents before their replies: they were read oldest first
     for (const c of newComments) await tx.insert(C).values(c);
 
+    // A reference an agent left waiting points at an item of the old workspace: it does not travel, the agent can bring it again
+    await tx.delete(schema.projectSuggestion).where(and(eq(schema.projectSuggestion.projectId, id), eq(schema.projectSuggestion.state, "open")));
     // Every row of the project, whatever table it is in, changes workspace with it
     const tables = await tx.execute<{ table_name: string }>(sql`
       select c.table_name from information_schema.columns c

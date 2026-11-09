@@ -94,7 +94,11 @@ function layoutBoard(items: InspoItem[], ratioOf: (item: InspoItem) => number, c
   return { slots, byKey, height: Math.max(padTop, ...bottoms) - GAP, col };
 }
 
-export default memo(function Grid({ under = false, missed = false, corner, items, ratioOf, hasNote, insets, zoom, onZoom, fitKey, focusKey, renderCard, handleRef }: {
+export default memo(function Grid({ under = false, missed = false, corner, head, headHeight = 0, items, ratioOf, hasNote, insets, zoom, onZoom, fitKey, focusKey, renderCard, handleRef }: {
+  /** A line over the cards, inside the scroll (it goes up with the board, never sticks): what an agent left */
+  head?: ReactNode;
+  /** The room it takes: the cards start this much lower */
+  headHeight?: number;
   /** Under Polish: kept laid out but inert, out of reach and without its corner */
   under?: boolean;
   /** After the corner pill (the theme button): where Tino takes the bottom-right corner, it sits here, as on the home */
@@ -135,7 +139,7 @@ export default memo(function Grid({ under = false, missed = false, corner, items
   }, []);
 
   // ─── The layout, as numbers ─────────────────────────────────────────────────
-  const padL = PAD + insets.left, padR = PAD + insets.right, padTop = insets.top + PAD / 2, padBottom = insets.bottom + PAD;
+  const padL = PAD + insets.left, padR = PAD + insets.right, padTop = insets.top + PAD / 2 + (head ? headHeight : 0), padBottom = insets.bottom + PAD;
   const room = Math.max(0, width - padL - padR);
   const phone = !!width && width < 801;
   const maxCols = Math.max(MIN_COLS, Math.min(MAX_COLS, Math.floor((room + GAP) / (MIN_COL + GAP))));
@@ -328,6 +332,7 @@ export default memo(function Grid({ under = false, missed = false, corner, items
     <>
       <div ref={scrollRef} className="board" data-bare={bare ? "" : undefined} data-missed={missed ? "" : undefined} inert={under || undefined} aria-hidden={under || undefined}>
         <div className="board__world" style={{ height: layout ? layout.height + padBottom : "100%" }}>
+          {head && <div className="board__head" style={{ top: insets.top + PAD / 2, left: padL, right: padR }}>{head}</div>}
           {visible.map((s) => {
             const enter = seen.has(s.key) ? undefined : entrance.current?.get(s.key);
             const at = enter === undefined ? arrivals.current.get(s.key) : undefined;

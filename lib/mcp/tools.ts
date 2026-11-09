@@ -14,6 +14,8 @@ import { BRIEF_LIMITS } from "@/types/brief";
 import { BringInput, bringBrand } from "./brand";
 import { TINO_APP_URI } from "./tino-app";
 import { TINO_VOICE } from "./tools-voice";
+import { ContextInput, bringContext } from "./context";
+import { REF_ROLES } from "@/types/suggestions";
 
 const Areas = z.array(z.enum(SYSTEM_AREAS)).max(SYSTEM_AREAS.length).optional();
 
@@ -93,11 +95,16 @@ export const TOOLS: Tool[] = [
   tool({
     name: "add_reference", title: "Add a reference",
     description: [
-      "Saves a reference on a project's board: something that inspires or informs the project. A url (a site, a video, a post, an image file) or a text kept whole. It is saved under the person's name, marked as coming from this app, and shows on the board at once.",
-      "Only add what the person asked to save or agreed to. When adding several, show the list first and add them after a yes. Give each a note saying why it is there.",
+      "Saves a reference on a project's board: something that inspires or informs the project. A url (a site, a video, a post, an image file) or a text kept whole. It is saved under the person's name, marked as coming from this app.",
+      "When the person asked for it, it goes on the board at once. When you bring it on your own (from your research, from earlier in the conversation), pass suggested: it waits on the board, marked, for the team to accept or dismiss, so no yes is needed first. Give each a note saying why it is there. To bring a lot at once, use bring_context.",
       "areas: the areas of the system it brings something to, when that is clear. A reference changes no decision by itself; to change what an area says, use propose_decision.",
     ].join("\n"),
-    input: z.object({ ...piece, areas: Areas.describe("The areas it backs, if clear: typography, color, layout, motion, iconography, logo, imagery, voice.") }),
+    input: z.object({
+      ...piece,
+      areas: Areas.describe("The areas it backs, if clear: typography, color, layout, motion, iconography, logo, imagery, voice."),
+      suggested: z.boolean().optional().describe("True when you bring it on your own and the person did not ask for it: it waits for the team's yes or no."),
+      role: z.enum(REF_ROLES).optional().describe("With suggested, what it is to the project: current-site, competitor, inspiration, press, material, brief, research."),
+    }),
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
     run: (i, ctx, origin) => addPiece(ctx, origin, i),
   }),
@@ -122,13 +129,13 @@ export const TOOLS: Tool[] = [
     name: "answer_question", title: "Answer a starting question",
     description: [
       "Keeps the person's answer to one of the starting questions criterio.md lists (under its starting questions, each with its id). It is written straight in, with no approval: it is what the person said, and it changes no decision. criterio.md then lists the question as answered, so no agent asks it again.",
-      "Call it right after the person answers, with their answer in their words, condensed if long but never invented or completed by you. What you read on the site or in the repo goes with source \"read\" and from: it stays unconfirmed until the person says so, and you then save it again with source \"person\". A second answer to the same question replaces the first. It returns the questions still open: ask the next one, one at a time.",
+      "Call it right after the person answers, with their answer in their words, condensed if long but never invented or completed by you. What you read on the site or in the repo goes with source \"read\" and from; what you worked out yourself (research, an earlier conversation) with source \"agent\". Both stay unconfirmed until the person says so (in the conversation, and you save it again with source \"person\", or in the app). A second answer to the same question replaces the first. It returns the questions still open: ask the next one, one at a time.",
     ].join("\n"),
     input: z.object({
       project: Project,
       question: z.enum(QUESTION_IDS).describe("The question's id, as criterio.md writes it before the question (offer, goal, audience…)."),
       answer: z.string().min(1).max(BRIEF_LIMITS.answer).describe("The person's answer, in their words and language."),
-      source: z.enum(["person", "read"]).optional().describe('"person" (default) when they said it, "read" when you read it.'),
+      source: z.enum(["person", "read", "agent"]).optional().describe('"person" (default) when they said it, "read" when you read it, "agent" when you worked it out.'),
       from: z.string().max(500).optional().describe("The address or path a read answer came from."),
     }),
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
@@ -207,6 +214,17 @@ export const TOOLS: Tool[] = [
     run: (i, ctx, origin) => bringBrand(ctx, origin, i),
   }),
   tool({
+    name: "bring_context", title: "Bring what you already know",
+    description: [
+      "Leaves everything you already worked out about a project on it, in one call: the brief, research notes with their sources, references (their site, competitors, press, inspiration), answers to the starting questions, a draft of the landing's plan, 2 or 3 directions for the hero and proposals for the areas. Makes the project when asked to (create).",
+      "Use it when you arrive with context from your own work or an earlier conversation, instead of asking the person what you already know. Nothing of it is a decision: references wait on the board marked as suggested, answers wait as yours, the plan waits as a draft, proposals wait under their area, and the team accepts or dismisses each in the app. So bring it without asking piece by piece. Never invent: what you did not find stays out, and figures go with their source.",
+      "Call it again with the same addresses, keys, questions and plan name to update what you brought: nothing is added twice, and what the team dismissed is not brought back. Then tell the person in a line or two what you left and what is missing.",
+    ].join("\n"),
+    input: ContextInput,
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true },
+    run: (i, ctx, origin) => bringContext(ctx, origin, i),
+  }),
+  tool({
     name: "create_project", title: "Create a project",
     description: "Creates an empty project in criterio: a place for the references and the criterio of one brand or client. When the person asks for one, or the setup needs one; check list_projects first so it does not duplicate one that exists.",
     input: z.object({
@@ -234,6 +252,7 @@ export const INSTRUCTIONS = [
   "Before designing, writing or reviewing anything for a project, call read_criterio and follow it. A decided area is a rule. Where an area is open, ask the person; do not invent.",
   "Work with the person as criterio.md's \"Start here\" says: read it first (read_criterio, section \"guide\") and follow its phases and checkpoints.",
   "You never rewrite criterio.md. You add pieces: references (add_reference), proposals for what an area should say (propose_decision), which wait for the team's yes or no in the app, a brand's values (bring_brand), which the team edits or hands back in the app, the person's answers to the starting questions (answer_question) and what you learned with them (record_learning), which go straight in.",
+  "Two ways to work. In a conversation, ask one thing at a time and save what the person says. When you arrive with context already worked out (research, a brief, references, answers, a plan from your own work or another conversation), bring it all with bring_context, without asking piece by piece: it waits as suggestions the team reviews in the app. Then say in a line or two what you left and what is missing, and talk little.",
   "To see a reference's picture, call read_reference with its id (list_references maps R1, R2… to ids): the picture comes inside the answer. Do not fetch the file links in criterio.md to look at a picture; they may be blocked where you run.",
-  "Write only what the person asked for or agreed to.",
+  "What you write straight in is only what the person asked for or agreed to. What you bring on your own goes in as a suggestion (bring_context, or add_reference with suggested).",
 ].join("\n");

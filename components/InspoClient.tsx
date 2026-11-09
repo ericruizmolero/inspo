@@ -4,7 +4,10 @@ import { removeInspo } from "@/app/actions/library";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { useState, useMemo, useEffect, useLayoutEffect, useRef, useCallback } from "react";
-import type { InspoItem, Project, ProjectLinks, PolishVote, ItemsPage } from "@/types/inspo";
+import type { InspoItem, Project, ProjectLinks, ProjectRoles, PolishVote, ItemsPage } from "@/types/inspo";
+import type { SuggestedRef } from "@/types/suggestions";
+import SuggestedLine, { SUGGESTED_LINE_H, type Pending } from "./SuggestedLine";
+import { answerSuggestions, pendingSuggestions } from "@/app/actions/suggestions";
 import { COLORS, viewOf } from "@/lib/taxonomy";
 import { filterKey, newestFirst, parseDate } from "@/lib/search-query";
 import Sidebar, { type QuotaView } from "./Sidebar";
@@ -116,6 +119,8 @@ export default function InspoClient({
   bell,
   initialProjects = [],
   initialProjectLinks = {},
+  initialRoles = {},
+  initialSuggested = [],
   initialSummaries = {},
   aiEnabled = false,
   user,
@@ -141,6 +146,10 @@ export default function InspoClient({
   initialPolishVotes?: PolishVote[];
   initialProjects?: Project[];
   initialProjectLinks?: ProjectLinks;
+  /** What a reference is to each project, when it is something (the brief opens the board) */
+  initialRoles?: ProjectRoles;
+  /** References agents brought that wait on the boards (lib/suggestions.ts) */
+  initialSuggested?: SuggestedRef[];
   /** What the views around each project's system read of it, by project id (lib/system/areas.ts loadSystemSummaries) */
   initialSummaries?: Record<string, SystemSummary>;
   aiEnabled?: boolean;
@@ -160,6 +169,10 @@ export default function InspoClient({
   // ?in=inbox (not filed anywhere) or ?in=<project id>; no param = everything. Filters apply inside the space.
   const [projects, setProjects] = useState(initialProjects);
   const [links, setLinks] = useState<ProjectLinks>(initialProjectLinks);
+  const [roles, setRoles] = useState<ProjectRoles>(initialRoles);
+  const [suggested, setSuggested] = useState<SuggestedRef[]>(initialSuggested);
+  // A reference waiting on some board is not in the Cajón: it is not the library's until someone says yes
+  const waitingIds = useMemo(() => new Set(suggested.map((x) => x.itemId)), [suggested]);
   // A notice up top: what failed, or (ok) what an import brought
   const [toast, setToast] = useState<ToastNote | null>(null);
   // Projects change on screen first; if the server says no, they go back with a notice
@@ -270,13 +283,20 @@ export default function InspoClient({
 
   // What no project has taken (nor archived): the library's second view
   // What no project holds: the system's inbox, kept as one array so the system view's memos hold across renders
-  const unfiled = useMemo(() => items.filter((i) => i.id ? !links[i.id]?.length : !i.pendingIn), [items, links]);
+  const unfiled = useMemo(() => items.filter((i) => i.id ? !links[i.id]?.length && !waitingIds.has(i.id) : !i.pendingIn), [items, links, waitingIds]);
   // The items in the current space (inbox, a project or everything), before any other filter. One still being saved
   // (no id yet) shows where it is going at once: the server's answer only swaps it for the saved one
-  const spaceItems = useMemo(() => space === "all" || space === "home" ? items
-    : space === "inbox" ? items.filter((i) => i.id ? !links[i.id]?.length : !i.pendingIn)
-    : items.filter((i) => i.id ? !!links[i.id]?.includes(space) : i.pendingIn === space),
-  [items, links, space]);
+  const spaceItems = useMemo(() => {
+    if (space === "all" || space === "home") return items;
+    if (space === "inbox") return items.filter((i) => i.id ? !links[i.id]?.length && !waitingIds.has(i.id) : !i.pendingIn);
+    // A project's board: its references and what an agent left on it; the brief always first
+    const here = new Set(suggested.filter((x) => x.projectId === space).map((x) => x.itemId));
+    const own = roles[space] ?? {};
+    const list = items.filter((i) => i.id ? !!links[i.id]?.includes(space) || here.has(i.id) : i.pendingIn === space);
+    return list.some((i) => i.id && own[i.id] === "brief") ? [...list].sort((a, b) => Number(own[b.id!] === "brief") - Number(own[a.id!] === "brief")) : list;
+  }, [items, links, space, suggested, roles, waitingIds]);
+  // The current board's waiting references, by item
+  const suggestedHere = useMemo(() => new Map(suggested.filter((x) => x.projectId === space).map((x) => [x.itemId, x])), [suggested, space]);
   // Polish in the Cajón: kept stays, forgotten is deleted on leaving Polish (hooks/use-inbox-polish.ts)
   const inboxPolishing = useInboxPolish({
     workspaceId: workspace.id, userId: user.id, active: inboxPolish, inbox: space === "inbox" ? spaceItems : EMPTY_ITEMS,
@@ -294,7 +314,7 @@ export default function InspoClient({
   const tinoCorner = space === "home" || boardTino || (!!currentProject && projectView !== "board") || inboxPolish;
 
   const { watch, gathering } = useTagWatch({ items: spaceItems, tagJobs, setTagJobs, setTagMap });
-  const { bellNews, beatRef, filling } = useLibrarySync({ first, stamp, since, bell, workspace, items, setMirror, setProjects, setLinks, setVotes, withVoteWrites, watch });
+  const { bellNews, beatRef, filling } = useLibrarySync({ first, stamp, since, bell, workspace, items, setMirror, setProjects, setLinks, setRoles, setSuggested, setVotes, withVoteWrites, watch });
 
   const { showAdd, setShowAdd, addInitial, setAddInitial, boardDrag } = useAddDialog({ t, setToast });
   const gridRef = useRef<GridHandle | null>(null);
@@ -304,7 +324,7 @@ export default function InspoClient({
     const t = setTimeout(() => setToast(null), 6000);
     return () => clearTimeout(t);
   }, [toast]);
-  const { createProject, importBoard, renameProject, deleteProject, duplicateProject, moveProject, toggleFiled, startSystem, fileMany, createAndFile, setClient, saveBrief, describe } = useProjectActions({ t, projects, setProjects, links, setLinks, space, currentProject, confirm, setParams, setSpace, setItems, setToast, watch, refreshSystem, voteWrites, setVotes, projectFailed });
+  const { createProject, importBoard, renameProject, deleteProject, duplicateProject, moveProject, toggleFiled, startSystem, fileMany, createAndFile, setClient, saveBrief } = useProjectActions({ t, projects, setProjects, links, setLinks, space, currentProject, confirm, setParams, setSpace, setItems, setToast, watch, refreshSystem, voteWrites, setVotes, projectFailed });
   const { handleThumbnailUpload, cardCopy, handleThumbnailRemove } = thumbnailActions(setThumbMap);
   const router = useRouter();
   const { isDuplicate, addByUrl, addByUpload, addByText, arrivingBoard } = useAddReferences({ user, workspace, t, items, setItems, setLinks, setThumbMap, saveTargetRef, refreshSystem, setSystem, watch, cardCopy, projectFailed, importBoard, router, setToast });
@@ -526,7 +546,43 @@ export default function InspoClient({
   }, [setSystem]);
   const { selected, bar, setBar, selectItem, clearSelection, selectAll, selectionIn, fileSelection, moveSelection, removeSelection, deleteSelection, createForSelection } = useSelection({ t, items, setItems, setThumbMap, boardItems, space, projectView, links, setLinks, currentProject, confirm, refreshSystem, projectFailed, setToast, createProject });
 
-  gridActions.current = { select: selectItem, openItem, deleteItem, handleThumbnailUpload, handleThumbnailRemove, toggleFiled, createAndFile, toggleArea, measure };
+  // What an agent left on the open project and has no card: its answers and a drafted plan, read when the project
+  // opens and whenever its waiting references move (the pulse brings those)
+  const [pendingRest, setPendingRest] = useState<Pick<Pending, "answers" | "outlines"> | null>(null);
+  const waitingKey = currentProject ? suggested.filter((x) => x.projectId === currentProject.id).map((x) => x.id).join() : "";
+  useEffect(() => {
+    if (!currentProject) { setPendingRest(null); return; }
+    let alive = true;
+    void pendingSuggestions(currentProject.id).then((r) => { if (alive && r.ok) setPendingRest(r.data); });
+    return () => { alive = false; };
+  }, [currentProject?.id, waitingKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  const waitingHere: Pending | null = useMemo(() => {
+    if (!currentProject) return null;
+    const refs = [...suggestedHere.values()];
+    const answers = pendingRest?.answers ?? [], outlines = pendingRest?.outlines ?? [];
+    if (!refs.length && !answers.length && !outlines.length) return null;
+    const origin = refs.find((x) => x.origin)?.origin || answers.find(([, a]) => a.origin)?.[1].origin || outlines.find((o) => o.draft?.origin)?.draft?.origin || "";
+    return { refs: refs.length, answers, outlines, origin };
+  }, [currentProject, suggestedHere, pendingRest]);
+  /** Accept or dismiss what an agent left: on screen first, then the server; the pulse settles the rest */
+  const answerPending = async (accept: boolean, what: { refs?: string[]; answers?: string[]; outlines?: string[]; all?: boolean }) => {
+    const projectId = currentProject?.id;
+    if (!projectId) return;
+    const prev = { suggested, links, pendingRest };
+    const taken = new Set(what.all ? suggested.filter((x) => x.projectId === projectId).map((x) => x.id) : what.refs ?? []);
+    const moving = suggested.filter((x) => taken.has(x.id));
+    setSuggested((list) => list.filter((x) => !taken.has(x.id)));
+    if (accept && moving.length) setLinks((l) => { const next = { ...l }; for (const x of moving) next[x.itemId] = [...new Set([...(next[x.itemId] ?? []), projectId])]; return next; });
+    setPendingRest((r) => r && {
+      answers: what.all ? [] : r.answers.filter(([id]) => !what.answers?.includes(id)),
+      outlines: what.all ? [] : r.outlines.filter((o) => !what.outlines?.includes(o.id)),
+    });
+    const r = await answerSuggestions(projectId, accept, what);
+    if (!r.ok) { setSuggested(prev.suggested); setLinks(prev.links); setPendingRest(prev.pendingRest); setToast({ title: t.suggested.failed, detail: r.error }); return; }
+    if (accept) refreshSystem(projectId);
+  };
+  const answerSuggestion = (id: string, accept: boolean) => void answerPending(accept, { refs: [id] });
+  gridActions.current = { select: selectItem, openItem, deleteItem, handleThumbnailUpload, handleThumbnailRemove, toggleFiled, createAndFile, toggleArea, measure, answerSuggestion };
 
   const [openArea, setOpenArea] = useState<SystemArea | null>(null);
   const [focusArea, setFocusArea] = useState<{ area: SystemArea; n: number } | null>(null);
@@ -628,9 +684,10 @@ export default function InspoClient({
       spaceName={workspace.name}
       takeOutOf={currentProject?.id}
       text={item.id ? textBodies[item.id] : undefined}
+      suggested={item.id ? suggestedHere.get(item.id) : undefined}
       actions={gridActions}
     />
-  ), [textBodies, workspace.name, ratioOf, tagMap, tagJobs, jevScores, reasons, commentMap, authorImages, thumbMap, signed, designMdIndex, pageShots, projects, links, currentProject, backsOf, areasByItem, selected, canManage, user, polishVotes]);
+  ), [suggestedHere, textBodies, workspace.name, ratioOf, tagMap, tagJobs, jevScores, reasons, commentMap, authorImages, thumbMap, signed, designMdIndex, pageShots, projects, links, currentProject, backsOf, areasByItem, selected, canManage, user, polishVotes]);
 
   // The board stays mounted under Polish and under the system, inert and hidden: coming back is instant, and the
   // cards fly from the tornado onto a board already laid out (components/view-morph.ts). The same element first in
@@ -701,6 +758,8 @@ export default function InspoClient({
       focusKey={panelItem ? keyOf(panelItem) : null}
       handleRef={gridRef}
       renderCard={renderCard}
+      head={waitingHere && projectView === "board" ? <SuggestedLine pending={waitingHere} onAnswer={answerPending} /> : undefined}
+      headHeight={SUGGESTED_LINE_H}
     />
   );
   return (
@@ -925,7 +984,6 @@ export default function InspoClient({
               if (saved) await toggleFiled(saved, currentProject.id, true);
               else await addByUrl({ web, type: typeFromUrl(web), note: "" });
             }}
-            onDescribe={(about) => describe(currentProject.id, about)}
             onUpload={async (files) => { await Promise.all(files.map((file) => addByUpload({ web: "", file, type: "inspiration", note: "" }))); }}
             onFile={(picked) => fileMany(picked, currentProject.id)}
             onBringBrand={() => setParams({ view: "system", bring: "site" })}

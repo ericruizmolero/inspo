@@ -31,7 +31,7 @@ export async function pulse(user: SessionUser, ws: Workspace, ask: PulseAsk): Pr
   const was = typeof ask.stamp === "string" ? ask.stamp.split("|") : [];
   const now = head.stamp.split("|");
   const moved = (part: (typeof STAMP_PARTS)[number]) => was[STAMP_PARTS.indexOf(part)] !== now[STAMP_PARTS.indexOf(part)];
-  const board = moved("projects") || moved("links") || moved("votes") ? boardState(ws.id) : null;
+  const board = moved("projects") || moved("links") || moved("suggested") || moved("votes") ? boardState(ws.id) : null;
   const L = schema.libraryTombstone;
   const [changed, comments, stones, b] = await Promise.all([
     itemsChangedSince(ws.id, after),
@@ -43,7 +43,7 @@ export async function pulse(user: SessionUser, ws: Workspace, ask: PulseAsk): Pr
   if (comments.length) out.comments = comments;
   if (stones.length) out.gone = { items: stones.filter((s) => s.kind === "item").map((s) => s.id), comments: stones.filter((s) => s.kind === "comment").map((s) => s.id) };
   if (b && moved("projects")) out.projects = b.projects;
-  if (b && moved("links")) out.links = b.links;
+  if (b && (moved("links") || moved("suggested"))) { out.links = b.links; out.roles = b.roles; out.suggested = b.suggested; }
   if (b && moved("votes")) out.votes = b.votes;
   return out;
 }

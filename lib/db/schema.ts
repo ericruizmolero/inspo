@@ -331,11 +331,47 @@ export const projectItem = pgTable("project_item", {
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
   /** Set when the reference leaves the board but stays with the project (Polish: "lo que no pesa"); null on the board */
   archivedAt: timestamp("archived_at", { withTimezone: true, mode: "date" }),
+  /** What the reference is to this project (types/suggestions.ts REF_ROLES): the brief, research, the client's current
+   *  site, a competitor, press… Null for an ordinary reference. The pass reads a competitor as contrast, never as taste */
+  role: text("role"),
 }, (t) => [
   primaryKey({ columns: [t.projectId, t.itemId] }),
   index("project_item_org_idx").on(t.organizationId),
   index("project_item_item_idx").on(t.itemId),
   index("project_item_added_by_idx").on(t.addedBy),
+]);
+
+/** What an AI client brought to a project in one go and the team has not answered yet, and what the team dismissed
+ *  (types/suggestions.ts). An open reference points at a library item not filed in the project: accepting files it
+ *  and deletes the row. A dismissed row of any kind stays, by its key, so the same thing is not proposed again. */
+export const projectSuggestion = pgTable("project_suggestion", {
+  id: text("id").primaryKey(),
+  organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
+  projectId: text("project_id").notNull().references(() => project.id, { onDelete: "cascade" }),
+  /** reference | answer | outline */
+  kind: text("kind").notNull(),
+  /** What makes it the same suggestion when it comes again: url:<web key>, text:<key>, answer:<question>:<hash>, outline:<name> */
+  key: text("key").notNull(),
+  /** open: waiting on the board. dismissed: the team said no, and it is not proposed again */
+  state: text("state").notNull().default("open"),
+  itemId: text("item_id").references(() => inspoItem.id, { onDelete: "cascade" }),
+  /** The suggestion made the item: dismissing it deletes the item too, when no project holds it */
+  madeItem: boolean("made_item").notNull().default(false),
+  role: text("role"),
+  note: text("note").notNull().default(""),
+  areas: jsonb("areas").$type<string[]>().notNull().default([]),
+  origin: text("origin").notNull().default(""),
+  via: text("via"),
+  byName: text("by_name").notNull().default(""),
+  createdBy: text("created_by").references(() => user.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull(),
+}, (t) => [
+  uniqueIndex("project_suggestion_key_uq").on(t.projectId, t.key),
+  index("project_suggestion_org_idx").on(t.organizationId),
+  index("project_suggestion_item_idx").on(t.itemId),
+  oneOf("project_suggestion_kind_check", t.kind, ["reference", "answer", "outline"]),
+  oneOf("project_suggestion_state_check", t.state, ["open", "dismissed"]),
 ]);
 
 /** Polish as a team (components/PolishView.tsx): what one person said about one reference of a project's board,

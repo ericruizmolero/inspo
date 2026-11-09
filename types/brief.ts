@@ -60,10 +60,13 @@ export interface Brief {
 }
 
 /** Where an answer comes from. "read": the agent read it on the site or in the repo, and the person has not confirmed it.
- *  "client": the client wrote it through the link (lib/client-ask.ts) */
-export const ANSWER_SOURCES = ["person", "read", "client"] as const;
+ *  "agent": an agent brought it from its own work (research, another conversation), unconfirmed as well, and the app
+ *  shows it as a suggestion to accept or dismiss. "client": the client wrote it through the link (lib/client-ask.ts) */
+export const ANSWER_SOURCES = ["person", "read", "agent", "client"] as const;
+/** The sources the person has not confirmed: the setup asks to confirm them, and the file says so */
+export const unconfirmed = (a: Pick<BriefAnswer, "source"> | undefined) => a?.source === "read" || a?.source === "agent";
 export type AnswerSource = (typeof ANSWER_SOURCES)[number];
-export interface BriefAnswer { text: string; by?: string; via?: string; /** ISO */ at: string; /** Absent: the person said it */ source?: AnswerSource; /** The address or path a read answer came from */ from?: string }
+export interface BriefAnswer { text: string; by?: string; via?: string; /** ISO */ at: string; /** Absent: the person said it */ source?: AnswerSource; /** The address or path a read answer came from */ from?: string; /** Where an agent's context came from (types/suggestions.ts) */ origin?: string }
 
 /** Not a limit anyone writing a brief meets: the screens show none. A ceiling on what the server keeps and sends to
  *  the models, so a whole file pasted by mistake is not stored and billed on every reading. */
@@ -87,8 +90,8 @@ function readAnswers(v: unknown): Record<string, BriefAnswer> | undefined {
     const a = x as Record<string, unknown>;
     const t = text(a.text, BRIEF_LIMITS.answer), at = text(a.at, 40);
     if (!t || !at) continue;
-    const by = text(a.by, 120), via = text(a.via, 80), from = text(a.from, BRIEF_LIMITS.url);
-    out[id] = { text: t, at, ...(by ? { by } : {}), ...(via ? { via } : {}), ...(a.source === "read" || a.source === "client" ? { source: a.source } : {}), ...(from ? { from } : {}) };
+    const by = text(a.by, 120), via = text(a.via, 80), from = text(a.from, BRIEF_LIMITS.url), origin = text(a.origin, 200);
+    out[id] = { text: t, at, ...(by ? { by } : {}), ...(via ? { via } : {}), ...(a.source === "read" || a.source === "agent" || a.source === "client" ? { source: a.source } : {}), ...(from ? { from } : {}), ...(origin ? { origin } : {}) };
   }
   return Object.keys(out).length ? out : undefined;
 }

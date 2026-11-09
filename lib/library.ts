@@ -14,6 +14,7 @@ import { quotaStatus } from "./quota";
 import { firstSteps } from "./first-steps";
 import { listCommentsOf } from "./comments";
 import { listVotes } from "./polish-votes";
+import { listSuggestions } from "./suggestions";
 import { latestTeamEvent } from "./notify";
 import { designDocsFor } from "./design-store";
 import { pageShotsFor, signCanvasCopies } from "./page-shots";
@@ -47,6 +48,8 @@ export async function loadLibrary(user: SessionUser, ws: Workspace) {
     first,
     initialProjects: board.projects,
     initialProjectLinks: board.links,
+    initialRoles: board.roles,
+    initialSuggested: board.suggested,
     initialSummaries: systems,
     members: members.map((m) => ({ id: m.userId, name: m.name, image: m.image ?? null })),
     initialPolishVotes: board.votes,
@@ -61,10 +64,10 @@ export type LibraryData = Awaited<ReturnType<typeof loadLibrary>>;
 /** The workspace's projects, which references each one holds, and the polish votes. A template is not one of the
  *  workspace's projects: its links and votes stay out with it */
 export async function boardState(organizationId: string) {
-  const [{ projects, links: all }, votes] = await Promise.all([loadProjects(organizationId), listVotes(organizationId)]);
+  const [{ projects, links: all, roles }, votes, suggested] = await Promise.all([loadProjects(organizationId), listVotes(organizationId), listSuggestions(organizationId)]);
   const real = new Set(projects.map((p) => p.id));
   const links: ProjectLinks = Object.fromEntries(Object.entries(all).map(([id, ps]) => [id, ps.filter((p) => real.has(p))] as const).filter(([, ps]) => ps.length));
-  return { projects, links, votes: votes.filter((v) => real.has(v.projectId)) };
+  return { projects, links, roles, suggested: suggested.filter((x) => real.has(x.projectId)), votes: votes.filter((v) => real.has(v.projectId)) };
 }
 
 /** What only a template holds is not in the library: the references a built-in template brought show up when a
@@ -134,7 +137,7 @@ async function signedLinks(paths: (string | null | undefined)[]): Promise<Record
 export const bellOf = (ws: Workspace, userId: string) => (ws.kind === "team" ? latestTeamEvent(ws.id, userId) : Promise.resolve(""));
 
 /** The parts of the stamp, in order. lib/pulse.ts compares them one by one */
-export const STAMP_PARTS = ["items", "links", "projects", "votes", "comments"] as const;
+export const STAMP_PARTS = ["items", "links", "suggested", "projects", "votes", "comments"] as const;
 
 /** What the board shows, in one short string: per part, how many rows and the last time any of them changed; and
  *  `since`, the server's clock when it was read. An add, a delete, an edit, tags arriving, a filing, a new project, a
@@ -142,7 +145,8 @@ export const STAMP_PARTS = ["items", "links", "projects", "votes", "comments"] a
 export async function readStamp(organizationId: string): Promise<{ stamp: string; since: string }> {
   const { rows } = await db.execute<{ stamp: string; since: string }>(sql`select concat_ws('|',
     (select concat_ws(':', count(*), max(updated_at)) from inspo_item where organization_id = ${organizationId}),
-    (select concat_ws(':', count(*), count(archived_at), max(created_at), max(archived_at)) from project_item where organization_id = ${organizationId}),
+    (select concat_ws(':', count(*), count(archived_at), max(created_at), max(archived_at), count(role)) from project_item where organization_id = ${organizationId}),
+    (select concat_ws(':', count(*), max(updated_at)) from project_suggestion where organization_id = ${organizationId}),
     (select concat_ws(':', count(*), max(updated_at)) from project where organization_id = ${organizationId} and template is null),
     (select concat_ws(':', count(*), max(updated_at)) from polish_vote where organization_id = ${organizationId}),
     (select concat_ws(':', count(*), max(coalesce(edited_at, created_at))) from inspo_comment where organization_id = ${organizationId})

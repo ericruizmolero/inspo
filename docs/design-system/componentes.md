@@ -174,7 +174,7 @@ Tino plano, el dibujo del favicon (`TinoMark`, `components/TinoMark.tsx`): un SV
 
 ### Asistente de proyecto nuevo
 `ProjectStart` · `components/ProjectStart.tsx`
-Una tarjeta plana (`Card` raised: `--surface-raised`, línea `--border`, sin bisel ni barra moss) con el nombre del proyecto como título (`t-title-m`) y dos pasos (De qué va, Referencias) como pastillas sin pozo, la actual en el cristal de la Isla (`--glass-on`). Los pasos ya nombran cada pantalla: sin segundo título encima del campo, solo la entradilla. Paso 1, el campo de la descripción; paso 2, pegar o subir y, debajo, la librería en un pozo hundido para elegir. El pie lleva el estado en texto apagado a la izquierda (sin `StatusBar`) y Saltar/Siguiente o Atrás/Añadir a la derecha. → [decisión](decisiones/2026-10-12-el-proyecto-vacio-es-una-tarjeta-plana-sin-barra-moss.md)
+Una tarjeta plana (`Card` raised: `--surface-raised`, línea `--border`, sin bisel ni barra moss) con el nombre del proyecto como título (`t-title-m`) y un solo paso, sin pasos numerados: pegar o subir y, debajo, la librería en un pozo hundido para elegir. No pregunta de qué va el proyecto ni las preguntas de arranque: eso llega por el MCP. El pie lleva el estado en texto apagado y "Hacerlo con tu agente" (abre `ConnectDialog`) a la izquierda, y Añadir a la derecha. → [decisión](decisiones/2026-10-12-el-proyecto-vacio-es-una-tarjeta-plana-sin-barra-moss.md), [fuera los formularios](decisiones/2026-11-09-fuera-los-formularios-crear-un-proyecto-es-solo-el-nombre-y-el-resto-llega-por-el-mcp.md)
 
 ### Isla
 `Island` · `components/Island.tsx` · `.island`
@@ -396,7 +396,7 @@ Trabajo hecho: un mensaje, los proyectos como portadas (`BoardCard` con el mismo
 
 ### Proyecto vacío
 `ProjectStart` · `components/ProjectStart.tsx`
-Caja para pegar enlace o imagen, la frase de intención editable y la biblioteca para traer referencias en bloque.
+Caja para pegar enlace o imagen y la biblioteca para traer referencias en bloque. Sin formulario: lo demás llega por el MCP. → [decisión](decisiones/2026-11-09-fuera-los-formularios-crear-un-proyecto-es-solo-el-nombre-y-el-resto-llega-por-el-mcp.md)
 
 ### Primera entrada
 `Welcome` · `components/Welcome.tsx` · `Welcome.module.css`
@@ -525,7 +525,15 @@ Antes de la pasada del modelo se elige el objetivo (ordenar, afinar la escritura
 
 ### Preguntas de la puesta en marcha
 `SetupQuestions` · `components/SetupQuestions.tsx` · `components/SetupQuestions.module.css`
-Las mismas preguntas que hace un agente (`SETUP_ROLES` en `lib/playbook-questions.ts`), en el paso Preguntas de `ProjectStart` y en "Responder las preguntas" del "…" de Sistema. Cada respuesta se guarda al salir del campo. "Preguntar al cliente" copia un enlace `/a/<token>` (`components/ClientAsk.tsx`, `lib/client-ask.ts`): sin cuenta, solo enseña las preguntas abiertas, y al enviar llega un correo a quien lo mandó. → [decisión](decisiones/2026-11-04-el-enlace-al-cliente-pide-respuestas-y-nada-mas.md)
+**Fuera de la interfaz desde el 09-11** (sigue en el código): las preguntas las hace el agente por el MCP. → [decisión](decisiones/2026-11-09-fuera-los-formularios-crear-un-proyecto-es-solo-el-nombre-y-el-resto-llega-por-el-mcp.md) Antes: las mismas preguntas que hace un agente (`SETUP_ROLES` en `lib/playbook-questions.ts`), en el paso Preguntas de `ProjectStart` y en "Responder las preguntas" del "…" de Sistema. Cada respuesta se guarda al salir del campo. "Preguntar al cliente" copia un enlace `/a/<token>` (`components/ClientAsk.tsx`, `lib/client-ask.ts`): sin cuenta, solo enseña las preguntas abiertas, y al enviar llega un correo a quien lo mandó. → [decisión](decisiones/2026-11-04-el-enlace-al-cliente-pide-respuestas-y-nada-mas.md)
+
+### Lo que trajo un agente
+`SuggestedLine` · `components/SuggestedLine.tsx` · `SuggestedLine.css` · `.tile__suggest` (`app/globals.css`)
+Lo que un agente dejó en un proyecto con `bring_context` (o `add_reference` con `suggested`) y el equipo no ha contestado (`lib/suggestions.ts`).
+- **En la tarjeta**: una pastilla butter sobre la imagen, abajo (`.tile__suggest`, encima para no cambiar el alto que el tablero calculó), con "Propuesto por Claude", el origen en el tooltip y dos `IconButton` xs: aceptar (check) y descartar (close). La referencia aún no está en el proyecto: no cuenta para la pasada ni para criterio.md, y no está en el Cajón.
+- **Sobre el tablero**: una línea plana dentro del scroll (`head` de `Grid`, sube con el tablero, nunca fija): "Tino te ha dejado N cosas" en semibold y el origen en `--text-muted` detrás, sin punto medio entre los dos; a la derecha Revisar (si hay respuestas o un plan), Descartar todo y Aceptar todo (`Button` secondary con check).
+- **Revisar** abre debajo, sobre las tarjetas, un panel raised con lo que no tiene tarjeta: las respuestas sin confirmar (la pregunta en gris, la respuesta) y el borrador de outline (objetivo, secciones y cuántas direcciones de hero), cada uno con aceptar y descartar. No se escribe nada: ni campos ni formularios.
+- El brief que trae un agente (papel `brief`) abre el tablero en cuanto se acepta. → [decisión](decisiones/2026-11-09-fuera-los-formularios-crear-un-proyecto-es-solo-el-nombre-y-el-resto-llega-por-el-mcp.md)
 
 ### Miniatura de referencia
 `Thumb` · `components/Thumb.tsx`

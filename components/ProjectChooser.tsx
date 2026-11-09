@@ -4,7 +4,6 @@
 // by its own board.
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type DragEvent } from "react";
 import Clouds from "@/components/Clouds";
-import { saveProjectBrief } from "@/app/actions/brief";
 import type { InspoItem, Project, ProjectLinks } from "@/types/inspo";
 import { SYSTEM_AREAS, filledOf, unreadOf, type SystemSummary } from "@/types/system";
 import { useT } from "./I18nProvider";
@@ -206,7 +205,6 @@ export default function ProjectChooser({ projects, systems, items, links, ratioO
   const { t, locale } = useT();
   const statusOf = useBoardStatus();
   const [name, setName] = useState("");
-  const [about, setAbout] = useState("");
   const [busy, setBusy] = useState(false);
   // Each project's references in the order its board shows them: newest first
   const byProject = useMemo(() => {
@@ -285,12 +283,9 @@ export default function ProjectChooser({ projects, systems, items, links, ratioO
     try {
       const p = await onCreate(n);
       if (!p) return;
-      // The sentence is the project's brief from the first minute: the first reading of the board follows it
-      if (about.trim()) await saveProjectBrief(p.id, { about: about.trim() }).catch(() => null);
       onPick(p.id);
     } finally { setBusy(false); }
   };
-  const named = !!name.trim();
   return (
     <>
     <div className="chooser">
@@ -302,15 +297,8 @@ export default function ProjectChooser({ projects, systems, items, links, ratioO
           inputProps={{ className: "chooser__name", maxLength: 60 }}
           leading={!name ? <Examples list={t.chooser.examples} /> : null}
           trailing={<Key className="chooser__key">{modKey}</Key>}
-          below={
-            // The second line only shows once there is a name: until then the box is one question
-            <div className={`chooser__more${named ? " is-open" : ""}`}>
-              <div className="chooser__more-inner">
-                <textarea className="chooser__about" rows={1} value={about} onChange={(e) => setAbout(e.target.value)} placeholder={t.chooser.aboutPlaceholder} maxLength={500} disabled={busy} aria-label={t.chooser.aboutPlaceholder}
-                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void create(); } }} />
-              </div>
-            </div>
-          } />
+          // Only the name: what the project is about comes over MCP (decisiones/2026-11-09-fuera-los-formularios…)
+          />
         <div className="chooser__actions">
           {homeActions(inbox.length, last).map((a) => (
             <Chip key={a.kind} tone="chrome" className="chooser__action" onClick={() => run(a)}>

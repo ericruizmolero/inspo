@@ -21,6 +21,16 @@ export interface LandingSection {
   refs: string[];
 }
 
+/** A way the hero could go, proposed with the plan: what changes against the others and the references behind it */
+export interface HeroDirection {
+  name: string;
+  /** What changes: type, layout, density or tone, never colour alone */
+  change: string;
+  /** The references it leans on, by item id */
+  refs: string[];
+}
+export const DIRECTIONS_MAX = 4;
+
 export interface LandingOutline {
   id: string;
   name: string;
@@ -29,6 +39,10 @@ export interface LandingOutline {
   sections: LandingSection[];
   /** Set when the landing exists: this closes the Build path */
   built?: { at: string; via?: string; url?: string };
+  /** Hero directions to build and choose between */
+  directions?: HeroDirection[];
+  /** Drafted by an agent from its own context and not accepted yet: the app shows it as a suggestion, the file as a draft */
+  draft?: { at: string; via?: string; origin?: string };
 }
 
 const str = (x: unknown, max: number) => (typeof x === "string" ? x.replace(/\s+/g, " ").trim().slice(0, max) : "");
@@ -43,6 +57,14 @@ function readSection(v: unknown): LandingSection[] {
   return [{ kind, job, ...(proof ? { proof } : {}), ...(cta ? { cta } : {}), refs }];
 }
 
+function readDirection(v: unknown): HeroDirection[] {
+  if (!v || typeof v !== "object") return [];
+  const r = v as Record<string, unknown>;
+  const name = str(r.name, 80), change = str(r.change, OUTLINE_TEXT_MAX);
+  if (!name || !change) return [];
+  return [{ name, change, refs: Array.isArray(r.refs) ? r.refs.filter((x): x is string => typeof x === "string").slice(0, 12) : [] }];
+}
+
 /** The stored list read into its shape: an outline with no name, goal or sections drops */
 export function readOutlines(v: unknown): LandingOutline[] {
   if (!Array.isArray(v)) return [];
@@ -55,6 +77,14 @@ export function readOutlines(v: unknown): LandingOutline[] {
     const b = r.built as Record<string, unknown> | null | undefined;
     const at = b ? str(b.at, 40) : "";
     const via = b ? str(b.via, 80) : "", url = b ? str(b.url, 2000) : "";
-    return [{ id, name, goal, sections, ...(at ? { built: { at, ...(via ? { via } : {}), ...(url ? { url } : {}) } } : {}) }];
+    const directions = Array.isArray(r.directions) ? r.directions.flatMap(readDirection).slice(0, DIRECTIONS_MAX) : [];
+    const d = r.draft as Record<string, unknown> | null | undefined;
+    const draftAt = d ? str(d.at, 40) : "", draftVia = d ? str(d.via, 80) : "", origin = d ? str(d.origin, 200) : "";
+    return [{
+      id, name, goal, sections,
+      ...(at ? { built: { at, ...(via ? { via } : {}), ...(url ? { url } : {}) } } : {}),
+      ...(directions.length ? { directions } : {}),
+      ...(draftAt ? { draft: { at: draftAt, ...(draftVia ? { via: draftVia } : {}), ...(origin ? { origin } : {}) } } : {}),
+    }];
   }).slice(0, OUTLINES_MAX);
 }

@@ -26,12 +26,14 @@ test("only goal stops the setup, and it is asked first", () => {
   expect(t.ask).toEqual(["audience", "why-us", "proof"]);
 });
 
-test("an answer the agent read is not the person's until confirmed", () => {
+test("an answer the agent read or brought is not the person's until confirmed, and is confirmed, never asked again", () => {
   const read = { ...said(), source: "read", from: "https://acme.com" };
-  const s = setupState({ ...empty, project: true, brand: true, brief: brief({ answers: { goal: read, offer: read } }) });
+  const brought = { ...said(), source: "agent", origin: "Prospecting chat" };
+  const s = setupState({ ...empty, project: true, brand: true, brief: brief({ answers: { goal: read, offer: read, audience: brought } }) });
   expect(s.next).toBe("questions");
-  expect(s.ask[0]).toBe("goal");
-  expect(s.confirm).toEqual(["goal", "offer"]);
+  expect(s.ask).not.toContain("goal");
+  expect(s.ask).not.toContain("audience");
+  expect(s.confirm).toEqual(["goal", "offer", "audience"]);
 });
 
 test("source and references can be skipped, and a brand needs no references", () => {

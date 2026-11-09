@@ -17,7 +17,7 @@ import { areaTokenLines } from "@/lib/area-tokens";
 import { hostOf, readableDomain } from "@/lib/url";
 import { brandTokenLines, brandIntroLines, brandCssLines, type BrandMdStrings } from "@/lib/brand-md";
 import type { BrandSpec } from "@/types/brand";
-import { readBrief, type KeepPart, type Platform, type PriceRange } from "@/types/brief";
+import { readBrief, unconfirmed, type KeepPart, type Platform, type PriceRange } from "@/types/brief";
 import { PLAYBOOK_QUESTIONS, SETUP_ROLES, questionText } from "@/lib/playbook-questions";
 import type { RefMeasured } from "@/lib/ref-measured";
 import type { RefComposition } from "@/types/inspo";
@@ -97,13 +97,13 @@ export interface CriterioMdInput {
     /** "Start here": the walk the agent takes the person on, written from what the project has (lib/criterio-md.ts guideKeys) */
     guide: { heading: string; setupOpen: string; lines: (k: GuideMdKeys) => string[] };
     /** "Starting questions": the questions still open, which the agent asks in phase 1 (lib/playbook-questions.ts) */
-    questions: { heading: string; intro: string; tiers: Record<QuestionTier, string>; decides: string; none: string; answered: (n: number) => string; inBrief: string };
+    questions: { heading: string; intro: string; tiers: Record<QuestionTier, string>; decides: string; none: string; answered: (n: number) => string; inBrief: string; unconfirmed: string };
     /** "What was learned": what agents wrote down with the person (types/system.ts SystemLearning); `rejected` heads what they turned down */
     learned: { heading: string; intro: string; with: (who: string, app: string) => string; rejected: string };
     /** The short list the file ends on, so the rules are read again last (a long file's middle is read worst) */
     before: { heading: string; lines: (k: BeforeMdKeys) => string[] };
     /** "The landing": each landing planned, its goal and its sections in order (types/landing.ts) */
-    landing: { heading: string; goal: string; proof: string; cta: string };
+    landing: { heading: string; goal: string; proof: string; cta: string; draft: string; directions: string };
     /** Every area's never lines gathered in one place, for the reader who reads one list before building */
     rejects: { heading: string; intro: string };
     clientCopy: string;
@@ -272,7 +272,7 @@ function startingQuestions(stored: unknown, hasRefs: boolean, lang: "en" | "es",
   if (done) {
     lines.push(`**${s.answered(done)}**`, "");
     if (fromBrief.length) lines.push(`- ${s.inBrief}: ${fromBrief.map((q) => `\`${q.id}\``).join(", ")}`);
-    for (const q of kept) lines.push(`- \`${q.id}\`: ${quote(answers[q.id].text, 160)}`);
+    for (const q of kept) lines.push(`- \`${q.id}\`: ${quote(answers[q.id].text, 160)}${unconfirmed(answers[q.id]) ? ` _(${s.unconfirmed})_` : ""}`);
   }
   while (lines[lines.length - 1] === "") lines.pop();
   return { open: open.map((q) => q.id), blocking: open.filter((q) => questionTier(q.id) === "ask").length, lines };
@@ -361,11 +361,15 @@ export function criterioBlocks({ project, system, items: allItems, labels, strin
   if (learnedLines.length) blocks.push({ kind: "section", id: "learned", heading: title("learned", strings.learned.heading), lines: [`> ${strings.learned.intro}`, "", ...learnedLines] });
   const outlines = system.outlines ?? [];
   if (outlines.length) blocks.push({ kind: "section", id: "landing", heading: title("landing", strings.landing.heading), lines: outlines.flatMap((o) => [
-    `### ${one(o.name)}`, "", `**${strings.landing.goal}:** ${one(o.goal)}`, "",
+    `### ${one(o.name)}`, "", ...(o.draft ? [`> ${strings.landing.draft}`, ""] : []), `**${strings.landing.goal}:** ${one(o.goal)}`, "",
     ...o.sections.map((x, i) => {
       const refs = x.refs.map((id) => code.get(id)).filter(Boolean);
       return `${i + 1}. **${x.kind}:** ${one(x.job)}${x.proof ? ` ${strings.landing.proof}: ${one(x.proof)}.` : ""}${x.cta ? ` ${strings.landing.cta}: ${one(x.cta)}.` : ""}${refs.length ? ` (${refs.join(", ")})` : ""}`;
     }), "",
+    ...(o.directions?.length ? [`**${strings.landing.directions}:**`, "", ...o.directions.map((d) => {
+      const refs = d.refs.map((id) => code.get(id)).filter(Boolean);
+      return `- **${one(d.name)}:** ${one(d.change)}${refs.length ? ` (${refs.join(", ")})` : ""}`;
+    }), ""] : []),
   ]) });
   blocks.push({ kind: "section", id: "use", heading: title("use", strings.use.heading), ...byHandOr("use", useLines) });
   if (rejected.length) blocks.push({ kind: "section", id: "rejects", heading: title("rejects", strings.rejects.heading), mark: strings.required, lines: [`> ${strings.rejects.intro}`, "", ...rejected] });

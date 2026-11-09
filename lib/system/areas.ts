@@ -102,7 +102,7 @@ export async function addLearning(organizationId: string, projectId: string, inp
 
 /** Saves a landing's outline, by name: the same name replaces it, whole. The write is one statement, so two agents on
  *  different landings both stay; a new one past OUTLINES_MAX is refused */
-export async function saveOutline(organizationId: string, projectId: string, input: Omit<LandingOutline, "id" | "built"> & { built?: { via?: string; url?: string } | null }): Promise<LandingOutline> {
+export async function saveOutline(organizationId: string, projectId: string, input: Omit<LandingOutline, "id" | "built" | "draft"> & { built?: { via?: string; url?: string } | null; draft?: { via?: string; origin?: string } }): Promise<LandingOutline> {
   await projectRow(organizationId, projectId);
   const now = new Date();
   await ensureHead(organizationId, projectId, now);
@@ -111,14 +111,32 @@ export async function saveOutline(organizationId: string, projectId: string, inp
   const same = known.find((o) => o.name.toLowerCase() === input.name.trim().toLowerCase());
   if (!same && known.length >= OUTLINES_MAX) throw new HttpError(400, (await getErrors()).badBody);
   const built = input.built ? { at: now.toISOString(), ...input.built } : input.built === null ? undefined : same?.built;
-  const [entry] = readOutlines([{ id: same?.id ?? newId(), name: input.name, goal: input.goal, sections: input.sections, built }]);
+  // A plan saved without `draft` is the person's: it replaces a draft of the same name. Directions not given are kept
+  const draft = input.draft ? { at: now.toISOString(), ...input.draft } : undefined;
+  const directions = input.directions ?? same?.directions;
+  const [entry] = readOutlines([{ id: same?.id ?? newId(), name: input.name, goal: input.goal, sections: input.sections, built, directions, draft }]);
   if (!entry) throw new HttpError(400, (await getErrors()).badBody);
-  const key = entry.name.toLowerCase();
+  await writeOutline(organizationId, projectId, entry.name, entry, now);
+  return entry;
+}
+
+/** Replaces the outline of that name (any case) with `entry`, or takes it out with null */
+async function writeOutline(organizationId: string, projectId: string, name: string, entry: LandingOutline | null, now: Date) {
+  const key = name.toLowerCase();
   await db.update(S).set({
-    outlines: sql`(select coalesce(jsonb_agg(e), '[]'::jsonb) from jsonb_array_elements(coalesce(${S.outlines}, '[]'::jsonb)) as x(e) where lower(e->>'name') is distinct from ${key}) || ${JSON.stringify([entry])}::jsonb`,
+    outlines: sql`(select coalesce(jsonb_agg(e), '[]'::jsonb) from jsonb_array_elements(coalesce(${S.outlines}, '[]'::jsonb)) as x(e) where lower(e->>'name') is distinct from ${key}) || ${JSON.stringify(entry ? [entry] : [])}::jsonb`,
     updatedAt: now,
   }).where(and(eq(S.organizationId, organizationId), eq(S.projectId, projectId)));
-  return entry;
+}
+
+/** The team took an agent's draft plan (accept) or turned it down (the plan goes). Returns its name, or null when no draft has that id */
+export async function answerDraftOutline(organizationId: string, projectId: string, id: string, accept: boolean): Promise<string | null> {
+  const [head] = await db.select({ outlines: S.outlines }).from(S).where(and(eq(S.organizationId, organizationId), eq(S.projectId, projectId))).limit(1);
+  const draft = readOutlines(head?.outlines).find((o) => o.id === id && o.draft);
+  if (!draft) return null;
+  const { draft: _d, ...kept } = draft;
+  await writeOutline(organizationId, projectId, draft.name, accept ? kept : null, new Date());
+  return draft.name;
 }
 
 /** A part of the file rewritten by hand; null (or the empty text) goes back to what the app writes */

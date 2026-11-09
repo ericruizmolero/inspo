@@ -8,7 +8,6 @@
 // house at the start goes to every project. Open tabs that do not fit beside the right-hand pill wait in "N more".
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { saveProjectBrief } from "@/app/actions/brief";
 import type { Workspace, SessionUser } from "@/lib/workspace-core";
 import type { InspoItem, Project, ProjectLinks } from "@/types/inspo";
 import { SYSTEM_AREAS, filledOf as filledIn, unreadOf, type SystemSummary } from "@/types/system";
@@ -64,18 +63,17 @@ function NameTab({ initial = "", onSubmit, onCancel }: { initial?: string; onSub
   );
 }
 
-/** A new project, asked for where the + is: its name and, if the team has it, the sentence it opens with
- *  (the brief the first reading of the board follows). Enter in the name, or ⌘↵ in the sentence, creates it. */
-function NewProject({ onCreate, onDone }: { onCreate: (name: string, about: string) => Promise<void>; onDone: () => void }) {
+/** A new project, asked for where the + is: only its name, Enter creates it. What it is about comes over MCP from
+ *  the person's agent, never from a form here (decisiones/2026-11-09-fuera-los-formularios…) */
+function NewProject({ onCreate, onDone }: { onCreate: (name: string) => Promise<void>; onDone: () => void }) {
   const { t } = useT();
   const [name, setName] = useState("");
-  const [about, setAbout] = useState("");
   const [busy, setBusy] = useState(false);
   const submit = async () => {
     const n = name.trim();
     if (!n || busy) return;
     setBusy(true);
-    try { await onCreate(n, about.trim()); onDone(); } finally { setBusy(false); }
+    try { await onCreate(n); onDone(); } finally { setBusy(false); }
   };
   return (
     // A small paper window: its name as a quiet heading (no moss bar: Eric, 07-10), the system's TextField and TextArea (sunken white fields),
@@ -84,9 +82,6 @@ function NewProject({ onCreate, onDone }: { onCreate: (name: string, about: stri
       <MenuLabel>{t.projects.newProject}</MenuLabel>
       <input autoFocus className="cr-input" value={name} maxLength={60} disabled={busy} placeholder={t.projects.namePlaceholder} aria-label={t.projects.namePlaceholder}
         onChange={(e) => setName(e.target.value)} />
-      <textarea rows={3} className="cr-input cr-textarea" value={about} disabled={busy} placeholder={t.projects.aboutPlaceholder} aria-label={t.projects.aboutPlaceholder}
-        onChange={(e) => setAbout(e.target.value)}
-        onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); void submit(); } }} />
       <div className="island__new-foot">
         <span className="island__new-hint">{t.projects.newHint}</span>
         <Button type="submit" variant="primary" size="s" disabled={busy || !name.trim()}>{busy && <Busy label={t.projects.createNew} />}{t.projects.createNew}</Button>
@@ -248,11 +243,9 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
     return { shown: openTabs.filter((p) => keep.has(p.id)), hidden: openTabs.filter((p) => !keep.has(p.id)) };
   }, [openTabs, fitOrder, fit]);
 
-  const createNew = async (name: string, about: string) => {
+  const createNew = async (name: string) => {
     const p = await onCreateProject(name);
     if (!p) return;
-    // The sentence is the project's brief from the first minute, as on the first screen
-    if (about) await saveProjectBrief(p.id, { about }).catch(() => null);
     onSpace(p.id);
   };
 

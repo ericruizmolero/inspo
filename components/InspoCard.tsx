@@ -186,6 +186,8 @@ interface InspoCardProps {
   /** A preview nobody edits (a project's board shared by link): no thumbnail menu, and no capture asked of the
    *  server; a site with no stored picture tries `ogSrc` (its og:image through the link) and else shows its words */
   readOnly?: boolean;
+  /** Brought by an agent and not answered yet (types/suggestions.ts): marked on the card, with yes and no on it */
+  suggestion?: { label: string; tip?: string; onAccept: () => void; onDismiss: () => void };
   ogSrc?: string;
   /** On the board: the page's top as the cover, sized before it loads */
   board?: {
@@ -227,7 +229,7 @@ export function captionFor(item: InspoItem, comments: InspoComment[] | undefined
   return { ...root, people, more: comments?.length ?? 0 };
 }
 
-export default function InspoCard({ item, text, tags, tagJob, score, reason, manualThumbnail: uploadedThumb, signedThumbnail, onUpload, onRemoveThumbnail, onOpen, designCover: coverSrc, designCoverFallback, designScroll: scrollSrc, designScrollFallback, commentCount = 0, caption, onComments, onDelete, onTakeOut, spaceName, projects, projectIds = [], onToggleProject, onCreateProject, backs = [], onToggleArea, areasIn, board, selected = false, selecting = false, onSelect, forgotten = false, readOnly = false, ogSrc }: InspoCardProps) {
+export default function InspoCard({ item, text, tags, tagJob, score, reason, manualThumbnail: uploadedThumb, signedThumbnail, onUpload, onRemoveThumbnail, onOpen, designCover: coverSrc, designCoverFallback, designScroll: scrollSrc, designScrollFallback, commentCount = 0, caption, onComments, onDelete, onTakeOut, spaceName, projects, projectIds = [], onToggleProject, onCreateProject, backs = [], onToggleArea, areasIn, board, selected = false, selecting = false, onSelect, forgotten = false, readOnly = false, ogSrc, suggestion }: InspoCardProps) {
   const { t } = useT();
   // An uploaded image is its own thumbnail; a video shows its frame when the provider gives one away
   const kind = mediaKindOf(item.web);
@@ -601,7 +603,15 @@ export default function InspoCard({ item, text, tags, tagJob, score, reason, man
             </button>
           )}
           {plays && !loopSrc && isLoaded && <span className="tile__play" aria-hidden><Icon name="play" size={18} /></span>}
-          {gifChip && isLoaded && score === undefined && <Chip tone="chrome" className="tile__badge">{t.card.gif}</Chip>}
+          {gifChip && isLoaded && score === undefined && !suggestion && <Chip tone="chrome" className="tile__badge">{t.card.gif}</Chip>}
+          {suggestion && (
+            // Over the picture, so the card keeps the height the grid placed it with
+            <div className="tile__suggest" onClick={(e) => e.stopPropagation()}>
+              <span className="tile__suggest-label t-label" data-tip={suggestion.tip}>{suggestion.label}</span>
+              <IconButton icon="check" size="xs" label={t.suggested.accept} onClick={suggestion.onAccept} />
+              <IconButton icon="close" size="xs" label={t.suggested.dismiss} onClick={suggestion.onDismiss} />
+            </div>
+          )}
 
           {!useManual && !useDesign && !useFrame && imgSrc && (
             <img

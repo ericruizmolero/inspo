@@ -5,7 +5,8 @@ import { applyPage, applyPulse, type Mirror } from "@/lib/library-mirror";
 import { keepSame } from "@/lib/keep-same";
 import type { Beat } from "@/components/useActivity";
 import type { Workspace } from "@/lib/workspace-core";
-import type { InspoItem, ItemsPage, PolishVote, Project, ProjectLinks, Pulse } from "@/types/inspo";
+import type { InspoItem, ItemsPage, PolishVote, Project, ProjectLinks, ProjectRoles, Pulse } from "@/types/inspo";
+import type { SuggestedRef } from "@/types/suggestions";
 
 /** While the board is seen, it asks every 15 s whether its workspace changed somewhere else */
 const PULSE_MS = 15_000;
@@ -35,7 +36,7 @@ export function useLibraryMirror(first: ItemsPage) {
 // The extension, another tab or a teammate: what they add, delete, edit or file shows up here without a
 // reload. The board asks (/api/pulse) when it comes back into view and every 15 s while it is seen; a hidden tab
 // asks nothing. Nothing changed: a few bytes. Something did: those rows only, folded in where they stand.
-export function useLibrarySync({ first, stamp, since, bell, workspace, items, setMirror, setProjects, setLinks, setVotes, withVoteWrites, watch }: {
+export function useLibrarySync({ first, stamp, since, bell, workspace, items, setMirror, setProjects, setLinks, setRoles, setSuggested, setVotes, withVoteWrites, watch }: {
   first: ItemsPage;
   stamp: string;
   since: string;
@@ -45,6 +46,8 @@ export function useLibrarySync({ first, stamp, since, bell, workspace, items, se
   setMirror: Dispatch<SetStateAction<Mirror>>;
   setProjects: Dispatch<SetStateAction<Project[]>>;
   setLinks: Dispatch<SetStateAction<ProjectLinks>>;
+  setRoles: Dispatch<SetStateAction<ProjectRoles>>;
+  setSuggested: Dispatch<SetStateAction<SuggestedRef[]>>;
   setVotes: Dispatch<SetStateAction<PolishVote[]>>;
   withVoteWrites: RefObject<(list: PolishVote[]) => PolishVote[]>;
   watch: (web: string) => void;
@@ -81,6 +84,8 @@ export function useLibrarySync({ first, stamp, since, bell, workspace, items, se
         setMirror((m) => applyPulse(m, d));
         if (d.projects) { const next = d.projects; setProjects((prev) => keepSame(prev, next)); }
         if (d.links) { const next = d.links; setLinks((prev) => keepSame(prev, next)); }
+        if (d.roles) { const next = d.roles; setRoles((prev) => keepSame(prev, next)); }
+        if (d.suggested) { const next = d.suggested; setSuggested((prev) => keepSame(prev, next)); }
         if (d.votes) { const next = d.votes; setVotes((prev) => keepSame(prev, withVoteWrites.current(next))); }
         // A new card whose tags are still on their way fills in as soon as they arrive, not on the next look
         for (const i of d.changed?.items ?? []) {
@@ -96,7 +101,7 @@ export function useLibrarySync({ first, stamp, since, bell, workspace, items, se
       clearInterval(id);
       document.removeEventListener("visibilitychange", look);
     };
-  }, [workspace.id, watch, setMirror, setProjects, setLinks, setVotes, withVoteWrites]);
+  }, [workspace.id, watch, setMirror, setProjects, setLinks, setRoles, setSuggested, setVotes, withVoteWrites]);
 
   // The rest of the library, a page after another as soon as the board is up. Search, chips, the Inbox and the
   // boards filter what is here in memory, so they need every reference: the pages are not waiting for a scroll

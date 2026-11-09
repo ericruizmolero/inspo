@@ -1,9 +1,9 @@
 "use client";
-// A project with nothing in it yet: a setup wizard on one flat card (the system's raised Card, no moss bar: the
-// project's name is its heading). Step 1, what the project is about: optional, saved on leaving the field or on Next; it is the
-// brief's intention (what the system reads the board against). Step 2, the references: a pasted link (a site, a
-// video, a post) is saved and filed here at once, an image is chosen, dropped anywhere or pasted with ⌘V, and the
-// references already in the library are picked in a well and brought in from the footer. The Inbox comes first:
+// A project with nothing in it yet: one flat card (the system's raised Card, no moss bar: the project's name is its
+// heading) to add references by hand. A pasted link (a site, a video, a post) is saved and filed here at once, an image
+// is chosen, dropped anywhere or pasted with ⌘V, and the references already in the library are picked in a well and
+// brought in from the footer. Nothing else is asked here: what the project is, its answers and its context come over
+// MCP from the person's agent (decisiones/2026-11-09-fuera-los-formularios…). The Inbox comes first:
 // filling a project is how the Inbox gets emptied. As soon as the project has something, the grid replaces this.
 import { useMemo, useRef, useEffect, useState } from "react";
 import Clouds from "@/components/Clouds";
@@ -11,10 +11,8 @@ import type { InspoItem, Project, ProjectLinks } from "@/types/inspo";
 import { normalizeWebUrl, readableDomain, mediaKindOf, isGif, type MediaKind } from "@/lib/url";
 import { MEDIA_ACCEPT, isMediaFile, mediaFileFrom } from "@/lib/media-client";
 import { useT } from "./I18nProvider";
-import { Busy, Button, Icon, IconButton, PromptInput, SegmentedControl, Separator, TextArea } from "@/components/criterio";
+import { Busy, Button, Icon, IconButton, PromptInput, SegmentedControl, Separator } from "@/components/criterio";
 import { cachedCardImage } from "./InspoCard";
-import SetupQuestions from "./SetupQuestions";
-import { readBrief } from "@/types/brief";
 import p from "./ProjectStart.module.css";
 
 const PAGE = 12;
@@ -51,7 +49,7 @@ function sourceOf(web: string, kinds: Record<MediaKind, string>, gif: string): s
   try { return readableDomain(new URL(web).hostname.replace(/^www\./, "")); } catch { return kinds[kind]; }
 }
 
-export default function ProjectStart({ project, items, links, imageOf, onAddUrl, onUpload, onDescribe, onFile, onBringBrand, onExamples, onAgent }: {
+export default function ProjectStart({ project, items, links, imageOf, onAddUrl, onUpload, onFile, onBringBrand, onExamples, onAgent }: {
   project: Project;
   /** The whole library, newest first */
   items: InspoItem[];
@@ -62,8 +60,6 @@ export default function ProjectStart({ project, items, links, imageOf, onAddUrl,
   onAddUrl: (web: string) => Promise<void>;
   /** Uploads the images and files them in this project. Resolves when done. */
   onUpload: (files: File[]) => Promise<void>;
-  /** Saves what the project is (the brief's sentence). Throws when it could not be saved. */
-  onDescribe: (about: string) => Promise<void>;
   onFile: (items: InspoItem[]) => Promise<void>;
   /** The project has a brand already (a site, files, a guide): opens the system to bring it in */
   onBringBrand?: () => void;
@@ -74,8 +70,6 @@ export default function ProjectStart({ project, items, links, imageOf, onAddUrl,
 }) {
   const { t } = useT();
   const w = t.projects;
-  // A project that already says what it is starts on its references
-  const [step, setStep] = useState<1 | 2 | 3>(() => (!project.intent?.trim() ? 1 : readBrief(project.brief)?.answers?.goal ? 3 : 2));
   const [raw, setRaw] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -83,42 +77,21 @@ export default function ProjectStart({ project, items, links, imageOf, onAddUrl,
   const [picked, setPicked] = useState<Set<string>>(() => new Set());
   const [shown, setShown] = useState(PAGE);
   const [dragging, setDragging] = useState(false);
-  const [about, setAbout] = useState(project.intent ?? "");
   const inputRef = useRef<HTMLInputElement>(null);
-  const aboutRef = useRef<HTMLTextAreaElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
-  // Each step starts in its field
-  useEffect(() => { if (step !== 2) (step === 1 ? aboutRef.current : inputRef.current)?.focus(); }, [step]);
+  useEffect(() => { inputRef.current?.focus(); }, []);
 
   const inbox = useMemo(() => items.filter((i) => i.id && !links[i.id]?.length), [items, links]);
   const library = useMemo(() => items.filter((i) => i.id), [items]);
   const [tab, setTab] = useState<"inbox" | "all">(() => (inbox.length ? "inbox" : "all"));
   const list = tab === "inbox" ? inbox : library;
-  const saved = !!about.trim() && about.trim() === (project.intent ?? "").trim();
 
-  const go = (next: 1 | 2 | 3) => { setError(""); setStep(next); };
   const submit = async () => {
     const web = normalizeWebUrl(raw);
     if (!web) { setError(t.start.notUrl); return; }
     setBusy(true);
     try { await onAddUrl(web); setRaw(""); } finally { setBusy(false); }
   };
-  // Saved on leaving the field and on Next: nothing else to press. False when it could not be saved.
-  // Next right after the field's blur waits for the same save instead of sending it twice
-  const savedRef = useRef((project.intent ?? "").trim());
-  const pendingRef = useRef<Promise<boolean>>(Promise.resolve(true));
-  const describe = (): Promise<boolean> => {
-    const next = about.trim();
-    if (next === savedRef.current) return pendingRef.current;
-    const before = savedRef.current;
-    savedRef.current = next;
-    pendingRef.current = onDescribe(next).then(
-      () => { setError(""); return true; },
-      (e) => { savedRef.current = before; setError(e instanceof Error ? e.message : String(e)); return false; },
-    );
-    return pendingRef.current;
-  };
-  const next = async () => { if (await describe()) go(2); };
   const upload = async (files: File[]) => {
     if (busy || !files.length) return;
     const images = files.filter(isMediaFile);
@@ -151,7 +124,6 @@ export default function ProjectStart({ project, items, links, imageOf, onAddUrl,
     try { await onFile(chosen); } finally { setBusy(false); setBringing(false); }
   };
 
-  const steps = [w.startStepAbout, w.startStepQuestions, w.startStepRefs];
   const errorLine = error && <p id="project-start-error" className="cr-field-hint is-error t-small" role="alert">{error}</p>;
 
   return (
@@ -161,44 +133,7 @@ export default function ProjectStart({ project, items, links, imageOf, onAddUrl,
       <section className={`cr-card cr-card-raised ${p.window}`} aria-labelledby="project-start-title">
         <h1 id="project-start-title" className={`t-title-m ${p.title}`}>{project.name}</h1>
 
-        {/* Where the wizard is: the current step is the glass pill, a done one carries the tick */}
-        <ol className={p.steps} aria-label={w.startSteps}>
-          {steps.map((label, i) => {
-            const n = (i + 1) as 1 | 2 | 3;
-            const done = n < step;
-            return (
-              <li key={n} className={`${p.step} t-ui${n === step ? ` ${p.stepOn}` : ""}`} aria-current={n === step ? "step" : undefined}>
-                <span className={p.stepMark} aria-hidden>{done ? <Icon name="check" size={14} /> : n}</span>
-                {label}
-              </li>
-            );
-          })}
-        </ol>
-
-        {step === 1 ? (
-          <div className={p.body}>
-            <p className={`t-small ${p.muted}`}>{w.startAboutLead}</p>
-            <TextArea
-              ref={aboutRef}
-              className={p.about}
-              rows={4}
-              value={about}
-              placeholder={w.startDescribe}
-              aria-label={w.startDescribeLabel(project.name)}
-              aria-invalid={!!error}
-              aria-describedby={error ? "project-start-error" : undefined}
-              onChange={(e) => { setAbout(e.target.value); setError(""); }}
-              onBlur={() => void describe()}
-              onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); void next(); } }}
-            />
-            {errorLine}
-          </div>
-        ) : step === 2 ? (
-          <div className={p.body}>
-            <SetupQuestions projectId={project.id} brief={project.brief} onError={setError} />
-            {errorLine}
-          </div>
-        ) : (
+        {(
           <div className={p.body}>
             <div className={p.add}>
               <PromptInput className={p.prompt} id="project-url" inputRef={inputRef} value={raw}
@@ -256,30 +191,19 @@ export default function ProjectStart({ project, items, links, imageOf, onAddUrl,
         <Separator className={p.sep} />
         <div className={p.footer}>
           <div className={p.footStart}>
-            {step !== 2 && <p className={`t-small ${p.muted}`} role="status">{step === 1
-              ? (saved ? w.startDescribed : w.startOptional)
-              : (picked.size ? w.startPicked(picked.size) : w.startNothingPicked)}</p>}
-            {step === 1 && onBringBrand && (
+            <p className={`t-small ${p.muted}`} role="status">{picked.size ? w.startPicked(picked.size) : w.startNothingPicked}</p>
+            {onAgent && <Button variant="quiet" size="s" icon="cable" data-tip={w.startAgentHint} onClick={onAgent}>{w.startAgent}</Button>}
+            {onBringBrand && (
               <Button variant="quiet" size="s" icon="folder" data-tip={w.startBrand} onClick={onBringBrand}>{w.startBrandShort}</Button>
             )}
-            {step === 1 && onAgent && <Button variant="quiet" size="s" icon="cable" onClick={onAgent}>{w.startAgent}</Button>}
-            {step === 3 && onExamples && library.length === 0 && (
+            {onExamples && library.length === 0 && (
               <Button variant="quiet" size="s" icon="compass" data-tip={t.start.examples} onClick={onExamples}>{t.ws.examples}</Button>
             )}
           </div>
           <div className={p.footEnd}>
-            {step === 1 ? <>
-              <Button onClick={() => go(2)}>{w.startSkip}</Button>
-              <Button variant="primary" iconEnd="arrow-right" onClick={() => void next()}>{w.startNext}</Button>
-            </> : step === 2 ? <>
-              <Button onClick={() => go(1)}>{w.startBack}</Button>
-              <Button variant="primary" iconEnd="arrow-right" onClick={() => go(3)}>{w.startNext}</Button>
-            </> : <>
-              <Button onClick={() => go(2)} disabled={bringing}>{w.startBack}</Button>
-              <Button variant="primary" icon={bringing ? undefined : "plus"} onClick={() => void bring()} disabled={!picked.size || busy}>
-                {bringing && <Busy label={w.startAdd(picked.size)} />}{w.startAdd(picked.size)}
-              </Button>
-            </>}
+            <Button variant="primary" icon={bringing ? undefined : "plus"} onClick={() => void bring()} disabled={!picked.size || busy}>
+              {bringing && <Busy label={w.startAdd(picked.size)} />}{w.startAdd(picked.size)}
+            </Button>
           </div>
         </div>
       </section>

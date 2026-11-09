@@ -1,3 +1,4 @@
+import type { RefRole, SuggestedRef } from "./suggestions";
 import type { SystemArea } from "./system";
 
 export interface InspoItem {
@@ -32,6 +33,8 @@ export type PolishChoice = "keep" | "forget";
 export interface PolishVote { projectId: string; itemId: string; userId: string; vote: PolishChoice; closedAt: string | null; closedBy: string | null }
 /** item id → ids of the projects it is filed in (none = Inbox) */
 export type ProjectLinks = Record<string, string[]>;
+/** What a reference is to a project, when it is something (types/suggestions.ts): by project id, then item id */
+export type ProjectRoles = Record<string, Record<string, RefRole>>;
 
 
 // ─── AI tags (lib/tagger.ts) ──────────────────────────────────────────────────
@@ -229,6 +232,9 @@ export interface Pulse {
   /** Each of these whole, only when it changed */
   projects?: Project[];
   links?: ProjectLinks;
+  roles?: ProjectRoles;
+  /** References agents brought that wait on the boards (types/suggestions.ts), whole, when links moved */
+  suggested?: SuggestedRef[];
   votes?: PolishVote[];
   /** When the bell's newest news happened, only when it moved: the bell then reads its feed */
   bell?: string;

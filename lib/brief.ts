@@ -7,7 +7,7 @@ import { HttpError } from "./workspace-core";
 import { getErrors } from "./i18n";
 import { SECTORS } from "./taxonomy";
 import { SKIPPABLE, type SetupKey } from "./setup-core";
-import { BRIEF_LIMITS, readBrief, type AnswerSource, type Brief } from "@/types/brief";
+import { BRIEF_LIMITS, readBrief, type AnswerSource, type Brief, type BriefAnswer } from "@/types/brief";
 
 const P = schema.project;
 
@@ -39,12 +39,36 @@ export async function saveBrief(organizationId: string, projectId: string, input
 
 /** An answer to one of criterio.md's starting questions (lib/playbook-questions.ts), kept in the brief under its id. A
  *  second answer to the same question replaces the first. Empty text takes the answer back */
-export async function saveAnswer(organizationId: string, projectId: string, questionId: string, input: { text: string; by?: string; via?: string; source?: AnswerSource; from?: string }, userId: string): Promise<Brief> {
+export interface AnswerInput { text: string; by?: string; via?: string; source?: AnswerSource; from?: string; origin?: string }
+
+const answerOf = (input: AnswerInput): BriefAnswer | null => {
+  const text = String(input.text ?? "").trim().slice(0, BRIEF_LIMITS.answer);
+  return text ? { text, at: new Date().toISOString(), ...(input.by ? { by: input.by } : {}), ...(input.via ? { via: input.via } : {}), ...(input.source && input.source !== "person" ? { source: input.source } : {}), ...(input.from ? { from: input.from } : {}), ...(input.origin ? { origin: input.origin } : {}) } : null;
+};
+
+export async function saveAnswer(organizationId: string, projectId: string, questionId: string, input: AnswerInput, userId: string): Promise<Brief> {
+  return saveAnswers(organizationId, projectId, { [questionId]: input }, userId);
+}
+
+/** Several answers in one write (an agent bringing its context): an empty text takes that answer out */
+export async function saveAnswers(organizationId: string, projectId: string, input: Record<string, AnswerInput>, userId: string): Promise<Brief> {
   const current = readBrief(await stored(organizationId, projectId)) ?? cleanBrief({}, userId);
   const answers = { ...(current.answers ?? {}) };
-  const text = String(input.text ?? "").trim().slice(0, BRIEF_LIMITS.answer);
-  if (text) answers[questionId] = { text, at: new Date().toISOString(), ...(input.by ? { by: input.by } : {}), ...(input.via ? { via: input.via } : {}), ...(input.source && input.source !== "person" ? { source: input.source } : {}), ...(input.from ? { from: input.from } : {}) };
-  else delete answers[questionId];
+  for (const [id, a] of Object.entries(input)) {
+    const answer = answerOf(a);
+    if (answer) answers[id] = answer; else delete answers[id];
+  }
+  const brief = readBrief({ ...current, answers, updatedAt: new Date().toISOString(), updatedBy: userId })!;
+  await write(organizationId, projectId, brief);
+  return brief;
+}
+
+/** The team took an answer an agent read or brought as theirs: it stays, said by the person now */
+export async function confirmAnswers(organizationId: string, projectId: string, ids: string[], userId: string): Promise<Brief | null> {
+  const current = readBrief(await stored(organizationId, projectId));
+  if (!current?.answers) return current;
+  const answers = { ...current.answers };
+  for (const id of ids) if (answers[id]) { const { source: _s, ...rest } = answers[id]; answers[id] = rest; }
   const brief = readBrief({ ...current, answers, updatedAt: new Date().toISOString(), updatedBy: userId })!;
   await write(organizationId, projectId, brief);
   return brief;

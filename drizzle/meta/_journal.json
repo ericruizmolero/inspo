@@ -372,6 +372,13 @@
       "when": 1793803102519,
       "tag": "0053_page_comments",
       "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1794219525783,
+      "tag": "0054_agent_suggestions",
+      "breakpoints": true
     }
   ]
 }

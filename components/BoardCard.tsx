@@ -6,6 +6,8 @@ import type { ShotLevel } from "./Grid";
 import { cardCopyOf } from "@/lib/board";
 import type { DesignIndexEntry, InspoComment, InspoItem, InspoTags, PageShot, Project, TagStatus } from "@/types/inspo";
 import type { SystemArea } from "@/types/system";
+import type { SuggestedRef } from "@/types/suggestions";
+import { useT } from "./I18nProvider";
 
 export interface GridActions {
   select: (item: InspoItem, range: boolean) => void;
@@ -17,10 +19,14 @@ export interface GridActions {
   createAndFile: (item: InspoItem, name: string) => Promise<void>;
   toggleArea: (item: InspoItem, area: SystemArea, on: boolean) => void;
   measure: (web: string, ratio: number) => void;
+  /** Takes or turns down a reference an agent brought (lib/suggestions.ts) */
+  answerSuggestion: (id: string, accept: boolean) => void;
 }
 
 /** One card with its handlers bound. Memoised on its own data: moving the camera or another card leaves it alone. */
-const BoardCard = memo(function BoardCard({ item, level, ratio, tags, tagJob, score, reason, comments, authorImage, manualThumbnail, signedThumbnail, signedCard, designMd, signedCover, signedScroll, shot, projects, projectIds, backs, areasIn, selected, selecting, forgotten, deletable, spaceName, takeOutOf, text, actions }: {
+const BoardCard = memo(function BoardCard({ item, level, ratio, tags, tagJob, score, reason, comments, authorImage, manualThumbnail, signedThumbnail, signedCard, designMd, signedCover, signedScroll, shot, projects, projectIds, backs, areasIn, selected, selecting, forgotten, deletable, spaceName, takeOutOf, text, actions, suggested }: {
+  /** Brought by an agent and waiting for the team's yes or no */
+  suggested?: SuggestedRef;
   /** A pasted text's whole words, once loaded: its card fills with them instead of the short excerpt in its tags */
   text?: string | null;
   item: InspoItem; level: ShotLevel; ratio: number; tags: InspoTags | undefined; tagJob: TagStatus | undefined; score: number | undefined; reason: string | undefined;
@@ -47,6 +53,12 @@ const BoardCard = memo(function BoardCard({ item, level, ratio, tags, tagJob, sc
 }) {
   // The handlers are read when used, never kept from this render: the card re-renders only with its own data
   const act = () => actions.current;
+  const { t } = useT();
+  const suggestion = useMemo(() => suggested ? {
+    label: t.suggested.by(suggested.via), tip: suggested.origin || undefined,
+    onAccept: () => actions.current.answerSuggestion(suggested.id, true),
+    onDismiss: () => actions.current.answerSuggestion(suggested.id, false),
+  } : undefined, [suggested, t, actions]);
   const onMeasure = useCallback((r: number) => actions.current.measure(item.web, r), [actions, item.web]);
   const caption = useMemo(() => captionFor(item, comments, authorImage), [item, authorImage, comments]);
   // The page's top, at the size it is seen: a site someone gave a thumbnail keeps that thumbnail
@@ -98,6 +110,8 @@ const BoardCard = memo(function BoardCard({ item, level, ratio, tags, tagJob, sc
       selecting={selecting}
       forgotten={forgotten}
       onSelect={item.id ? (range) => act().select(item, range) : undefined}
+      suggestion={suggestion}
+      // A suggested card is not on the board yet: filing it or taking it out is what Accept and Dismiss do
       board={{ ratio, color: showsPage ? shot!.color : undefined, alternates: showsPage ? alternates : pictureAlternates, thumb: card ?? undefined, onMeasure: showsPage ? undefined : onMeasure }}
     />
   );

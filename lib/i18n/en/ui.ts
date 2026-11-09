@@ -280,6 +280,22 @@ export const ui = {
     sent: "Thank you. Your answers are with the team.",
     failed: "That did not work. Try again.",
   },
+  /** What an agent brought to a project and waits for the team (types/suggestions.ts) */
+  suggested: {
+    by: (via: string | null): string => (via ? `Proposed by ${via}` : "Proposed by your agent"),
+    accept: "Accept",
+    dismiss: "Dismiss",
+    /** The line over the board. No middle dot before the origin (Eric, 09-11) */
+    left: (n: number): string => (n === 1 ? "Tino left you 1 thing" : `Tino left you ${n} things`),
+    acceptAll: "Accept all",
+    dismissAll: "Dismiss all",
+    review: "Review",
+    hide: "Hide",
+    answer: "Answer",
+    plan: (name: string): string => `Plan: ${name}`,
+    directions: (n: number): string => (n === 1 ? "1 hero direction" : `${n} hero directions`),
+    failed: "That did not go through. Try again.",
+  },
   setupQuestions: {
     lead: "Only the first one is needed. The rest can wait.",
     client: "Ask the client",
@@ -498,6 +514,7 @@ export const ui = {
     startStepQuestions: "Questions",
     startStepRefs: "References",
     startAgent: "Set up with your agent",
+    startAgentHint: "Your AI asks what is missing and leaves it here",
     startAboutTitle: "What is it about?",
     startAboutLead: "The board gets read against this sentence.",
     startRefsTitle: "Bring your references",
@@ -1051,8 +1068,9 @@ export const ui = {
         },
         decides: "Decides", none: "Every starting question is answered.",
         answered: (n: number): string => `Already answered (${n})`, inBrief: "In the Brief",
+        unconfirmed: "not confirmed yet: show it once to confirm, never ask it again",
       },
-      landing: { heading: "The landing", goal: "Goal", proof: "Proof", cta: "Action" },
+      landing: { heading: "The landing", goal: "Goal", proof: "Proof", cta: "Action", draft: "Draft by an agent, not accepted yet: a starting point, not the team's plan", directions: "Hero directions" },
       learned: {
         heading: "What was learned",
         intro: "What the person corrected, chose or turned down in earlier sessions, newest first. Start from it, and do not offer again what was turned down; where it clashes with a decision, the decision wins and you say so.",

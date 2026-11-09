@@ -94,6 +94,8 @@ export default function LibraryHost({ library, user, workspaces, aiEnabled }: {
         bell={shown.bell}
         initialProjects={shown.initialProjects}
         initialProjectLinks={shown.initialProjectLinks}
+        initialRoles={shown.initialRoles}
+        initialSuggested={shown.initialSuggested}
         initialSummaries={shown.initialSummaries}
         aiEnabled={aiEnabled}
         user={user}

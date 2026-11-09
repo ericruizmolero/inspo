@@ -5,7 +5,8 @@ import { and, asc, desc, eq, inArray, sql, isNull } from "drizzle-orm";
 import { db, schema } from "./db";
 import { getErrors } from "./i18n";
 import { HttpError, newId } from "./workspace-core";
-import type { Project, ProjectLinks } from "@/types/inspo";
+import type { Project, ProjectLinks, ProjectRoles } from "@/types/inspo";
+import { isRefRole } from "@/types/suggestions";
 import { deleteProjectBrandFiles, projectBrandPrefix } from "./brand-files";
 import { assertProjectRoom } from "./quota";
 
@@ -25,14 +26,18 @@ async function cleanName(name: string): Promise<string> {
  * project. A reference Polish archived (archived_at, from before Polish was retired on 2026-10-04) is on its board
  * like any other: there is no longer a place to see it apart.
  */
-export async function loadProjects(organizationId: string): Promise<{ projects: Project[]; links: ProjectLinks }> {
+export async function loadProjects(organizationId: string): Promise<{ projects: Project[]; links: ProjectLinks; roles: ProjectRoles }> {
   const [projects, rows] = await Promise.all([
     db.select({ id: P.id, name: P.name, intent: sql<string | null>`${P.brief}->>'about'`, clientItemId: sql<string | null>`${P.brief}->>'clientItemId'`, brief: P.brief, hasRecipe: sql<boolean>`${P.recipe} <> ''`, started: sql<boolean>`${P.startedAt} is not null`, createdAt: P.createdAt }).from(P).where(and(eq(P.organizationId, organizationId), isNull(P.template))).orderBy(asc(P.createdAt)),
-    db.select({ projectId: PI.projectId, itemId: PI.itemId }).from(PI).where(eq(PI.organizationId, organizationId)),
+    db.select({ projectId: PI.projectId, itemId: PI.itemId, role: PI.role }).from(PI).where(eq(PI.organizationId, organizationId)),
   ]);
   const links: ProjectLinks = {};
-  for (const r of rows) (links[r.itemId] ??= []).push(r.projectId);
-  return { projects: projects.map((p) => ({ ...p, createdAt: p.createdAt.toISOString() })), links };
+  const roles: ProjectRoles = {};
+  for (const r of rows) {
+    (links[r.itemId] ??= []).push(r.projectId);
+    if (isRefRole(r.role)) (roles[r.projectId] ??= {})[r.itemId] = r.role;
+  }
+  return { projects: projects.map((p) => ({ ...p, createdAt: p.createdAt.toISOString() })), links, roles };
 }
 
 export async function createProject(organizationId: string, name: string, userId: string): Promise<Project> {

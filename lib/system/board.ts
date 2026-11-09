@@ -48,6 +48,16 @@ export function measuredSummary(spec: DesignSpec | null, pixels: InspoColor[] | 
   return Object.keys(kept).length ? kept : undefined;
 }
 
+/** What a reference's role on the project (types/suggestions.ts) tells the model reading it */
+const ROLE_NOTES = {
+  competitor: "competitor: a site this project competes with and must stand apart from. Never take taste from it; read it for what to avoid and how not to look",
+  press: "press: a piece about the client. Read it for facts and proof, never for taste",
+  "current-site": "the client's current site",
+  brief: "the project's brief, in the team's words",
+  research: "research on the client, with its sources: facts, not taste",
+  material: "the client's own material",
+} as const;
+
 interface BoardRef {
   code: string;
   itemId: string;
@@ -111,7 +121,7 @@ async function cutBoard<R extends { row: typeof T.$inferSelect; at: Date }>(orga
  * on the whole board (as lib/brand.ts names it), so the cut never renumbers one.
  */
 export async function loadBoard(organizationId: string, projectId: string): Promise<{ refs: BoardRef[]; stamp: string; omitted: number }> {
-  const rows = await db.select({ row: T, at: PI.createdAt }).from(PI).innerJoin(T, eq(T.id, PI.itemId))
+  const rows = await db.select({ row: T, at: PI.createdAt, role: PI.role }).from(PI).innerJoin(T, eq(T.id, PI.itemId))
     .where(and(eq(PI.organizationId, organizationId), eq(PI.projectId, projectId))).orderBy(asc(PI.createdAt));
   const all = rows.map((r, i) => ({ ...r, code: `r${i + 1}` }));
   const threads = all.length
@@ -133,7 +143,7 @@ export async function loadBoard(organizationId: string, projectId: string): Prom
     return { spec: entry?.spec ?? null, why: (why?.why as DesignWhy | undefined) ?? null };
   }));
 
-  const refs: BoardRef[] = board.map(({ row, code }, i) => {
+  const refs: BoardRef[] = board.map(({ row, code, role }, i) => {
     const item = rowToItem(row);
     const said = byItem.get(row.id) ?? [];
     const comments = said.slice(-COMMENTS_PER_REF);
@@ -146,11 +156,14 @@ export async function loadBoard(organizationId: string, projectId: string): Prom
     const composition = row.tagsJson?.composition;
     // How it is built, in the model's words and keys: only for a reference that reads as a page
     const build = isPage(composition) ? { structure: composition.structure, side_share: composition.share || undefined, fixed: composition.fixed, nav: composition.nav, sketch: composition.sketch } : undefined;
-    return {
+    // A competitor or a press piece is on the board for what it says, not for its look: no taste is counted from it
+    const noTaste = role === "competitor" || role === "press";
+    const roleNote = role && ROLE_NOTES[role as keyof typeof ROLE_NOTES];
+    const built = {
       code,
       itemId: row.id,
       composition,
-      signals: Object.fromEntries(Object.entries(tags?.areas ?? {}).map(([area, a]) => [area, a!.signals])),
+      signals: noTaste ? {} : Object.fromEntries(Object.entries(tags?.areas ?? {}).map(([area, a]) => [area, a!.signals])),
       words: [base.curator_notes ?? "", ...comments, ...pointed.map((p) => p.quote)],
       // A pasted text is the project's content: the model gets its title and first lines, nothing to read a look from
       ref: mediaKindOf(row.web) === "text" ? {
@@ -172,8 +185,10 @@ export async function loadBoard(organizationId: string, projectId: string): Prom
         build,
       },
     };
+    return roleNote ? { ...built, ref: { ...built.ref, role: roleNote } } : built;
   });
-  const stamp = createHash("sha1").update(JSON.stringify({ ids, w: refs.map((r) => r.words), m: PROMPTS.system.model, v: PROMPTS.system.version })).digest("hex").slice(0, 20);
+  const roles = board.map((b) => b.role ?? "");
+  const stamp = createHash("sha1").update(JSON.stringify({ ids, w: refs.map((r) => r.words), r: roles.some(Boolean) ? roles : undefined, m: PROMPTS.system.model, v: PROMPTS.system.version })).digest("hex").slice(0, 20);
   return { refs, stamp, omitted: all.length - board.length };
 }
 

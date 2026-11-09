@@ -274,6 +274,22 @@ export const ui: typeof EnUi = {
     sent: "Gracias. Tus respuestas ya están con el equipo.",
     failed: "No ha funcionado. Inténtalo de nuevo.",
   },
+  /** Lo que un agente trajo a un proyecto y espera al equipo (types/suggestions.ts) */
+  suggested: {
+    by: (via: string | null): string => (via ? `Propuesto por ${via}` : "Propuesto por tu agente"),
+    accept: "Aceptar",
+    dismiss: "Descartar",
+    /** La línea sobre el tablero. Sin punto medio antes del origen (Eric, 09-11) */
+    left: (n: number): string => (n === 1 ? "Tino te ha dejado 1 cosa" : `Tino te ha dejado ${n} cosas`),
+    acceptAll: "Aceptar todo",
+    dismissAll: "Descartar todo",
+    review: "Revisar",
+    hide: "Ocultar",
+    answer: "Respuesta",
+    plan: (name: string): string => `Plan: ${name}`,
+    directions: (n: number): string => (n === 1 ? "1 dirección de hero" : `${n} direcciones de hero`),
+    failed: "No se ha podido. Prueba otra vez.",
+  },
   setupQuestions: {
     lead: "Solo hace falta la primera. Las demás pueden esperar.",
     client: "Preguntar al cliente",
@@ -489,6 +505,7 @@ export const ui: typeof EnUi = {
     startStepQuestions: "Preguntas",
     startStepRefs: "Referencias",
     startAgent: "Hacerlo con tu agente",
+    startAgentHint: "Tu IA te pregunta lo que falta y lo deja aquí",
     startAboutTitle: "¿De qué va?",
     startAboutLead: "El tablero se lee a la luz de esta frase.",
     startRefsTitle: "Trae tus referencias",
@@ -1041,8 +1058,9 @@ export const ui: typeof EnUi = {
         },
         decides: "Decide", none: "Todas las preguntas de arranque están respondidas.",
         answered: (n: number): string => `Ya respondidas (${n})`, inBrief: "En el Brief",
+        unconfirmed: "sin confirmar: enséñala una vez para confirmarla, no la vuelvas a preguntar",
       },
-      landing: { heading: "La landing", goal: "Objetivo", proof: "Prueba", cta: "Acción" },
+      landing: { heading: "La landing", goal: "Objetivo", proof: "Prueba", cta: "Acción", draft: "Borrador de un agente, sin aceptar: un punto de partida, no el plan del equipo", directions: "Direcciones del hero" },
       learned: {
         heading: "Lo aprendido",
         intro: "Lo que la persona corrigió, eligió o rechazó en sesiones anteriores, lo último primero. Parte de ahí y no vuelvas a proponer lo rechazado; si choca con una decisión, manda la decisión y lo dices.",

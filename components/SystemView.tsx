@@ -12,9 +12,7 @@ import type { ProjectMeasures } from "@/lib/ref-measured";
 import SkillsMenu from "./SkillsMenu";
 import { NO_SKILLS, skillsOf, MD_SKILL_EXCLUSIVE, type MdSkill } from "@/lib/md-skill-ids";
 import ImproveModal from "./ImproveModal";
-import SetupQuestions from "./SetupQuestions";
 import PageComments from "./PageComments";
-import { Dialog, DialogWindow } from "@/components/ui/dialog";
 import { VersionPicker, VersionView, useVersions } from "./VersionPicker";
 import { readBrief, type Brief } from "@/types/brief";
 import { loadSystem, decideSystemArea, setSystemNever, saveDocPart, criterioVersionNow } from "@/app/actions/system";
@@ -136,7 +134,6 @@ export default function SystemView({ onConnect, project, system, onSystem, board
   useEffect(() => { if (open) document.getElementById(`sdoc-${open}`)?.scrollIntoView({ behavior: "smooth", block: "start" }); }, [open]);
   // A pass asked for from "Improve with AI" carries what the team wants from it (ImproveModal); the plain one reads everything
   const [improving, setImproving] = useState(false);
-  const [answering, setAnswering] = useState(false);
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [phase, setPhase] = useState<"brand" | null>(null);
   const post = async (path: string, body: object) => {
@@ -303,7 +300,6 @@ export default function SystemView({ onConnect, project, system, onSystem, board
         <PopoverTrigger className="cr-iconbtn cr-iconbtn-quiet cr-iconbtn-s spage-more" aria-label={t.card.more} data-tip={t.card.more}>{Icons.dots}</PopoverTrigger>
         <PopoverContent align="end" className="cr-menu spage-more__menu">
           {board.length > 0 && !firstStep && <MenuItem disabled={running} onClick={() => { setMoreOpen(false); setImproving(true); }}>{t.system.improve}</MenuItem>}
-          <MenuItem onClick={() => { setMoreOpen(false); setAnswering(true); }}>{t.setupQuestions.menu}</MenuItem>
           <MenuItem onClick={() => { setMoreOpen(false); setCommentsOpen(true); }}>{t.pageComments.title}</MenuItem>
           <MenuItem disabled={running} onClick={() => { setMoreOpen(false); setBringing("site"); }}>{t.brand.import.title}</MenuItem>
           <MenuItem onClick={() => { setMoreOpen(false); setSharing(true); }}>{t.brand.share.title}</MenuItem>
@@ -327,13 +323,6 @@ export default function SystemView({ onConnect, project, system, onSystem, board
         {error && <p className="sysv-error" role="alert">{error}</p>}
         {notice && <p className="spage-notice" role="status">{notice}</p>}
         {commentsOpen && <PageComments projectId={project.id} onClose={() => setCommentsOpen(false)} />}
-        {answering && (
-          <Dialog open onOpenChange={(o) => { if (!o) setAnswering(false); }}>
-            <DialogWindow heading={t.setupQuestions.menu} closeLabel={t.common.close}>
-              <SetupQuestions projectId={project.id} brief={project.brief} onError={setError} />
-            </DialogWindow>
-          </Dialog>
-        )}
         {improving && <ImproveModal system={sys} onRun={(focus) => void run(focus)} onClose={() => setImproving(false)} />}
         {sharing && <ShareDialog projectId={project.id} onClose={() => setSharing(false)} />}
         {bringing && <BrandImport projectId={project.id} brand={editor.brand} initial={bringing} onClose={() => setBringing(null)} onAddSite={onAddSite} onClient={onClient}
