@@ -2467,7 +2467,7 @@ export const ui: typeof EnUi = {
       open: "Compartir", title: "Compartir el tablón", lead: "Un enlace para que el cliente o el equipo comente las referencias y elija las que prefiere.",
       what: "Qué compartes", all: "Todo el tablón", someHint: "Para enseñar solo algunas, selecciónalas en el tablón y pulsa Compartir en la barra de abajo.",
       picked: (n: number): string => (n === 1 ? "1 elegida" : `${n} elegidas`),
-      subtitle: "Subtítulo (opcional)", subtitlePlaceholder: "Subtítulo (opcional): qué tiene que mirar el cliente", links: "Enlaces", openLink: "Abrir el enlace", who: "Quién entra", link: "Con el enlace", invite: "Invitados",
+      preview: (n: number, project: string): string => `${n === 1 ? "1 referencia" : `${n} referencias`} de ${project} para comentar y marcar las que te gustan.`, subtitle: "Subtítulo (opcional)", subtitlePlaceholder: "Subtítulo (opcional): qué tiene que mirar el cliente", links: "Enlaces", openLink: "Abrir el enlace", who: "Quién entra", link: "Con el enlace", invite: "Invitados",
       linkHint: "Cualquiera con el enlace entra sin cuenta, con un avatar al azar.", inviteHint: "Cada persona recibe por correo su propio enlace y comenta con su nombre.",
       emails: "Correos", emailsPlaceholder: "ana@cliente.com, luis@cliente.com", inviteMore: "Invitar", copyTheirs: "Copiar su enlace", uninvite: "Quitar",
       makeInvite: "Crear e invitar", refs: (n: number): string => (n === 1 ? "1 referencia" : `${n} referencias`), whole: "Todo el tablón",

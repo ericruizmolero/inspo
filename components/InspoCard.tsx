@@ -134,6 +134,10 @@ export function cachedCardImage(web: string): string | null {
 }
 
 interface InspoCardProps {
+  /** One more button in the row at the bottom left, after comments, the same strong IconButton s (the shared board's
+   *  like: components/brand/ShareBoard.tsx). `goShown` keeps that row on screen without hover */
+  goExtra?: React.ReactNode;
+  goShown?: boolean;
   item: InspoItem;
   /** A pasted text's whole words, once loaded: the card fills its height with them (the tags only keep an excerpt) */
   text?: string | null;
@@ -233,7 +237,7 @@ export function captionFor(item: InspoItem, comments: InspoComment[] | undefined
   return { ...root, people, more: comments?.length ?? 0 };
 }
 
-export default function InspoCard({ item, text, tags, tagJob, score, reason, manualThumbnail: uploadedThumb, signedThumbnail, onUpload, onRemoveThumbnail, onOpen, designCover: coverSrc, designCoverFallback, designScroll: scrollSrc, designScrollFallback, commentCount = 0, caption, onComments, onDelete, onTakeOut, spaceName, projects, projectIds = [], onToggleProject, onCreateProject, backs = [], onToggleArea, areasIn, board, selected = false, selecting = false, onSelect, forgotten = false, readOnly = false, ogSrc, suggestion }: InspoCardProps) {
+export default function InspoCard({ item, text, tags, tagJob, score, reason, manualThumbnail: uploadedThumb, signedThumbnail, onUpload, onRemoveThumbnail, onOpen, designCover: coverSrc, designCoverFallback, designScroll: scrollSrc, designScrollFallback, commentCount = 0, caption, onComments, onDelete, onTakeOut, spaceName, projects, projectIds = [], onToggleProject, onCreateProject, backs = [], onToggleArea, areasIn, board, selected = false, selecting = false, onSelect, forgotten = false, readOnly = false, ogSrc, suggestion, goExtra, goShown = false }: InspoCardProps) {
   const { t } = useT();
   // An uploaded image is its own thumbnail; a video shows its frame when the provider gives one away
   const kind = mediaKindOf(item.web);
@@ -735,8 +739,8 @@ export default function InspoCard({ item, text, tags, tagJob, score, reason, man
           </div>
 
           {/* Down here, what is done most with a reference: file it (projects and areas) and talk about it */}
-          {(onToggleProject || onComments) && (
-            <div className={`tile__go${pickerOpen ? " is-visible" : ""}`} onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
+          {(onToggleProject || onComments || goExtra) && (
+            <div className={`tile__go${pickerOpen || goShown ? " is-visible" : ""}`} onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
               {/* Three strong IconButtons s (the retro one: paper, ink border, bevel), square, the size of the three up on
                   the right (Eric, 07-10: "el resto homogeneizamos", "ese tamaño está bien", "con el botón tipo retro que
                   tenía una especie de sombreado"), icon only: the folder (ember once filed, the one colour on the card),
@@ -749,6 +753,7 @@ export default function InspoCard({ item, text, tags, tagJob, score, reason, man
                   label={commentCount > 0 ? `${t.card.comments} (${commentCount})` : t.card.comments}
                   onClick={(e) => { e.stopPropagation(); onComments(); }} />
               )}
+              {goExtra}
             </div>
           )}
 

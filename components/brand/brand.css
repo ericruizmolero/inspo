@@ -541,20 +541,11 @@
 .sboard__name { max-width: 220px; padding: 2px 0; border: 0; background: none; color: var(--text); font: inherit; font-size: var(--fs-small); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: text; }
 .sboard__name:hover { color: var(--text); text-decoration: underline; text-decoration-color: var(--border); text-underline-offset: 3px; }
 .sboard__name--edit { width: 200px; outline: none; border-bottom: 1px solid var(--text-2); }
-/* A card on the shared board, and its like: a heart on the card's top right corner, on hover; it stays once someone
-   liked it, with how many, and fills in ember when it is yours */
+/* A card on the shared board, and its like: one more strong IconButton s in the card's row at the bottom left
+   (.tile__go, beside comments: same paper, bevel and rounded square); with a count it grows to fit the number, and
+   once yours it is ember like a filed folder. On touch, where the row hides, a liked card still shows it */
 .sboard__cell { position: relative; }
-.sboard__like {
-  position: absolute; top: 10px; right: 10px; z-index: 3; display: inline-flex; align-items: center; gap: 4px;
-  height: 30px; min-width: 30px; padding: 0 8px; justify-content: center; border: 0; border-radius: 999px;
-  background: var(--chrome); color: var(--chrome-ink); font: inherit; font-size: var(--fs-label); font-weight: 600; cursor: pointer;
-  opacity: 0; transform: scale(0.9); transition: opacity 0.18s, transform 0.18s var(--ease-out), color 0.15s;
-}
-.sboard__like.has-likes, .sboard__like:focus-visible { opacity: 1; transform: none; }
-@media (hover: hover) and (pointer: fine) { .sboard__cell:hover .sboard__like { opacity: 1; transform: none; } }
-@media (hover: none) { .sboard__like { opacity: 1; transform: none; } }
-.sboard__like:active { transform: scale(0.9); }
-.sboard__like.is-on { color: var(--ember); }
-.sboard__like:focus-visible { outline: 2px solid var(--ember-glow); outline-offset: 2px; }
+.tile__go .sboard__like.has-likes { width: auto; padding: 0 9px; gap: 5px; font: inherit; font-size: var(--fs-label); font-weight: 600; font-variant-numeric: tabular-nums; }
+@media (hover: none) { .share--board .tile__go.is-visible { display: flex; } }
 .sboard__error { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 40; margin: 0; padding: 8px 14px; border-radius: var(--radius-md); background: var(--chrome); color: var(--chrome-ink); font-size: var(--fs-small); }
 @media (max-width: 800px) { .share-head__end { gap: 12px; } .sboard__name { max-width: 140px; } }

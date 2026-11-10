@@ -19,7 +19,17 @@ export async function generateMetadata({ params }: PageProps<"/s/[token]">): Pro
   if (!share) return { title: t.brand.guidelines, robots, referrer: "no-referrer" };
   const board = await loadShareBoard(share, `/s/${token}`);
   const title = board?.name ?? t.brand.guidelines;
-  return { title: { absolute: title }, robots, referrer: "no-referrer", openGraph: { title } };
+  // Pasted in a chat, the link speaks of the project, not of the app (Eric, 10-11): its subtitle, or how many
+  // references it holds; and the picture of the first one, through the link
+  const description = share.subtitle || (board ? t.brand.share.preview(board.items.length, title) : title);
+  const first = board?.items.find((i) => board.thumbs[i.web] || board.shots[i.web] || board.cards[i.web]);
+  const image = first && board ? board.cards[first.web] ?? board.thumbs[first.web] ?? board.shots[first.web]?.tileUrl : undefined;
+  const images = image ? [{ url: image }] : undefined;
+  return {
+    title: { absolute: title }, description, robots, referrer: "no-referrer",
+    openGraph: { title, description, siteName: title, type: "website", ...(images ? { images } : {}) },
+    twitter: { card: images ? "summary_large_image" : "summary", title, description, ...(images ? { images } : {}) },
+  };
 }
 
 export default async function Page({ params }: PageProps<"/s/[token]">) {

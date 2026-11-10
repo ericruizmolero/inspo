@@ -128,6 +128,19 @@ export default function ShareBoard({ token, name, subtitle, data, activity: firs
           designCover={showsPage ? shot![key] : design?.coverUrl}
           designScroll={design?.scrollUrl}
           readOnly
+          // A like, in the card's own row at the bottom left, beside comments, the same strong IconButton s (Eric, 10-11:
+          // "si alguien hace hovering en la card desde fuera pueda dar a me gusta en corazón"; the first try, a dark
+          // circle up on the right, "no está del todo bien integrado"). The row stays once someone liked it
+          goShown={picks.length > 0}
+          goExtra={guest && item.id ? (
+            <button type="button" className={`cr-iconbtn cr-iconbtn-strong cr-iconbtn-s sboard__like${liked ? " is-filed" : ""}${picks.length ? " has-likes" : ""}`}
+              aria-pressed={liked} aria-label={liked ? g.unlike : g.like}
+              data-tip={picks.length ? g.likedBy(picks.map((p) => (p.key === guest.key ? t.comments.you : p.name)).join(", ")) : g.like}
+              onClick={(e) => { e.stopPropagation(); void pick(item); }}>
+              <Heart size={16} weight={liked ? "fill" : "regular"} aria-hidden />
+              {picks.length > 0 && <span>{picks.length}</span>}
+            </button>
+          ) : undefined}
           ogSrc={item.id && og.has(item.id) ? `/s/${token}/og?id=${encodeURIComponent(item.id)}` : undefined}
           board={{
             ratio: ratioOf(item),
@@ -137,17 +150,6 @@ export default function ShareBoard({ token, name, subtitle, data, activity: firs
             onMeasure: showsPage ? undefined : (r) => measure(web, r),
           }}
         />
-        {/* A like, on the card's corner on hover (Eric, 10-11: "si alguien hace hovering en la card desde fuera pueda dar
-            a me gusta en corazón"); it stays once someone liked it, with how many. No selection circle here: a guest
-            does nothing with several cards at once */}
-        {guest && item.id && (
-          <button type="button" className={`sboard__like${liked ? " is-on" : ""}${picks.length ? " has-likes" : ""}`} aria-pressed={liked}
-            aria-label={liked ? g.unlike : g.like} data-tip={picks.length ? g.likedBy(picks.map((p) => (p.key === guest.key ? t.comments.you : p.name)).join(", ")) : g.like}
-            onClick={(e) => { e.stopPropagation(); void pick(item); }}>
-            <Heart size={16} weight={liked ? "fill" : "regular"} aria-hidden />
-            {picks.length > 0 && <span>{picks.length}</span>}
-          </button>
-        )}
       </div>
     );
   }, [shots, thumbs, designs, cards, tags, texts, og, token, name, ratioOf, measure, commentsOf, picksOf, guest, pick, g, t, data.people]);

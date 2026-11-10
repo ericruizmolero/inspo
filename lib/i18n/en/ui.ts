@@ -2486,7 +2486,7 @@ export const ui = {
       open: "Share", title: "Share the board", lead: "A link for the client or the team to comment on the references and pick the ones they prefer.",
       what: "What you share", all: "The whole board", someHint: "To show only some, select them on the board and press Share in the bar below.",
       picked: (n: number): string => `${n} picked`,
-      subtitle: "Subtitle (optional)", subtitlePlaceholder: "Subtitle (optional): what the client should look at", links: "Links", openLink: "Open the link", who: "Who gets in", link: "With the link", invite: "Invited",
+      preview: (n: number, project: string): string => `${n === 1 ? "1 reference" : `${n} references`} from ${project} to comment on and like.`, subtitle: "Subtitle (optional)", subtitlePlaceholder: "Subtitle (optional): what the client should look at", links: "Links", openLink: "Open the link", who: "Who gets in", link: "With the link", invite: "Invited",
       linkHint: "Anyone with the link gets in without an account, with a random avatar.", inviteHint: "Each person gets their own link by email and comments with their name.",
       emails: "Emails", emailsPlaceholder: "ana@client.com, luis@client.com", inviteMore: "Invite", copyTheirs: "Copy their link", uninvite: "Remove",
       makeInvite: "Create and invite", refs: (n: number): string => (n === 1 ? "1 reference" : `${n} references`), whole: "The whole board",
