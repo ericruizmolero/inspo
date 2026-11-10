@@ -541,11 +541,12 @@
 .sboard__name { max-width: 220px; padding: 2px 0; border: 0; background: none; color: var(--text); font: inherit; font-size: var(--fs-small); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: text; }
 .sboard__name:hover { color: var(--text); text-decoration: underline; text-decoration-color: var(--border); text-underline-offset: 3px; }
 .sboard__name--edit { width: 200px; outline: none; border-bottom: 1px solid var(--text-2); }
-/* A card on the shared board, and its like: one more strong IconButton s in the card's row at the bottom left
-   (.tile__go, beside comments: same paper, bevel and rounded square); with a count it grows to fit the number, and
-   once yours it is ember like a filed folder. On touch, where the row hides, a liked card still shows it */
+/* A card on the shared board, and its like: up on the right, in place of the link to the original, the card's own
+   default IconButton s (round, chrome fill, hairline) shown with the card's actions on hover; with a count it becomes
+   a pill that fits the number, and once yours the heart fills in ember */
 .sboard__cell { position: relative; }
-.tile__go .sboard__like.has-likes { width: auto; padding: 0 9px; gap: 5px; font: inherit; font-size: var(--fs-label); font-weight: 600; font-variant-numeric: tabular-nums; }
-@media (hover: none) { .share--board .tile__go.is-visible { display: flex; } }
+.tile__actions .sboard__like.has-likes { width: auto; padding: 0 10px; gap: 5px; border-radius: 999px; font: inherit; font-size: var(--fs-label); font-weight: 600; font-variant-numeric: tabular-nums; }
+.tile__actions .sboard__like.is-on svg { color: var(--ember); }
+@media (hover: none) { .share--board .tile__actions.is-visible { display: flex; } }
 .sboard__error { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 40; margin: 0; padding: 8px 14px; border-radius: var(--radius-md); background: var(--chrome); color: var(--chrome-ink); font-size: var(--fs-small); }
 @media (max-width: 800px) { .share-head__end { gap: 12px; } .sboard__name { max-width: 140px; } }

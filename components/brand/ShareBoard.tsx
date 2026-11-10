@@ -128,12 +128,12 @@ export default function ShareBoard({ token, name, subtitle, data, activity: firs
           designCover={showsPage ? shot![key] : design?.coverUrl}
           designScroll={design?.scrollUrl}
           readOnly
-          // A like, in the card's own row at the bottom left, beside comments, the same strong IconButton s (Eric, 10-11:
-          // "si alguien hace hovering en la card desde fuera pueda dar a me gusta en corazón"; the first try, a dark
-          // circle up on the right, "no está del todo bien integrado"). The row stays once someone liked it
-          goShown={picks.length > 0}
-          goExtra={guest && item.id ? (
-            <button type="button" className={`cr-iconbtn cr-iconbtn-strong cr-iconbtn-s sboard__like${liked ? " is-filed" : ""}${picks.length ? " has-likes" : ""}`}
+          // A like, up on the right where the app has the link to the original, which a guest does not need there (Eric,
+          // 10-11: "estaba bien ahí el corazón pero no estaba bien el hovering"): the card's own default IconButton s,
+          // round, shown on hover with the card's actions; it stays once someone liked it, with how many
+          cornerShown={picks.length > 0}
+          corner={guest && item.id ? (
+            <button type="button" className={`cr-iconbtn cr-iconbtn-default cr-iconbtn-s sboard__like${liked ? " is-on" : ""}${picks.length ? " has-likes" : ""}`}
               aria-pressed={liked} aria-label={liked ? g.unlike : g.like}
               data-tip={picks.length ? g.likedBy(picks.map((p) => (p.key === guest.key ? t.comments.you : p.name)).join(", ")) : g.like}
               onClick={(e) => { e.stopPropagation(); void pick(item); }}>
