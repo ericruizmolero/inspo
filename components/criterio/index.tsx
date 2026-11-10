@@ -516,7 +516,8 @@ export function AgentBadge({ agent, size, children }: { agent?: { name: string; 
   return (
     <span className="cr-agent" style={{ "--av": `${size}px`, "--mk": `${m}px` } as CSSProperties} data-tip={app}>
       {children}
-      {mark ? <span className="cr-agent__mark" role="img" aria-label={app} style={{ background: mark.paint, WebkitMaskImage: `url(${mark.src})`, maskImage: `url(${mark.src})` }} />
+      {/* The shape is a mask, so its cut-out ring (the stack's, in the page background) comes from a filter on a wrapper */}
+      {mark ? <span className="cr-agent__mark" role="img" aria-label={app}><span className="cr-agent__shape" style={{ background: mark.paint, WebkitMaskImage: `url(${mark.src})`, maskImage: `url(${mark.src})` }} /></span>
         : <span className="cr-agent__mark is-initial" role="img" aria-label={app}>{app.slice(0, 1).toUpperCase()}</span>}
     </span>
   );
