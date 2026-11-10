@@ -2206,6 +2206,16 @@ html[data-distill] .board[inert] { visibility: hidden; }
    animations again, so the tornado's cards replayed their entrance and went out and back in. A copy is a still */
 [data-ghost], [data-ghost] * { animation: none !important; transition: none !important; }
 .board__world { position: relative; width: 100%; }
+/* The rectangle dragged over the empty board to pick several cards (components/Grid.tsx), like a screenshot's:
+   a hairline of the text color over a wash of it, above the cards, never taking the pointer */
+.board-marquee {
+  position: absolute; left: 0; top: 0; z-index: 2; pointer-events: none;
+  border: 1px solid color-mix(in oklab, var(--text) 45%, transparent);
+  background: color-mix(in oklab, var(--text) 6%, transparent);
+  border-radius: var(--radius-s);
+}
+.board-marquee[hidden] { display: none; }
+.board[data-marquee] { user-select: none; -webkit-user-select: none; cursor: crosshair; }
 /* The clouds (components/Clouds.tsx; Eric, 09-10: "nubecita del color de background", "casi que en todas partes"):
    a view fades into its own background where the bars float over it. Each shows where there is more beyond it:
    the bottom one under the dock or the corner pill until the view reaches its end (.is-off), the top one once the

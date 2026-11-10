@@ -94,7 +94,15 @@ function layoutBoard(items: InspoItem[], ratioOf: (item: InspoItem) => number, c
   return { slots, byKey, height: Math.max(padTop, ...bottoms) - GAP, col };
 }
 
-export default memo(function Grid({ under = false, missed = false, corner, head, headHeight = 0, items, ratioOf, hasNote, insets, zoom, onZoom, fitKey, focusKey, renderCard, handleRef }: {
+/** A drag shorter than this is still a click */
+const MARQUEE_SLOP = 4;
+/** Near the top or bottom of the board (clear of the bars), a rectangle being drawn scrolls it, faster the closer */
+const MARQUEE_EDGE = 56;
+const MARQUEE_SPEED = 18;
+
+export default memo(function Grid({ under = false, missed = false, corner, head, headHeight = 0, items, ratioOf, hasNote, insets, zoom, onZoom, fitKey, focusKey, renderCard, handleRef, onMarquee }: {
+  /** A rectangle dragged from the board's empty space: the cards it covers, live (additive with ⇧/⌘), and null once it is let go */
+  onMarquee?: (covered: InspoItem[] | null, additive: boolean) => void;
   /** A line over the cards, inside the scroll (it goes up with the board, never sticks): what an agent left */
   head?: ReactNode;
   /** The room it takes: the cards start this much lower */
@@ -241,6 +249,74 @@ export default memo(function Grid({ under = false, missed = false, corner, head,
     if (s.y >= top && s.y + s.h <= bottom) return;
     el.scrollTo({ top: Math.max(0, s.y - ins.top - PAD), behavior: "smooth" });
   }, []);
+  // ─── The rectangle: picking several cards with one drag ─────────────────────
+  // Like the rectangle of a screenshot: pressed on the empty board (between the cards, round them) and dragged,
+  // every card it touches is picked, live. It reads the layout's numbers, so the cards scrolled out of the window
+  // count too, and near an edge it scrolls the board on. Mouse and pen only: on touch a drag is a scroll.
+  const boxRef = useRef<HTMLDivElement>(null);
+  const marqueeRef = useRef(onMarquee);
+  marqueeRef.current = onMarquee;
+  const onPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    const el = scrollRef.current, box = boxRef.current;
+    if (!el || !box || !marqueeRef.current || e.button !== 0 || e.pointerType === "touch") return;
+    const target = e.target as HTMLElement;
+    if (target.closest(".board-tile, .board__head, button, a, input, textarea, [contenteditable]")) return;
+    const er = el.getBoundingClientRect();
+    if (e.clientX - er.left >= el.clientWidth) return; // the scrollbar
+    const additive = e.shiftKey || e.metaKey || e.ctrlKey;
+    const x0 = e.clientX - er.left, y0 = e.clientY - er.top + el.scrollTop;
+    let cx = e.clientX, cy = e.clientY, active = false, raf = 0, lastHit = "";
+    const draw = () => {
+      const r = el.getBoundingClientRect();
+      const x1 = Math.max(0, Math.min(el.clientWidth, cx - r.left)), y1 = cy - r.top + el.scrollTop;
+      const left = Math.min(x0, x1), top = Math.min(y0, y1), w = Math.abs(x1 - x0), h = Math.abs(y1 - y0);
+      box.style.transform = `translate(${left}px, ${top}px)`;
+      box.style.width = `${w}px`;
+      box.style.height = `${h}px`;
+      const slots = layoutRef.current?.slots ?? [];
+      const hit = slots.filter((s) => s.x < left + w && s.x + s.w > left && s.y < top + h && s.y + s.h > top);
+      const sig = hit.map((s) => s.key).join("|");
+      if (sig !== lastHit) { lastHit = sig; marqueeRef.current?.(hit.map((s) => s.item), additive); }
+    };
+    // Scrolls while the pointer rests near an edge, and redraws as the board moves under it
+    const tick = () => {
+      raf = requestAnimationFrame(tick);
+      const r = el.getBoundingClientRect(), ins = insetsRef.current;
+      const topEdge = r.top + ins.top + MARQUEE_EDGE, bottomEdge = r.bottom - ins.bottom - MARQUEE_EDGE;
+      const by = cy < topEdge ? -Math.min(1, (topEdge - cy) / MARQUEE_EDGE) : cy > bottomEdge ? Math.min(1, (cy - bottomEdge) / MARQUEE_EDGE) : 0;
+      if (by) { el.scrollTop += by * MARQUEE_SPEED; draw(); }
+    };
+    const move = (ev: PointerEvent) => {
+      cx = ev.clientX; cy = ev.clientY;
+      if (!active) {
+        if (Math.hypot(cx - e.clientX, cy - e.clientY) < MARQUEE_SLOP) return;
+        active = true;
+        el.dataset.marquee = "";
+        box.hidden = false;
+        window.getSelection()?.removeAllRanges();
+        raf = requestAnimationFrame(tick);
+      }
+      draw();
+    };
+    const up = () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      window.removeEventListener("pointercancel", up);
+      cancelAnimationFrame(raf);
+      if (!active) return;
+      delete el.dataset.marquee;
+      box.hidden = true;
+      marqueeRef.current?.(null, additive);
+      // The click that ends the drag lands on the board: it must not read as a click on empty space
+      const swallow = (c: MouseEvent) => c.stopPropagation();
+      window.addEventListener("click", swallow, { capture: true, once: true });
+      setTimeout(() => window.removeEventListener("click", swallow, { capture: true }), 0);
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+    window.addEventListener("pointercancel", up);
+  }, []);
+
   // A render of its own for the flight to run in, once the refs are reset
   const [, setArriving] = useState(0);
   const receive = useCallback(() => { morphed.current = false; placed.current = false; setArriving((n) => n + 1); }, []);
@@ -330,8 +406,9 @@ export default memo(function Grid({ under = false, missed = false, corner, head,
 
   return (
     <>
-      <div ref={scrollRef} className="board" data-bare={bare ? "" : undefined} data-missed={missed ? "" : undefined} inert={under || undefined} aria-hidden={under || undefined}>
+      <div ref={scrollRef} className="board" data-bare={bare ? "" : undefined} data-missed={missed ? "" : undefined} inert={under || undefined} aria-hidden={under || undefined} onPointerDown={onMarquee && !phone ? onPointerDown : undefined}>
         <div className="board__world" style={{ height: layout ? layout.height + padBottom : "100%" }}>
+          <div ref={boxRef} className="board-marquee" hidden aria-hidden />
           {head && <div className="board__head" style={{ top: insets.top + PAD / 2, left: padL, right: padR }}>{head}</div>}
           {visible.map((s) => {
             const enter = seen.has(s.key) ? undefined : entrance.current?.get(s.key);

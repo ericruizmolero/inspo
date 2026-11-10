@@ -583,7 +583,7 @@ export default function InspoClient({
     setSystem(projectId, r.data);
   // eslint-disable-next-line react-hooks/exhaustive-deps -- projectFailed is a new function on every render, so listing it would rebuild this callback on every render
   }, [setSystem]);
-  const { selected, bar, setBar, selectItem, clearSelection, selectAll, selectionIn, fileSelection, moveSelection, removeSelection, deleteSelection, createForSelection } = useSelection({ t, items, setItems, setThumbMap, boardItems, space, projectView, links, setLinks, currentProject, confirm, refreshSystem, projectFailed, setToast, createProject });
+  const { selected, bar, setBar, selectItem, marqueeSelect, clearSelection, selectAll, selectionIn, fileSelection, moveSelection, removeSelection, deleteSelection, createForSelection } = useSelection({ t, items, setItems, setThumbMap, boardItems, space, projectView, links, setLinks, currentProject, confirm, refreshSystem, projectFailed, setToast, createProject });
 
   // What an agent left on the open project and has no card: its answers and a drafted plan, read when the project
   // opens and whenever its waiting references move (the pulse brings those)
@@ -796,6 +796,7 @@ export default function InspoClient({
       fitKey={fitKey}
       focusKey={panelItem ? keyOf(panelItem) : null}
       handleRef={gridRef}
+      onMarquee={marqueeSelect}
       renderCard={boardAt ? (item, level) => item.id && boardAt.added.has(item.id) ? <div className="bh-fresh" style={{ display: "contents" }}>{renderCard(item, level)}</div> : renderCard(item, level) : renderCard}
       head={boardAt && boardRows && projectView === "board" ? <BoardVersionBar n={boardAt.n} rows={boardRows} restoring={restoring} onPick={pickBoardVersion} onRestore={() => void restoreBoardVersion()} />
         : waitingHere && projectView === "board" ? <SuggestedLine pending={waitingHere} onAnswer={answerPending} /> : undefined}

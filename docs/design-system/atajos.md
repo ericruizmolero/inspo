@@ -16,6 +16,7 @@ Todos los que maneja la app. Al añadir uno: que no choque con estos, que no sal
 | ⌘/Ctrl + rueda, o pellizco | Zoom de columnas del tablero; en Pulido, tamaño del tornado |
 | ⌘/Ctrl/Shift/Alt + clic en una pestaña | Lo que haría el navegador con un enlace |
 | ⌘/Ctrl o Shift + clic en una tarjeta | La selecciona; con Shift, el tramo desde la última elegida |
+| Arrastrar desde el hueco del tablero (ratón) | Dibuja un rectángulo, como el de una captura: selecciona en vivo las tarjetas que toca; con ⌘/Shift las suma a lo ya elegido. Cerca del borde de arriba o de abajo el tablero se desplaza solo |
 | ⌘A / Ctrl+A con algo seleccionado | Selecciona todo el tablero a la vista (botón "Seleccionar todo" de la barra) |
 | Esc con algo seleccionado | Suelta la selección |
 

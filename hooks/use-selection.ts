@@ -9,7 +9,8 @@ import type { InspoItem, Project, ProjectLinks } from "@/types/inspo";
 
 // ─── Selection: several references at once (SelectBar) ──────────────────────
 // ⌘/⇧-click or the circle on a card picks it; while anything is picked, a click picks. ⇧ picks the run from
-// the last pick, in the board's order. Esc or Done lets go; changing space does too.
+// the last pick, in the board's order. Dragging a rectangle from the board's empty space picks what it covers.
+// Esc or Done lets go; changing space does too.
 export function useSelection({ t, items, setItems, setThumbMap, boardItems, space, projectView, links, setLinks, currentProject, confirm, refreshSystem, projectFailed, setToast, createProject }: {
   t: Dict;
   items: InspoItem[];
@@ -50,6 +51,20 @@ export function useSelection({ t, items, setItems, setThumbMap, boardItems, spac
   const clearSelection = useCallback(() => { setSelected(new Set()); lastPick.current = null; }, []);
   useEffect(() => { clearSelection(); }, [space, projectView, clearSelection]);
   const selectAll = useCallback(() => setSelected(new Set(boardItems.map((i) => i.id).filter((x): x is string => !!x))), [boardItems]);
+  // The rectangle dragged over the board (Grid's onMarquee): what it covers is the selection, live, on top of what
+  // was picked before it started when ⇧/⌘ was held. null ends the drag.
+  const marqueeBase = useRef<ReadonlySet<string> | null>(null);
+  const selectedRef = useRef(selected);
+  selectedRef.current = selected;
+  const marqueeSelect = useCallback((covered: InspoItem[] | null, additive: boolean) => {
+    if (!covered) { marqueeBase.current = null; return; }
+    if (!marqueeBase.current) marqueeBase.current = additive ? selectedRef.current : new Set();
+    const next = new Set(marqueeBase.current);
+    for (const i of covered) if (i.id) next.add(i.id);
+    setSelected(next);
+    const last = covered.at(-1)?.id;
+    if (last) lastPick.current = last;
+  }, []);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const el = e.target as HTMLElement | null;
@@ -138,5 +153,5 @@ export function useSelection({ t, items, setItems, setThumbMap, boardItems, spac
     if (currentProject) await moveSelection(p.id);
     else await fileSelection(p.id, true);
   }, [createProject, currentProject, moveSelection, fileSelection]);
-  return { selected, bar, setBar, selectItem, clearSelection, selectAll, selectionIn, fileSelection, moveSelection, removeSelection, deleteSelection, createForSelection };
+  return { selected, bar, setBar, selectItem, marqueeSelect, clearSelection, selectAll, selectionIn, fileSelection, moveSelection, removeSelection, deleteSelection, createForSelection };
 }
