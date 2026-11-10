@@ -136,8 +136,8 @@ export const TOOLS: Tool[] = [
   }),
   tool({
     name: "remove_reference", title: "Remove references from the board",
-    description: "Takes references off a project's board: duplicates, or one brought by mistake. Only when the person asks or agrees; say which ones first. Each stays in the workspace's library and on any other board, so it can come back. The codes R1, R2… of the ones after it move up: list_references again before citing one.",
-    input: z.object({ project: Project, ids: z.array(z.string().min(1).max(60)).min(1).max(30).describe("The references' ids, from list_references.") }),
+    description: "Takes references off a project's board: duplicates, or one brought by mistake. Only when the person asks or agrees; say which ones first. Each stays in the workspace's library and on any other board, so it can come back. It also takes off one still waiting for the team's yes (list_references, waiting_for_the_team): that one is dismissed and not brought back as it was. The codes R1, R2… of the ones after it move up: list_references again before citing one.",
+    input: z.object({ project: Project, ids: z.array(z.string().min(1).max(60)).min(1).max(30).describe("The references' ids, from list_references (on the board or waiting for the team).") }),
     annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: false },
     run: (i, ctx, origin) => removeReferences(ctx, origin, i),
   }),

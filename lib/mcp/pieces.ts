@@ -25,7 +25,7 @@ import { addComment, listItemComments } from "../comments";
 import { refInfoOf } from "../ref-info";
 import { dictOf } from "../i18n";
 import { normalizeWebUrl, mediaKindOf, nameFromFile, webKeyOf } from "../url";
-import { answerKey, dismissedKeys, suggestReference, textKey, type Brought } from "../suggestions";
+import { answerKey, dismissSuggestions, dismissedKeys, suggestReference, textKey, type Brought } from "../suggestions";
 import type { RefRole } from "@/types/suggestions";
 import { fetchFile } from "../remote-file";
 import { MEDIA_TYPES, MAX_MEDIA_BYTES, newMediaKey } from "../media";
@@ -169,11 +169,14 @@ async function broughtMd(org: string, projectId: string): Promise<string> {
 export async function listReferences(ctx: McpCtx, ref: string) {
   const project = await resolveProject(ctx, ref);
   const org = project.workspace.id;
-  const [rows, system] = await Promise.all([
+  const S = schema.projectSuggestion;
+  const [rows, system, waiting] = await Promise.all([
     db.select({ id: T.id, name: T.name, web: T.web, source: T.source, author: T.author, via: T.via, note: T.note })
       .from(PI).innerJoin(T, eq(T.id, PI.itemId))
       .where(and(eq(PI.organizationId, org), eq(PI.projectId, project.id))).orderBy(asc(PI.createdAt)),
     getSystem(org, project.id),
+    db.select({ id: T.id, name: T.name, web: T.web }).from(S).innerJoin(T, eq(T.id, S.itemId))
+      .where(and(eq(S.organizationId, org), eq(S.projectId, project.id), eq(S.kind, "reference"), eq(S.state, "open"))).orderBy(asc(S.createdAt)),
   ]);
   const areasOf: Record<string, SystemArea[]> = {};
   for (const a of system.areas) for (const e of a.evidence) (areasOf[e.itemId] ??= []).push(a.area);
@@ -191,6 +194,12 @@ export async function listReferences(ctx: McpCtx, ref: string) {
         ...(areasOf[r.id]?.length ? { areas: areasOf[r.id] } : {}),
       };
     }),
+    // Brought by an agent and not answered yet: no code, they are not references until the team says yes.
+    // remove_reference takes them off too
+    ...(waiting.length ? { waiting_for_the_team: waiting.map((r) => {
+      const kind = mediaKindOf(r.web);
+      return { id: r.id, name: r.name, kind, ...(kind === "image" || kind === "text" ? {} : { url: r.web }) };
+    }) } : {}),
   };
 }
 
@@ -353,20 +362,34 @@ export async function addPiece(ctx: McpCtx, origin: string, input: NewPiece) {
 /**
  * Takes references off a project's board: a duplicate, one brought by mistake. Each stays in the workspace's
  * library (and on any other board), so it can be filed again; what was voted on it in this project goes.
+ * One still waiting for the team's yes is dismissed, as the ✕ on its card does (lib/suggestions.ts): it leaves the
+ * library too when the suggestion made it, and the same thing is not brought back.
  */
 export async function removeReferences(ctx: McpCtx, origin: string, input: { project: string; ids: readonly string[] }) {
   const project = await resolveProject(ctx, input.project);
   const org = project.workspace.id;
+  const S = schema.projectSuggestion;
   const ids = [...new Set(input.ids.map((i) => String(i).trim()).filter(Boolean))];
   const filed = ids.length ? await db.select({ id: PI.itemId, name: T.name }).from(PI).innerJoin(T, eq(T.id, PI.itemId))
     .where(and(eq(PI.organizationId, org), eq(PI.projectId, project.id), inArray(PI.itemId, ids))) : [];
-  const missing = ids.filter((i) => !filed.some((f) => f.id === i));
+  const rest = ids.filter((i) => !filed.some((f) => f.id === i));
+  // The rest may be waiting: found by the reference's id, or by the suggestion's own
+  const waiting = rest.length ? await db.select({ id: S.id, itemId: S.itemId, name: T.name }).from(S).innerJoin(T, eq(T.id, S.itemId))
+    .where(and(eq(S.organizationId, org), eq(S.projectId, project.id), eq(S.kind, "reference"), eq(S.state, "open"))) : [];
+  const dropped = waiting.filter((w) => rest.includes(w.itemId!) || rest.includes(w.id));
+  const missing = rest.filter((i) => !dropped.some((w) => w.itemId === i || w.id === i));
   await unfileItems(org, project.id, filed.map((f) => f.id), { userId: ctx.user.id });
-  if (filed.length) versionAfterWrite(ctx, origin, project);
+  if (dropped.length) await dismissSuggestions(org, project.id, { refs: dropped.map((w) => w.id) }, { id: ctx.user.id, name: ctx.user.name, email: ctx.user.email });
+  if (filed.length || dropped.length) versionAfterWrite(ctx, origin, project);
   return {
-    removed: filed.map((f) => ({ id: f.id, name: f.name })), project: project.name,
+    removed: filed.map((f) => ({ id: f.id, name: f.name })),
+    ...(dropped.length ? { dismissed: dropped.map((w) => ({ id: w.itemId, name: w.name })) } : {}),
+    project: project.name,
     ...(missing.length ? { not_on_this_board: missing } : {}),
-    status: filed.length ? "Off the board; still in the library. The codes R1, R2… of the ones after them move up: call list_references again before citing one." : "None of these was on the board.",
+    status: [
+      filed.length ? "Off the board; still in the library. The codes R1, R2… of the ones after them move up: call list_references again before citing one." : "",
+      dropped.length ? "The ones waiting for the team are dismissed: they will not be brought back as they were." : "",
+    ].filter(Boolean).join(" ") || "None of these was on the board or waiting on it.",
     url: projectUrl(origin, project.id),
   };
 }
