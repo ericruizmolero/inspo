@@ -13,6 +13,7 @@ import VideoPlayer from "./VideoPlayer";
 import PostView from "./PostView";
 import { Busy, Button, Chip, EmptyState, Icon, IconButton, TextArea } from "@/components/criterio";
 import PersonAvatar from "@/components/PersonAvatar";
+import { agentMark } from "@/lib/agent-mark";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { REACTIONS } from "@/lib/reactions";
 
@@ -55,6 +56,10 @@ interface CommentsPanelProps {
   noteReactions?: { note?: CommentReaction[]; subNote?: CommentReaction[] };
   /** Gives or takes away the person's emoji on that note. Without it, its reactions are only shown */
   onReactNote?: (field: "note" | "subNote", emoji: string) => Promise<void>;
+  /** No screenshots: a guest of a share link writes words only (components/brand/ShareBoard.tsx) */
+  noFiles?: boolean;
+  /** The line under an empty conversation, when it is not the team who will read it */
+  emptyLine?: string;
 }
 
 const IcTrash = <Icon name="trash" size={14} />;
@@ -95,6 +100,8 @@ interface Msg {
   attachments: CommentAttachment[];
   at: string;
   mine: boolean;
+  /** Who an agent saved it for, when `name` is the AI app it came through: "by Eric" */
+  byline?: string;
   /** true for the original note and the item's subcomment */
   original?: boolean;
   deletable?: boolean;
@@ -103,6 +110,8 @@ interface Msg {
   /** Emoji reactions: on a comment, or on the note the reference was saved with (stored on the reference) */
   reactions?: CommentReaction[];
   reactable?: boolean;
+  /** From outside the team, through a share link */
+  guest?: boolean;
 }
 
 /** The emoji to choose from, the quick row first, as a menu over the comment (Slack, WhatsApp). One each: yours is
@@ -185,7 +194,7 @@ function filesFrom(dt: DataTransfer | null): File[] {
   return out;
 }
 
-export default function CommentsPanel({ item, comments, user, canManage, memberImages, memberNames = [], image, notice, onPost, onDelete, onEditNote, onClose, showMedia = true, onPostThumb, onReply, onReact, noteReactions, onReactNote }: CommentsPanelProps) {
+export default function CommentsPanel({ item, comments, user, canManage, memberImages, memberNames = [], image, notice, onPost, onDelete, onEditNote, onClose, showMedia = true, onPostThumb, onReply, onReact, noteReactions, onReactNote, noFiles = false, emptyLine }: CommentsPanelProps) {
   const { locale, t } = useT();
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
@@ -276,15 +285,17 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
     const author = item.addedBy || t.comments.noAuthor;
     const mine = author === user.name;
     const editable = !!onEditNote && (mine || canManage);
+    // Saved over MCP: the note is the app's, with its logo, and says who it worked for
+    const agent = item.via ? { name: item.via, image: agentMark(item.via), byline: t.comments.viaBy(author) } : null;
     if (item.note) {
-      originals.push({ id: "nota", name: author, image: memberImages[author] ?? null, body: item.note, attachments: [], at: esDateToIso(item.date), mine, original: true, editable, reactions: noteReactions?.note ?? [], reactable: true });
+      originals.push({ id: "nota", name: author, image: memberImages[author] ?? null, ...agent, body: item.note, attachments: [], at: esDateToIso(item.date), mine, original: true, editable, reactions: noteReactions?.note ?? [], reactable: true });
     }
     if (item.subNote) {
       originals.push({ id: "sub", name: author, image: memberImages[author] ?? null, body: item.subNote, attachments: [], at: esDateToIso(item.date), mine, original: true, editable, reactions: noteReactions?.subNote ?? [], reactable: true });
     }
     const toMsg = (c: InspoComment): Msg => {
       const own = c.authorId === user.id;
-      return { id: c.id, name: c.authorName, image: c.authorImage, body: c.body, attachments: c.attachments ?? [], at: c.createdAt, mine: own, deletable: own || canManage, reactions: c.reactions ?? [], reactable: true };
+      return { id: c.id, name: c.authorName, image: c.authorImage, body: c.body, attachments: c.attachments ?? [], at: c.createdAt, mine: own, deletable: own || canManage, reactions: c.reactions ?? [], reactable: !c.guest, guest: c.guest };
     };
     const ids = new Set(comments.map((c) => c.id));
     const threads: Thread[] = [];
@@ -396,7 +407,7 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
       {!grouped && (
         <div className="cm-msg__head">
           <PersonAvatar name={m.name} image={m.image} size={26} />
-          <span className="cm-msg__name">{m.name}{m.mine && <Chip className="cm-msg__you">{t.comments.you}</Chip>}</span>
+          <span className="cm-msg__name">{m.name}{m.byline && <span className="cm-msg__by">{m.byline}</span>}{m.mine && !m.byline && <Chip className="cm-msg__you">{t.comments.you}</Chip>}{m.guest && !m.mine && <Chip className="cm-msg__you">{t.comments.guest}</Chip>}</span>
           <span className="cm-msg__time" data-tip={fmtDateTime(m.at, locale)}>{relTime(m.at, now, locale, t)}</span>
         </div>
       )}
@@ -487,11 +498,11 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
         className={`cm-panel${dragging ? " is-dragging" : ""}`}
         role="dialog"
         aria-label={t.comments.ofLabel(item.name)}
-        onPaste={onPaste}
-        onDragEnter={onDragEnter}
-        onDragOver={onDragOver}
-        onDragLeave={onDragLeave}
-        onDrop={onDrop}
+        onPaste={noFiles ? undefined : onPaste}
+        onDragEnter={noFiles ? undefined : onDragEnter}
+        onDragOver={noFiles ? undefined : onDragOver}
+        onDragLeave={noFiles ? undefined : onDragLeave}
+        onDrop={noFiles ? undefined : onDrop}
       >
         {dragging && (
           <div className="cm-drop" aria-hidden>
@@ -543,9 +554,9 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
               suggestions={[...(kind === "web" ? t.comments.prompts : t.comments.promptsMedia)]}
               onSuggest={(p) => { setDraft(p + " "); textareaRef.current?.focus(); }}
             >
-              {others.length === 0
+              {emptyLine ?? (others.length === 0
                 ? t.comments.emptyAlone
-                : t.comments.emptyWithOthers(listNames(others, t.comments.and), others.length > 1)}
+                : t.comments.emptyWithOthers(listNames(others, t.comments.and), others.length > 1))}
             </EmptyState>
           )}
           {threads.map(({ head, replies }) => (
@@ -605,7 +616,7 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); void submit(); } }}
             toolbar={<>
-              <IconButton icon="image" variant="quiet" size="s" label={t.comments.attach} onClick={() => fileRef.current?.click()} />
+              {!noFiles && <IconButton icon="image" variant="quiet" size="s" label={t.comments.attach} onClick={() => fileRef.current?.click()} />}
               {uploading && <span className="cr-textbox-status" role="status">{t.comments.uploading}</span>}
               <Button variant="primary" size="s" type="submit" disabled={!canSend}>
                 {sending ? <Busy label={t.comments.send} /> : t.comments.send}
@@ -627,7 +638,7 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
           </TextArea>
           {error && <p className="cm-composer__error" role="alert">{error}</p>}
           {/* The little help under the field, whole and out of the way (Eric, 07-10: in the bar it was cut and in the way) */}
-          <p id="cm-composer-keys" className="cm-composer__hint cm-composer__keys">{t.comments.composerHint}</p>
+          <p id="cm-composer-keys" className="cm-composer__hint cm-composer__keys">{noFiles ? t.comments.composerHintWords : t.comments.composerHint}</p>
         </form>
       </aside>
 

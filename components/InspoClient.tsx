@@ -402,7 +402,8 @@ export default function InspoClient({
   const [connecting, setConnecting] = useState(false);
   const [exampleOpen, setExampleOpen] = useState(false);
   // The project whose share links are open (components/brand/ShareDialog.tsx), from its tab's menu
-  const [sharing, setSharing] = useState<string | null>(null);
+  // With the references selected on its board when it opened from the selection bar
+  const [sharing, setSharing] = useState<{ projectId: string; itemIds?: string[] } | null>(null);
   const stepsList = firstSteps && (
     <FirstSteps steps={firstSteps} onConnect={() => setConnecting(true)}
       onHide={() => { setFirstSteps(null); void hideFirstStepsList(); }} />
@@ -890,7 +891,7 @@ export default function InspoClient({
           <Island user={user} workspace={workspace} workspaces={workspaces} isAdmin={isAdmin}
             items={items} links={links} projects={projects} systems={systems} space={space} onSpace={setSpace} bellNews={bellNews}
             onCreateProject={createProject} onRenameProject={renameProject} onDeleteProject={deleteProject}
-            onDuplicateProject={duplicateProject} onMoveProject={moveProject} onShareProject={(p) => setSharing(p.id)}
+            onDuplicateProject={duplicateProject} onMoveProject={moveProject} onShareProject={(p) => setSharing({ projectId: p.id })}
             members={members} onPerson={(name) => {
               // What someone saved is looked at inside a project: the open one, or the one being worked in
               if (!currentProject) { const to = saveTarget(); if (to) setParams({ in: to, view: "board" }); }
@@ -1140,9 +1141,10 @@ export default function InspoClient({
         {bar && (
           <SelectBar count={bar.count} total={boardItems.length} closing={selected.size === 0} onClosed={() => setBar(null)} projects={projects} filed={selectionIn.all} partly={selectionIn.some} current={currentProject}
             onAll={selectAll} onFile={(id, on) => void fileSelection(id, on)} onMove={(id) => void moveSelection(id)} onCreate={createForSelection}
-            onRemove={() => void removeSelection()} onDelete={() => void deleteSelection()} onDone={clearSelection} />
+            onRemove={() => void removeSelection()} onDelete={() => void deleteSelection()} onDone={clearSelection}
+            onShare={currentProject ? () => setSharing({ projectId: currentProject.id, itemIds: boardItems.flatMap((i) => (i.id && selected.has(i.id) ? [i.id] : [])) }) : undefined} />
         )}
-        {sharing && <ShareDialog projectId={sharing} onClose={() => setSharing(null)} />}
+        {sharing && <ShareDialog projectId={sharing.projectId} itemIds={sharing.itemIds} onClose={() => setSharing(null)} />}
         {/* Neither the bar nor Tino while the first time in is walked: one thing per screen */}
         {!welcome && items.length > 0 && ((searchHere && spaceItems.length > 0) || agentSpeaks) && selected.size === 0 && (
           <div className="dock">

@@ -10,7 +10,7 @@ export async function GET(req: Request, ctx: RouteContext<"/s/[token]/og">) {
   const share = await resolveShare(token);
   if (!share) return new Response("not found", { status: 404, headers: { "X-Robots-Tag": "noindex" } });
   const id = new URL(req.url).searchParams.get("id") ?? "";
-  const board = await loadShareBoard(share.organizationId, share.projectId, share.mode, `/s/${token}`);
+  const board = await loadShareBoard(share, `/s/${token}`);
   const item = board && board.og.includes(id) ? board.items.find((i) => i.id === id) : undefined;
   if (!item || !isPublicHttpUrl(item.web)) return new Response("forbidden", { status: 403 });
   return ogImage(item.web);

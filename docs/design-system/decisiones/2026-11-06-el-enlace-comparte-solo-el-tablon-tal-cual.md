@@ -1,7 +1,7 @@
 ---
 title: El enlace comparte solo el tablón, tal cual se ve en la app
 date: 2026-11-06
-status: vigente
+status: sustituida
 kind: producto
 supersedes: 2026-11-06-el-enlace-del-proyecto-comparte-tambien-el-tablon
 ---

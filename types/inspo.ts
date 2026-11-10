@@ -173,6 +173,8 @@ export interface InspoComment {
   createdAt: string;
   /** Emoji reactions, by emoji in the order first given (lib/reactions.ts) */
   reactions?: CommentReaction[];
+  /** Written by someone from outside the team, through a share link (lib/share-guests.ts) */
+  guest?: boolean;
 }
 
 /** One emoji on a comment and who gave it */

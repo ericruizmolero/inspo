@@ -8,7 +8,7 @@ import { useT } from "./I18nProvider";
 import { Button, Icon, Separator } from "@/components/criterio";
 import "./SelectBar.css";
 
-export default function SelectBar({ count, total, closing, onClosed, projects, filed, partly, current, onAll, onFile, onMove, onCreate, onRemove, onDelete, onDone }: {
+export default function SelectBar({ count, total, closing, onClosed, projects, filed, partly, current, onAll, onFile, onMove, onCreate, onRemove, onDelete, onShare, onDone }: {
   count: number;
   /** How many the board on screen holds: with all of them picked there is nothing left to offer */
   total: number;
@@ -25,6 +25,8 @@ export default function SelectBar({ count, total, closing, onClosed, projects, f
   onCreate: (name: string) => Promise<void>;
   onRemove: () => void;
   onDelete: () => void;
+  /** Inside a project: a share link with only the selection (components/brand/ShareDialog.tsx) */
+  onShare?: () => void;
   onDone: () => void;
 }) {
   const { t } = useT();
@@ -55,6 +57,11 @@ export default function SelectBar({ count, total, closing, onClosed, projects, f
           <Icon name="trash" size={16} />
           <span>{s.remove}</span>
         </button>
+      )}
+      {current && onShare && (
+        <Button variant="quiet" size="s" icon="link" className="selbar__btn" onClick={onShare} aria-label={s.shareSelection} data-tip={s.shareSelection}>
+          <span>{s.share}</span>
+        </Button>
       )}
       {!current && (
         <Button variant="quiet" size="s" icon="trash" className="selbar__btn" onClick={onDelete} aria-label={s.deleteSelection} data-tip={s.deleteSelection}>

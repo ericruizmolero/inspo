@@ -176,6 +176,12 @@ export function clientAnswersMail(a: { project: string; n: number; url: string }
   return { subject: t.clientAnswers.subject(a.project), text: signed(locale, t.clientAnswers.text(a.project, a.n, a.url)) };
 }
 
+/** Someone invited to a share link (lib/share.ts): their own address to the board, to comment and choose */
+export function shareInviteMail(s: { who: string; project: string; url: string }, locale: Locale): Mail {
+  const t = mailDict(locale);
+  return { subject: t.shareInvite.subject(s.who, s.project), text: signed(locale, t.shareInvite.text(s.who, s.project, s.url)) };
+}
+
 // ─── First use (lib/first-use-mail.ts) ───────────────────────────────────────
 
 /** Once, when the account is made: the five steps to a first criterio.md, in order */

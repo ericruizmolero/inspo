@@ -15,7 +15,7 @@ export async function GET(req: Request, ctx: RouteContext<"/s/[token]/f/[...key]
   if (!share) return new Response("not found", { status: 404 });
   let ok = shareMayServe(share.organizationId, share.projectId, key);
   if (!ok) {
-    const board = await loadShareBoard(share.organizationId, share.projectId, share.mode, `/s/${token}`);
+    const board = await loadShareBoard(share, `/s/${token}`);
     ok = !!board?.keys.has(key);
   }
   if (!ok) return new Response("forbidden", { status: 403 });

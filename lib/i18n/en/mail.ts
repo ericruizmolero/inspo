@@ -85,6 +85,11 @@ export const mail = {
       `${who} ${accepted ? "accepted" : "turned down"} what you proposed for ${area} in ${project}: ${decision}\n\nOpen it here:\n${url}`,
   },
 
+  shareInvite: {
+    subject: (who: string, project: string): string => `${who} wants your take on ${project}`,
+    text: (who: string, project: string, url: string): string => `${who} shared the board of ${project} with you on criterio.design. Open each reference, comment on it and pick the ones you like:\n${url}\n\nThe link is yours alone: what you write goes with your name. No account needed.`,
+  },
+
   clientAnswers: {
     subject: (project: string): string => `Your client answered about ${project}`,
     text: (project: string, n: number, url: string): string => `Your client answered ${n === 1 ? "1 question" : `${n} questions`} about ${project}. The file has not changed: run a new pass when you want it to read them.\n\nOpen it here:\n${url}`,

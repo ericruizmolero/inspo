@@ -501,12 +501,37 @@
 .bshare__make { display: flex; gap: 8px; }
 .bshare__make .cr-input { flex: 1; min-width: 0; }
 .bshare__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
-.bshare__list li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; border-top: 1px solid var(--border); }
-.bshare__list li > div { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-.bshare__list b { display: inline-flex; align-items: center; gap: 8px; font-size: var(--fs-small); font-weight: 600; }
+.bshare__list li { display: flex; flex-direction: column; gap: 10px; padding: 12px 0; border-top: 1px solid var(--border); }
+.bshare__row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.bshare__row > div { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.bshare__list b { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 8px; font-size: var(--fs-small); font-weight: 600; }
 .bshare__list small { font-size: var(--fs-small); color: var(--text-2); }
+.bshare__back { color: var(--text); }
 .bshare__list code { font-family: var(--font-mono); font-size: var(--fs-label); color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .bshare__mode.cr-chip { padding: 1px 8px; font-size: var(--fs-label); font-weight: 500; }
-.bshare__list li > span { display: inline-flex; gap: 4px; flex-shrink: 0; }
+.bshare__row > span { display: inline-flex; gap: 4px; flex-shrink: 0; }
 /* Copy link: a secondary Button, size s; revoke: a quiet one, beside the strong IconButton */
-@media (max-width: 560px) { .bshare__list li { flex-direction: column; align-items: flex-start; } }
+.bshare__emails { width: 100%; resize: vertical; min-height: 0; font: inherit; font-size: var(--fs-small); }
+/* The people invited to a link: one line each, their own link to copy, and a field for more */
+.bshare__guests { display: flex; flex-direction: column; gap: 4px; }
+.bshare__guest { display: flex; align-items: center; gap: 8px; min-height: 32px; }
+.bshare__guest-who { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-small); }
+.bshare__guest-who b { font-weight: 600; }
+.bshare__guests .bshare__make { margin-top: 4px; }
+@media (max-width: 560px) { .bshare__row { flex-direction: column; align-items: flex-start; } .bshare__guest { flex-wrap: wrap; } }
+
+/* ─── A guest on the shared board (components/brand/ShareBoard.tsx) ─── */
+.share-head__end { display: inline-flex; align-items: center; gap: 16px; flex-shrink: 0; min-width: 0; }
+/* Who you are: your avatar and your name, written in place when pressed */
+.sboard__me { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
+.sboard__name { max-width: 220px; padding: 2px 0; border: 0; background: none; color: var(--text); font: inherit; font-size: var(--fs-small); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: text; }
+.sboard__name:hover { color: var(--text); text-decoration: underline; text-decoration-color: var(--border); text-underline-offset: 3px; }
+.sboard__name--edit { width: 200px; outline: none; border-bottom: 1px solid var(--text-2); }
+/* A card on the shared board: the circle is the guest's choice and stays on once picked; who else picked it, top right */
+.sboard__cell { position: relative; }
+.share--board .tile.is-selected .tile__select { opacity: 1; transform: none; }
+.sboard__picks { position: absolute; top: 10px; right: 10px; z-index: 3; pointer-events: auto; }
+.sboard__choose { margin-bottom: 4px; }
+.sboard__choose > span { min-width: 0; }
+.sboard__error { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 40; margin: 0; padding: 8px 14px; border-radius: var(--radius-md); background: var(--chrome); color: var(--chrome-ink); font-size: var(--fs-small); }
+@media (max-width: 800px) { .share-head__end { gap: 12px; } .share-head__by { display: none; } .sboard__name { max-width: 140px; } }

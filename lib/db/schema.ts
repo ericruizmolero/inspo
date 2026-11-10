@@ -526,6 +526,9 @@ export const inspoComment = pgTable("inspo_comment", {
   /** The comment this one answers. Null: a comment of its own, about the whole reference */
   parentId: text("parent_id").references((): AnyPgColumn => inspoComment.id, { onDelete: "cascade" }),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
+  /** Written by a guest of a share link, not a member: who (the hash of their key, or `inv:<share_guest id>`) and through which link */
+  guestKey: text("guest_key"),
+  shareId: text("share_id").references((): AnyPgColumn => systemShare.id, { onDelete: "set null" }),
   /** Its last change after being written (a reaction too): what the pulse looks at */
   editedAt: timestamp("edited_at", { withTimezone: true, mode: "date" }),
 }, (t) => [
@@ -932,6 +935,10 @@ export const systemShare = pgTable("system_share", {
   projectId: text("project_id").notNull().references(() => project.id, { onDelete: "cascade" }),
   organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
   mode: text("mode").notNull(),
+  /** Which references it shows, in the board's order. Null: the whole board, as it is when opened */
+  itemIds: jsonb("item_ids").$type<string[]>(),
+  /** Who gets in: `link` anyone with the address, `invite` only the people invited (share_guest), each with their own */
+  access: text("access").notNull().default("link"),
   /** Who it was made for, in the team's words ("For Andoni") */
   label: text("label").notNull().default(""),
   createdBy: text("created_by").references(() => user.id, { onDelete: "set null" }),
@@ -943,6 +950,38 @@ export const systemShare = pgTable("system_share", {
   index("system_share_project_idx").on(t.projectId),
   index("system_share_org_idx").on(t.organizationId),
   oneOf("system_share_mode_check", t.mode, ["clean", "full"]),
+  oneOf("system_share_access_check", t.access, ["link", "invite"]),
+]);
+
+/** Someone invited to a share link by email: their own address (/s/<token>), their name on what they write */
+export const shareGuest = pgTable("share_guest", {
+  id: text("id").primaryKey(),
+  shareId: text("share_id").notNull().references(() => systemShare.id, { onDelete: "cascade" }),
+  organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
+  email: text("email").notNull(),
+  name: text("name").notNull(),
+  /** Their own secret address: 16 random bytes, base64url */
+  token: text("token").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
+  lastSeenAt: timestamp("last_seen_at", { withTimezone: true, mode: "date" }),
+  revokedAt: timestamp("revoked_at", { withTimezone: true, mode: "date" }),
+}, (t) => [
+  uniqueIndex("share_guest_token_idx").on(t.token),
+  index("share_guest_share_idx").on(t.shareId),
+  index("share_guest_org_idx").on(t.organizationId),
+]);
+
+/** A guest of a share link chose this reference among the ones shown (lib/share-guests.ts). One per guest and reference */
+export const sharePick = pgTable("share_pick", {
+  shareId: text("share_id").notNull().references(() => systemShare.id, { onDelete: "cascade" }),
+  itemId: text("item_id").notNull().references(() => inspoItem.id, { onDelete: "cascade" }),
+  /** Who, as their comments say it (inspo_comment.guest_key) */
+  guestKey: text("guest_key").notNull(),
+  name: text("name").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
+}, (t) => [
+  primaryKey({ columns: [t.shareId, t.guestKey, t.itemId] }),
+  index("share_pick_item_idx").on(t.itemId),
 ]);
 
 // ─── MCP connector (lib/mcp) ─────────────────────────────────────────────────

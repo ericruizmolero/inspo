@@ -88,7 +88,7 @@ async function main() {
     console.log("✓ tokens and zip");
 
     // A share: clean carries no team names, a turned-off link stops resolving
-    const [link] = await createShare(m.org, project.id, "clean", "check", m.user);
+    const { links: [link] } = await createShare(m.org, project.id, { mode: "clean", access: "link", label: "check", itemIds: null, emails: [] }, m.user);
     assert.ok(await resolveShare(link.token));
     const view = await loadShareView(m.org, project.id, "clean", "en", `/s/${link.token}`, "http://localhost");
     assert.ok(view && !/Saved by|What the team said|conversation/.test(view.markdown), "clean criterio.md has no team names or threads");

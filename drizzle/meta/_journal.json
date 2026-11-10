@@ -386,6 +386,13 @@
       "when": 1794249956838,
       "tag": "0055_board_versions",
       "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1794326605089,
+      "tag": "0056_share_guests",
+      "breakpoints": true
     }
   ]
 }

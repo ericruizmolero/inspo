@@ -448,8 +448,62 @@ export const actions: Record<string, Surface> = {
       const { makeShare } = await import("@/app/actions/share");
       const before = await shares(fx.a.project);
       asB(fx);
-      expectRefused(fx, await makeShare(fx.a.project, "full", "b"), "B cannot share A's project");
+      expectRefused(fx, await makeShare(fx.a.project, { mode: "full", access: "link", label: "b", itemIds: null, emails: [] }), "B cannot share A's project");
       expect(await shares(fx.a.project), "no new link to A's project").toEqual(before);
+    },
+  },
+  "action:app/actions/share.ts#inviteMore": {
+    probe: async (fx) => {
+      const { inviteMore } = await import("@/app/actions/share");
+      asB(fx);
+      expectRefused(fx, await inviteMore(fx.a.project, fx.a.share, ["probe@example.test"]), "B cannot invite people to A's link");
+      expectRefused(fx, await inviteMore(fx.b.project, fx.a.share, ["probe@example.test"]), "nor through its own project");
+      const guests = await db.select().from(schema.shareGuest).where(eq(schema.shareGuest.shareId, fx.a.share));
+      expect(guests, "nobody invited to A's link").toEqual([]);
+    },
+  },
+  "action:app/actions/share.ts#uninvite": {
+    probe: async (fx) => {
+      const { uninvite } = await import("@/app/actions/share");
+      asB(fx);
+      expectRefused(fx, await uninvite(fx.a.project, "anyone"), "B cannot list A's links through uninvite");
+    },
+  },
+  // The guest half takes no session: the link's token is the proof. What it may never do is reach past its own link
+  "action:app/actions/share.ts#guestActivity": {
+    probe: async (fx) => {
+      const { guestActivity } = await import("@/app/actions/share");
+      // A's team comments on the shared board, and they are not the guests' to read
+      expectNoSecret(fx, await guestActivity(fx.a.shareToken), "a guest does not read the team's own conversation");
+      expectRefused(fx, await guestActivity("A".repeat(22)), "an unknown token");
+    },
+  },
+  "action:app/actions/share.ts#guestComment": {
+    probe: async (fx) => {
+      const { guestComment } = await import("@/app/actions/share");
+      const secret = "probe-secret-0123456789abcdef";
+      expectRefused(fx, await guestComment(fx.a.shareToken, secret, { itemId: `${fx.a.prefix}-text`, body: "x", name: "x" }), "a guest cannot comment on a reference off the link");
+      expectRefused(fx, await guestComment(fx.a.shareToken, secret, { itemId: fx.b.item, body: "x", name: "x" }), "nor on another workspace's");
+      expectRefused(fx, await guestComment(fx.a.shareToken, secret, { itemId: `${fx.a.prefix}-item`, body: "x", parentId: `${fx.a.prefix}-comment`, name: "x" }), "nor answer the team's own comment");
+    },
+  },
+  "action:app/actions/share.ts#guestUncomment": {
+    probe: async (fx) => {
+      const { guestUncomment } = await import("@/app/actions/share");
+      await guestUncomment(fx.a.shareToken, "probe-secret-0123456789abcdef", `${fx.a.prefix}-comment`);
+      expect(await commentRow(`${fx.a.prefix}-comment`), "a guest cannot delete the team's comment").toBeTruthy();
+    },
+  },
+  "action:app/actions/share.ts#guestPick": {
+    probe: async (fx) => {
+      const { guestPick } = await import("@/app/actions/share");
+      expectRefused(fx, await guestPick(fx.a.shareToken, "probe-secret-0123456789abcdef", `${fx.a.prefix}-text`, "x"), "a guest cannot pick a reference off the link");
+    },
+  },
+  "action:app/actions/share.ts#guestRename": {
+    probe: async (fx) => {
+      const { guestRename } = await import("@/app/actions/share");
+      expectNoSecret(fx, await guestRename(fx.a.shareToken, "probe-secret-0123456789abcdef", "Probe"), "renaming hands back nothing of the team's");
     },
   },
   "action:app/actions/share.ts#stopShare": {

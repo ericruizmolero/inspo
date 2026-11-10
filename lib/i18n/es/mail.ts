@@ -75,6 +75,11 @@ export const mail: typeof EnMail = {
     text: (who: string, mine: string, theirs: string, url: string): string => `Escribiste: ${mine}\n\n${who} responde: ${theirs}\n\nMíralo aquí:\n${url}`,
   },
 
+  shareInvite: {
+    subject: (who: string, project: string): string => `${who} quiere tu opinión sobre ${project}`,
+    text: (who: string, project: string, url: string): string => `${who} te ha compartido el tablón de ${project} en criterio.design. Abre cada referencia, coméntala y elige las que te gustan:\n${url}\n\nEl enlace es solo tuyo: lo que escribas irá con tu nombre. No hace falta cuenta.`,
+  },
+
   clientAnswers: {
     subject: (project: string): string => `Tu cliente ha respondido sobre ${project}`,
     text: (project: string, n: number, url: string): string => `Tu cliente ha respondido ${n === 1 ? "1 pregunta" : `${n} preguntas`} sobre ${project}. El archivo no ha cambiado: lanza una pasada cuando quieras que las lea.\n\nÁbrelo aquí:\n${url}`,

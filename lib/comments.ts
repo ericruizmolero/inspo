@@ -17,11 +17,11 @@ const U = schema.user;
 const select = {
   id: C.id, itemId: C.itemId, authorId: C.authorId, authorName: C.authorName,
   body: C.body, attachments: C.attachments, createdAt: C.createdAt, authorImage: U.image,
-  parentId: C.parentId, reactions: C.reactions,
+  parentId: C.parentId, reactions: C.reactions, guestKey: C.guestKey,
 };
 type Row = {
   id: string; itemId: string; authorId: string | null; authorName: string; body: string; attachments: CommentAttachment[]; createdAt: Date; authorImage: string | null;
-  parentId: string | null; reactions: CommentReactionRow[];
+  parentId: string | null; reactions: CommentReactionRow[]; guestKey?: string | null;
 };
 
 const toComment = (r: Row): InspoComment => ({
@@ -29,6 +29,7 @@ const toComment = (r: Row): InspoComment => ({
   authorImage: r.authorImage ?? null, body: r.body, attachments: Array.isArray(r.attachments) ? r.attachments : [],
   ...(r.parentId ? { parentId: r.parentId } : {}),
   ...(Array.isArray(r.reactions) && r.reactions.length ? { reactions: groupReactions(r.reactions) } : {}),
+  ...(r.guestKey ? { guest: true } : {}),
   createdAt: r.createdAt.toISOString(),
 });
 

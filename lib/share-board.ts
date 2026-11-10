@@ -37,13 +37,16 @@ export interface ShareBoard {
   keys: Set<string>;
 }
 
-export async function loadShareBoard(organizationId: string, projectId: string, mode: ShareMode, base: string): Promise<ShareBoard | null> {
+export async function loadShareBoard(share: { organizationId: string; projectId: string; mode: ShareMode; itemIds: string[] | null }, base: string): Promise<ShareBoard | null> {
+  const { organizationId, projectId, mode } = share;
   const [project] = await db.select({ name: P.name }).from(P).where(and(eq(P.organizationId, organizationId), eq(P.id, projectId))).limit(1);
   if (!project) return null;
   const rows = await db.select({ itemId: PI.itemId, archivedAt: PI.archivedAt }).from(PI)
     .where(and(eq(PI.organizationId, organizationId), eq(PI.projectId, projectId))).orderBy(asc(PI.createdAt));
   // On the board only: what a polish took off it stays with the project but is not on the board
-  const order = rows.filter((r) => !r.archivedAt).map((r) => r.itemId).reverse();
+  // A link made with some of the board shows those, in the order they were picked, if they are still on it
+  const live = rows.filter((r) => !r.archivedAt).map((r) => r.itemId).reverse();
+  const order = share.itemIds ? share.itemIds.filter((id) => live.includes(id)) : live;
   const data = await loadWorkspaceData(organizationId);
   const byId = new Map(data.items.filter((i) => i.id).map((i) => [i.id!, i]));
   const onBoard = order.map((id) => byId.get(id)).filter((i): i is InspoItem => !!i);
