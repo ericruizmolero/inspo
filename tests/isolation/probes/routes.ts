@@ -353,6 +353,23 @@ export const routes: Record<string, Surface> = {
       expect(await onBoard(fx.a.project), "A's board is unchanged").toBe(before);
     },
   },
+  "mcp:list_drawer": {
+    probe: async (fx) => {
+      await refusedTool(fx, "list_drawer", { workspace: fx.a.team });
+      // B's own Drawer holds none of A's (tool() checks every answer for A's secret)
+      await tool(fx, "list_drawer", { workspace: fx.b.team });
+    },
+  },
+  "mcp:delete_from_drawer": {
+    probe: async (fx) => {
+      const T = schema.inspoItem;
+      const there = async () => (await db.select({ n: count() }).from(T).where(eq(T.id, fx.a.item)))[0].n;
+      await refusedTool(fx, "delete_from_drawer", { workspace: fx.a.team, ids: [fx.a.item] });
+      // Named from B's own workspace, A's reference is not found there
+      await tool(fx, "delete_from_drawer", { workspace: fx.b.team, ids: [fx.a.item] });
+      expect(await there(), "A's reference is still there").toBe(1);
+    },
+  },
   "mcp:propose_decision": {
     probe: async (fx) => {
       const C = schema.systemAreaComment;

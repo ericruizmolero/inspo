@@ -6,7 +6,7 @@ import "server-only";
 import { z } from "zod";
 import { SYSTEM_AREAS } from "@/types/system";
 import type { McpCtx } from "./auth";
-import { CRITERIO_SECTIONS, ProjectArg as Project, QUESTION_IDS, addPiece, answerQuestion, listProjects, listReferences, newProject, proposeDecision, readCriterio, readReference, measureSite, recordLearning, runPass, removeReferences, setOutline, startSetup, checkLandingPage, listComments, resolveComment } from "./pieces";
+import { CRITERIO_SECTIONS, ProjectArg as Project, QUESTION_IDS, addPiece, answerQuestion, listProjects, listReferences, newProject, proposeDecision, readCriterio, readReference, measureSite, recordLearning, runPass, removeReferences, listDrawer, deleteFromDrawer, setOutline, startSetup, checkLandingPage, listComments, resolveComment } from "./pieces";
 import { OUTLINE_SECTIONS_MAX, OUTLINE_TEXT_MAX, SECTION_KINDS } from "@/types/landing";
 import { SKIPPABLE } from "../setup-core";
 import { LEARNING_NOTE_MAX } from "@/types/system";
@@ -136,10 +136,24 @@ export const TOOLS: Tool[] = [
   }),
   tool({
     name: "remove_reference", title: "Remove references from the board",
-    description: "Takes references off a project's board: duplicates, or one brought by mistake. Only when the person asks or agrees; say which ones first. Each stays in the workspace's library and on any other board, so it can come back. It also takes off one still waiting for the team's yes (list_references, waiting_for_the_team): that one is dismissed and not brought back as it was. The codes R1, R2… of the ones after it move up: list_references again before citing one.",
+    description: "Takes references off a project's board: duplicates, or one brought by mistake. Only when the person asks or agrees; say which ones first. One that is then on no other board is deleted whole, not left in the library's Drawer (when the person saved it or manages the workspace); one on another board stays there. It also takes off one still waiting for the team's yes (list_references, waiting_for_the_team): that one is dismissed and not brought back as it was. The codes R1, R2… of the ones after it move up: list_references again before citing one.",
     input: z.object({ project: Project, ids: z.array(z.string().min(1).max(60)).min(1).max(30).describe("The references' ids, from list_references (on the board or waiting for the team).") }),
     annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: false },
     run: (i, ctx, origin) => removeReferences(ctx, origin, i),
+  }),
+  tool({
+    name: "list_drawer", title: "List the Drawer",
+    description: "The workspace's Drawer: references saved and on no project's board, newest first, with their ids. To find leftovers to clean up.",
+    input: z.object({ workspace: z.string().max(120).optional().describe("The workspace's name or id, when the person is in several.") }),
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+    run: (i, ctx) => listDrawer(ctx, i),
+  }),
+  tool({
+    name: "delete_from_drawer", title: "Delete from the Drawer",
+    description: "Deletes references from the Drawer for good, with their comments and files. Only ones on no board, and only ones the person saved (any, if they manage the workspace). Only when the person asks or agrees; say which ones first.",
+    input: z.object({ ids: z.array(z.string().min(1).max(60)).min(1).max(100).describe("The references' ids, from list_drawer."), workspace: z.string().max(120).optional().describe("The workspace's name or id, when the person is in several.") }),
+    annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: false },
+    run: (i, ctx) => deleteFromDrawer(ctx, i),
   }),
   tool({
     name: "propose_decision", title: "Propose a decision",

@@ -8,9 +8,9 @@
 // Every write leaves criterio.md as a version (via "mcp-write"), once the answer is out.
 import "server-only";
 import { z } from "zod";
-import { and, asc, eq, inArray, isNull } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { db, schema } from "../db";
-import { HttpError, type Workspace } from "../workspace-core";
+import { HttpError, canManage, type Workspace } from "../workspace-core";
 import { createHash } from "node:crypto";
 import { loadProjects, createProject, unfileItems } from "../projects";
 import { imageTypeOf } from "../brand-files";
@@ -19,7 +19,9 @@ import { loadShareView } from "../share-view";
 import { recordVersion } from "../criterio-versions";
 import { inBackground } from "../notify";
 import { CRITERIO_PARTS, partMd, type CriterioPart } from "../criterio-md";
-import { rowToItem, tagsOfRow, ITEM_COLUMNS } from "../items";
+import { rowToItem, tagsOfRow, ITEM_COLUMNS, deleteItems, deletableIds } from "../items";
+import { deleteMediaFile } from "../media";
+import { deleteTextFile } from "../text-refs";
 import { addReference, cleanAreas, titleOf, type Piece } from "../add";
 import { addComment, listItemComments } from "../comments";
 import { refInfoOf } from "../ref-info";
@@ -360,10 +362,11 @@ export async function addPiece(ctx: McpCtx, origin: string, input: NewPiece) {
 }
 
 /**
- * Takes references off a project's board: a duplicate, one brought by mistake. Each stays in the workspace's
- * library (and on any other board), so it can be filed again; what was voted on it in this project goes.
- * One still waiting for the team's yes is dismissed, as the ✕ on its card does (lib/suggestions.ts): it leaves the
- * library too when the suggestion made it, and the same thing is not brought back.
+ * Takes references off a project's board: a duplicate, one brought by mistake. One that is then on no board is
+ * deleted whole, as the trash on its card does, when this person may (they saved it, or they manage the workspace);
+ * one still on another board, or someone else's, stays. What was voted on it in this project goes. One still
+ * waiting for the team's yes is dismissed, as the ✕ on its card does (lib/suggestions.ts): it leaves the library too
+ * when the suggestion made it, and the same thing is not brought back.
  */
 export async function removeReferences(ctx: McpCtx, origin: string, input: { project: string; ids: readonly string[] }) {
   const project = await resolveProject(ctx, input.project);
@@ -380,17 +383,77 @@ export async function removeReferences(ctx: McpCtx, origin: string, input: { pro
   const missing = rest.filter((i) => !dropped.some((w) => w.itemId === i || w.id === i));
   await unfileItems(org, project.id, filed.map((f) => f.id), { userId: ctx.user.id });
   if (dropped.length) await dismissSuggestions(org, project.id, { refs: dropped.map((w) => w.id) }, { id: ctx.user.id, name: ctx.user.name, email: ctx.user.email });
+  // Taken off its only board, it would land in the Drawer: it goes whole instead
+  const gone = await deleteLoose(ctx, project.workspace, filed.map((f) => f.id));
   if (filed.length || dropped.length) versionAfterWrite(ctx, origin, project);
+  const kept = filed.filter((f) => !gone.some((g) => g.id === f.id));
   return {
-    removed: filed.map((f) => ({ id: f.id, name: f.name })),
+    ...(gone.length ? { deleted: gone } : {}),
+    ...(kept.length ? { removed_kept_in_library: kept.map((f) => ({ id: f.id, name: f.name })) } : {}),
     ...(dropped.length ? { dismissed: dropped.map((w) => ({ id: w.itemId, name: w.name })) } : {}),
     project: project.name,
     ...(missing.length ? { not_on_this_board: missing } : {}),
     status: [
-      filed.length ? "Off the board; still in the library. The codes R1, R2… of the ones after them move up: call list_references again before citing one." : "",
+      gone.length ? "Deleted: they were on no other board." : "",
+      kept.length ? "Off this board; kept in the library because another board holds them or someone else saved them." : "",
+      filed.length ? "The codes R1, R2… of the ones after them move up: call list_references again before citing one." : "",
       dropped.length ? "The ones waiting for the team are dismissed: they will not be brought back as they were." : "",
     ].filter(Boolean).join(" ") || "None of these was on the board or waiting on it.",
     url: projectUrl(origin, project.id),
+  };
+}
+
+/** Of these, the references on no board and with no suggestion waiting on them that this person may delete (as the
+ *  trash on a card: their own, or any for someone who manages the workspace): deleted with their threads and their
+ *  stored file. Returns the ones that went */
+async function deleteLoose(ctx: McpCtx, workspace: Workspace, ids: string[]): Promise<{ id: string; name: string }[]> {
+  if (!ids.length) return [];
+  const org = workspace.id;
+  const S = schema.projectSuggestion;
+  const [rows, filed, waiting, mayDelete] = await Promise.all([
+    db.select({ id: T.id, name: T.name, web: T.web }).from(T).where(and(eq(T.organizationId, org), inArray(T.id, ids))),
+    db.select({ id: PI.itemId }).from(PI).where(and(eq(PI.organizationId, org), inArray(PI.itemId, ids))),
+    db.select({ id: S.itemId }).from(S).where(and(eq(S.organizationId, org), inArray(S.itemId, ids), eq(S.state, "open"))),
+    deletableIds(org, ids, ctx.user, canManage(workspace.role)),
+  ]);
+  const held = new Set([...filed, ...waiting].map((r) => r.id));
+  const loose = rows.filter((r) => !held.has(r.id) && mayDelete.includes(r.id));
+  if (!loose.length) return [];
+  await deleteItems(org, loose.map((r) => r.id));
+  // An uploaded picture or a pasted text goes with its card, as in app/actions/library.ts removeInspos
+  await Promise.all(loose.flatMap((r) => [deleteMediaFile(org, r.web), deleteTextFile(org, r.web)]));
+  return loose.map((r) => ({ id: r.id, name: r.name }));
+}
+
+/** The workspace's Drawer: what was saved and is on no project's board, newest first */
+export async function listDrawer(ctx: McpCtx, input: { workspace?: string }) {
+  const workspace = resolveWorkspace(ctx, input.workspace);
+  const org = workspace.id;
+  const rows = await db.select({ id: T.id, name: T.name, web: T.web, author: T.author, via: T.via, note: T.note, createdAt: T.createdAt }).from(T)
+    .where(and(eq(T.organizationId, org), sql`not exists (select 1 from ${PI} where ${PI.itemId} = ${T.id} and ${PI.organizationId} = ${org})`))
+    .orderBy(desc(T.createdAt)).limit(200);
+  return {
+    workspace: workspace.name,
+    drawer: rows.map((r) => {
+      const kind = mediaKindOf(r.web);
+      return {
+        id: r.id, name: r.name, kind, ...(kind === "image" || kind === "text" ? {} : { url: r.web }),
+        saved_by: r.via ? `${r.author} (via ${r.via})` : r.author, saved: r.createdAt.toISOString().slice(0, 10),
+        ...(r.note.trim() ? { note: r.note.trim().slice(0, 200) } : {}),
+      };
+    }),
+  };
+}
+
+/** Deletes references from the Drawer: only ones on no board, and only ones this person may delete */
+export async function deleteFromDrawer(ctx: McpCtx, input: { ids: readonly string[]; workspace?: string }) {
+  const workspace = resolveWorkspace(ctx, input.workspace);
+  const ids = [...new Set(input.ids.map((i) => String(i).trim()).filter(Boolean))];
+  const gone = await deleteLoose(ctx, workspace, ids);
+  const left = ids.filter((i) => !gone.some((g) => g.id === i));
+  return {
+    deleted: gone, workspace: workspace.name,
+    ...(left.length ? { not_deleted: left, why: "Not in the Drawer (it is on a board, or waiting on one), not found, or saved by someone else and this person does not manage the workspace." } : {}),
   };
 }
 
