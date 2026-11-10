@@ -13,8 +13,9 @@ import type { TinoState } from "@/components/tino/engine";
 import { setTheme as applyTheme } from "@/lib/theme";
 import { audition, gust } from "@/lib/ui-sounds";
 import { SYSTEM_AREAS } from "@/types/system";
+import { agentMark } from "@/lib/agent-mark";
 import {
-  Avatar, AvatarStack, Balloon, BoardCard, Busy, Button, Card, Checkbox, Chip, Comment, EmptyState, FieldRow, Icon, IconButton, Key, MenuItem,
+  AgentBadge, Avatar, AvatarStack, Balloon, BoardCard, Busy, Button, Card, Checkbox, Chip, Comment, EmptyState, FieldRow, Icon, IconButton, Key, MenuItem,
   MenuLabel, NoteCard, PillBar, PillBarSep, Progress, PromptInput, ReferenceTile, SegmentedControl, Separator, SettingsWindow, StatusBar, StatusCell,
   StatusRing, Switch, TextArea, TextField, TipWindow, toneFor, Wordmark, ZoomControl, ICON_NAMES as ALL_ICONS,
 } from "@/components/criterio";
@@ -851,6 +852,18 @@ const SAMPLES: Record<string, () => ReactNode> = {
       {people.map((n) => <Avatar key={n} initials={n.slice(0, 1)} name={n} tone={toneFor(n)} size={32} />)}
       <Avatar initials="C" name="Criterio" tone="chrome" square size={32} />
       <AvatarStack people={people.map((n) => ({ initials: n.slice(0, 1), name: n, tone: toneFor(n) }))} />
+    </div>
+  ),
+  // What an agent saved: the person's face with its app's mark on the corner, in both themes (lib/agent-mark.ts)
+  "sello-de-agente": () => (
+    <div className="ds-row">
+      {["Claude", "ChatGPT", "Gemini", "Cursor"].map((app, i) => (
+        <AgentBadge key={app} agent={{ name: app, mark: agentMark(app) }} size={32}>
+          <Avatar initials={people[i % people.length].slice(0, 1)} name={people[i % people.length]} tone={toneFor(people[i % people.length])} size={32} />
+        </AgentBadge>
+      ))}
+      <AgentBadge agent={{ name: "Claude", mark: agentMark("Claude") }} size={20}><Avatar initials="E" name="Eric" tone={toneFor("Eric")} size={20} /></AgentBadge>
+      <span className="ds-note">Eric vía Claude</span>
     </div>
   ),
   comentario: () => <Card className="ds-sys__card"><Comment author="Eric" initials="E">Este azul se parece demasiado al de Windows.</Comment></Card>,
