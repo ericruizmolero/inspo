@@ -13,7 +13,7 @@ import VideoPlayer from "./VideoPlayer";
 import PostView from "./PostView";
 import { AgentBadge, Busy, Button, Chip, EmptyState, Icon, IconButton, TextArea } from "@/components/criterio";
 import PersonAvatar from "@/components/PersonAvatar";
-import { agentMark } from "@/lib/agent-mark";
+import { agentMark, type AgentMark } from "@/lib/agent-mark";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { REACTIONS } from "@/lib/reactions";
 
@@ -101,7 +101,7 @@ interface Msg {
   at: string;
   mine: boolean;
   /** The AI app that saved it over MCP: its mark on the avatar and "via Claude" after the name */
-  agent?: { name: string; mark: string | null };
+  agent?: { name: string; mark: AgentMark | null };
   /** true for the original note and the item's subcomment */
   original?: boolean;
   deletable?: boolean;

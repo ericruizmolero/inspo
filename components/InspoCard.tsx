@@ -13,7 +13,7 @@ import type { SystemArea } from "@/types/system";
 import { mediaKindOf, videoEmbedOf, isGif, postThumbKind, postOf, readableDomain } from "@/lib/url";
 import { usePost } from "./post-cache";
 import LoopVideo from "./LoopVideo";
-import { agentMark } from "@/lib/agent-mark";
+import { agentMark, type AgentMark } from "@/lib/agent-mark";
 import { AgentBadge, Avatar, AvatarStack, Busy, Button, Chip, Icon, IconButton, MenuItem, toneFor } from "@/components/criterio";
 import "./TextRef.css";
 import { useDecodedSrc } from "@/hooks/use-decoded-src";
@@ -212,7 +212,7 @@ const IconInfo = <Icon name="info" size={12} />;
 
 export interface NoteCaption { name: string; image: string | null; body: string; people: { name: string; image: string | null }[]; more: number;
   /** The AI app that saved the note over MCP: its mark goes on the person's avatar (AgentBadge) */
-  agent?: { name: string; mark: string | null } }
+  agent?: { name: string; mark: AgentMark | null } }
 
 /** Under the tile: the note of whoever saved it; with no note, the first reply with text.
  *  `people` are everyone in the thread (saver first, then each new voice), at most three circles;
