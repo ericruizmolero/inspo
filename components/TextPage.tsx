@@ -64,13 +64,33 @@ function Words({ body, onSave }: { body: string; onSave: (text: string) => Promi
     let live = true;
     const keys = (e: KeyboardEvent) => onKey(e, jar.current);
     el.addEventListener("keydown", keys);
+    // The lines the caret or the selection touch show their marks (TextRef.css): found by counting line breaks
+    let lines: [number, number] = [-1, -1];
+    const mark = () => {
+      for (const l of el.querySelectorAll(".mde-line.is-active")) l.classList.remove("is-active");
+      for (let i = lines[0]; i >= 0 && i <= lines[1]; i++) el.querySelector(`.mde-line[data-l="${i}"]`)?.classList.add("is-active");
+    };
+    const lineAt = (node: Node, offset: number) => {
+      const r = document.createRange();
+      r.setStart(el, 0); r.setEnd(node, offset);
+      return r.toString().split("\n").length - 1;
+    };
+    const follow = () => {
+      const sel = document.getSelection();
+      if (!sel?.rangeCount || !el.contains(sel.anchorNode)) return;
+      const r = sel.getRangeAt(0);
+      const next: [number, number] = [lineAt(r.startContainer, r.startOffset), lineAt(r.endContainer, r.endOffset)];
+      if (next[0] === lines[0] && next[1] === lines[1]) return;
+      lines = next; mark();
+    };
+    document.addEventListener("selectionchange", follow);
     void import("codejar").then(({ CodeJar }) => {
       if (!live) return;
-      const j = CodeJar(el, (node) => { node.innerHTML = highlightMarkdown(node.textContent ?? ""); }, { tab: "  ", indentOn: /$^/, addClosing: false });
+      const j = CodeJar(el, (node) => { node.innerHTML = highlightMarkdown(node.textContent ?? ""); mark(); }, { tab: "  ", indentOn: /$^/, addClosing: false });
       j.onUpdate(() => typed.current());
       jar.current = j;
     });
-    return () => { live = false; el.removeEventListener("keydown", keys); jar.current?.destroy(); jar.current = null; };
+    return () => { live = false; el.removeEventListener("keydown", keys); document.removeEventListener("selectionchange", follow); jar.current?.destroy(); jar.current = null; };
   }, []);
   return (
     <>

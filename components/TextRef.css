@@ -16,9 +16,14 @@
 .ip-text__body[contenteditable] { min-height: 40vh; outline: none; cursor: text; caret-color: var(--text); }
 .ip-text__body[contenteditable]:focus { color: var(--text); }
 /* Saving and saved: a cell of the system's StatusBar, kept in sight at the bottom */
-/* The words are Markdown (lib/markdown-highlight.ts), shown the way Bear writes it: every mark stays where it was
-   typed, in --muted, and the words take what it means. Read and typed alike; headings step down from the page's
-   title-l: # is title-m, ## title-s, deeper ones only the weight */
+/* The words are Markdown (lib/markdown-highlight.ts): the words take what each mark means and the marks are hidden,
+   except a list's number or dash. Typing, the line with the caret (.mde-line.is-active, set by TextPage) shows its
+   marks in --muted, so they can be changed where they are. Headings step down from the page's title-l: # is
+   title-m, ## title-s, deeper ones only the weight */
+.mde .mde-mark:not(.mde-keep) { display: none; }
+.mde:focus .mde-line.is-active .mde-mark { display: inline; }
+.mde .mde-line:not(.is-active) .mde-rule, .mde:not(:focus) .mde-rule { display: inline-block; width: 100%; color: transparent; background: linear-gradient(var(--border), var(--border)) center / 100% 1px no-repeat; }
+.mde .mde-q { padding-left: 12px; box-shadow: inset 2px 0 var(--border-strong); }
 .mde .mde-mark { color: var(--muted); font-weight: var(--fw-regular); font-style: normal; }
 .mde .mde-h { color: var(--text-strong); font-weight: var(--fw-semibold); }
 .mde .mde-h1 { font-size: var(--fs-title-m); line-height: var(--lh-title-m); font-weight: var(--fw-title-m); }

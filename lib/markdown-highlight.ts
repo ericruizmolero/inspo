@@ -1,9 +1,10 @@
-// A text reference's Markdown, coloured the way Bear writes it: every mark stays where it was typed, dimmed, and
-// what it means is set on the words. Every character of the source is in the HTML once and in order, so the
-// editor (components/TextPage.tsx) can put the caret back by counting characters after each redraw.
+// A text reference's Markdown as HTML: what each mark means is set on the words, and the marks themselves are kept in
+// spans (.mde-mark) that the CSS hides except on the line being typed (components/TextRef.css). Every character of
+// the source is in the HTML once and in order, so the editor (components/TextPage.tsx) can put the caret back by
+// counting characters after each redraw. Each line is a .mde-line with its number in data-l.
 
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-const mark = (s: string) => (s ? `<span class="mde-mark">${esc(s)}</span>` : "");
+const mark = (s: string, cls = "") => (s ? `<span class="mde-mark${cls}">${esc(s)}</span>` : "");
 const safeHref = (url: string) => (/^(https?:|mailto:)/i.test(url) ? url : null);
 
 type Opts = { links: boolean };
@@ -52,9 +53,10 @@ function line(text: string, o: Opts): string {
   if ((m = text.match(QUOTE))) return `<span class="mde-q">${mark(m[1])}${inline(m[2], o)}</span>`;
   if ((m = text.match(TASK))) {
     const done = m[2] !== " ";
-    return `<span class="mde-li mde-task${done ? " is-done" : ""}">${mark(`${m[1]}[`)}<span class="mde-check">${esc(m[2])}</span>${mark(`]${m[3]}`)}${inline(m[4], o)}</span>`;
+    return `<span class="mde-li mde-task${done ? " is-done" : ""}">${mark(`${m[1]}[`, " mde-keep")}<span class="mde-check">${esc(m[2])}</span>${mark(`]${m[3]}`, " mde-keep")}${inline(m[4], o)}</span>`;
   }
-  if ((m = text.match(ITEM))) return `<span class="mde-li">${mark(m[1])}${inline(m[2], o)}</span>`;
+  // A list keeps its marker in sight: the number or the dash is part of what it says
+  if ((m = text.match(ITEM))) return `<span class="mde-li">${mark(m[1], " mde-keep")}${inline(m[2], o)}</span>`;
   return inline(text, o);
 }
 
@@ -62,9 +64,11 @@ function line(text: string, o: Opts): string {
 export function highlightMarkdown(src: string, { links = false }: Partial<Opts> = {}): string {
   const o = { links };
   let fenced = false;
-  return src.split("\n").map((text) => {
-    if (FENCE.test(text)) { fenced = !fenced; return `<span class="mde-mark mde-fence">${esc(text)}</span>`; }
-    return fenced ? `<span class="mde-pre">${esc(text)}</span>` : line(text, o);
+  return src.split("\n").map((text, i) => {
+    let html: string;
+    if (FENCE.test(text)) { fenced = !fenced; html = `<span class="mde-mark mde-fence">${esc(text)}</span>`; }
+    else html = fenced ? `<span class="mde-pre">${esc(text)}</span>` : line(text, o);
+    return `<span class="mde-line" data-l="${i}">${html}</span>`;
   }).join("\n");
 }
 
