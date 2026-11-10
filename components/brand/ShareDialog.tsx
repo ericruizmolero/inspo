@@ -9,10 +9,9 @@ import { useT } from "../I18nProvider";
 import { Dialog, DialogDescription, DialogWindow } from "@/components/ui/dialog";
 import { Busy, Button, Chip, Icon, SegmentedControl } from "@/components/criterio";
 import PersonAvatar from "../PersonAvatar";
-import { inviteMore, loadShareChoices, loadShares, makeShare, stopShare, uninvite } from "@/app/actions/share";
+import { inviteMore, loadShares, makeShare, stopShare, uninvite } from "@/app/actions/share";
 import { timeAgo } from "@/lib/i18n/format";
 import type { ShareAccess, ShareLink } from "@/lib/share";
-import type { ShareChoice } from "@/lib/share-board";
 // Its styles (.bshare, .bimp__lead, .bimp__hint) live with the brand's: imported here too, since the dialog also
 // opens from a project tab's menu on the board, where the brand page never loaded them
 import "./brand.css";
@@ -29,9 +28,6 @@ export default function ShareDialog({ projectId, itemIds, onClose }: {
   const s = t.brand.share;
   const [links, setLinks] = useState<ShareLink[] | null>(null);
   const [some, setSome] = useState(!!itemIds?.length);
-  // Which references the link shows when it is not the whole board: picked here, on their pictures
-  const [choices, setChoices] = useState<ShareChoice[] | null>(null);
-  const [chosen, setChosen] = useState<Set<string>>(() => new Set(itemIds ?? []));
   const [access, setAccess] = useState<ShareAccess>("link");
   const [emails, setEmails] = useState("");
   const [mode, setMode] = useState<"clean" | "full">("clean");
@@ -40,18 +36,11 @@ export default function ShareDialog({ projectId, itemIds, onClose }: {
   const [error, setError] = useState("");
   const [copied, setCopied] = useState<string | null>(null);
   useEffect(() => { void loadShares(projectId).then((r) => { if (r.ok) setLinks(r.data); else setError(r.error); }); }, [projectId]);
-  useEffect(() => {
-    if (!some || choices) return;
-    void loadShareChoices(projectId).then((r) => { if (r.ok) setChoices(r.data); else setError(r.error); });
-  }, [some, choices, projectId]);
-  const toggle = (id: string) => setChosen((prev) => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; });
-  // In the board's order, whatever order they were pressed in
-  const pickedIds = choices ? choices.filter((c) => chosen.has(c.id)).map((c) => c.id) : [...chosen];
   const urlOf = (token: string) => `${window.location.origin}/s/${token}`;
   const copy = async (id: string, token: string) => { try { await navigator.clipboard.writeText(urlOf(token)); setCopied(id); setTimeout(() => setCopied(null), 1500); } catch { /* the link is on screen */ } };
   const make = async () => {
     setBusy(true); setError("");
-    const r = await makeShare(projectId, { mode, access, label, itemIds: some ? pickedIds : null, emails: access === "invite" ? splitEmails(emails) : [] });
+    const r = await makeShare(projectId, { mode, access, label, itemIds: some && itemIds?.length ? itemIds : null, emails: access === "invite" ? splitEmails(emails) : [] });
     setBusy(false);
     if (!r.ok) { setError(r.error); return; }
     setLinks(r.data); setLabel(""); setEmails("");
@@ -67,32 +56,12 @@ export default function ShareDialog({ projectId, itemIds, onClose }: {
           <DialogDescription className="bimp__lead">{s.lead}</DialogDescription>
           <div className="bshare__modes">
             <span className="bshare__legend">{s.what}</span>
-            <SegmentedControl tone="paper" choice label={s.what} active={some ? 1 : 0} onChange={(i) => setSome(i === 1)}
-              items={[{ label: s.all }, { label: some && chosen.size ? s.picked(chosen.size) : s.some }]} />
-            {some && (choices === null ? <p className="bimp__hint"><Busy /></p> : (
-              <div className="bshare__pick">
-                <div className="bshare__pick-bar">
-                  <span className="bimp__hint">{chosen.size ? s.picked(chosen.size) : s.pickHint}</span>
-                  <span>
-                    <Button variant="quiet" size="s" onClick={() => setChosen(new Set(choices.map((c) => c.id)))}>{s.pickAll}</Button>
-                    <Button variant="quiet" size="s" onClick={() => setChosen(new Set())}>{s.pickNone}</Button>
-                  </span>
-                </div>
-                <ul className="bshare__grid">
-                  {choices.map((c) => {
-                    const on = chosen.has(c.id);
-                    return (
-                      <li key={c.id}>
-                        <button type="button" className={`bshare__ref${on ? " is-on" : ""}`} aria-pressed={on} title={c.name} onClick={() => toggle(c.id)}>
-                          {c.img ? <img src={c.img} alt="" loading="lazy" /> : <span className="bshare__ref-name">{c.name}</span>}
-                          <span className="cr-check-box" aria-hidden><Icon name="check" size={10} weight="bold" /></span>
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-            ))}
+            {/* What goes is chosen on the board, where the references can be seen: select them and press Share in the
+                selection bar (Eric, 10-11: "que el propio seleccionar... ya te salga un botón de compartir") */}
+            {itemIds?.length ? (
+              <SegmentedControl tone="paper" choice label={s.what} active={some ? 1 : 0} onChange={(i) => setSome(i === 1)}
+                items={[{ label: s.all }, { label: s.picked(itemIds.length) }]} />
+            ) : <p className="bimp__hint">{s.all}. {s.someHint}</p>}
           </div>
           <div className="bshare__modes">
             <span className="bshare__legend">{s.who}</span>
@@ -112,7 +81,7 @@ export default function ShareDialog({ projectId, itemIds, onClose }: {
           </div>
           <form className="bshare__make" onSubmit={(e) => { e.preventDefault(); void make(); }}>
             <input className="cr-input" value={label} maxLength={80} placeholder={s.labelPlaceholder} aria-label={s.label} onChange={(e) => setLabel(e.currentTarget.value)} />
-            <Button variant="primary" type="submit" disabled={busy || (access === "invite" && !splitEmails(emails).length) || (some && !chosen.size)}>
+            <Button variant="primary" type="submit" disabled={busy || (access === "invite" && !splitEmails(emails).length)}>
               {busy ? <Busy label={s.make} /> : access === "invite" ? s.makeInvite : s.make}
             </Button>
           </form>

@@ -2485,7 +2485,7 @@ export const ui = {
     fillHint: "Turns the decisions into values: colors, faces, curves, voice. Sections you edited by hand stay.",
     share: {
       open: "Share", title: "Share the board", lead: "A link for the client or the team to comment on the references and pick the ones they prefer.",
-      what: "What you share", all: "The whole board", some: "Pick", pickHint: "Press the ones you want to show.", pickAll: "All", pickNone: "None",
+      what: "What you share", all: "The whole board", someHint: "To show only some, select them on the board and press Share in the bar below.",
       picked: (n: number): string => `${n} picked`,
       who: "Who gets in", link: "With the link", invite: "Invited",
       linkHint: "Anyone with the link gets in without an account, with a random avatar.", inviteHint: "Each person gets their own link by email and comments with their name.",

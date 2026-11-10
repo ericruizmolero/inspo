@@ -2466,7 +2466,7 @@ export const ui: typeof EnUi = {
     fillHint: "Convierte las decisiones en valores: colores, fuentes, curvas, voz. Las secciones que editaste a mano se quedan.",
     share: {
       open: "Compartir", title: "Compartir el tablón", lead: "Un enlace para que el cliente o el equipo comente las referencias y elija las que prefiere.",
-      what: "Qué compartes", all: "Todo el tablón", some: "Elegir", pickHint: "Pulsa las que quieres enseñar.", pickAll: "Todas", pickNone: "Ninguna",
+      what: "Qué compartes", all: "Todo el tablón", someHint: "Para enseñar solo algunas, selecciónalas en el tablón y pulsa Compartir en la barra de abajo.",
       picked: (n: number): string => (n === 1 ? "1 elegida" : `${n} elegidas`),
       who: "Quién entra", link: "Con el enlace", invite: "Invitados",
       linkHint: "Cualquiera con el enlace entra sin cuenta, con un avatar al azar.", inviteHint: "Cada persona recibe por correo su propio enlace y comenta con su nombre.",

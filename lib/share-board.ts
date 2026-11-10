@@ -101,28 +101,3 @@ export async function loadShareBoard(share: { organizationId: string; projectId:
   return out;
 }
 
-/** A reference the share dialog offers to pick: its name and a small picture a member's session can load */
-export interface ShareChoice { id: string; name: string; img: string | null; kind: string }
-
-/** The board's references, newest first, to choose which a link shows (components/brand/ShareDialog.tsx). For a
- *  member: the pictures go through the app's own file route, not a link's */
-export async function shareChoices(organizationId: string, projectId: string): Promise<ShareChoice[]> {
-  const rows = await db.select({ itemId: PI.itemId, archivedAt: PI.archivedAt }).from(PI)
-    .where(and(eq(PI.organizationId, organizationId), eq(PI.projectId, projectId))).orderBy(asc(PI.createdAt));
-  const order = rows.filter((r) => !r.archivedAt).map((r) => r.itemId).reverse();
-  if (!order.length) return [];
-  const data = await loadWorkspaceData(organizationId);
-  const byId = new Map(data.items.filter((i) => i.id).map((i) => [i.id!, i]));
-  const onBoard = order.map((id) => byId.get(id)).filter((i): i is InspoItem => !!i);
-  const [designIndex, pageShots] = await Promise.all([designDocsFor(onBoard.map((i) => i.web)), pageShotsFor(onBoard.map((i) => i.web))]);
-  return onBoard.map((i) => {
-    const kind = mediaKindOf(i.web);
-    const thumb = staysInside(i) ? null : data.thumbnailMap[i.web];
-    const shot = pageShots[i.web];
-    const img = thumb ? cardCopyOf(thumb) ?? thumb
-      : kind === "image" && !staysInside(i) ? cardCopyOf(i.web) ?? i.web
-      : shot ? shot.paths?.thumbUrl ?? shot.thumbUrl
-      : designIndex[i.web]?.coverUrl ?? null;
-    return { id: i.id!, name: i.name, img: img ?? null, kind };
-  });
-}

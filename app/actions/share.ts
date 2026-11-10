@@ -6,7 +6,6 @@ import { headers } from "next/headers";
 import { and, eq } from "drizzle-orm";
 import { withCtx, HttpError, type ActionResult } from "@/lib/workspace";
 import { createShare, inviteToShare, listShares, resolveShare, revokeShare, uninviteFromShare, type ShareAccess, type ShareGuestRow } from "@/lib/share";
-import { shareChoices } from "@/lib/share-board";
 import { deleteGuestComment, postGuestComment, renameGuest, shareActivity, toggleGuestPick, type ShareActivity } from "@/lib/share-guests";
 import { APP_URL } from "@/lib/auth";
 import { inBackground } from "@/lib/notify";
@@ -14,14 +13,6 @@ import { localeForEmail, sendMail, shareInviteMail } from "@/lib/mail";
 import { db, schema } from "@/lib/db";
 import { getErrors } from "@/lib/i18n";
 import { recordFailure } from "@/lib/log";
-
-/** The board's references with a small picture, to pick which a link shows */
-export async function loadShareChoices(projectId: string) {
-  return withCtx(async (ctx) => {
-    await listShares(ctx.workspace.id, String(projectId)); // the project is this workspace's, or it throws
-    return shareChoices(ctx.workspace.id, String(projectId));
-  });
-}
 
 export async function loadShares(projectId: string) {
   return withCtx(async (ctx) => listShares(ctx.workspace.id, String(projectId)));
