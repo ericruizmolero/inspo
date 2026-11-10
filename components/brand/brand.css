@@ -506,7 +506,9 @@
 .bshare__legend { font-size: var(--fs-small); color: var(--text-2); }
 .bshare__value { font-size: var(--fs-small); color: var(--text); cursor: help; }
 .bshare__summary { margin: 2px 0 0; }
-.bshare__emails { width: 100%; resize: vertical; min-height: 0; font: inherit; font-size: var(--fs-small); }
+/* The emails read like the fields under them: same face and size, the first line where an input's text sits
+   (11px down a 44px box), and the box grows with the list instead of a resize handle (Eric, 10-11) */
+.bshare__emails { display: block; width: 100%; height: auto; min-height: 44px; max-height: 132px; padding: 11px 12px; line-height: 19px; resize: none; field-sizing: content; font-family: inherit; }
 .bshare__make { display: flex; gap: 8px; }
 .bshare__make .cr-input { flex: 1; min-width: 0; }
 .bshare__links { display: flex; flex-direction: column; gap: 4px; padding-top: 16px; border-top: 1px solid var(--border); }

@@ -78,7 +78,7 @@ export default function ShareDialog({ projectId, itemIds, onClose }: {
                 items={modes.map((m) => ({ label: s[m], title: m === "clean" ? s.cleanHint : s.fullHint }))} />
             </div>
             {access === "invite" && (
-              <textarea className="cr-input bshare__emails" rows={2} value={emails} aria-label={s.emails} placeholder={s.emailsPlaceholder}
+              <textarea className="cr-input bshare__emails" rows={1} value={emails} aria-label={s.emails} placeholder={s.emailsPlaceholder}
                 onChange={(e) => setEmails(e.currentTarget.value)} />
             )}
             <p className="bimp__hint bshare__summary">{summary}</p>
