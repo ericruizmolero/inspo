@@ -2487,7 +2487,6 @@ export const ui = {
       open: "Share", title: "Share the board", lead: "A link for the client or the team to comment on the references and pick the ones they prefer.",
       what: "What you share", all: "The whole board", some: "Pick", pickHint: "Press the ones you want to show.", pickAll: "All", pickNone: "None",
       picked: (n: number): string => `${n} picked`,
-      someHint: "To show only some, select them on the board (\u2318 click) and press Share.",
       who: "Who gets in", link: "With the link", invite: "Invited",
       linkHint: "Anyone with the link gets in without an account, with a random avatar.", inviteHint: "Each person gets their own link by email and comments with their name.",
       emails: "Emails", emailsPlaceholder: "ana@client.com, luis@client.com", inviteMore: "Invite", copyTheirs: "Copy their link", uninvite: "Remove",
