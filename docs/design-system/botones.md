@@ -1,6 +1,6 @@
 # Botones
 
-El botón es la firma del sistema: grueso, con borde de tinta y bisel, el guiño al 2000. Aquí están todas sus variantes, tallas y estados juntas; la ficha técnica está en [Componentes](componentes.md#boton). → [sistema Criterio](decisiones/2026-10-07-sistema-de-diseno-criterio.md)
+El botón es la firma del sistema: grueso, con borde de tinta y bisel, el guiño al 2000. Aquí están todas sus variantes, tallas y estados juntas; la ficha técnica está en [Componentes](componentes.md#boton). → [sistema Criterio](decisiones/2026-10-07-sistema-de-diseno-criterio.md) Ninguna revisión de gusto lo quita, tampoco en la landing; lo mismo vale para el campo de email. → [decisión](decisiones/2026-11-10-los-botones-y-el-campo-de-email-no-se-tocan-en-una-revision-de-gusto.md)
 
 ## Variantes
 

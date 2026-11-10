@@ -74,6 +74,8 @@ Ver principio 18. Además: en el idioma del equipo, frases que se lean de golpe,
 
 Sin IA, sin descargas de blobs ni análisis de imágenes al renderizar. Lo precomputado va en build, script o segundo plano. → [login instantáneo](decisiones/2026-09-22-login-sin-trabajo-pesado.md)
 
+La portada de waitlist abre con una promesa clara, subheadline y formulario sobre el río de referencias, con Tino en el centro. Después, una sección normal por paso, cada una con su elemento y visible desde el principio, que se anima cuando llegas. Nada bloquea el scroll ni hay animación de carga inicial. → [decisión](decisiones/2026-11-10-la-demo-de-la-landing-es-una-seccion-por-paso-sin-scroll-atrapado.md)
+
 ## Tino toma la iniciativa
 
 Tino no espera a que le pregunten: en cada vista mira lo que pasa ahí y empuja hacia lo siguiente que sirve, con un botón que lleva justo a ese sitio. Lo que dice sale de los datos reales de esa vista, nunca de una plantilla. → [proactivo con el proyecto](decisiones/2026-11-04-tino-siempre-en-la-esquina-y-proactivo-con-el-proyecto.md), [nunca se encoge de hombros](decisiones/2026-11-06-tino-nunca-se-encoge-de-hombros-y-en-el-inbox-empuja-a-un-proyecto.md)
