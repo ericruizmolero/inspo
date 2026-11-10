@@ -1,7 +1,7 @@
 ---
 title: La portada en inglés es la misma landing, traducida
 date: 2026-11-06
-status: vigente
+status: sustituida
 kind: diseño
 ---
 **Contexto.** Tras publicar la landing nueva en `/es/` (página estática), `/` seguía siendo la home antigua de Astro (`Home`), con otro diseño.

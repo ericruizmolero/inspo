@@ -1,7 +1,6 @@
 // www.criterio.design redirects to criterio.design, path and query kept. Someone already signed in to the app who opens
-// the home page goes straight into the app (meeting 13/10). A visitor from Spain, or whose browser asks for Spanish first,
-// who opens the English home (/) gets the Spanish one (/es/), unless they asked for English with ?lang=en (Eric, 06-11).
-// Everything else is the static site.
+// the home page goes straight into the app (meeting 13/10). English is the default for everyone: / is never redirected
+// to /es/ by country or browser language (Alberto, 10-11); Spanish is only for whoever opens /es/. Everything else is the static site.
 const APP_URL = "https://app.criterio.design";
 // The app keeps this cookie on .criterio.design while the browser has a session (lib/signed-in-cookie.ts in the app)
 const SIGNED_IN = /(?:^|;\s*)criterio_signed_in=1(?:;|$)/;
@@ -17,13 +16,6 @@ export default {
     // ?landing shows the landing page anyway
     if (HOMES.has(url.pathname) && !url.searchParams.has("landing") && SIGNED_IN.test(request.headers.get("cookie") ?? "")) {
       return Response.redirect(`${APP_URL}/`, 302);
-    }
-    // Cloudflare tells the Worker the visitor's country from their IP; the browser's first language is in Accept-Language
-    const country = (request as Request & { cf?: { country?: string } }).cf?.country;
-    const browserEs = /^es\b/i.test((request.headers.get("accept-language") ?? "").trim());
-    if (url.pathname === "/" && (country === "ES" || browserEs) && url.searchParams.get("lang") !== "en") {
-      url.pathname = "/es/";
-      return Response.redirect(url.toString(), 302);
     }
     return env.ASSETS.fetch(request);
   },
