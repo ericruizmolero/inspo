@@ -1167,6 +1167,7 @@ video.vp__media { object-fit: contain; }
 /* A comment as the system's Comment: avatar in the person's tone, the author in bold. In the thread every comment's
    words are in the full text colour, whoever wrote it: muted paper is for the two-line teaser under a card, and
    the old rule (muted for the others, full for yours and the first) read as the others' being faded (Eric, 08-10) */
+.cm-msg__by { font-weight: var(--fw-regular); color: var(--muted); }
 .cm-msg__name { min-width: 0; font-size: var(--fs-ui); font-weight: var(--fw-semibold); color: var(--text); display: inline-flex; align-items: center; gap: 6px; }
 /* "You": the system's Chip, at label size beside the name */
 .cm-msg__you.cr-chip { padding: 1px 8px; font-size: var(--fs-label); font-weight: var(--fw-medium); }

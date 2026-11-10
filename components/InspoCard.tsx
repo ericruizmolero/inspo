@@ -13,6 +13,7 @@ import type { SystemArea } from "@/types/system";
 import { mediaKindOf, videoEmbedOf, isGif, postThumbKind, postOf, readableDomain } from "@/lib/url";
 import { usePost } from "./post-cache";
 import LoopVideo from "./LoopVideo";
+import { agentMark } from "@/lib/agent-mark";
 import { Avatar, AvatarStack, Busy, Button, Chip, Icon, IconButton, MenuItem, toneFor } from "@/components/criterio";
 import "./TextRef.css";
 import { useDecodedSrc } from "@/hooks/use-decoded-src";
@@ -216,8 +217,9 @@ export interface NoteCaption { name: string; image: string | null; body: string;
  *  `more` counts every comment in the thread, as the card's comment button does, so the two never disagree. */
 export function captionFor(item: InspoItem, comments: InspoComment[] | undefined, authorImage: string | undefined): NoteCaption | null {
   const firstComment = comments?.find((c) => c.body.trim());
+  // A note an agent wrote (saved over MCP) speaks as its app, with the app's logo: the person is in the thread ("From Claude, by Eric")
   const root = item.note.trim()
-    ? { name: item.addedBy, image: authorImage ?? null, body: item.note.trim() }
+    ? item.via ? { name: item.via, image: agentMark(item.via), body: item.note.trim() } : { name: item.addedBy, image: authorImage ?? null, body: item.note.trim() }
     : firstComment ? { name: firstComment.authorName, image: firstComment.authorImage, body: firstComment.body.trim() } : null;
   if (!root) return null;
   const people = [{ name: root.name, image: root.image }];
