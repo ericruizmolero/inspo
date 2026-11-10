@@ -19,10 +19,19 @@ import type { InspoComment } from "@/types/inspo";
 const C = schema.inspoComment;
 const K = schema.sharePick;
 const G = schema.shareGuest;
+const F = schema.shareFace;
 const PI = schema.projectItem;
 
 export interface SharePick { itemId: string; key: string; name: string }
-export interface ShareActivity { comments: InspoComment[]; picks: SharePick[] }
+export interface ShareActivity {
+  comments: InspoComment[]; picks: SharePick[];
+  /** The photos guests put on their avatars, by key */
+  faces: Record<string, string>;
+}
+
+/** A photo small enough to keep as text: the browser makes it 160 px WebP or JPEG (components/brand/ShareBoard.tsx) */
+const FACE = /^data:image\/(webp|jpeg|png);base64,[A-Za-z0-9+/=]+$/;
+export const MAX_FACE = 30_000;
 
 /** Who is writing: the invited person the address belongs to, or the browser's secret, hashed */
 export function guestKeyOf(share: ResolvedShare, secret: unknown): string {
@@ -48,21 +57,22 @@ async function mustBeOn(share: ResolvedShare, itemId: string) {
 /** What was said and chosen through this link: its comments, the team's answers to them, and the picks */
 export async function shareActivity(share: ResolvedShare): Promise<ShareActivity> {
   const ids = [...(await onLink(share))];
-  if (!ids.length) return { comments: [], picks: [] };
-  const rows = await db.select({ id: C.id, itemId: C.itemId, authorId: C.authorId, authorName: C.authorName, body: C.body, createdAt: C.createdAt, parentId: C.parentId, reactions: C.reactions, guestKey: C.guestKey, shareId: C.shareId })
-    .from(C).where(and(eq(C.organizationId, share.organizationId), inArray(C.itemId, ids))).orderBy(asc(C.createdAt));
+  if (!ids.length) return { comments: [], picks: [], faces: {} };
+  const faces = Object.fromEntries((await db.select({ key: F.guestKey, image: F.image }).from(F).where(eq(F.shareId, share.id))).map((f) => [f.key, f.image]));
+  const rows = await db.select({ id: C.id, itemId: C.itemId, authorId: C.authorId, authorName: C.authorName, body: C.body, createdAt: C.createdAt, parentId: C.parentId, reactions: C.reactions, guestKey: C.guestKey, shareId: C.shareId, image: schema.user.image })
+    .from(C).leftJoin(schema.user, eq(schema.user.id, C.authorId)).where(and(eq(C.organizationId, share.organizationId), inArray(C.itemId, ids))).orderBy(asc(C.createdAt));
   const ours = new Set(rows.filter((r) => r.shareId === share.id).map((r) => r.id));
   const comments: InspoComment[] = rows.filter((r) => ours.has(r.id) || (r.parentId && ours.has(r.parentId))).map((r) => ({
     id: r.id, itemId: r.itemId,
-    // A guest by their key (the hash, never the secret); a member by nothing of theirs: no id, no picture from afar
-    authorId: r.guestKey ?? "team", authorName: r.authorName, authorImage: null, body: r.body, attachments: [],
+    // A guest by their key (the hash, never the secret); a member with no id, and their photo when it lives at an outside address
+    authorId: r.guestKey ?? "team", authorName: r.authorName, authorImage: r.guestKey ? faces[r.guestKey] ?? null : r.image && /^https:\/\//.test(r.image) ? r.image : null, body: r.body, attachments: [],
     ...(r.parentId ? { parentId: r.parentId } : {}),
     ...(Array.isArray(r.reactions) && r.reactions.length ? { reactions: groupReactions(r.reactions) } : {}),
     ...(r.guestKey ? { guest: true } : {}),
     createdAt: r.createdAt.toISOString(),
   }));
   const picks = await db.select({ itemId: K.itemId, key: K.guestKey, name: K.name }).from(K).where(eq(K.shareId, share.id)).orderBy(asc(K.createdAt));
-  return { comments, picks: picks.filter((p) => ids.includes(p.itemId)) };
+  return { comments, picks: picks.filter((p) => ids.includes(p.itemId)), faces };
 }
 
 async function limited(share: ResolvedShare, key: string) {
@@ -115,4 +125,14 @@ export async function renameGuest(share: ResolvedShare, secret: unknown, name: u
   await db.update(K).set({ name: clean }).where(and(eq(K.shareId, share.id), eq(K.guestKey, key)));
   // What they already wrote keeps the name it was written with, as a member's comment does
   return clean;
+}
+
+/** A guest puts a photo on their avatar, or takes it off (null) */
+export async function setGuestFace(share: ResolvedShare, secret: unknown, image: unknown): Promise<void> {
+  const key = guestKeyOf(share, secret);
+  if (image === null) { await db.delete(F).where(and(eq(F.shareId, share.id), eq(F.guestKey, key))); return; }
+  if (typeof image !== "string" || image.length > MAX_FACE || !FACE.test(image)) throw new HttpError(400, (await getErrors()).shareBadFace);
+  await limited(share, key);
+  await db.insert(F).values({ shareId: share.id, guestKey: key, image, updatedAt: new Date() })
+    .onConflictDoUpdate({ target: [F.shareId, F.guestKey], set: { image, updatedAt: new Date() } });
 }

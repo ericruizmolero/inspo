@@ -13,10 +13,13 @@ import { groupReactions, isReaction, MAX_REACTIONS } from "./reactions";
 
 const C = schema.inspoComment;
 const U = schema.user;
+const F = schema.shareFace;
 
 const select = {
   id: C.id, itemId: C.itemId, authorId: C.authorId, authorName: C.authorName,
-  body: C.body, attachments: C.attachments, createdAt: C.createdAt, authorImage: U.image,
+  body: C.body, attachments: C.attachments, createdAt: C.createdAt,
+  // A member's picture, or the photo a guest of a share link put on their avatar
+  authorImage: sql<string | null>`coalesce(${U.image}, ${F.image})`,
   parentId: C.parentId, reactions: C.reactions, guestKey: C.guestKey,
 };
 type Row = {
@@ -52,7 +55,7 @@ function cleanAttachments(organizationId: string, input: unknown): CommentAttach
 
 /** All workspace comments grouped by item: the shared view of a whole workspace (lib/share-view.ts) */
 export async function listComments(organizationId: string): Promise<CommentMap> {
-  const rows = await db.select(select).from(C).leftJoin(U, eq(C.authorId, U.id))
+  const rows = await db.select(select).from(C).leftJoin(U, eq(C.authorId, U.id)).leftJoin(F, and(eq(F.shareId, C.shareId), eq(F.guestKey, C.guestKey)))
     .where(eq(C.organizationId, organizationId)).orderBy(asc(C.createdAt));
   const map: CommentMap = {};
   for (const r of rows) (map[r.itemId] ??= []).push(toComment(r));
@@ -62,7 +65,7 @@ export async function listComments(organizationId: string): Promise<CommentMap> 
 /** The threads of these items, grouped by item: what the library sends with each page of references */
 export async function listCommentsOf(organizationId: string, itemIds: string[]): Promise<CommentMap> {
   if (!itemIds.length) return {};
-  const rows = await db.select(select).from(C).leftJoin(U, eq(C.authorId, U.id))
+  const rows = await db.select(select).from(C).leftJoin(U, eq(C.authorId, U.id)).leftJoin(F, and(eq(F.shareId, C.shareId), eq(F.guestKey, C.guestKey)))
     .where(and(eq(C.organizationId, organizationId), inArray(C.itemId, itemIds))).orderBy(asc(C.createdAt));
   const map: CommentMap = {};
   for (const r of rows) (map[r.itemId] ??= []).push(toComment(r));
@@ -71,14 +74,14 @@ export async function listCommentsOf(organizationId: string, itemIds: string[]):
 
 /** Comments written or edited after `after`, oldest first (lib/pulse.ts) */
 export async function commentsSince(organizationId: string, after: Date): Promise<InspoComment[]> {
-  const rows = await db.select(select).from(C).leftJoin(U, eq(C.authorId, U.id))
+  const rows = await db.select(select).from(C).leftJoin(U, eq(C.authorId, U.id)).leftJoin(F, and(eq(F.shareId, C.shareId), eq(F.guestKey, C.guestKey)))
     .where(and(eq(C.organizationId, organizationId), sql`coalesce(${C.editedAt}, ${C.createdAt}) > ${after}`)).orderBy(asc(C.createdAt));
   return rows.map(toComment);
 }
 
 /** The thread of one item, oldest first. */
 export async function listItemComments(organizationId: string, itemId: string): Promise<InspoComment[]> {
-  const rows = await db.select(select).from(C).leftJoin(U, eq(C.authorId, U.id))
+  const rows = await db.select(select).from(C).leftJoin(U, eq(C.authorId, U.id)).leftJoin(F, and(eq(F.shareId, C.shareId), eq(F.guestKey, C.guestKey)))
     .where(and(eq(C.organizationId, organizationId), eq(C.itemId, itemId))).orderBy(asc(C.createdAt));
   return rows.map(toComment);
 }
@@ -163,7 +166,7 @@ export async function toggleReaction(organizationId: string, commentId: string, 
     const [there] = await db.select({ id: C.id }).from(C).where(and(eq(C.id, commentId), eq(C.organizationId, organizationId))).limit(1);
     throw new HttpError(there ? 409 : 404, there ? errors.tooManyReactions : errors.reactionGone);
   }
-  const [row] = await db.select(select).from(C).leftJoin(U, eq(C.authorId, U.id))
+  const [row] = await db.select(select).from(C).leftJoin(U, eq(C.authorId, U.id)).leftJoin(F, and(eq(F.shareId, C.shareId), eq(F.guestKey, C.guestKey)))
     .where(and(eq(C.id, commentId), eq(C.organizationId, organizationId))).limit(1);
   return toComment(row);
 }

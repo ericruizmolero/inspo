@@ -33,6 +33,9 @@ export interface ShareBoard {
   texts: Record<string, string>;
   /** References whose og:image the link may fetch (/s/<token>/og): sites with no stored picture */
   og: string[];
+  /** The team's photos by name, for a link that names who saved each one (full): an outside address as it is, a stored
+   *  one through the link. Empty in a clean link */
+  people: Record<string, string>;
   /** Every stored key the page may load, for the file route */
   keys: Set<string>;
 }
@@ -61,14 +64,21 @@ export async function loadShareBoard(share: { organizationId: string; projectId:
     keys.add(key);
     return `${base}/f/${key}`;
   };
-  const out: ShareBoard = { name: project.name, items: [], thumbs: {}, cards: {}, shots: {}, designs: {}, tags: {}, texts: {}, og: [], keys };
+  const out: ShareBoard = { name: project.name, items: [], thumbs: {}, cards: {}, shots: {}, designs: {}, tags: {}, texts: {}, og: [], people: {}, keys };
+  if (mode === "full") {
+    // Eric, 10-11: "la foto de Eric no sale en compartir... que salga". The page sends no referrer, and the photos load
+    const M = schema.member, U = schema.user;
+    const team = await db.select({ name: U.name, image: U.image }).from(M).innerJoin(U, eq(U.id, M.userId)).where(eq(M.organizationId, organizationId));
+    for (const p of team) { const src = p.image && (/^https:\/\//.test(p.image) ? p.image : through(p.image)); if (src) out.people[p.name] = src; }
+  }
   for (const i of onBoard) {
     // What came from X or Pinterest is named and linked, never with our copy of it (lib/url.ts staysInside)
     const held = staysInside(i);
     const kind = mediaKindOf(i.web);
     const web = held ? i.source ?? i.web : kind === "image" ? through(i.web) ?? i.web : i.web;
     out.items.push({
-      ...i, web,
+      // On a link the note is the person's, never an AI app's (no Claude mark): Eric, 10-11, "eso solo en compartir"
+      ...i, web, via: undefined,
       ...(mode === "full" ? {} : { addedBy: "", note: "" }),
     });
     const tags = data.tagMap[i.web];

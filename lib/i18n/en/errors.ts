@@ -59,6 +59,7 @@ export const errors = {
   unknownEvent: "Unknown event",
   unknownSection: "Unknown section",
   projectNameRequired: "Give the project a name",
+  shareBadFace: "That photo cannot be used: try another picture",
   shareNothingPicked: "Pick at least one reference to share",
   shareNoGuests: "Write at least one email to invite",
   shareNotOnBoard: "That reference is not on this link",

@@ -19,7 +19,7 @@ export type ShareMode = "clean" | "full";
 export type ShareAccess = "link" | "invite";
 export interface ShareGuestRow { id: string; email: string; name: string; token: string; lastSeenAt: string | null }
 export interface ShareLink {
-  id: string; token: string; mode: ShareMode; access: ShareAccess; label: string;
+  id: string; token: string; mode: ShareMode; access: ShareAccess; label: string; subtitle: string;
   /** The references it shows; null: the whole board */
   itemIds: string[] | null;
   guests: ShareGuestRow[];
@@ -27,7 +27,7 @@ export interface ShareLink {
   comments: number; picks: number;
   createdBy: string | null; createdAt: string; lastViewedAt: string | null;
 }
-export interface NewShare { mode: ShareMode; access: ShareAccess; label: string; itemIds: string[] | null; emails: string[] }
+export interface NewShare { mode: ShareMode; access: ShareAccess; label: string; subtitle?: string; itemIds: string[] | null; emails: string[] }
 
 /** At most this many people invited to one link at once */
 export const MAX_GUESTS = 30;
@@ -54,7 +54,7 @@ export async function listShares(organizationId: string, projectId: string): Pro
   ]) : [[], [], []];
   const nOf = (list: { id: string | null; n: number }[], id: string) => Number(list.find((x) => x.id === id)?.n ?? 0);
   return rows.map(({ s, by }) => ({
-    id: s.id, token: s.token, mode: s.mode as ShareMode, access: (s.access === "invite" ? "invite" : "link") as ShareAccess, label: s.label,
+    id: s.id, token: s.token, mode: s.mode as ShareMode, access: (s.access === "invite" ? "invite" : "link") as ShareAccess, label: s.label, subtitle: s.subtitle,
     itemIds: Array.isArray(s.itemIds) ? s.itemIds : null,
     guests: guests.filter((g) => g.shareId === s.id).map((g) => ({ id: g.id, email: g.email, name: g.name, token: g.token, lastSeenAt: g.lastSeenAt?.toISOString() ?? null })),
     comments: nOf(comments, s.id), picks: nOf(picks, s.id),
@@ -89,7 +89,7 @@ export async function createShare(organizationId: string, projectId: string, inp
   if (input.access === "invite" && !emails.length) throw new HttpError(400, errors.shareNoGuests);
   const id = newId();
   const now = new Date();
-  await db.insert(Sh).values({ id, token: token(), projectId, organizationId, mode: input.mode === "full" ? "full" : "clean", access: input.access === "invite" ? "invite" : "link", itemIds, label: input.label.trim().slice(0, 80), createdBy: userId, createdAt: now });
+  await db.insert(Sh).values({ id, token: token(), projectId, organizationId, mode: input.mode === "full" ? "full" : "clean", access: input.access === "invite" ? "invite" : "link", itemIds, label: input.label.trim().slice(0, 80), subtitle: (input.subtitle ?? "").replace(/\s+/g, " ").trim().slice(0, 200), createdBy: userId, createdAt: now });
   const invited = emails.map((email) => ({ id: newId(), email, name: nameFromEmail(email), token: token(), lastSeenAt: null }));
   if (invited.length) await db.insert(G).values(invited.map((g) => ({ ...g, shareId: id, organizationId, createdAt: now })));
   return { links: await listShares(organizationId, projectId), invited };
@@ -118,7 +118,7 @@ export async function revokeShare(organizationId: string, projectId: string, id:
 }
 
 export interface ResolvedShare {
-  id: string; organizationId: string; projectId: string; mode: ShareMode; itemIds: string[] | null;
+  id: string; organizationId: string; projectId: string; mode: ShareMode; itemIds: string[] | null; subtitle: string;
   /** Who is in, when the address is an invited person's own: their key on what they write, and their name */
   guest: { id: string; key: string; name: string } | null;
 }
@@ -127,13 +127,13 @@ export interface ResolvedShare {
  *  opened by its general address). The address is the link's own, or one invited person's */
 export async function resolveShare(token: string): Promise<ResolvedShare | null> {
   if (!/^[\w-]{16,64}$/.test(token)) return null;
-  const cols = { id: Sh.id, organizationId: Sh.organizationId, projectId: Sh.projectId, mode: Sh.mode, itemIds: Sh.itemIds, access: Sh.access };
+  const cols = { id: Sh.id, organizationId: Sh.organizationId, projectId: Sh.projectId, mode: Sh.mode, itemIds: Sh.itemIds, access: Sh.access, subtitle: Sh.subtitle };
   const [r] = await db.select(cols).from(Sh).where(and(eq(Sh.token, token), isNull(Sh.revokedAt))).limit(1);
   if (r) return r.access === "invite" ? null : { ...r, mode: r.mode as ShareMode, itemIds: Array.isArray(r.itemIds) ? r.itemIds : null, guest: null };
   const [g] = await db.select({ ...cols, guestId: G.id, guestName: G.name }).from(G).innerJoin(Sh, eq(Sh.id, G.shareId))
     .where(and(eq(G.token, token), isNull(G.revokedAt), isNull(Sh.revokedAt))).limit(1);
   if (!g) return null;
-  return { id: g.id, organizationId: g.organizationId, projectId: g.projectId, mode: g.mode as ShareMode, itemIds: Array.isArray(g.itemIds) ? g.itemIds : null, guest: { id: g.guestId, key: `inv:${g.guestId}`, name: g.guestName } };
+  return { id: g.id, organizationId: g.organizationId, projectId: g.projectId, mode: g.mode as ShareMode, subtitle: g.subtitle, itemIds: Array.isArray(g.itemIds) ? g.itemIds : null, guest: { id: g.guestId, key: `inv:${g.guestId}`, name: g.guestName } };
 }
 
 export async function markViewed(share: ResolvedShare): Promise<void> {

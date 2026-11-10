@@ -30,6 +30,6 @@ export default async function Page({ params }: PageProps<"/s/[token]">) {
   if (!board) notFound();
   after(() => markViewed(share));
   const { name, keys: _keys, ...data } = board;
-  return <SharePage token={token} name={name} board={data} activity={activity}
+  return <SharePage token={token} name={name} subtitle={share.subtitle} board={data} activity={activity}
     guest={share.guest ? { key: share.guest.key, name: share.guest.name } : null} />;
 }

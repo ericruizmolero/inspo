@@ -941,6 +941,8 @@ export const systemShare = pgTable("system_share", {
   access: text("access").notNull().default("link"),
   /** Who it was made for, in the team's words ("For Andoni") */
   label: text("label").notNull().default(""),
+  /** A line under the project's name on the shared page, if the team wants one */
+  subtitle: text("subtitle").notNull().default(""),
   createdBy: text("created_by").references(() => user.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
   revokedAt: timestamp("revoked_at", { withTimezone: true, mode: "date" }),
@@ -970,6 +972,15 @@ export const shareGuest = pgTable("share_guest", {
   index("share_guest_share_idx").on(t.shareId),
   index("share_guest_org_idx").on(t.organizationId),
 ]);
+
+/** The photo a guest of a share link put on their avatar: small (160 px, WebP), kept as a data URL, so it needs no file
+ *  route and travels with their comments, on the link and in the app's thread (lib/share-guests.ts) */
+export const shareFace = pgTable("share_face", {
+  shareId: text("share_id").notNull().references(() => systemShare.id, { onDelete: "cascade" }),
+  guestKey: text("guest_key").notNull(),
+  image: text("image").notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull(),
+}, (t) => [primaryKey({ columns: [t.shareId, t.guestKey] })]);
 
 /** A guest of a share link chose this reference among the ones shown (lib/share-guests.ts). One per guest and reference */
 export const sharePick = pgTable("share_pick", {

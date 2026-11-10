@@ -6,6 +6,6 @@
 import ShareBoard, { type ShareBoardData } from "./ShareBoard";
 import type { ShareActivity } from "@/lib/share-guests";
 
-export default function SharePage({ token, name, board, activity, guest }: { token: string; name: string; board: ShareBoardData; activity: ShareActivity; guest: { key: string; name: string } | null }) {
-  return <ShareBoard token={token} name={name} data={board} activity={activity} invited={guest} />;
+export default function SharePage({ token, name, subtitle, board, activity, guest }: { token: string; name: string; subtitle: string; board: ShareBoardData; activity: ShareActivity; guest: { key: string; name: string } | null }) {
+  return <ShareBoard token={token} name={name} subtitle={subtitle} data={board} activity={activity} invited={guest} />;
 }

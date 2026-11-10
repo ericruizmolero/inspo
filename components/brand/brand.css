@@ -486,44 +486,56 @@
 .share-head--over { position: absolute; z-index: 20; top: 0; left: 0; right: 0; max-width: none; height: 72px; margin: 0; padding: 0 24px; flex-wrap: nowrap; pointer-events: none; }
 .share-head--over > * { pointer-events: auto; }
 .share-head--over .share-head__name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+/* The name, and under it the line the team wrote when sharing, if any */
+.share-head__title { display: flex; flex-direction: column; gap: 4px; min-width: 0; margin: 0; }
+.share-head__sub { margin: 0; font-size: var(--fs-ui); line-height: var(--lh-small); color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.share-head--over.has-sub { height: 96px; }
 .share-head__by { flex-shrink: 0; font-size: var(--fs-label); color: var(--text-2); text-decoration: none; } .share-head__by:hover { color: var(--text); }
 .sboard__note { cursor: default; margin: 0; }
 .sboard__empty { max-width: 1180px; margin: 0 auto; font-size: var(--fs-ui); color: var(--text-2); }
 .share--board .share-head:not(.share-head--over) { padding: 48px 24px 0; }
 @media (max-width: 800px) { .share-head--over { height: 64px; padding: 0 16px; } }
 
-/* ─── Sharing (components/brand/ShareDialog.tsx) ─── */
-.bshare { width: min(560px, 94vw); }
-.bshare__body { display: flex; flex-direction: column; gap: 16px; }
-/* What the link carries: the system's SegmentedControl as a choice, the picked one's meaning under it */
-.bshare__modes { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+/* ─── Sharing (components/brand/ShareDialog.tsx) ───
+   Clean (Eric, 10-11: "más limpito"): each setting one row, name left and its choice at size s right; one line
+   says what the link will be; each link one line, its actions quiet icons */
+.bshare { width: min(520px, 94vw); }
+.bshare__body { display: flex; flex-direction: column; gap: 20px; }
+.bshare__sets { display: flex; flex-direction: column; gap: 10px; }
+.bshare__set { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 34px; }
 .bshare__legend { font-size: var(--fs-small); color: var(--text-2); }
+.bshare__value { font-size: var(--fs-small); color: var(--text); cursor: help; }
+.bshare__summary { margin: 2px 0 0; }
+.bshare__emails { width: 100%; resize: vertical; min-height: 0; font: inherit; font-size: var(--fs-small); }
 .bshare__make { display: flex; gap: 8px; }
 .bshare__make .cr-input { flex: 1; min-width: 0; }
+.bshare__links { display: flex; flex-direction: column; gap: 4px; padding-top: 16px; border-top: 1px solid var(--border); }
 .bshare__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
-.bshare__list li { display: flex; flex-direction: column; gap: 10px; padding: 12px 0; border-top: 1px solid var(--border); }
+.bshare__list li { display: flex; flex-direction: column; gap: 6px; padding: 8px 0; }
 .bshare__row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.bshare__row > div { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-.bshare__list b { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 8px; font-size: var(--fs-small); font-weight: 600; }
-.bshare__list small { font-size: var(--fs-small); color: var(--text-2); }
+.bshare__what { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.bshare__what b { font-size: var(--fs-small); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bshare__what small { font-size: var(--fs-label); color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .bshare__back { color: var(--text); }
-.bshare__list code { font-family: var(--font-mono); font-size: var(--fs-label); color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.bshare__mode.cr-chip { padding: 1px 8px; font-size: var(--fs-label); font-weight: 500; }
-.bshare__row > span { display: inline-flex; gap: 4px; flex-shrink: 0; }
-/* Copy link: a secondary Button, size s; revoke: a quiet one, beside the strong IconButton */
-.bshare__emails { width: 100%; resize: vertical; min-height: 0; font: inherit; font-size: var(--fs-small); }
+.bshare__acts { display: inline-flex; align-items: center; gap: 2px; flex-shrink: 0; }
 /* The people invited to a link: one line each, their own link to copy, and a field for more */
-.bshare__guests { display: flex; flex-direction: column; gap: 4px; }
+.bshare__guests { display: flex; flex-direction: column; gap: 2px; padding-left: 12px; border-left: 1px solid var(--border); }
 .bshare__guest { display: flex; align-items: center; gap: 8px; min-height: 32px; }
 .bshare__guest-who { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-small); }
 .bshare__guest-who b { font-weight: 600; }
+.bshare__guest-who small { color: var(--text-2); }
 .bshare__guests .bshare__make { margin-top: 4px; }
-@media (max-width: 560px) { .bshare__row { flex-direction: column; align-items: flex-start; } .bshare__guest { flex-wrap: wrap; } }
+@media (max-width: 480px) { .bshare__set { flex-direction: column; align-items: flex-start; gap: 6px; } }
 
 /* ─── A guest on the shared board (components/brand/ShareBoard.tsx) ─── */
 .share-head__end { display: inline-flex; align-items: center; gap: 16px; flex-shrink: 0; min-width: 0; }
 /* Who you are: your avatar and your name, written in place when pressed */
 .sboard__me { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
+/* The avatar is a button: press it to put your photo on it */
+.sboard__face { display: inline-flex; padding: 0; border: 0; border-radius: 50%; background: none; cursor: pointer; transition: transform 0.15s var(--ease-out); }
+.sboard__face:hover { transform: scale(1.06); }
+.sboard__face:focus-visible { outline: 2px solid var(--ember-glow); outline-offset: 2px; }
+.sboard__face[aria-busy] { opacity: 0.5; }
 .sboard__name { max-width: 220px; padding: 2px 0; border: 0; background: none; color: var(--text); font: inherit; font-size: var(--fs-small); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: text; }
 .sboard__name:hover { color: var(--text); text-decoration: underline; text-decoration-color: var(--border); text-underline-offset: 3px; }
 .sboard__name--edit { width: 200px; outline: none; border-bottom: 1px solid var(--text-2); }
@@ -534,4 +546,4 @@
 .sboard__choose { margin-bottom: 4px; }
 .sboard__choose > span { min-width: 0; }
 .sboard__error { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 40; margin: 0; padding: 8px 14px; border-radius: var(--radius-md); background: var(--chrome); color: var(--chrome-ink); font-size: var(--fs-small); }
-@media (max-width: 800px) { .share-head__end { gap: 12px; } .share-head__by { display: none; } .sboard__name { max-width: 140px; } }
+@media (max-width: 800px) { .share-head__end { gap: 12px; } .sboard__name { max-width: 140px; } }

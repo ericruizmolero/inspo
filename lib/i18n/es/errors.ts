@@ -59,6 +59,7 @@ export const errors: typeof EnErrors = {
   unknownEvent: "Evento desconocido",
   unknownSection: "Sección desconocida",
   projectNameRequired: "Ponle un nombre al proyecto",
+  shareBadFace: "La foto no vale: prueba con otra imagen",
   shareNothingPicked: "Elige al menos una referencia para compartir",
   shareNoGuests: "Escribe al menos un correo para invitar",
   shareNotOnBoard: "Esa referencia no está en este enlace",

@@ -500,6 +500,13 @@ export const actions: Record<string, Surface> = {
       expectRefused(fx, await guestPick(fx.a.shareToken, "probe-secret-0123456789abcdef", `${fx.a.prefix}-text`, "x"), "a guest cannot pick a reference off the link");
     },
   },
+  "action:app/actions/share.ts#guestFace": {
+    probe: async (fx) => {
+      const { guestFace } = await import("@/app/actions/share");
+      expectRefused(fx, await guestFace(fx.a.shareToken, "probe-secret-0123456789abcdef", "javascript:alert(1)"), "a guest's photo is a small image, nothing else");
+      expectRefused(fx, await guestFace("A".repeat(22), "probe-secret-0123456789abcdef", null), "an unknown token");
+    },
+  },
   "action:app/actions/share.ts#guestRename": {
     probe: async (fx) => {
       const { guestRename } = await import("@/app/actions/share");

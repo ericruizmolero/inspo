@@ -6,7 +6,7 @@ import { headers } from "next/headers";
 import { and, eq } from "drizzle-orm";
 import { withCtx, HttpError, type ActionResult } from "@/lib/workspace";
 import { createShare, inviteToShare, listShares, resolveShare, revokeShare, uninviteFromShare, type ShareAccess, type ShareGuestRow } from "@/lib/share";
-import { deleteGuestComment, postGuestComment, renameGuest, shareActivity, toggleGuestPick, type ShareActivity } from "@/lib/share-guests";
+import { deleteGuestComment, postGuestComment, renameGuest, setGuestFace, shareActivity, toggleGuestPick, type ShareActivity } from "@/lib/share-guests";
 import { APP_URL } from "@/lib/auth";
 import { inBackground } from "@/lib/notify";
 import { localeForEmail, sendMail, shareInviteMail } from "@/lib/mail";
@@ -31,12 +31,13 @@ async function sendInvites(organizationId: string, projectId: string, invited: S
   });
 }
 
-export async function makeShare(projectId: string, input: { mode: "clean" | "full"; access: ShareAccess; label: string; itemIds: string[] | null; emails: string[] }) {
+export async function makeShare(projectId: string, input: { mode: "clean" | "full"; access: ShareAccess; label: string; subtitle?: string; itemIds: string[] | null; emails: string[] }) {
   return withCtx(async (ctx) => {
     const { links, invited } = await createShare(ctx.workspace.id, String(projectId), {
       mode: input?.mode === "full" ? "full" : "clean",
       access: input?.access === "invite" ? "invite" : "link",
       label: String(input?.label ?? ""),
+      subtitle: String(input?.subtitle ?? ""),
       itemIds: Array.isArray(input?.itemIds) ? input.itemIds.map(String) : null,
       emails: Array.isArray(input?.emails) ? input.emails.map(String) : [],
     }, ctx.user.id);
@@ -95,4 +96,8 @@ export async function guestPick(token: string, secret: string, itemId: string, n
 
 export async function guestRename(token: string, secret: string, name: string) {
   return asGuest(token, async (share) => ({ name: await renameGuest(share, secret, name), activity: await shareActivity(share) }));
+}
+
+export async function guestFace(token: string, secret: string, image: string | null) {
+  return asGuest(token, async (share) => { await setGuestFace(share, secret, image); return shareActivity(share); });
 }

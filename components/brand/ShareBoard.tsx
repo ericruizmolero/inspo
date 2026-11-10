@@ -19,7 +19,7 @@ import { AvatarStack, Button, toneFor } from "@/components/criterio";
 import { useBoardRatios } from "@/hooks/use-board-ratios";
 import { useKeptZoom } from "@/hooks/use-kept-zoom";
 import { randomGuestName, useShareGuest } from "@/hooks/use-share-guest";
-import { guestActivity, guestComment, guestPick, guestRename, guestUncomment } from "@/app/actions/share";
+import { guestActivity, guestComment, guestFace, guestPick, guestRename, guestUncomment } from "@/app/actions/share";
 import { keyOf } from "@/lib/board";
 import { mediaKindOf } from "@/lib/url";
 import type { ShareActivity } from "@/lib/share-guests";
@@ -35,16 +35,22 @@ export interface ShareBoardData {
   tags: Record<string, InspoTags>;
   texts: Record<string, string>;
   og: string[];
+  /** The team's photos by name (a full link only) */
+  people: Record<string, string>;
 }
 
 /** Room for the bar over the board (the project's name), and at the bottom for the board's end */
 const INSETS = { top: 72, left: 0, right: 0, bottom: 24 };
+/** With a subtitle under the name, the bar takes one line more */
+const INSETS_SUB = { ...INSETS, top: 96 };
 /** How often an open link asks for what others wrote, while the tab is in view */
 const POLL_MS = 20_000;
 const none = () => Promise.resolve();
 
-export default function ShareBoard({ token, name, data, activity: first, invited }: {
-  token: string; name: string; data: ShareBoardData; activity: ShareActivity;
+export default function ShareBoard({ token, name, subtitle, data, activity: first, invited }: {
+  token: string; name: string;
+  /** A line under the name, if the team wrote one when sharing */
+  subtitle: string; data: ShareBoardData; activity: ShareActivity;
   /** The invited person this address belongs to; null: the general address, a guest with a random name */
   invited: { key: string; name: string } | null;
 }) {
@@ -101,13 +107,17 @@ export default function ShareBoard({ token, name, data, activity: first, invited
     const comments = item.id ? commentsOf[item.id] : undefined;
     const picks = item.id ? picksOf[item.id] ?? [] : [];
     const others = picks.filter((p) => p.key !== guest?.key);
+    const caption = captionFor(item, comments, data.people[item.addedBy]);
     return (
       <div className="sboard__cell">
         <InspoCard
           item={item}
           text={item.id ? texts[item.id] ?? null : null}
           tags={tags[web]}
-          caption={captionFor(item, comments, undefined)}
+          caption={caption}
+          // The card draws the note and its thread only with somewhere to open them: here, the reference's sheet.
+          // Without a note there is no line (no "add the first note" to a guest)
+          onComments={caption ? () => setOpen(item) : undefined}
           commentCount={comments?.length ?? 0}
           spaceName={name}
           manualThumbnail={thumb}
@@ -132,23 +142,28 @@ export default function ShareBoard({ token, name, data, activity: first, invited
         />
         {others.length > 0 && (
           <span className="sboard__picks" data-tip={g.pickedBy(others.map((p) => p.name).join(", "))}>
-            <AvatarStack size={22} people={others.slice(0, 3).map((p) => ({ initials: p.name.slice(0, 1).toUpperCase(), name: p.name, tone: toneFor(p.name) }))} />
+            <AvatarStack size={22} people={others.slice(0, 3).map((p) => ({ initials: p.name.slice(0, 1).toUpperCase(), name: p.name, tone: toneFor(p.name), src: activity.faces[p.key] ?? null }))} />
           </span>
         )}
       </div>
     );
-  }, [shots, thumbs, designs, cards, tags, texts, og, token, name, ratioOf, measure, commentsOf, picksOf, guest, pick, g]);
+  }, [shots, thumbs, designs, cards, tags, texts, og, token, name, ratioOf, measure, commentsOf, picksOf, guest, pick, g, activity.faces, data.people]);
 
   const head = (
-    <header className={`share-head${items.length ? " share-head--over" : ""}`}>
-      <h1 className="share-head__name">{name}</h1>
+    <header className={`share-head${items.length ? " share-head--over" : ""}${subtitle ? " has-sub" : ""}`}>
+      <hgroup className="share-head__title">
+        <h1 className="share-head__name">{name}</h1>
+        {subtitle && <p className="share-head__sub">{subtitle}</p>}
+      </hgroup>
       <span className="share-head__end">
-        {guest && <GuestName guest={guest} invited={!!invited} onRename={async (next) => {
+        {guest && <GuestName guest={guest} face={activity.faces[guest.key] ?? null} onRename={async (next) => {
           rename(next);
           const r = await guestRename(token, guest.secret, next);
           if (r.ok) setActivity(r.data.activity);
+        }} onFace={async (image) => {
+          const r = await guestFace(token, guest.secret, image);
+          if (r.ok) setActivity(r.data); else setError(r.error);
         }} />}
-        <a className="share-head__by" href="https://criterio.design" rel="noreferrer">criterio.design</a>
       </span>
     </header>
   );
@@ -159,7 +174,7 @@ export default function ShareBoard({ token, name, data, activity: first, invited
   return (
     <main className="share share--board">
       {head}
-      <Grid items={items} ratioOf={ratioOf} hasNote={hasNote} insets={INSETS} zoom={zoom} onZoom={setZoom}
+      <Grid items={items} ratioOf={ratioOf} hasNote={hasNote} insets={subtitle ? INSETS_SUB : INSETS} zoom={zoom} onZoom={setZoom}
         fitKey="share" focusKey={open ? keyOf(open) : null} renderCard={renderCard} />
       {open && (
         <ItemPanel
@@ -172,9 +187,9 @@ export default function ShareBoard({ token, name, data, activity: first, invited
               key={open.id}
               item={open}
               comments={commentsOf[open.id] ?? []}
-              user={{ id: guest.key, name: guest.name, email: "", image: null, language: locale }}
+              user={{ id: guest.key, name: guest.name, email: "", image: activity.faces[guest.key] ?? null, language: locale }}
               canManage={false}
-              memberImages={{}}
+              memberImages={data.people}
               image={null}
               showMedia={false}
               noFiles
@@ -201,20 +216,45 @@ export default function ShareBoard({ token, name, data, activity: first, invited
   );
 }
 
-/** Who you are on the link: your avatar and your name, which you press to write another (an invited person's too) */
-function GuestName({ guest, invited, onRename }: { guest: { name: string }; invited: boolean; onRename: (name: string) => Promise<void> }) {
+/** A photo from the guest's device, made small enough to keep as text: a 160 px square, WebP (JPEG where WebP is not made) */
+async function facePhoto(file: File): Promise<string> {
+  const bitmap = await createImageBitmap(file);
+  const side = Math.min(bitmap.width, bitmap.height);
+  const canvas = document.createElement("canvas");
+  canvas.width = canvas.height = 160;
+  canvas.getContext("2d")!.drawImage(bitmap, (bitmap.width - side) / 2, (bitmap.height - side) / 2, side, side, 0, 0, 160, 160);
+  bitmap.close();
+  const webp = canvas.toDataURL("image/webp", 0.8);
+  return webp.startsWith("data:image/webp") ? webp : canvas.toDataURL("image/jpeg", 0.8);
+}
+
+/** Who you are on the link: your avatar, which you press to put your photo on it, and your name, which you press to
+ *  write another (Eric, 10-11: "que si quieren que suban su foto") */
+function GuestName({ guest, face, onRename, onFace }: { guest: { name: string }; face: string | null; onRename: (name: string) => Promise<void>; onFace: (image: string | null) => Promise<void> }) {
   const { t } = useT();
   const g = t.brand.share.guest;
   const [draft, setDraft] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
   const input = useRef<HTMLInputElement>(null);
+  const file = useRef<HTMLInputElement>(null);
   const save = () => {
     const next = (draft ?? "").replace(/\s+/g, " ").trim().slice(0, 40);
     setDraft(null);
     if (next && next !== guest.name) void onRename(next);
   };
   return (
-    <span className="sboard__me" data-invited={invited || undefined}>
-      <PersonAvatar name={guest.name} image={null} size={24} />
+    <span className="sboard__me">
+      <button type="button" className="sboard__face" aria-label={face ? g.changePhoto : g.addPhoto} data-tip={face ? g.changePhoto : g.addPhoto}
+        aria-busy={busy || undefined} onClick={() => file.current?.click()}>
+        <PersonAvatar name={guest.name} image={face} size={28} />
+      </button>
+      <input ref={file} type="file" accept="image/*" hidden onChange={async (e) => {
+        const f = e.currentTarget.files?.[0];
+        e.currentTarget.value = "";
+        if (!f) return;
+        setBusy(true);
+        try { await onFace(await facePhoto(f)); } catch { /* the error line says it */ } finally { setBusy(false); }
+      }} />
       {draft === null ? (
         <button type="button" className="sboard__name" data-tip={g.rename} onClick={() => { setDraft(guest.name); requestAnimationFrame(() => input.current?.select()); }}>
           {g.you(guest.name)}
