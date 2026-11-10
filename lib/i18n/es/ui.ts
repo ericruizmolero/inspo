@@ -2471,11 +2471,10 @@ export const ui: typeof EnUi = {
       linkHint: "Cualquiera con el enlace entra sin cuenta, con un avatar al azar.", inviteHint: "Cada persona recibe por correo su propio enlace y comenta con su nombre.",
       emails: "Correos", emailsPlaceholder: "ana@cliente.com, luis@cliente.com", inviteMore: "Invitar", copyTheirs: "Copiar su enlace", uninvite: "Quitar",
       makeInvite: "Crear e invitar", refs: (n: number): string => (n === 1 ? "1 referencia" : `${n} referencias`), whole: "Todo el tablón",
-      back: (comments: number, picks: number): string => [comments ? (comments === 1 ? "1 comentario" : `${comments} comentarios`) : "", picks ? (picks === 1 ? "1 elección" : `${picks} elecciones`) : ""].filter(Boolean).join(", "),
+      back: (comments: number, picks: number): string => [comments ? (comments === 1 ? "1 comentario" : `${comments} comentarios`) : "", picks ? `${picks} me gusta` : ""].filter(Boolean).join(", "),
       guest: {
         addPhoto: "Poner tu foto", changePhoto: "Cambiar tu foto", you: (name: string): string => `Eres ${name}`, rename: "Cambiar nombre", nameLabel: "Tu nombre", save: "Guardar",
-        hint: "Pulsa una referencia para comentarla o elegirla.",
-        pick: "Elegir", picked: "Elegida", pickedBy: (names: string): string => `La eligen ${names}`,
+        like: "Me gusta", unlike: "Quitar el me gusta", likedBy: (names: string): string => `Le gusta a ${names}`,
         emptyLine: "Lo que escribas lo lee el equipo que te lo ha compartido.",
         names: ["Nutria", "Zorro", "Garza", "Lince", "Búho", "Ballena", "Erizo", "Ciervo", "Pulpo", "Tejón", "Grulla", "Morsa"],
         colors: ["ámbar", "índigo", "coral", "salvia", "cobalto", "lima", "ciruela", "arena", "turquesa", "ocre"],

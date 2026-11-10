@@ -15,7 +15,7 @@ import VideoPlayer from "../VideoPlayer";
 import CommentsPanel from "../CommentsPanel";
 import PersonAvatar from "../PersonAvatar";
 import { useT } from "../I18nProvider";
-import { AvatarStack, Button, toneFor } from "@/components/criterio";
+import { Heart } from "@phosphor-icons/react/ssr";
 import { useBoardRatios } from "@/hooks/use-board-ratios";
 import { useKeptZoom } from "@/hooks/use-kept-zoom";
 import { randomGuestName, useShareGuest } from "@/hooks/use-share-guest";
@@ -106,7 +106,7 @@ export default function ShareBoard({ token, name, subtitle, data, activity: firs
     const card = level === "full" ? undefined : cards[web];
     const comments = item.id ? commentsOf[item.id] : undefined;
     const picks = item.id ? picksOf[item.id] ?? [] : [];
-    const others = picks.filter((p) => p.key !== guest?.key);
+    const liked = !!guest && picks.some((p) => p.key === guest.key);
     const caption = captionFor(item, comments, data.people[item.addedBy]);
     return (
       <div className="sboard__cell">
@@ -128,9 +128,6 @@ export default function ShareBoard({ token, name, subtitle, data, activity: firs
           designCover={showsPage ? shot![key] : design?.coverUrl}
           designScroll={design?.scrollUrl}
           readOnly
-          // The board's own selection circle is the guest's choice: pressing it picks, pressing the card opens it
-          selected={!!guest && picks.some((p) => p.key === guest.key)}
-          onSelect={guest && item.id ? () => void pick(item) : undefined}
           ogSrc={item.id && og.has(item.id) ? `/s/${token}/og?id=${encodeURIComponent(item.id)}` : undefined}
           board={{
             ratio: ratioOf(item),
@@ -140,14 +137,20 @@ export default function ShareBoard({ token, name, subtitle, data, activity: firs
             onMeasure: showsPage ? undefined : (r) => measure(web, r),
           }}
         />
-        {others.length > 0 && (
-          <span className="sboard__picks" data-tip={g.pickedBy(others.map((p) => p.name).join(", "))}>
-            <AvatarStack size={22} people={others.slice(0, 3).map((p) => ({ initials: p.name.slice(0, 1).toUpperCase(), name: p.name, tone: toneFor(p.name), src: activity.faces[p.key] ?? null }))} />
-          </span>
+        {/* A like, on the card's corner on hover (Eric, 10-11: "si alguien hace hovering en la card desde fuera pueda dar
+            a me gusta en corazón"); it stays once someone liked it, with how many. No selection circle here: a guest
+            does nothing with several cards at once */}
+        {guest && item.id && (
+          <button type="button" className={`sboard__like${liked ? " is-on" : ""}${picks.length ? " has-likes" : ""}`} aria-pressed={liked}
+            aria-label={liked ? g.unlike : g.like} data-tip={picks.length ? g.likedBy(picks.map((p) => (p.key === guest.key ? t.comments.you : p.name)).join(", ")) : g.like}
+            onClick={(e) => { e.stopPropagation(); void pick(item); }}>
+            <Heart size={16} weight={liked ? "fill" : "regular"} aria-hidden />
+            {picks.length > 0 && <span>{picks.length}</span>}
+          </button>
         )}
       </div>
     );
-  }, [shots, thumbs, designs, cards, tags, texts, og, token, name, ratioOf, measure, commentsOf, picksOf, guest, pick, g, activity.faces, data.people]);
+  }, [shots, thumbs, designs, cards, tags, texts, og, token, name, ratioOf, measure, commentsOf, picksOf, guest, pick, g, t, data.people]);
 
   const head = (
     <header className={`share-head${items.length ? " share-head--over" : ""}${subtitle ? " has-sub" : ""}`}>
@@ -169,8 +172,6 @@ export default function ShareBoard({ token, name, subtitle, data, activity: firs
   );
 
   if (!items.length) return <main className="share share--board">{head}<p className="sboard__empty">{t.brand.share.boardEmpty}</p></main>;
-  const openPicks = open?.id ? picksOf[open.id] ?? [] : [];
-  const mine = !!guest && openPicks.some((p) => p.key === guest.key);
   return (
     <main className="share share--board">
       {head}
@@ -197,12 +198,6 @@ export default function ShareBoard({ token, name, subtitle, data, activity: firs
               onPost={async (body) => done(await guestComment(token, guest.secret, { itemId: open.id!, body, name: guest.name }))}
               onReply={async (parentId, body) => done(await guestComment(token, guest.secret, { itemId: open.id!, body, parentId, name: guest.name }))}
               onDelete={async (id) => done(await guestUncomment(token, guest.secret, id))}
-              notice={
-                <p className="cm-notice sboard__choose">
-                  <span>{openPicks.length ? g.pickedBy(openPicks.map((p) => (p.key === guest.key ? t.comments.you : p.name)).join(", ")) : g.hint}</span>
-                  <Button size="s" icon={mine ? "check" : undefined} variant={mine ? "primary" : "secondary"} pressed={mine} onClick={() => void pick(open)}>{mine ? g.picked : g.pick}</Button>
-                </p>
-              }
             />
           ) : null}
           onClose={() => setOpen(null)}

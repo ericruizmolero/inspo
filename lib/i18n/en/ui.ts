@@ -2490,11 +2490,10 @@ export const ui = {
       linkHint: "Anyone with the link gets in without an account, with a random avatar.", inviteHint: "Each person gets their own link by email and comments with their name.",
       emails: "Emails", emailsPlaceholder: "ana@client.com, luis@client.com", inviteMore: "Invite", copyTheirs: "Copy their link", uninvite: "Remove",
       makeInvite: "Create and invite", refs: (n: number): string => (n === 1 ? "1 reference" : `${n} references`), whole: "The whole board",
-      back: (comments: number, picks: number): string => [comments ? (comments === 1 ? "1 comment" : `${comments} comments`) : "", picks ? (picks === 1 ? "1 pick" : `${picks} picks`) : ""].filter(Boolean).join(", "),
+      back: (comments: number, picks: number): string => [comments ? (comments === 1 ? "1 comment" : `${comments} comments`) : "", picks ? (picks === 1 ? "1 like" : `${picks} likes`) : ""].filter(Boolean).join(", "),
       guest: {
         addPhoto: "Add your photo", changePhoto: "Change your photo", you: (name: string): string => `You are ${name}`, rename: "Change name", nameLabel: "Your name", save: "Save",
-        hint: "Press a reference to comment on it or pick it.",
-        pick: "Pick", picked: "Picked", pickedBy: (names: string): string => `Picked by ${names}`,
+        like: "Like", unlike: "Remove the like", likedBy: (names: string): string => `Liked by ${names}`,
         emptyLine: "What you write is read by the team that shared this with you.",
         names: ["Otter", "Fox", "Heron", "Lynx", "Owl", "Whale", "Hedgehog", "Deer", "Octopus", "Badger", "Crane", "Walrus"],
         colors: ["Amber", "Indigo", "Coral", "Sage", "Cobalt", "Lime", "Plum", "Sand", "Teal", "Ochre"],

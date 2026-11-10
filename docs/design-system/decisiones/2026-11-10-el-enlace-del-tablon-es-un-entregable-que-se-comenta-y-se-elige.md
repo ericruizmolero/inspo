@@ -1,5 +1,5 @@
 ---
-title: El enlace del tablón es un entregable que se comenta y se elige
+title: El enlace del tablón es un entregable que se comenta y donde se marca lo que gusta
 date: 2026-11-10
 status: vigente
 kind: producto
@@ -14,7 +14,7 @@ supersedes: 2026-11-06-el-enlace-comparte-solo-el-tablon-tal-cual
 - Quien entra es un invitado con nombre: el invitado por correo con el suyo (lo de antes de la @), el resto con uno al azar ("Nutria ámbar", `hooks/use-share-guest.ts`) y su avatar es la inicial en su tono (`PersonAvatar`). El nombre se pulsa arriba a la derecha y se reescribe en el sitio.
 - Comentar: la ficha lleva el hilo de la app (`CommentsPanel` con `noFiles`, solo palabras). Lo escrito va a `inspo_comment` con `guest_key` y `share_id`, así que el equipo lo lee en su hilo con la etiqueta "invitado" y lo contesta desde ahí. En el enlace se ve solo lo escrito por ese enlace y las respuestas del equipo, nunca la conversación interna.
 - La cabecera del enlace es el nombre del proyecto, el subtítulo opcional que se escribe al compartir y quién eres; sin "criterio.design". El invitado puede poner su foto pulsando su avatar (Eric: "que si quieren que suban su foto"). En un enlace completo el equipo sale con su foto ("la foto de Eric no sale en compartir... que salga"), y lo que guardó un agente sale como de la persona, sin el logo de Claude ("eso solo en compartir").
-- Elegir: el círculo de selección de la tarjeta es la elección del invitado (se queda puesto) y la ficha lleva "Elegir" con quién la eligió; quién más la eligió sale arriba a la derecha de la tarjeta (`share_pick`). Cada enlace en el diálogo dice cuántos comentarios y elecciones han vuelto.
+- "Me gusta": un corazón en la esquina de la tarjeta, al pasar el ratón; se queda con el número cuando alguien la marca (`share_pick`). Primero fue "Elegir", con el círculo de selección de la tarjeta y un botón en la ficha; Eric lo descartó: "lo de elegir tiene sentido?", "igual mejor solo comentarios, pero que si alguien hace hovering en la card desde fuera pueda dar a me gusta en corazón", "ahí el seleccionar no tiene tanto sentido". La ficha queda solo con los comentarios.
 - Sin sesión: el token es la prueba y un invitado anónimo manda además un secreto aleatorio de su navegador (su clave es el hash). Límite de 30 mensajes o elecciones cada 10 minutos por persona y 300 por enlace.
 
 **Por qué.** Palabras de Eric arriba: el enlace pasa de enseñar a recoger lo que piensa el cliente. Que el hilo sea el mismo que el del equipo sigue el principio "menos sitios para lo mismo" (interpretación mía), y elegir en el tablón en vez de en una lista del diálogo, "sobre las tarjetas, no en tablas ni modales".
