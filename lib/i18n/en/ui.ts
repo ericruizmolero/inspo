@@ -1678,7 +1678,6 @@ export const ui = {
     daysAgo: (n: number): string => `${n} days ago`,
     and: "and",
     noAuthor: "No author",
-    viaBy: (name: string): string => `by ${name}`,
     uploadFailed: "Could not upload",
     sendFailed: "Could not send",
     ofLabel: (name: string): string => `Comments on ${name}`,

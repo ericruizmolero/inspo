@@ -14,7 +14,7 @@ import { mediaKindOf, videoEmbedOf, isGif, postThumbKind, postOf, readableDomain
 import { usePost } from "./post-cache";
 import LoopVideo from "./LoopVideo";
 import { agentMark } from "@/lib/agent-mark";
-import { Avatar, AvatarStack, Busy, Button, Chip, Icon, IconButton, MenuItem, toneFor } from "@/components/criterio";
+import { AgentBadge, Avatar, AvatarStack, Busy, Button, Chip, Icon, IconButton, MenuItem, toneFor } from "@/components/criterio";
 import "./TextRef.css";
 import { useDecodedSrc } from "@/hooks/use-decoded-src";
 import { markShown, wasShown } from "@/lib/shown-images";
@@ -210,16 +210,18 @@ const IconMore = <Icon name="dots" size={14} />;
 const IconExternal = <Icon name="arrow-up-right" size={13} />;
 const IconInfo = <Icon name="info" size={12} />;
 
-export interface NoteCaption { name: string; image: string | null; body: string; people: { name: string; image: string | null }[]; more: number }
+export interface NoteCaption { name: string; image: string | null; body: string; people: { name: string; image: string | null }[]; more: number;
+  /** The AI app that saved the note over MCP: its mark goes on the person's avatar (AgentBadge) */
+  agent?: { name: string; mark: string | null } }
 
 /** Under the tile: the note of whoever saved it; with no note, the first reply with text.
  *  `people` are everyone in the thread (saver first, then each new voice), at most three circles;
  *  `more` counts every comment in the thread, as the card's comment button does, so the two never disagree. */
 export function captionFor(item: InspoItem, comments: InspoComment[] | undefined, authorImage: string | undefined): NoteCaption | null {
   const firstComment = comments?.find((c) => c.body.trim());
-  // A note an agent wrote (saved over MCP) speaks as its app, with the app's logo: the person is in the thread ("From Claude, by Eric")
+  // A note an agent wrote over MCP keeps the person's face, with the app's mark on its corner
   const root = item.note.trim()
-    ? item.via ? { name: item.via, image: agentMark(item.via), body: item.note.trim() } : { name: item.addedBy, image: authorImage ?? null, body: item.note.trim() }
+    ? { name: item.addedBy, image: authorImage ?? null, body: item.note.trim(), ...(item.via ? { agent: { name: item.via, mark: agentMark(item.via) } } : {}) }
     : firstComment ? { name: firstComment.authorName, image: firstComment.authorImage, body: firstComment.body.trim() } : null;
   if (!root) return null;
   const people = [{ name: root.name, image: root.image }];
@@ -760,13 +762,13 @@ export default function InspoCard({ item, text, tags, tagJob, score, reason, man
           like any card (the board keeps 44px for it either way, and an empty one left a hole: Eric, 13-10) */}
       {!(isError && kind === "text") && onComments && (caption ? (
         <button type="button" className="tile__note cr-comment" onClick={onComments} data-tip={t.card.seeComments}>
-          {caption.people.length > 1 ? (
+          <AgentBadge agent={caption.agent} size={20}>{caption.people.length > 1 ? (
             // Several people in the thread: the system's AvatarStack, whoever saved it first
             <AvatarStack className="tile__note-stack" size={20}
               people={caption.people.map((p) => ({ initials: p.name.slice(0, 1).toUpperCase(), name: p.name, tone: toneFor(p.name), src: p.image }))} />
           ) : (
             <Avatar initials={caption.name.slice(0, 1).toUpperCase()} name={caption.name} tone={toneFor(caption.name)} src={caption.image} size={20} />
-          )}
+          )}</AgentBadge>
           <span className="tile__note-text cr-comment-text"><b className="tile__note-who">{caption.name}</b> {caption.body}</span>
           {caption.more > 0 && <span className="tile__note-count" aria-label={t.card.replies(caption.more)}><Icon name="comment" size={12} />{caption.more}</span>}
         </button>

@@ -26,7 +26,7 @@ import { fmtDate } from "@/lib/i18n/format";
 import { keyOf } from "@/lib/board";
 import { MORPH_MS, peekHandoff, takeHandoff } from "./view-morph";
 import { mediaKindOf } from "@/lib/url";
-import { Busy, Button, EmptyState, IconButton, Key } from "@/components/criterio";
+import { AgentBadge, Busy, Button, EmptyState, IconButton, Key } from "@/components/criterio";
 import type { NoteCaption } from "./InspoCard";
 import { AUTO_SPEED, ANGLE, CARD_H, EASE_OUT, EDGE_OFFSET, EDGE_SCALE, ORBIT, SCROLL_EASE, Y_SPACING, clamp, mod, nearest, paint, settleFromBoard, stillMotion, type Engine } from "./polish-tornado";
 import { Face, Picture, postFromName, postHasMedia } from "./PolishFace";
@@ -718,9 +718,9 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
             )}
             {note && (
               <p className="polish__say polish__say--note">
-                {note.people.length > 1
+                <AgentBadge agent={note.agent} size={18}>{note.people.length > 1
                   ? <span className="polish__faces" aria-hidden>{note.people.map((p) => <PersonAvatar key={p.name} name={p.name} image={p.image} size={18} />)}</span>
-                  : <PersonAvatar name={note.name} image={note.image} size={18} />}
+                  : <PersonAvatar name={note.name} image={note.image} size={18} />}</AgentBadge>
                 <span><b>{note.name}</b> {note.body.length > NOTE_MAX ? `${note.body.slice(0, NOTE_MAX).trimEnd()}…` : note.body}</span>
               </p>
             )}

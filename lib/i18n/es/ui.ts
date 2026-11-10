@@ -1662,7 +1662,6 @@ export const ui: typeof EnUi = {
     daysAgo: (n: number) => `hace ${n} días`,
     and: "y",
     noAuthor: "Sin autor",
-    viaBy: (name: string): string => `por ${name}`,
     uploadFailed: "No se pudo subir",
     sendFailed: "No se pudo enviar",
     ofLabel: (name: string) => `Comentarios de ${name}`,

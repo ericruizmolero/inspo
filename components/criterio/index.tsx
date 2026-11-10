@@ -505,6 +505,22 @@ export function Avatar({ initials, name, tone = "moss", size = 28, square, src, 
   );
 }
 
+/** A person's avatar (or stack) with the mark of the AI app that acted for them, small on the first face's corner:
+ *  what an agent saved over MCP keeps the person's face and says which app brought it (Eric, 10-11). `mark` is the
+ *  app's logo (lib/agent-mark.ts); an app without one shows its initial. With no agent, the faces alone */
+export function AgentBadge({ agent, size, children }: { agent?: { name: string; mark: string | null } | null; size: number; children: ReactNode }) {
+  if (!agent) return <>{children}</>;
+  const { name: app, mark } = agent;
+  const m = Math.max(10, Math.round(size * 0.5));
+  return (
+    <span className="cr-agent" style={{ "--av": `${size}px`, "--mk": `${m}px` } as CSSProperties} data-tip={app}>
+      {children}
+      {mark ? <img className="cr-agent__mark" src={mark} alt={app} width={m} height={m} />
+        : <span className="cr-agent__mark is-initial" role="img" aria-label={app}>{app.slice(0, 1).toUpperCase()}</span>}
+    </span>
+  );
+}
+
 export function AvatarStack({ people, size = 24, className }: { people: Parameters<typeof Avatar>[0][]; size?: number; className?: string }) {
   return <span className={cx("cr-avatars", className)}>{people.map((p, i) => <Avatar key={i} size={size} {...p} />)}</span>;
 }

@@ -11,7 +11,7 @@ import { useT, messageOf } from "./I18nProvider";
 import { mediaKindOf } from "@/lib/url";
 import VideoPlayer from "./VideoPlayer";
 import PostView from "./PostView";
-import { Busy, Button, Chip, EmptyState, Icon, IconButton, TextArea } from "@/components/criterio";
+import { AgentBadge, Busy, Button, Chip, EmptyState, Icon, IconButton, TextArea } from "@/components/criterio";
 import PersonAvatar from "@/components/PersonAvatar";
 import { agentMark } from "@/lib/agent-mark";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -100,8 +100,8 @@ interface Msg {
   attachments: CommentAttachment[];
   at: string;
   mine: boolean;
-  /** Who an agent saved it for, when `name` is the AI app it came through: "by Eric" */
-  byline?: string;
+  /** The AI app that saved it over MCP: its mark on the avatar and "via Claude" after the name */
+  agent?: { name: string; mark: string | null };
   /** true for the original note and the item's subcomment */
   original?: boolean;
   deletable?: boolean;
@@ -285,8 +285,8 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
     const author = item.addedBy || t.comments.noAuthor;
     const mine = author === user.name;
     const editable = !!onEditNote && (mine || canManage);
-    // Saved over MCP: the note is the app's, with its logo, and says who it worked for
-    const agent = item.via ? { name: item.via, image: agentMark(item.via), byline: t.comments.viaBy(author) } : null;
+    // Saved over MCP: the person's note, with the app's mark on their face
+    const agent = item.via ? { agent: { name: item.via, mark: agentMark(item.via) } } : null;
     if (item.note) {
       originals.push({ id: "nota", name: author, image: memberImages[author] ?? null, ...agent, body: item.note, attachments: [], at: esDateToIso(item.date), mine, original: true, editable, reactions: noteReactions?.note ?? [], reactable: true });
     }
@@ -406,8 +406,8 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
     <div key={m.id} className={`cm-msg${m.mine ? " is-mine" : ""}${m.original ? " is-original" : ""}${grouped ? " is-grouped" : ""}`}>
       {!grouped && (
         <div className="cm-msg__head">
-          <PersonAvatar name={m.name} image={m.image} size={26} />
-          <span className="cm-msg__name">{m.name}{m.byline && <span className="cm-msg__by">{m.byline}</span>}{m.mine && !m.byline && <Chip className="cm-msg__you">{t.comments.you}</Chip>}{m.guest && !m.mine && <Chip className="cm-msg__you">{t.comments.guest}</Chip>}</span>
+          <AgentBadge agent={m.agent} size={26}><PersonAvatar name={m.name} image={m.image} size={26} /></AgentBadge>
+          <span className="cm-msg__name">{m.name}{m.agent && <span className="cm-msg__by">{t.mcp.via(m.agent.name)}</span>}{m.mine && <Chip className="cm-msg__you">{t.comments.you}</Chip>}{m.guest && !m.mine && <Chip className="cm-msg__you">{t.comments.guest}</Chip>}</span>
           <span className="cm-msg__time" data-tip={fmtDateTime(m.at, locale)}>{relTime(m.at, now, locale, t)}</span>
         </div>
       )}
