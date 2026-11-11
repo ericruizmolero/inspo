@@ -739,21 +739,16 @@ export default function InspoCard({ item, text, tags, tagJob, score, reason, man
             ))}
           </div>
 
-          {/* Down here, what is done most with a reference: file it (projects and areas) and talk about it */}
-          {(onToggleProject || onComments) && (
+          {/* Down here, what is done most with a reference: file it (projects and areas) */}
+          {(onToggleProject || onToggleArea) && (
             <div className={`tile__go${pickerOpen ? " is-visible" : ""}`} onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
-              {/* Three strong IconButtons s (the retro one: paper, ink border, bevel), square, the size of the three up on
+              {/* Strong IconButtons s (the retro one: paper, ink border, bevel), square, the size of the three up on
                   the right (Eric, 07-10: "el resto homogeneizamos", "ese tamaño está bien", "con el botón tipo retro que
-                  tenía una especie de sombreado"), icon only: the folder (ember once filed, the one colour on the card),
-                  the areas of the system and comments. The words (filed where, in how many) live in the caption's row
-                  and in each label */}
+                  tenía una especie de sombreado"), icon only: the folder (ember once filed, the one colour on the card)
+                  and the areas of the system. No comments button: the card's page already has the thread (Eric, 11-11).
+                  The words (filed where, in how many) live in the caption's row and in each label */}
               {picker("tile__go-pick", setPickerOpen, true)}
               {areaPicker("cr-iconbtn cr-iconbtn-strong cr-iconbtn-s", setPickerOpen)}
-              {onComments && (
-                <IconButton icon="comment" variant="strong" size="s"
-                  label={commentCount > 0 ? `${t.card.comments} (${commentCount})` : t.card.comments}
-                  onClick={(e) => { e.stopPropagation(); onComments(); }} />
-              )}
             </div>
           )}
 
