@@ -3,8 +3,8 @@
 // next (the first step still to do, the inbox piling up, a board that moved while you were away, a board still
 // empty, a milestone), in the voice of the copy sheet (docs/design-system/componentes.md, Tino en el Inicio). One unprompted balloon per visit:
 // "Later" and the cross put it away until the next one, and a click on Tino brings it back with the rest. What the
-// person starts (typing a project's name) he answers every time. Muted, he sinks and sleeps: no balloons, and a
-// click wakes him. The switch in the corner pill (TinoSwitch) mutes him too, and both are remembered.
+// person starts (typing a project's name) he answers every time. He starts muted: sunk and asleep, no balloons, and
+// a click wakes him. The switch in the corner pill (TinoSwitch) wakes and mutes him too, and both are remembered.
 import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode, type Ref, type RefObject } from "react";
 import Tino from "./Tino";
 import Typed, { typedMs } from "./Typed";
@@ -41,13 +41,17 @@ const AWAY_MS = 5 * 24 * 3600 * 1000;
 const MAX_NUDGES = 4;
 
 const subs = new Set<() => void>();
-const readOn = () => { try { return localStorage.getItem(ON_KEY) !== "off"; } catch { return true; } };
+// Asleep unless the person woke him (Eric, 11-11: "por defecto siempre Tino dormido"): only "on" keeps him awake.
+// Without storage, what was chosen holds for this page
+let held = false;
+const readOn = () => { try { return localStorage.getItem(ON_KEY) === "on"; } catch { return held; } };
 function setOn(on: boolean) {
-  try { if (on) localStorage.removeItem(ON_KEY); else localStorage.setItem(ON_KEY, "off"); } catch { /* no storage: it holds for this page */ }
+  held = on;
+  try { if (on) localStorage.setItem(ON_KEY, "on"); else localStorage.removeItem(ON_KEY); } catch { /* no storage: it holds for this page */ }
   for (const f of subs) f();
 }
 function useTinoOn() {
-  return useSyncExternalStore((f) => { subs.add(f); return () => { subs.delete(f); }; }, readOn, () => true);
+  return useSyncExternalStore((f) => { subs.add(f); return () => { subs.delete(f); }; }, readOn, () => false);
 }
 
 const read = (store: () => Storage, key: string) => { try { return store().getItem(key); } catch { return null; } };

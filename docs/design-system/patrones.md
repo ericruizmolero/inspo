@@ -90,7 +90,7 @@ Tino no espera a que le pregunten: en cada vista mira lo que pasa ahí y empuja 
 - **Descartarlo.** Todo aviso lleva "Ya lo sé", que lo calla para siempre en esa vista. Si habla de una referencia dice "Se queda": la da por buena y la próxima vez pregunta por otra.
 - **Una sola vez.** Un hito o una explicación (`once`) se dice una vez en la vida y no vuelve (`localStorage`). Lo que pasó mientras no estabas (`happened`) solo se dice al volver tras 5 días o más.
 - **Pulsado sin nada pendiente.** Nunca "nada que objetar": cuenta cómo está la vista y propone algo con su botón (`boardIdle`, `inboxIdle`, `systemIdle`).
-- **Silenciado.** El interruptor de la pastilla (`TinoSwitch`) lo duerme: se hunde y no dice nada sin pedir. Lo que la persona le pide (una búsqueda) lo contesta igual.
+- **Dormido por defecto.** Tino arranca silenciado: hundido y sin decir nada sin pedir. Un clic en él o el interruptor de la pastilla (`TinoSwitch`) lo despierta, y se recuerda en ese navegador. Lo que la persona le pide (una búsqueda) lo contesta igual. → [decisión](decisiones/2026-11-11-tino-duerme-por-defecto.md)
 - **Dentro de un proyecto habla de ese proyecto.** Nunca de la bandeja ni de otros proyectos.
 - **Un respiro.** Tras 40 minutos activos, por turnos: música, cambiar de tema, Recursos o estirar; nunca dos a menos de 30 minutos (`components/tino-break.ts`). Va por encima de lo pospuesto, nunca por encima de lo que la persona está haciendo.
 - **Majo, nunca chulo.** Tino es majo y agradable: nada de "campeón", "crack" o "jefe", ni frases que traten a la persona por encima del hombro. La ironía, con la situación, nunca con la persona. → [decisión](decisiones/2026-11-06-en-el-cajon-olvidar-es-un-toque-y-sin-campeon.md)
