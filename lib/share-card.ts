@@ -3,8 +3,9 @@
 // (lib/preview-bots.ts); a person still signs in to see the reference. The id is the secret, as with any shared link.
 //
 // What we copied from X, Pinterest, Are.na or Cosmos stays inside (staysInside, lib/url.ts): a post shows X's own
-// picture, linked where X serves it, and the rest keeps the app's card. Nothing else of the reference goes out: no
-// note, no comment, no workspace.
+// picture, linked where X serves it, and the rest keeps the app's card. The preview reads like the card on the board:
+// the picture, and as its title what whoever saved it wrote under it ("Eric: …"; captionOf). Only that note goes
+// out: no reply from the thread, no workspace.
 import "server-only";
 import { eq } from "drizzle-orm";
 import { db, schema } from "./db";
@@ -20,13 +21,26 @@ import { log } from "./log";
 export const CARD = { width: 1200, height: 630 };
 
 const T = schema.inspoItem;
-export type SharedItem = { id: string; name: string; web: string; source: string | null; thumbnailUrl: string | null };
+export type SharedItem = { id: string; name: string; web: string; source: string | null; thumbnailUrl: string | null; author: string; note: string };
 
 export async function sharedItem(id: string): Promise<SharedItem | null> {
   if (!/^[\w-]{6,64}$/.test(id)) return null;
-  const [row] = await db.select({ id: T.id, name: T.name, web: T.web, source: T.source, thumbnailUrl: T.thumbnailUrl })
+  const [row] = await db.select({ id: T.id, name: T.name, web: T.web, source: T.source, thumbnailUrl: T.thumbnailUrl, author: T.author, note: T.note })
     .from(T).where(eq(T.id, id)).limit(1);
   return row ?? null;
+}
+
+const CAPTION_MAX = 200;
+
+/** The line under the card on the board, as the preview's title: who saved it and what they wrote ("Eric: …").
+ *  Null without a note: the preview keeps the reference's own name. The thread's replies never go out */
+export function captionOf(item: Pick<SharedItem, "author" | "note">): string | null {
+  const note = item.note.replace(/\s+/g, " ").trim();
+  if (!note) return null;
+  const body = note.length > CAPTION_MAX ? `${note.slice(0, CAPTION_MAX - 1).trimEnd()}…` : note;
+  const who = item.author.trim();
+  // "Both" is the legacy label of the first two-person library, not a person
+  return who && who !== "Both" ? `${who}: ${body}` : body;
 }
 
 /** The site the reference lives on, for the preview's line under the title */
