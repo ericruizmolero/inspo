@@ -345,6 +345,14 @@ export const actions: Record<string, Surface> = {
       expect(await workspaceOfItem(fx.a.item), "A's item does not name A's team to B").toEqual({ ok: true, data: null });
     },
   },
+  "action:app/actions/library.ts#shortLinkOf": {
+    probe: async (fx) => {
+      const { shortLinkOf } = await import("@/app/actions/library");
+      asB(fx);
+      expect(await shortLinkOf(fx.a.item, "inbox"), "B gets no short link to A's item").toEqual({ ok: true, data: null });
+      expect(await db.select().from(schema.shortLink).where(eq(schema.shortLink.itemId, fx.a.item)), "and none was made").toEqual([]);
+    },
+  },
   "action:app/actions/library.ts#editTags": {
     probe: async (fx) => {
       const { editTags } = await import("@/app/actions/library");
