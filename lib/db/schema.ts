@@ -982,6 +982,18 @@ export const shareFace = pgTable("share_face", {
   updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull(),
 }, (t) => [primaryKey({ columns: [t.shareId, t.guestKey] })]);
 
+/** The short address of one reference, as its "copy link" hands it out (lib/short-link.ts): /i/<code> stands for
+ *  /i/<item>?in=<inside>. One per reference and place, so copying twice gives the same link */
+export const shortLink = pgTable("short_link", {
+  /** Ten random letters and digits: with no session this is the secret, as the item's own id was */
+  code: text("code").primaryKey(),
+  itemId: text("item_id").notNull().references(() => inspoItem.id, { onDelete: "cascade" }),
+  /** The `?in=` it was copied in (a project's id, "inbox"), or "" for none */
+  inside: text("inside").notNull().default(""),
+  createdBy: text("created_by").references(() => user.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
+}, (t) => [uniqueIndex("short_link_item_inside_idx").on(t.itemId, t.inside)]);
+
 /** A guest of a share link chose this reference among the ones shown (lib/share-guests.ts). One per guest and reference */
 export const sharePick = pgTable("share_pick", {
   shareId: text("share_id").notNull().references(() => systemShare.id, { onDelete: "cascade" }),

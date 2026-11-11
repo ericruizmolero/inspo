@@ -6,6 +6,7 @@ import { useT } from "./I18nProvider";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { IconButton, SegmentedControl } from "@/components/criterio";
 import { mediaKindOf, readableDomain } from "@/lib/url";
+import { shortLinkOf } from "@/app/actions/library";
 
 // ─── Panel ────────────────────────────────────────────────────────────────────
 // The system's Viewer: one reference over the canvas, which dims behind it; the island and the search dock
@@ -129,12 +130,22 @@ export default function ItemPanel({ item, isSite, page, criterio, thread, onClos
   useEffect(() => { setCopied(false); }, [url]);
   const copyLink = async () => {
     if (!item.id) return;
-    const link = new URL(`/i/${encodeURIComponent(item.id)}`, window.location.origin);
+    const long = new URL(`/i/${encodeURIComponent(item.id)}`, window.location.origin);
     const inProject = new URLSearchParams(window.location.search).get("in");
-    if (inProject) link.searchParams.set("in", inProject);
-    // A frame without clipboard permission (an embedded preview) falls back to the old copy command
-    const ok = await navigator.clipboard.writeText(link.href).then(() => true, () => {
-      const area = Object.assign(document.createElement("textarea"), { value: link.href });
+    if (inProject) long.searchParams.set("in", inProject);
+    // The short address (/i/<code>, lib/short-link.ts) stands for that one; if it cannot be had, the long one is copied
+    const href = shortLinkOf(item.id, inProject).then(
+      (res) => res.ok && res.data ? new URL(`/i/${res.data}`, window.location.origin).href : long.href,
+      () => long.href,
+    );
+    // Safari only lets the click itself write to the clipboard, so the write starts now and takes the address when
+    // it comes; elsewhere it is written once it is here. A frame without clipboard permission (an embedded preview)
+    // falls back to the old copy command
+    const write = typeof ClipboardItem === "function"
+      ? navigator.clipboard.write([new ClipboardItem({ "text/plain": href.then((text) => new Blob([text], { type: "text/plain" })) })])
+      : href.then((text) => navigator.clipboard.writeText(text));
+    const ok = await write.then(() => true, async () => {
+      const area = Object.assign(document.createElement("textarea"), { value: await href });
       area.style.cssText = "position:fixed;opacity:0";
       document.body.append(area); area.select();
       const done = document.execCommand("copy"); area.remove(); return done;

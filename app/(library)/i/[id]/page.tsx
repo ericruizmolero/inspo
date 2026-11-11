@@ -6,6 +6,7 @@ import { getT } from "@/lib/i18n";
 import { isPreviewBot } from "@/lib/preview-bots";
 import { sharedItem, previewImageOf, hostOf, captionOf, CARD } from "@/lib/share-card";
 import { SITE } from "@/lib/site";
+import { resolveShort } from "@/lib/short-link";
 
 // The library's server actions run here: an add tags its item after answering (app/actions/library.ts)
 export const maxDuration = 300;
@@ -16,7 +17,9 @@ const fromPreviewApp = async () => isPreviewBot((await headers()).get("user-agen
 // the note under the card ("Eric: …"), or its name when nobody wrote one (lib/share-card.ts). Only for those apps; a person's tab gets its title from the open panel (hooks/use-panel-route.ts).
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   if (!(await fromPreviewApp())) return {};
-  const item = await sharedItem((await params).id);
+  // The pasted address is the short one (lib/short-link.ts) or, from before it, the reference's own id
+  const { id } = await params;
+  const item = await sharedItem((await resolveShort(id))?.itemId ?? id);
   if (!item) return {};
   const [{ t }, image] = await Promise.all([getT(), previewImageOf(item)]);
   const host = hostOf(item);
@@ -28,7 +31,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     title,
     description,
     robots: { index: false, follow: false },
-    openGraph: { type: "website", siteName: "criterio.design", url: `${SITE}/i/${item.id}`, title, description, images },
+    openGraph: { type: "website", siteName: "criterio.design", url: `${SITE}/i/${id}`, title, description, images },
     twitter: { card: "summary_large_image", title, description, images },
   };
 }
@@ -41,5 +44,8 @@ export default async function InspoPage({ params }: { params: Promise<{ id: stri
     if (await fromPreviewApp()) return null;
     redirect(`/login?next=${encodeURIComponent(`/i/${id}`)}`);
   }
+  // A short link stands for the reference in the place it was copied in: the library opens the long address
+  const short = await resolveShort(id);
+  if (short) redirect(`/i/${encodeURIComponent(short.itemId)}${short.inside ? `?in=${encodeURIComponent(short.inside)}` : ""}`);
   return null;
 }

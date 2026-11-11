@@ -28,6 +28,7 @@ import { normalizeWebUrl, nameFromFile } from "@/lib/url";
 import { db, schema } from "@/lib/db";
 import { getErrors, getT } from "@/lib/i18n";
 import { log } from "@/lib/log";
+import { shortCodeFor } from "@/lib/short-link";
 import { LANG_COOKIE, LANG_COOKIE_MAX_AGE, isLocale } from "@/lib/i18n/locale";
 import type { CommentAttachment, InspoItem, PolishChoice } from "@/types/inspo";
 
@@ -279,6 +280,17 @@ export async function workspaceOfItem(itemId: string) {
       .from(schema.inspoItem).where(eq(schema.inspoItem.id, itemId)).limit(1);
     if (!row || !ctx.workspaces.some((w) => w.id === row.organizationId)) return null;
     return row.organizationId;
+  });
+}
+
+/** The short code "copy link" pastes for a reference (/i/<code>, lib/short-link.ts), remembering the `?in=` it is open
+ *  in. Null when the reference is not in a workspace of the person's, saying nothing about whether it exists. */
+export async function shortLinkOf(itemId: string, inside: string | null) {
+  return withCtx(async (ctx) => {
+    const [row] = await db.select({ organizationId: schema.inspoItem.organizationId })
+      .from(schema.inspoItem).where(eq(schema.inspoItem.id, String(itemId))).limit(1);
+    if (!row || !ctx.workspaces.some((w) => w.id === row.organizationId)) return null;
+    return shortCodeFor(String(itemId), typeof inside === "string" ? inside : null, ctx.user.id);
   });
 }
 
