@@ -24,7 +24,7 @@ import BoardCard, { type GridActions } from "./BoardCard";
 import AgentCard from "./AgentCard";
 import Toast, { type ToastNote } from "./Toast";
 import GatherBar, { StartButton } from "./GatherBar";
-import { boardNudges, boardIdle, inboxNudges, inboxIdle, kindsOf, missingFrom, paceOf, oldReference, othersThisWeek, quietReference, sameSite, sharedTag, unansweredTalk, unusedByAreas, withoutReason } from "./board-nudges";
+import { FEW_REFS, boardNudges, boardIdle, inboxNudges, inboxIdle, kindsOf, missingFrom, paceOf, oldReference, othersThisWeek, quietReference, sameSite, sharedTag, unansweredTalk, unusedByAreas, withoutReason } from "./board-nudges";
 import InboxZero from "./InboxZero";
 import SelectBar from "./SelectBar";
 import { refInfoOf } from "@/lib/ref-info";
@@ -65,6 +65,7 @@ import { cardCopyOf, keyOf } from "@/lib/board";
 import EmptyStart from "./EmptyStart";
 import Welcome from "./Welcome";
 import BoardStart from "./BoardStart";
+import { START_KEYS, startPicks } from "@/lib/resources";
 import LibraryPick from "./LibraryPick";
 import { filledOf, unreadOf, type SystemArea, type SystemSummary } from "@/types/system";
 import ProjectChooser from "./ProjectChooser";
@@ -352,6 +353,10 @@ export default function InspoClient({
   // A project's board with nothing on it: the board itself, empty, and Tino asking what it is for (BoardStart)
   const startHere = !!currentProject && projectView === "board" && spaceItems.length === 0 && items.length > 0;
   const [pickingLibrary, setPickingLibrary] = useState(false);
+  // Tino sends a starting board to one kind of resource: Discover opens narrowed to it, once
+  const [discoverGroup, setDiscoverGroup] = useState<string | null>(null);
+  const openResources = (group: string) => { setDiscoverGroup(group); setSpace("discover"); };
+  useEffect(() => { if (space !== "discover" && discoverGroup) setDiscoverGroup(null); }, [space]); // eslint-disable-line react-hooks/exhaustive-deps
   const tinoCorner = space === "home" || boardTino || startHere || (!!currentProject && projectView !== "board") || inboxPolish;
 
   const { watch, gathering } = useTagWatch({ items: spaceItems, tagJobs, setTagJobs, setTagMap });
@@ -766,6 +771,12 @@ export default function InspoClient({
       return { label: filterLabel(f, t).toLowerCase(), n: top.n, total: spaceItems.length, per100: top.per100, go: () => setFilters([f]) };
     })(),
     onSearch: (words) => setQuery(words),
+    // Where to look while the board is starting: the first topic (typography, then color…) not answered "I know"
+    look: (() => {
+      const key = spaceItems.length < FEW_REFS ? START_KEYS.find((k) => !settled(`:${space}|look:${k}`)) : undefined;
+      const at = key ? startPicks(key) : null;
+      return at && { key: at.topic.key, group: at.topic.title[locale], names: new Intl.ListFormat(locale, { type: "conjunction" }).format(at.picks.map((r) => r.name)), go: () => openResources(at.topic.group) };
+    })(),
     // With a team only: who has not put anything here yet, and how this week went against the last
     missing: solo ? [] : missingFrom(spaceItems, members.map((m) => m.name), user.name || user.email),
     pace: solo ? null : paceOf(spaceItems, parseDate, openedAt),
@@ -939,7 +950,7 @@ export default function InspoClient({
           />
         ) : space === "templates" || space === "discover" || space === "skills" ? (
           // Discover: the examples (whole systems to start a project from), the resources (the places we look) and the skills for agents
-          <Discover section={space === "discover" ? "sites" : space} onSection={(s) => setSpace(s === "sites" ? "discover" : s)}
+          <Discover initialGroup={discoverGroup} section={space === "discover" ? "sites" : space} onSection={(s) => setSpace(s === "sites" ? "discover" : s)}
             templates={(head) => <TemplatesView key={workspace.id} workspaceId={workspace.id} head={head} onOpenChange={setExampleOpen} onStarted={(p) => {
               // The template's references are not in this page's library until a project holds them, so the page is
               // read again on the new project: its board comes with them, their pictures and their tags
@@ -1201,6 +1212,7 @@ export default function InspoClient({
             onAdd={() => setShowAdd(true)}
             onLibrary={() => setPickingLibrary(true)}
             onAgent={() => setConnecting(true)}
+            onResources={openResources}
           />
         )}
         {pickingLibrary && currentProject && (

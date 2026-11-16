@@ -4,15 +4,18 @@
 // sentence (saved as the brief's `about`) or a link (saved here as a reference). A site pasted while the project has
 // no client's site gets one question: the one being redesigned, or a reference. Images are dropped or pasted on the
 // board as anywhere (hooks/use-add-dialog.ts); the dock's two buttons open the library picker and the add dialog.
+// "Where do I look?" under his question shows where we look ourselves, a topic at a time and typography first
+// (lib/resources.ts START_TOPICS): three to open, the whole list in Discover, and the next kind.
 // As soon as the board has something, the search and its Tino take over (SearchTino).
 import { useState } from "react";
 import type { InspoItem, Project } from "@/types/inspo";
 import { hostOf, mediaKindOf, normalizeWebUrl } from "@/lib/url";
 import { IconButton } from "@/components/criterio";
+import { START_KEYS, startPicks } from "@/lib/resources";
 import { useT } from "./I18nProvider";
 import TinoDock, { type DockSay } from "./TinoDock";
 
-export default function BoardStart({ project, hasLibrary, onAddUrl, onAbout, onClient, onAdd, onLibrary, onAgent }: {
+export default function BoardStart({ project, hasLibrary, onAddUrl, onAbout, onClient, onAdd, onLibrary, onAgent, onResources }: {
   project: Project;
   /** The library has references to bring: the picker is offered */
   hasLibrary: boolean;
@@ -27,14 +30,21 @@ export default function BoardStart({ project, hasLibrary, onAddUrl, onAbout, onC
   onLibrary: () => void;
   /** The same setup from the person's own agent: connects it (ConnectDialog) */
   onAgent: () => void;
+  /** Opens Discover narrowed to one kind of resource */
+  onResources: (group: string) => void;
 }) {
-  const { t } = useT();
+  const { t, locale } = useT();
   const s = t.tino.start;
   const [value, setValue] = useState("");
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
   // A site pasted, waiting to hear what it is to the project
   const [site, setSite] = useState<string | null>(null);
+  // Asked where to look: which topic he is showing (an index into START_KEYS), or null
+  const [looking, setLooking] = useState<number | null>(null);
+  const shown = looking === null ? null : startPicks(START_KEYS[looking % START_KEYS.length]);
+  const next = looking === null ? null : startPicks(START_KEYS[(looking + 1) % START_KEYS.length]);
+  const look = { key: "look", label: s.look, onPick: () => setLooking(0) };
 
   const add = async (web: string, client: boolean) => {
     setBusy(true); setSite(null);
@@ -66,11 +76,20 @@ export default function BoardStart({ project, hasLibrary, onAddUrl, onAbout, onC
         { key: "reference", label: s.reference, onPick: () => void add(site, false) },
       ],
     }
-    : project.intent ? { key: "start-refs", title: s.refsTitle, text: s.refsText, mood: "watching" }
-    : { key: "start-ask", title: s.askTitle, text: s.askText, mood: "watching", options: [{ key: "agent", label: t.projects.startAgent, onPick: onAgent }] };
+    : shown ? {
+      key: `start-look:${shown.topic.key}`, title: shown.topic.title[locale], text: shown.topic.hint[locale], mood: "accomplice",
+      options: [
+        ...shown.picks.map((r) => ({ key: r.url, label: r.name, onPick: () => { window.open(r.url, "_blank", "noopener"); } })),
+        { key: "all", label: s.lookAll, onPick: () => onResources(shown.topic.group) },
+        ...(next ? [{ key: "next", label: `${next.topic.title[locale]} ›`, onPick: () => setLooking((i) => (i ?? 0) + 1) }] : []),
+      ],
+    }
+    : project.intent ? { key: "start-refs", title: s.refsTitle, text: s.refsText, mood: "watching", options: [look] }
+    : { key: "start-ask", title: s.askTitle, text: s.askText, mood: "watching", options: [look, { key: "agent", label: t.projects.startAgent, onPick: onAgent }] };
 
   return (
     <TinoDock label={s.label(project.name)} placeholder={s.placeholder} value={value} busy={busy} say={say} scope={`:${project.id}`}
+      onSayClose={looking !== null && !failed && !site ? () => setLooking(null) : undefined}
       onChange={(v) => { setValue(v); setFailed(false); setSite(null); }} onSubmit={(v) => void submit(v)}
       actions={<>
         {hasLibrary && <IconButton icon="inbox" variant="quiet" size="s" label={t.projects.startFromLibrary} onClick={onLibrary} />}

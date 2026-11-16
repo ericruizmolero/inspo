@@ -1222,6 +1222,10 @@ export const ui: typeof EnUi = {
       fewTitle: ["Esto empieza a tener forma.", "Poco a poco."],
       fewText: (n: number, more: number): string => `${n === 1 ? "1 referencia" : `${n} referencias`}. Con ${more === 1 ? "una más" : `${more} más`} ya veo por dónde vas.`,
       fewAct: "Añadir más",
+      // Con pocas referencias: dónde mirar, un grupo de Recursos cada vez
+      lookTitle: ["Te enseño dónde miro yo.", "Por si no sabes por dónde tirar."],
+      lookText: (group: string, names: string): string => `${group}: ${names}.`,
+      lookAct: "Verlas",
       firstTitle: ["Yo no digo nada.", "Ya hay material."],
       firstText: (n: number): string => `${n} referencias. Hay de sobra para la primera pasada.`,
       firstAct: "Hacer la primera pasada",
@@ -1344,6 +1348,8 @@ export const ui: typeof EnUi = {
       redesign: "La rediseño",
       reference: "Es una referencia",
       failed: "No se ha guardado. Prueba otra vez.",
+      look: "¿Dónde miro?",
+      lookAll: "Ver todas",
     },
     dock: {
       build: "¿Qué construye Tino? La página About, un post de lanzamiento…",

@@ -38,14 +38,16 @@ function rowTick(e: React.PointerEvent) {
 const inShelf = (s: Resource, shelf: Shelf) => shelf === "all" || (shelf === "new" ? isNewSite(s) : FEATURED_URLS.includes(s.url));
 
 /** Discover: the examples, the places to look and the skills for agents */
-export default function Discover({ section, onSection, templates }: {
+export default function Discover({ section, onSection, templates, initialGroup = null }: {
   section: DiscoverSection;
   onSection: (s: DiscoverSection) => void;
   /** The examples' own view, rendered when that section is chosen, under the page's head */
   templates: (head: React.ReactNode) => React.ReactNode;
+  /** The kind of resource it opens narrowed to (Tino sends a starting board to one: lib/resources.ts START_TOPICS) */
+  initialGroup?: string | null;
 }) {
   const { t, locale } = useT();
-  const [group, setGroup] = useState<string | null>(null);
+  const [group, setGroup] = useState<string | null>(initialGroup);
   const [shelf, setShelf] = useState<Shelf>("all");
   /** Words typed over the resources: they narrow what the shelf and the kind leave (name, domain, what it is for) */
   const [query, setQuery] = useState("");

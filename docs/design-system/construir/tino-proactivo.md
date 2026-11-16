@@ -60,6 +60,7 @@ Cada número que decide cuándo habla, con su sitio. Para afinar, se cambia aqu�
 | `AWAY_MS` | 5 días | `HomeTino.tsx` | Desde cuándo una vuelta cuenta como "volver tras un tiempo" |
 | `seed` | 0 a 999 al azar por visita | `visitSeed` en `InspoClient.tsx` y `SystemDoc.tsx` | Con qué aviso no urgente abre |
 | `FEW_REFS` | 8 | `board-nudges.ts` | Menos que esto: "añade más"; desde aquí, primera pasada (y en el Inbox, "nombra un proyecto") |
+| `START_TOPICS` | nueve temas, tipografía primero | `lib/resources.ts` | Qué recomienda al tablón que empieza, en qué orden y qué tres recursos por tema → [decisión](../decisiones/2026-11-16-tino-recomienda-recursos-al-tablon-que-empieza-tipografia-primero.md) |
 | `MANY_REFS` | 12 | `board-nudges.ts` | Desde aquí propone pulir |
 | `OLD_MS` | 14 días | `board-nudges.ts` | Cuándo una referencia sin nota ni comentarios es vieja |
 | `RECENT_MS` | 7 días | `board-nudges.ts` | Qué es "esta semana": comentarios sin contestar, lo de otra persona, lo callado |
@@ -106,6 +107,7 @@ Cada número que decide cuándo habla, con su sitio. Para afinar, se cambia aqu�
 | `vote:close` | votación | Gestionas y hay votos por cerrar | Cerrarlo | judge |
 | `vote` | votación | Te quedan votos (la key no lleva la cifra: "Luego" aguanta aunque entren votos) | Votar | skeptic |
 | `few` | recuento | Sin primera pasada y menos de 8 | Añadir más | watching |
+| `look:<tema>` | `START_TOPICS` y `startPicks` (`lib/resources.ts`) | Menos de 8 referencias; el primer tema no descartado en ese tablón (tipografía, color, webs, botones y detalles, secciones, movimiento, iconos, logo y marca, imagen) | Verlas (Descubrir en su grupo) | accomplice |
 | `first` | recuento | Sin primera pasada y 8 o más | Hacer la primera pasada | accomplice |
 | `stale` | sistema | Con pasada, referencias que el sistema no ha leído | Ponerlo al día | skeptic |
 | `gaps:<áreas>` | sistema | Con pasada, áreas sin ninguna referencia (nombra 3 como mucho) | Añadir referencias | suspect |

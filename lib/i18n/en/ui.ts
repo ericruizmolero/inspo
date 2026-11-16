@@ -1232,6 +1232,10 @@ export const ui = {
       fewTitle: ["Getting somewhere.", "Bit by bit."],
       fewText: (n: number, more: number): string => `${n === 1 ? "1 reference" : `${n} references`}. ${more === 1 ? "One more" : `${more} more`} and I can see where you are going.`,
       fewAct: "Add more",
+      // With few references: where to look, one group of Resources at a time
+      lookTitle: ["Let me show you where I look.", "In case you are not sure where to go."],
+      lookText: (group: string, names: string): string => `${group}: ${names}.`,
+      lookAct: "See them",
       firstTitle: ["I'm not saying anything.", "That'll do."],
       firstText: (n: number): string => `${n} references. Plenty for the first pass.`,
       firstAct: "Do the first pass",
@@ -1355,6 +1359,8 @@ export const ui = {
       redesign: "I'm redesigning it",
       reference: "It's a reference",
       failed: "It was not saved. Try again.",
+      look: "Where do I look?",
+      lookAll: "See all",
     },
     dock: {
       build: "What should Tino build? The About page, a launch post\u2026",

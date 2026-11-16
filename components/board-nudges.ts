@@ -24,7 +24,7 @@ function said(names: string[], and: string): string {
   return names.length > 1 ? `${names.slice(0, -1).join(", ")} ${and} ${names[names.length - 1]}` : names[0] ?? "";
 }
 
-export function boardNudges({ t, count, read, stale, empty, others, talk, vote, quietRef, kinds, oldRef, seed, noReason, twins, unused = 0, shared, missing = [], pace, onAdd, onStart, onSystem, onPolish, onPerson, onOpen, onKind, onSearch, pictureOf }: {
+export function boardNudges({ t, count, read, stale, empty, others, talk, vote, quietRef, kinds, oldRef, seed, noReason, twins, unused = 0, shared, missing = [], pace, onAdd, onStart, onSystem, onPolish, onPerson, onOpen, onKind, onSearch, pictureOf , look}: {
   t: Dict;
   /** A reference's small picture, when it has one: Tino shows it and says "this one" */
   pictureOf?: (item: InspoItem) => string | null;
@@ -75,6 +75,8 @@ export function boardNudges({ t, count, read, stale, empty, others, talk, vote, 
   onKind?: (kind: MediaKind) => void;
   /** Shows the board searched by those words (a site's name) */
   onSearch?: (words: string) => void;
+  /** Where to look while the board is starting: a starting topic (lib/resources.ts START_TOPICS), its names in a sentence, and the way to it */
+  look?: { key: string; group: string; names: string; go: () => void } | null;
 }): TinoNudge[] {
   const b = t.tino.board;
   // A teammate talking to you goes first, always; the rest takes turns from one visit to the next (`seed`), so he
@@ -87,6 +89,7 @@ export function boardNudges({ t, count, read, stale, empty, others, talk, vote, 
   else if (vote && vote.left > 0) list.push({ key: "vote", title: b.voteTitle, text: b.voteText(vote.left), act: b.voteAct, mood: "skeptic", go: onPolish });
   // Before the first reading: more references, or the reading itself once there are enough
   if (!read && count < FEW_REFS) list.push({ key: "few", title: b.fewTitle, text: b.fewText(count, FEW_REFS - count), act: b.fewAct, mood: "watching", go: onAdd });
+  if (look && count < FEW_REFS) list.push({ key: `look:${look.key}`, title: b.lookTitle, text: b.lookText(look.group, look.names), act: b.lookAct, mood: "accomplice", go: look.go });
   if (!read && count >= FEW_REFS) list.push({ key: "first", title: b.firstTitle, text: b.firstText(count), act: b.firstAct, mood: "accomplice", go: onStart });
   // After it: what came in since, and what the board says nothing about
   if (read && stale > 0) list.push({ key: "stale", title: b.staleTitle, text: b.staleText(stale), act: b.staleAct, mood: "skeptic", go: onSystem });
