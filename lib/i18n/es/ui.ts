@@ -538,6 +538,7 @@ export const ui: typeof EnUi = {
     startAdd: (n: number): string => (n === 1 ? "Añadir 1 referencia" : n ? `Añadir ${n} referencias` : "Añadir referencias"),
     startDrop: "Suelta para añadir",
     startMore: (n: number): string => `Ver más (quedan ${n})`,
+    pickTitle: (name: string): string => `De tu librería a ${name}`,
     startPicked: (n: number): string => (n === 1 ? "1 elegida" : `${n} elegidas`),
     inboxEmptyTitle: "Cajón vacío",
     inboxEmptyHint: "Todo está archivado en algún proyecto.",
@@ -1330,6 +1331,20 @@ export const ui: typeof EnUi = {
     savingTitle: ["A ver, a ver."],
     saving: "Lo estoy guardando. Ya está en el tablón.",
     uploading: "Lo estoy subiendo. Ya está en el tablón.",
+    // El tablón vacío de un proyecto: Tino habla primero, y el campo del dock recibe un enlace o de qué va
+    start: {
+      label: (name: string): string => `Empezar ${name}`,
+      placeholder: "Pega un enlace o cuenta de qué va el proyecto",
+      askTitle: ["¿Qué vamos a hacer aquí?", "Tablón vacío. ¿De qué va esto?"],
+      askText: "Cuéntamelo en una frase, o pega la web que vas a rediseñar.",
+      refsTitle: ["Ahora, referencias.", "Falta material."],
+      refsText: "Pega un enlace, suelta una imagen o trae algo de tu librería.",
+      siteTitle: ["¿Y esta web?", "A ver qué es esto."],
+      siteText: (host: string): string => `¿${host} es la que vas a rediseñar o una referencia?`,
+      redesign: "La rediseño",
+      reference: "Es una referencia",
+      failed: "No se ha guardado. Prueba otra vez.",
+    },
     dock: {
       build: "¿Qué construye Tino? La página About, un post de lanzamiento…",
       send: "Enviar",

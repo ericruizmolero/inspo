@@ -64,7 +64,8 @@ import { cue, gust } from "@/lib/ui-sounds";
 import { cardCopyOf, keyOf } from "@/lib/board";
 import EmptyStart from "./EmptyStart";
 import Welcome from "./Welcome";
-import ProjectStart from "./ProjectStart";
+import BoardStart from "./BoardStart";
+import LibraryPick from "./LibraryPick";
 import { filledOf, unreadOf, type SystemArea, type SystemSummary } from "@/types/system";
 import ProjectChooser from "./ProjectChooser";
 import { TinoSwitch, settled } from "./HomeTino";
@@ -348,7 +349,10 @@ export default function InspoClient({
   // Tino stands in the bottom-right corner wherever he speaks for the page: the home, Polish, the system, and a board
   // with something on it (SearchTino); the theme button leaves that corner and sits after the pill
   const boardTino = searchHere && spaceItems.length > 0;
-  const tinoCorner = space === "home" || boardTino || (!!currentProject && projectView !== "board") || inboxPolish;
+  // A project's board with nothing on it: the board itself, empty, and Tino asking what it is for (BoardStart)
+  const startHere = !!currentProject && projectView === "board" && spaceItems.length === 0 && items.length > 0;
+  const [pickingLibrary, setPickingLibrary] = useState(false);
+  const tinoCorner = space === "home" || boardTino || startHere || (!!currentProject && projectView !== "board") || inboxPolish;
 
   const { watch, gathering } = useTagWatch({ items: spaceItems, tagJobs, setTagJobs, setTagMap });
   const { bellNews, beatRef, filling } = useLibrarySync({ first, stamp, since, bell, workspace, items, setMirror, setProjects, setLinks, setRoles, setSuggested, setVotes, withVoteWrites, watch });
@@ -785,7 +789,7 @@ export default function InspoClient({
   const grid = (
     <Grid
       under={(!!currentProject || space === "inbox") && projectView !== "board"}
-      corner={boardTino ? <ThemeToggle /> : undefined}
+      corner={boardTino || startHere ? <ThemeToggle /> : undefined}
       missed={missed}
       items={boardItems}
       ratioOf={ratioOf}
@@ -1014,27 +1018,6 @@ export default function InspoClient({
             }}
           />
           </>
-        ) : spaceItems.length === 0 && currentProject && projectView !== "polish" ? (
-          // An empty project is a starting point: paste a site, or bring references from the library
-          <ProjectStart
-            key={currentProject.id}
-            project={currentProject}
-            items={items}
-            links={links}
-            imageOf={smallImageOf}
-            onAddUrl={async (web) => {
-              // Already in the library: filed here instead of "already saved"
-              const key = webKeyOf(web);
-              const saved = items.find((i) => webKeyOf(i.web) === key);
-              if (saved) await toggleFiled(saved, currentProject.id, true);
-              else await addByUrl({ web, type: typeFromUrl(web), note: "" });
-            }}
-            onUpload={async (files) => { await Promise.all(files.map((file) => addByUpload({ web: "", file, type: "inspiration", note: "" }))); }}
-            onFile={(picked) => fileMany(picked, currentProject.id)}
-            onBringBrand={() => setParams({ view: "system", bring: "site" })}
-            onExamples={() => setSpace("templates")}
-            onAgent={() => setConnecting(true)}
-          />
         ) : spaceItems.length === 0 && space === "inbox" && !inboxPolish ? (
           <InboxZero
             projects={projects}
@@ -1052,7 +1035,7 @@ export default function InspoClient({
         ) : (
           <>
             {grid}
-            {filtered.length === 0 && projectView !== "polish" && !missed && (
+            {filtered.length === 0 && projectView !== "polish" && !missed && !startHere && (
               // Still looking: only that, quietly; "nothing here" waits until the search has really found nothing
               // (Eric, 13-10: "mejora este diseño", it said both at once with the button stuck to the line)
               searchBusy ? (
@@ -1122,7 +1105,7 @@ export default function InspoClient({
             have nothing to zoom, and the pill is the music alone */}
         {!(space !== "templates" && space !== "discover" && space !== "skills" && space !== "home" && items.length > 0
           && !(currentProject && projectView === "system")
-          && (projectView === "polish" || !(spaceItems.length === 0 && (currentProject || space === "inbox"))))
+          && (projectView === "polish" || startHere || !(spaceItems.length === 0 && (currentProject || space === "inbox"))))
           && (space === "home" ? (
             // The home gives its bottom-right corner to Tino: the theme button comes to this one, after the pill
             <div className="board-zoom home-corner">
@@ -1183,7 +1166,7 @@ export default function InspoClient({
               <GatherBar count={spaceItems.length} thumbs={gatherThumbs} onAdd={() => setShowAdd(true)}
                 title={t.projects.inbox} lead={t.gather.inboxLead} />
             )}
-            {/* Only over a board with something on it: an empty project starts from its own box (ProjectStart), and a
+            {/* Only over a board with something on it: an empty project has Tino and his field instead (BoardStart), and a
                 search with nothing to look through reads as broken (Andoni, 06-10) */}
             {searchHere && spaceItems.length > 0 && (
               <SearchBar className="sb--dock" filters={filters} text={query} onFilters={setFilters} onText={setQuery}
@@ -1199,6 +1182,30 @@ export default function InspoClient({
             </div>
             )}
           </div>
+        )}
+        {/* An empty project: Tino asks what it is for, and the dock's field takes a sentence or a link (BoardStart) */}
+        {startHere && currentProject && !welcome && selected.size === 0 && (
+          <BoardStart
+            key={currentProject.id}
+            project={currentProject}
+            hasLibrary={items.some((i) => i.id)}
+            onAddUrl={async (web) => {
+              // Already in the library: filed here instead of "already saved"
+              const key = webKeyOf(web);
+              const saved = items.find((i) => webKeyOf(i.web) === key);
+              if (saved) { await toggleFiled(saved, currentProject.id, true); return saved; }
+              return addByUrl({ web, type: typeFromUrl(web), note: "" });
+            }}
+            onAbout={async (about) => !!(await saveBrief(currentProject.id, { about }))}
+            onClient={(itemId) => setClient(currentProject.id, itemId)}
+            onAdd={() => setShowAdd(true)}
+            onLibrary={() => setPickingLibrary(true)}
+            onAgent={() => setConnecting(true)}
+          />
+        )}
+        {pickingLibrary && currentProject && (
+          <LibraryPick project={currentProject} items={items} links={links} imageOf={smallImageOf}
+            onFile={(picked) => fileMany(picked, currentProject.id)} onClose={() => setPickingLibrary(false)} />
         )}
         {/* Tino in the bottom-right corner, as on the home: he answers the search and, when nobody searches, brings up
             what the board could use next. Outside the dock, whose transform would carry his fixed corner with it */}

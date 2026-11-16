@@ -1,7 +1,7 @@
 ---
 title: El proyecto vacío es una tarjeta plana, sin barra moss, con el nombre como título
 date: 2026-10-12
-status: vigente
+status: sustituida
 kind: diseño
 supersedes: la parte del asistente de proyecto vacío (`ProjectStart`) de "toda ventana lleva barra moss y sigue al tema"
 ---

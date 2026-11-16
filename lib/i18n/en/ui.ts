@@ -547,6 +547,7 @@ export const ui = {
     startAdd: (n: number): string => (n === 1 ? "Add 1 reference" : n ? `Add ${n} references` : "Add references"),
     startDrop: "Drop to add",
     startMore: (n: number): string => `Show more (${n} left)`,
+    pickTitle: (name: string): string => `From your library to ${name}`,
     startPicked: (n: number): string => (n === 1 ? "1 picked" : `${n} picked`),
     inboxEmptyTitle: "Inbox zero",
     inboxEmptyHint: "Everything is filed in a project.",
@@ -1341,6 +1342,20 @@ export const ui = {
     saving: "Saving it. It\u2019s already on the board.",
     uploading: "Uploading it. It\u2019s already on the board.",
     // The dock under the System page (TinoDock): what to build on Result, what to change in the file, in words, on Agent and Human
+    // A project's empty board: Tino speaks first, and the dock's field takes a link or what it is about
+    start: {
+      label: (name: string): string => `Start ${name}`,
+      placeholder: "Paste a link or say what the project is about",
+      askTitle: ["What are we making here?", "Empty board. What is this about?"],
+      askText: "Tell me in a sentence, or paste the site you are redesigning.",
+      refsTitle: ["Now, references.", "Something's missing here."],
+      refsText: "Paste a link, drop an image or bring something from your library.",
+      siteTitle: ["And this site?", "Let's see what this is."],
+      siteText: (host: string): string => `Is ${host} the one you are redesigning, or a reference?`,
+      redesign: "I'm redesigning it",
+      reference: "It's a reference",
+      failed: "It was not saved. Try again.",
+    },
     dock: {
       build: "What should Tino build? The About page, a launch post\u2026",
       send: "Send",

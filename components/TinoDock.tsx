@@ -1,10 +1,10 @@
 "use client";
-// Tino's composer on the System page: the board's dock (.dock, .dock__bar) with its field (SearchBar's .sb--dock
+// Tino's composer on the System page and on a project's empty board (BoardStart): the board's dock (.dock, .dock__bar) with its field (SearchBar's .sb--dock
 // look), centred at the bottom of the Agent, Human and Result views, and Tino in the bottom-right corner as on the
 // home and the board (TinoCorner). On Result it takes what to build; on Agent and Human, what to change in the file, in
 // words. What he says goes in his balloon: the shortcuts while the field is focused and empty, or a line the view
 // hands him. His face follows: thinking while busy, following the words.
-import { useEffect, useRef, useState, type RefObject } from "react";
+import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import { createPortal } from "react-dom";
 import Typed, { typedMs } from "./Typed";
 import type { TinoMood } from "./tino/moods";
@@ -18,7 +18,7 @@ import "./TinoDock.css";
 /** What he says from the dock. `options`: answers to pick from under the line (his "which way?") */
 export type DockSay = { key: string; title: string | readonly string[]; text?: string; mood?: TinoMood; options?: { key: string; label: string; onPick: () => void }[] };
 
-export default function TinoDock({ label, placeholder, value, onChange, onSubmit, busy, mood, say, onSayClose, chips = [], hint, nudges = NONE, focusRef, idle }: {
+export default function TinoDock({ label, placeholder, value, onChange, onSubmit, busy, mood, say, onSayClose, chips = [], hint, nudges = NONE, focusRef, idle, actions, scope = ":system" }: {
   /** The field's accessible name */
   label: string;
   placeholder: string;
@@ -40,6 +40,10 @@ export default function TinoDock({ label, placeholder, value, onChange, onSubmit
   idle?: TinoNudge;
   /** The field, for a nudge that fills it and puts the cursor there */
   focusRef?: RefObject<HTMLInputElement | null>;
+  /** After the field, before the send: the dock's own buttons (the empty board's ways to add) */
+  actions?: ReactNode;
+  /** Where "Later" and the cross hold (HomeTino): the System page's unless another view says its own */
+  scope?: string;
 }) {
   const { t } = useT();
   const own = useRef<HTMLInputElement>(null);
@@ -81,13 +85,14 @@ export default function TinoDock({ label, placeholder, value, onChange, onSubmit
             <input ref={field} className="sb__input" aria-label={label} placeholder={placeholder} value={value} maxLength={400} disabled={busy}
               onChange={(e) => onChange(e.target.value)} onFocus={() => setFocused(true)} onBlur={() => setFocused(false)} />
             <span className="sb__right">
+              {actions}
               {busy ? <Busy label={placeholder} />
                 : value.trim() && <IconButton type="submit" icon="arrow-right" variant="quiet" size="s" className="tdock__send" label={t.tino.dock.send} />}
             </span>
           </div>
         </div>
       </div>
-      {host && createPortal(<HomeTino className="board-tino" nudges={nudges} scope=":system" speak={speak} face={face} quiet={busy || focused || !!value}
+      {host && createPortal(<HomeTino className="board-tino" nudges={nudges} scope={scope} speak={speak} face={face} quiet={busy || focused || !!value}
         idle={idle ?? { key: "idle", title: t.tino.system.idleTitle, text: t.tino.system.idleText, mood: "watching" }} />, host)}
     </form>
   );

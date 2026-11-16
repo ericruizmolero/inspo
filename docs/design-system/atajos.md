@@ -71,5 +71,5 @@ Todos los que maneja la app. Al añadir uno: que no choque con estos, que no sal
 | Enter en Inicio | Crea el proyecto con ese nombre |
 | ⌘/Ctrl+Enter en la Isla | Proyecto nuevo desde la frase |
 | Enter / Esc al renombrar | Guarda / cancela |
-| ⌘V en proyecto vacío o Inbox | Sube la imagen pegada |
+| ⌘V en el Cajón vacío | Sube la imagen pegada |
 | Esc en un ejemplo | La cierra |

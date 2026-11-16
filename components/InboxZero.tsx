@@ -11,7 +11,7 @@ import { useT } from "./I18nProvider";
 import { boardColumns, useBoardStatus } from "./ProjectChooser";
 import { BoardCard, Icon, IconButton, PromptInput } from "@/components/criterio";
 import s from "./EmptyStart.module.css";
-import p from "./ProjectStart.module.css";
+import p from "./LibraryPick.module.css";
 
 const SHOWN = 6;
 
