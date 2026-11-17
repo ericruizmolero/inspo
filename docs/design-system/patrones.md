@@ -76,6 +76,14 @@ Sin IA, sin descargas de blobs ni análisis de imágenes al renderizar. Lo preco
 
 La portada de waitlist abre con una promesa clara, subheadline y formulario sobre el río de referencias, con Tino en el centro. Después, una sección normal por paso, cada una con su elemento y visible desde el principio, que se anima cuando llegas. Nada bloquea el scroll ni hay animación de carga inicial. → [decisión](decisiones/2026-11-10-la-demo-de-la-landing-es-una-seccion-por-paso-sin-scroll-atrapado.md)
 
+En el paso 1 las seis fuentes van sobre un círculo, tres a cada lado con sus dos referencias sin barra de dirección, y Tino se planta en el centro y lo cuenta. → [decisión](decisiones/2026-11-17-el-paso-1-de-la-landing-es-un-corro-de-fuentes-alrededor-de-tino.md)
+
+En el paso 2 el tablero queda detrás, atenuado, y delante salen tres piezas de la app tal cual, una por verbo: el panel de comentarios del visor, dos baldosas del tablero y el globo de Tino en Pulido. → [decisión](decisiones/2026-11-17-el-paso-2-de-la-landing-es-el-tablero-con-tres-piezas-de-la-interfaz-delante.md)
+
+El bento enseña lo que no cuentan los pasos: buscar como hablas, las skills, compartir con el cliente sin cuenta y volver a cualquier versión del tablero, cada uno con su interfaz real. → [decisión](decisiones/2026-11-17-el-bento-de-la-landing-cambia-comentar-y-votar-por-compartir-y-versiones.md)
+
+Tino nunca mira de lado: te mira a ti, y solo en la portada da la espalda para mirar el río → [decisión](decisiones/2026-11-17-tino-nunca-mira-de-lado.md). Habla siempre con el globo de la app, con el rabo hacia él → [decisión](decisiones/2026-11-17-tino-habla-en-la-landing-con-el-globo-de-la-app.md). Del manifiesto al bento se aparta y vuelve en las preguntas y el pie; en el manifiesto solo aparece mientras presenta a alguien del equipo al pasar por su foto. → [decisión](decisiones/2026-11-17-en-la-landing-tino-solo-da-la-espalda-en-la-portada-y-se-aparta-del-manifiesto-a-las-preguntas.md)
+
 ## Tino toma la iniciativa
 
 Tino no espera a que le pregunten: en cada vista mira lo que pasa ahí y empuja hacia lo siguiente que sirve, con un botón que lleva justo a ese sitio. Lo que dice sale de los datos reales de esa vista, nunca de una plantilla. → [proactivo con el proyecto](decisiones/2026-11-04-tino-siempre-en-la-esquina-y-proactivo-con-el-proyecto.md), [nunca se encoge de hombros](decisiones/2026-11-06-tino-nunca-se-encoge-de-hombros-y-en-el-inbox-empuja-a-un-proyecto.md)
