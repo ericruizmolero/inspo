@@ -84,7 +84,9 @@ Ver principio 18. Además: en el idioma del equipo, frases que se lean de golpe,
 
 Sin IA, sin descargas de blobs ni análisis de imágenes al renderizar. Lo precomputado va en build, script o segundo plano. → [login instantáneo](decisiones/2026-09-22-login-sin-trabajo-pesado.md)
 
-La portada de waitlist abre con una promesa clara, subheadline y formulario sobre el río de referencias, con Tino en el centro. Después, una sección normal por paso, cada una con su elemento y visible desde el principio, que se anima cuando llegas. Nada bloquea el scroll ni hay animación de carga inicial. → [decisión](decisiones/2026-11-10-la-demo-de-la-landing-es-una-seccion-por-paso-sin-scroll-atrapado.md)
+Mientras reunimos la lista de espera, la portada es solo el héroe: el mismo titular, subheadline y formulario en su sitio, y debajo el vídeo de Criterio, quieto en su póster hasta que lo pones, sin pasar de la pantalla; Tino duerme en la esquina y se despierta al pasarle por encima, al escribir tu correo o para mirar el vídeo. La landing completa espera en `/landing/`. → [decisión](decisiones/2026-11-17-mientras-reunimos-la-lista-de-espera-la-portada-es-solo-el-heroe-con-el-video.md)
+
+La landing completa abre con una promesa clara, subheadline y formulario sobre el río de referencias, con Tino en el centro. Después, una sección normal por paso, cada una con su elemento y visible desde el principio, que se anima cuando llegas. Nada bloquea el scroll ni hay animación de carga inicial. → [decisión](decisiones/2026-11-10-la-demo-de-la-landing-es-una-seccion-por-paso-sin-scroll-atrapado.md)
 
 En el paso 1 las seis fuentes van sobre un círculo, tres a cada lado con sus dos referencias sin barra de dirección, y Tino se planta en el centro y lo cuenta. → [decisión](decisiones/2026-11-17-el-paso-1-de-la-landing-es-un-corro-de-fuentes-alrededor-de-tino.md)
 
