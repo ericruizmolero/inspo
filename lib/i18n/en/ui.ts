@@ -517,6 +517,8 @@ export const ui = {
     confirmRemoveHint: "The references stay in the library. Those in no other project go back to the Inbox.",
     findOrCreate: "Find or create a project",
     fileIn: "Add to project",
+    dropped: (n: number, name: string): string => (n === 1 ? `Added to ${name}` : `${n} references added to ${name}`),
+    alreadyIn: (n: number, name: string): string => (n === 1 ? `Already in ${name}` : `They were already in ${name}`),
     filedIn: (n: number): string => (n === 1 ? "In 1 project" : `In ${n} projects`),
     none: "No projects yet",
     create: (name: string): string => `Create \u201c${name}\u201d`,

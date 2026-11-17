@@ -21,6 +21,7 @@ import SearchBar, { filterLabel } from "./SearchBar";
 import { Button as CrButton, Busy, EmptyState, Icon, IconButton, PillBar, PillBarSep, StatusBar, StatusCell } from "@/components/criterio";
 import { captionFor } from "./InspoCard";
 import BoardCard, { type GridActions } from "./BoardCard";
+import { setPickedCount } from "./card-drag";
 import AgentCard from "./AgentCard";
 import Toast, { type ToastNote } from "./Toast";
 import GatherBar, { StartButton } from "./GatherBar";
@@ -630,6 +631,17 @@ export default function InspoClient({
     if (accept) refreshSystem(projectId);
   };
   const answerSuggestion = (id: string, accept: boolean) => void answerPending(accept, { refs: [id] });
+  // A card dragged onto a project's tab (components/card-drag.ts): filed there too, and it stays where it was. A
+  // picked card takes the whole selection with it
+  useEffect(() => setPickedCount(selected.size), [selected]);
+  const dropOnProject = (project: Project, itemId: string) => {
+    const picked = items.filter((i) => i.id && (selected.has(itemId) ? selected.has(i.id) : i.id === itemId));
+    const fresh = picked.filter((i) => !(links[i.id!] ?? []).includes(project.id));
+    if (!picked.length) return;
+    if (!fresh.length) { setToast({ title: t.projects.alreadyIn(picked.length, project.name), detail: "", ok: true }); return; }
+    void fileMany(fresh, project.id);
+    setToast({ title: t.projects.dropped(fresh.length, project.name), detail: "", ok: true });
+  };
   gridActions.current = { select: selectItem, openItem, deleteItem, handleThumbnailUpload, handleThumbnailRemove, toggleFiled, createAndFile, toggleArea, measure, answerSuggestion };
 
   const [openArea, setOpenArea] = useState<SystemArea | null>(null);
@@ -907,7 +919,7 @@ export default function InspoClient({
           <Island user={user} workspace={workspace} workspaces={workspaces} isAdmin={isAdmin}
             items={items} links={links} projects={projects} systems={systems} space={space} onSpace={setSpace} bellNews={bellNews}
             onCreateProject={createProject} onRenameProject={renameProject} onDeleteProject={deleteProject}
-            onDuplicateProject={duplicateProject} onMoveProject={moveProject} onShareProject={(p) => setSharing({ projectId: p.id })}
+            onDuplicateProject={duplicateProject} onMoveProject={moveProject} onShareProject={(p) => setSharing({ projectId: p.id })} onDropRef={dropOnProject}
             members={members} onPerson={(name) => {
               // What someone saved is looked at inside a project: the open one, or the one being worked in
               if (!currentProject) { const to = saveTarget(); if (to) setParams({ in: to, view: "board" }); }

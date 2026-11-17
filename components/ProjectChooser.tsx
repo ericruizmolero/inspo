@@ -18,6 +18,7 @@ import { FirstStepsPath } from "./FirstSteps";
 import { mediaKindOf, normalizeWebUrl, videoEmbedOf } from "@/lib/url";
 import { mediaFileFrom } from "@/lib/media-client";
 import { homeActions, isProjectSort, PROJECT_SORTS, sortProjects, type HomeAction, type ProjectSort } from "@/lib/home";
+import { carriesRef } from "./card-drag";
 import "./ProjectChooser.css";
 
 /** The empty box's placeholder, taking turns between what a project can be: word by word, each one rises a little
@@ -131,7 +132,7 @@ function droppedFrom(data: DataTransfer | null): Dropped | null {
   const web = /\s/.test(line) ? null : normalizeWebUrl(line);
   return web ? { kind: "url", web } : null;
 }
-const carriesDrop = (e: DragEvent) => e.dataTransfer.types.some((t) => t === "Files" || t === "text/uri-list" || t === "text/plain");
+const carriesDrop = (e: DragEvent) => !carriesRef(e) && e.dataTransfer.types.some((t) => t === "Files" || t === "text/uri-list" || t === "text/plain");
 
 /** A project with nothing yet: its mosaic is a place to drop a picture or a link, or to paste one while the card has
  *  the focus. The paste is caught on the document before the add dialog's own (hooks/use-add-dialog.ts) */

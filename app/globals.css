@@ -589,6 +589,19 @@ select.cr-input { appearance: none; padding-right: 32px; cursor: pointer;
 .island__tabs[data-liquid] > .island__home:hover, .island__tabs[data-liquid] > .island__home.is-active { background: none; }
 .island__tabs.liquid > :is(button, a):active { transform: none; }
 @media (forced-colors: active) { .island__tab.is-on { outline: 2px solid Highlight; outline-offset: -2px; } }
+/* A card of the board in the air (components/card-drag.ts): the other projects' tabs wake up as places to leave it,
+   and the one under it takes the chosen tab's glass. The card itself sinks back while it travels */
+:root[data-ref-drag] .island__tab--closable { color: var(--chrome-ink); }
+.island__tabs > .island__tab.is-drop { background: var(--glass-on); box-shadow: var(--glass-line); color: var(--chrome-ink); }
+.island__tab.is-drop .island__tab-x { visibility: hidden; }
+.island__tab.is-drop * { pointer-events: none; }
+/* The picture and the links inside never start a drag of their own (their link, their file): the card does */
+.tile--board :is(img, a) { -webkit-user-drag: none; }
+.tile[data-dragging] { opacity: 0.45; transition: opacity 150ms var(--ease-out); }
+/* What travels under the pointer: the card's picture, small, and how many go with it */
+.ref-ghost { position: fixed; top: -1000px; left: -1000px; border-radius: var(--radius-md); background: var(--chrome-raised); overflow: hidden; }
+.ref-ghost canvas { display: block; width: 100%; height: 100%; }
+.ref-ghost__n { position: absolute; top: 6px; right: 6px; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px; background: var(--chrome); color: var(--chrome-ink); font-size: var(--fs-chrome); font-weight: var(--fw-medium); line-height: 22px; text-align: center; }
 /* A long name stops at 200px; the tab's tooltip keeps it whole */
 .island__label { max-width: 200px; overflow: hidden; text-overflow: ellipsis; }
 /* The count (the system's .cr-tab-count): chrome-muted on chrome, a step lighter on chrome-raised for contrast */

@@ -56,6 +56,16 @@ Cada acción de la app existe como botón **y** como acción del agente (`lib/ag
 
 - Día más reciente primero y, a igual día, la hora del post en X (su id); el resto como llega del servidor. Un solo comparador, `newestFirst` (`lib/search-query.ts`). → [decisión](decisiones/2026-10-08-el-tablon-ordena-por-dia-y-dentro-del-dia-por-hora-del-post.md)
 
+## Arrastrar una tarjeta a otro proyecto
+
+Una tarjeta del tablón (del Cajón o de un proyecto) se coge y se suelta en la pestaña de otro proyecto de la Isla: queda archivada también ahí y sigue donde estaba. Es añadir, no mover; mover sigue en la barra de selección.
+
+- Lo lleva el arrastre nativo del navegador (`draggable` en `.tile--board`, `components/card-drag.ts`), así el clic, el rectángulo de selección y el scroll no cambian. Viaja solo el id, en el tipo `application/x-criterio-ref`: un fichero o un enlace traído de fuera no enciende las pestañas, y una tarjeta no cuenta como enlace soltado en otro sitio (`carriesRef`).
+- Si la tarjeta está seleccionada, van todas las seleccionadas, y el fantasma dice cuántas (`.ref-ghost__n`).
+- El fantasma es la imagen de la tarjeta a 112 px (`.ref-ghost`, dibujada en un canvas), para ver las pestañas a las que va; la tarjeta se queda al 45 % mientras viaja (`.tile[data-dragging]`).
+- Al soltar, un aviso corto: "Añadida a X", "N referencias añadidas a X" o "Ya estaba en X". Si el servidor falla, vuelve atrás con el aviso de siempre.
+- Solo con ratón o lápiz (`pointer: fine`): la Isla es de escritorio. La imagen y los enlaces de dentro no arrancan su propio arrastre (`-webkit-user-drag: none`).
+
 ## Confirmaciones y vacíos
 
 - Confirmar solo lo que destruye o saca algo (`useConfirm`). Sacar de un proyecto = vuelve al Inbox, nunca se borra ni se archiva en silencio; hay que decirlo donde se decide.

@@ -508,6 +508,8 @@ export const ui: typeof EnUi = {
     confirmRemoveHint: "Las referencias siguen en la librería. Las que no estén en otro proyecto vuelven al Cajón.",
     findOrCreate: "Busca o crea un proyecto",
     fileIn: "Añadir a un proyecto",
+    dropped: (n: number, name: string): string => (n === 1 ? `Añadida a ${name}` : `${n} referencias añadidas a ${name}`),
+    alreadyIn: (n: number, name: string): string => (n === 1 ? `Ya estaba en ${name}` : `Ya estaban en ${name}`),
     filedIn: (n: number): string => (n === 1 ? "En 1 proyecto" : `En ${n} proyectos`),
     none: "Aún no hay proyectos",
     create: (name: string): string => `Crear "${name}"`,

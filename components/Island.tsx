@@ -21,6 +21,7 @@ import TeamBell from "./TeamBell";
 import { useT } from "./I18nProvider";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Liquid, afterPaint } from "@/components/ui/liquid";
+import { carriesRef, droppedRef } from "./card-drag";
 
 /** Open tabs shown at most, room allowing; the rest wait in "N more" */
 const MAX_TABS = 8;
@@ -91,7 +92,7 @@ function NewProject({ onCreate, onDone }: { onCreate: (name: string) => Promise<
 }
 
 export default function Island({ user, workspace, workspaces, isAdmin, items, links, projects, systems = {}, members = [], space, onSpace, bellNews = "",
-  onCreateProject, onRenameProject, onDeleteProject, onDuplicateProject, onMoveProject, onShareProject, onPerson, quota, onMenuOpen }: {
+  onCreateProject, onRenameProject, onDeleteProject, onDuplicateProject, onMoveProject, onShareProject, onDropRef, onPerson, quota, onMenuOpen }: {
   user: SessionUser; workspace: Workspace; workspaces: Workspace[]; isAdmin: boolean;
   items: InspoItem[]; links: ProjectLinks; projects: Project[];
   /** Each project's system: a ring on its tab says how much of it is decided */
@@ -114,6 +115,8 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
   onMoveProject: (project: Project, to: Workspace) => void;
   /** A public link to the project: its board and its brand, read only (components/brand/ShareDialog.tsx) */
   onShareProject?: (project: Project) => void;
+  /** A card of the board let go on a project's tab: it is filed there too (components/card-drag.ts) */
+  onDropRef?: (project: Project, itemId: string) => void;
   quota: QuotaView | null;
 }) {
   const { t, locale } = useT();
@@ -122,6 +125,8 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
   const [naming, setNaming] = useState<string | null>(null);
   const [optionsOpen, setOptionsOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
+  // The project tab a dragged card is over
+  const [dropOn, setDropOn] = useState<string | null>(null);
   // How many project tabs fit, measured; null until the first layout
   const [fit, setFit] = useState<number | null>(null);
   // The selected tab's own width, from its copy in the measure: the real one takes it and can shrink below it
@@ -274,6 +279,12 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
     <IconButton icon="close" variant="quiet" size="xs" className="island__tab-x" label={t.projects.closeTab(p.name)}
       onClick={(e) => { e.preventDefault(); e.stopPropagation(); closeTab(p.id); }} />
   );
+  /** A tab of another project takes a card dragged from the board: it lights while the card is over it */
+  const dropProps = (p: Project) => onDropRef ? {
+    onDragOver: (e: React.DragEvent) => { if (!carriesRef(e)) return; e.preventDefault(); e.dataTransfer.dropEffect = "copy"; setDropOn(p.id); },
+    onDragLeave: (e: React.DragEvent) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDropOn((d) => (d === p.id ? null : d)); },
+    onDrop: (e: React.DragEvent) => { const id = droppedRef(e); setDropOn(null); if (!id) return; e.preventDefault(); onDropRef(p, id); },
+  } : {};
   const tab = (id: string, name: string, n: number, fixed?: boolean) => (
     <a key={id} href={hrefOf(id)} className={`island__tab${space === id ? " is-on" : ""}`} aria-current={space === id ? "page" : undefined}
       data-tip={name.length > LONG_NAME ? name : undefined} data-fixed={fixed || undefined} onClick={go(id)}>
@@ -365,7 +376,7 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
             {closeX(p)}
           </span>
         ) : (
-          <span key={p.id} className="island__tab island__tab--split island__tab--closable">
+          <span key={p.id} className={`island__tab island__tab--split island__tab--closable${dropOn === p.id ? " is-drop" : ""}`} {...dropProps(p)}>
             <a href={hrefOf(p.id)} className="island__tab-main" data-tip={p.name.length > LONG_NAME ? p.name : undefined} onClick={go(p.id)}>
               {label(p.name, counts.byProject[p.id] ?? 0, p.id)}
             </a>

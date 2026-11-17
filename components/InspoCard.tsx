@@ -8,6 +8,7 @@ import { useT } from "./I18nProvider";
 import { flyToInbox } from "./fly-to-inbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import ProjectPicker from "./ProjectPicker";
+import { startCardDrag } from "./card-drag";
 import AreaPicker from "./AreaPicker";
 import type { SystemArea } from "@/types/system";
 import { mediaKindOf, videoEmbedOf, isGif, postThumbKind, postOf, readableDomain } from "@/lib/url";
@@ -536,6 +537,9 @@ export default function InspoCard({ item, text, tags, tagJob, score, reason, man
       <article
         className={`tile${board ? " tile--board" : ""}${selecting ? " is-selecting" : ""}${selected ? " is-selected" : ""}`}
         data-id={item.id}
+        // On the board a card can be carried to a project's tab, to be filed there too (components/card-drag.ts)
+        draggable={board && item.id ? true : undefined}
+        onDragStart={board && item.id ? (e) => startCardDrag(e, item.id!, !!selected) : undefined}
         onClick={(e) => {
           if (suppressClick.current) return;
           if (onSelect && (selecting || e.metaKey || e.ctrlKey || e.shiftKey)) { onSelect(e.shiftKey); return; }
