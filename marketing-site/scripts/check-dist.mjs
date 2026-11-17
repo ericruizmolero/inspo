@@ -44,7 +44,9 @@ for (const file of pages) {
 
 const sitemap = readFileSync(join(dist, "sitemap.xml"), "utf8");
 const listed = new Set([...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]));
-const built = new Set(pages.map((p) => SITE + addressOf(p)));
+// A page marked noindex (the full landing, parked at /landing/ while the home is the waitlist) stays out of the sitemap
+const noindex = (p) => /<meta name="robots" content="noindex">/.test(readFileSync(p, "utf8"));
+const built = new Set(pages.filter((p) => !noindex(p)).map((p) => SITE + addressOf(p)));
 for (const u of built) if (!listed.has(u)) fail("sitemap.xml", `misses ${u}`);
 for (const u of listed) if (!built.has(u)) fail("sitemap.xml", `lists ${u}, which was not built`);
 

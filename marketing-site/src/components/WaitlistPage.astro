@@ -1,0 +1,231 @@
+---
+// The home page while we gather the waitlist: the landing's hero alone. The nav, headline, subheadline and form stay
+// where the landing has them; under them, in place of the river of references, the Criterio video plays, and Tino
+// watches it from its corner. The full landing waits at /landing/ (src/pages/landing/index.astro).
+import { APP_URL, PAGES, copy, type Locale } from "../i18n";
+
+interface Props { locale: Locale }
+const { locale } = Astro.props;
+const t = copy[locale];
+const w = t.waitlist;
+const at = (path: string) => new URL(path, Astro.site).href;
+const home = PAGES.home.path;
+const work = (["extension", "skills", "resources"] as const).map((key) => ({ label: PAGES[key].nav[locale], href: PAGES[key].path[locale] }));
+---
+<!doctype html>
+<html lang={locale}>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{w.title}</title>
+<meta name="description" content={w.description}>
+<link rel="canonical" href={at(home[locale])}>
+<link rel="alternate" hreflang="en" href={at(home.en)}>
+<link rel="alternate" hreflang="es" href={at(home.es)}>
+<link rel="alternate" hreflang="x-default" href={at(home.en)}>
+<meta name="theme-color" content="#E7E5DF">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Criterio">
+<meta property="og:locale" content={locale === "es" ? "es_ES" : "en_US"}>
+<meta property="og:url" content={at(home[locale])}>
+<meta property="og:title" content={w.title}>
+<meta property="og:description" content={w.description}>
+<meta property="og:image" content={at("/og.jpg")}>
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content={w.ogAlt}>
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/assets/marca/conejo-icono.svg?v=42" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="preload" href="/assets/fonts/geist-serif/GeistSerifVF.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/satoshi/Satoshi-Variable.woff2" as="font" type="font/woff2" crossorigin>
+<script type="importmap" is:inline>{ "imports": { "three": "/assets/mascota/tino-app/vendor/three/three.module.min.js", "three/addons/": "/assets/mascota/tino-app/vendor/three/jsm/" } }</script>
+</head>
+<body>
+<div class="navblur" aria-hidden="true"></div>
+<header class="nav">
+  <a class="mark" href={home[locale]} aria-label={w.home}><svg viewBox="0 0 46 42" aria-hidden="true"><g fill="#1B1B18"><path class="ear ear-l" d="M8 2h4v1h-4zM8 3h4v1h-4zM8 4h6v1h-6zM8 5h6v1h-6zM6 6h10v1h-10zM6 7h10v1h-10zM6 8h12v1h-12zM6 9h12v1h-12zM6 10h12v1h-12zM6 11h12v1h-12zM6 12h12v1h-12zM6 13h12v1h-12zM6 14h12v1h-12z"/><path class="ear ear-r" d="M22 0h4v1h-4zM22 1h4v1h-4zM22 2h6v1h-6zM22 3h6v1h-6zM20 4h8v1h-8zM20 5h8v1h-8zM20 6h10v1h-10zM20 7h10v1h-10zM20 8h10v1h-10zM20 9h10v1h-10zM18 10h12v1h-12zM18 11h12v1h-12zM18 12h12v1h-12zM18 13h12v1h-12zM18 14h16v1h-16z"/><path d="M6 15h28v1h-28zM8 16h30v1h-30zM8 17h30v1h-30zM4 18h38v1h-38zM4 19h38v1h-38zM2 20h42v1h-42zM2 21h42v1h-42zM2 22h22v1h-22zM42 22h2v1h-2zM2 23h22v1h-22zM42 23h2v1h-2zM0 24h24v1h-24zM42 24h4v1h-4zM0 25h24v1h-24zM42 25h4v1h-4zM0 26h24v1h-24zM42 26h4v1h-4zM0 27h24v1h-24zM42 27h4v1h-4zM0 28h46v1h-46zM0 29h46v1h-46zM0 30h46v1h-46zM0 31h46v1h-46zM0 32h46v1h-46zM0 33h46v1h-46zM0 34h46v1h-46zM0 35h46v1h-46zM2 36h42v1h-42zM2 37h42v1h-42zM4 38h38v1h-38zM4 39h38v1h-38zM8 40h32v1h-32zM8 41h32v1h-32z"/></g><rect class="vis" x="24" y="22" width="18" height="6" fill="none"/></svg><span>criterio</span></a>
+  <div class="menu" id="menu"><div class="menu-panel" id="menu-panel">
+    <button class="menu-btn" type="button" aria-expanded="false" aria-controls="menu-body" data-open={w.menu.open} data-close={w.menu.close}><i aria-hidden="true"></i><span>{w.menu.open}</span></button>
+    <div class="menu-body" id="menu-body" inert>
+      <span class="menu-segs" aria-hidden="true"><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b></span>
+      <nav aria-label={w.menu.project}><small>{w.menu.project}</small>{w.project.map((p, i) => <a class={i === 0 ? "big" : undefined} href={p.href}>{p.label}</a>)}</nav>
+      <div class="menu-foot">
+        <div><small>{w.menu.work}</small><p>{work.map((p) => <a href={p.href}>{p.label}</a>)}</p></div>
+        <div class="menu-cta"><a class="btn btn-sm nav-cta" href="#mail">{w.join}</a><a class="btn btn-sm btn-paper" href={t.login.href}>{t.login.label}</a></div>
+      </div>
+    </div>
+  </div></div>
+</header>
+
+<main class="hero">
+  <div class="copy">
+    <h1>{w.headline.map((line) => <span class="l">{line}</span>)}</h1>
+    <p class="hero-sub">{w.sub}</p>
+    <form class="invite" id="invite" novalidate data-locale={locale} data-login={`${APP_URL}/login`} data-bad={w.note.bad} data-consent={w.note.consent} data-to-login={w.note.login} data-ok={w.note.ok} data-fail={w.note.fail}>
+      <label class="sr" for="mail">{w.email}</label>
+      <div class="invite-row"><input id="mail" type="email" name="email" autocomplete="email" placeholder={w.placeholder} required aria-describedby="note"><button class="btn" type="submit"><span class="btn-label">{w.join}</span><span class="seg" aria-hidden="true"></span></button></div>
+      <p class="form-note" id="note" role="status"></p>
+      <label class="consent"><input type="checkbox" required><span>{w.consent} <a href={PAGES.privacy.path[locale]}>{PAGES.privacy.nav[locale]}</a></span></label><input class="hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+    </form>
+  </div>
+
+  <div class="stage">
+    <figure class="screen">
+      <video id="film" playsinline preload="none" poster="/assets/video/poster.jpg" src="/assets/video/criterio.mp4" aria-label={w.video}></video>
+      <button class="btn play" id="play" type="button" aria-label={w.video}><i class="tri" aria-hidden="true"></i><span>{w.watch}</span></button>
+    </figure>
+  </div>
+
+  <!-- Tino naps in the corner, as he did in the landing's footer: hover wakes him, a click makes him jump -->
+  <div class="corner" id="corner" data-woken={JSON.stringify(w.woken)} data-poked={JSON.stringify(w.poked)}>
+    <p class="say" id="say" aria-live="polite"></p>
+    <p class="zzz" id="zzz" aria-hidden="true"><i>z</i><i>z</i><i>z</i></p>
+    <div class="tino" id="tino" aria-hidden="true"><canvas></canvas></div>
+    <div class="fx" id="fx" aria-hidden="true"></div>
+  </div>
+</main>
+
+<!-- Tino's engine is the app's (public/assets/mascota/tino-app), served as is: it reaches the page script as window.Peluche, as on the landing -->
+<script is:inline type="module">import { create } from "/assets/mascota/tino-app/engine.js"; window.Peluche = { create }; dispatchEvent(new Event("tino-engine"));</script>
+<script>
+  import "../scripts/waitlist";
+</script>
+</body>
+</html>
+
+<style is:global>
+@font-face { font-family: "Satoshi"; src: url("/assets/fonts/satoshi/Satoshi-Variable.woff2") format("woff2"); font-weight: 300 900; font-display: swap; }
+@font-face { font-family: "Geist Serif"; src: url("/assets/fonts/geist-serif/GeistSerifVF.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
+/* The landing's tokens (src/pages/landing/index.astro); controls keep the brand's paper, as there */
+:root {
+  --paper: #E7E5DF; --paper-l: #F6F1E6; --ink: #1B1B18; --ember: #E8892B; --ember-glow: #F6A848; --butter: #FBF1C7; --text-2: #5A5850;
+  --bevel: inset 2px 2px 0 rgb(255 255 255 / 0.65), inset -2px -3px 0 rgb(27 27 24 / 0.22); --bevel-pressed: inset 2px 3px 0 rgb(27 27 24 / 0.22);
+  --display: "Geist Serif", Georgia, serif; --sans: "Satoshi", system-ui, sans-serif; --mono: ui-monospace, "SF Mono", Menlo, monospace;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--paper); color: var(--ink); font: 400 16px/1.5 var(--sans); -webkit-font-smoothing: antialiased; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ── the nav: the mark on the left, the menu key on the right, over a blur that only shows once you scroll ── */
+.navblur { position: fixed; inset: 0 0 auto; height: 84px; z-index: 35; pointer-events: none; backdrop-filter: blur(9px); -webkit-backdrop-filter: blur(9px); -webkit-mask-image: linear-gradient(#000 45%, transparent); mask-image: linear-gradient(#000 45%, transparent); background: linear-gradient(rgb(231 229 223 / 0.75), transparent); opacity: 0; transition: opacity 0.25s; }
+html.scrolled .navblur { opacity: 1; }
+.nav { position: fixed; z-index: 40; top: max(14px, env(safe-area-inset-top)); left: clamp(12px, 3vw, 40px); right: clamp(12px, 3vw, 40px); display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.mark { --ws: 27px; display: flex; align-items: flex-end; gap: calc(var(--ws) * 0.3736); color: var(--ink); text-decoration: none; }
+.mark svg { flex: none; height: calc(var(--ws) * 1.0776); width: calc(var(--ws) * 1.0776 * 58.8 / 55.2); overflow: visible; }
+.mark span { display: block; margin: 0 0 calc(var(--ws) * -0.133); font: 400 var(--ws)/1 var(--display); letter-spacing: -0.065em; -webkit-text-stroke: 0.024em currentColor; }
+.mark:focus-visible { outline: 2px solid var(--ink); outline-offset: 4px; border-radius: 4px; }
+/* on hover the ears move, one after the other, and the visor lights up */
+.mark .ear { transform-box: fill-box; transform-origin: 50% 100%; }
+.mark:hover .ear-l { animation: ear-l 0.6s steps(4); } .mark:hover .ear-r { animation: ear-r 0.6s 0.08s steps(4); }
+.mark .vis { transition: fill 0.15s steps(2); } .mark:hover .vis { fill: var(--ember-glow); }
+@keyframes ear-l { 25% { transform: rotate(-14deg); } 60% { transform: rotate(8deg); } }
+@keyframes ear-r { 25% { transform: rotate(14deg); } 60% { transform: rotate(-8deg); } }
+
+/* ── retro buttons: a key with an edge. Hover sinks it, pressing bottoms it out, in two dry steps ── */
+.btn { --lift: 4px; position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 46px; padding: 0 20px; margin-bottom: var(--lift);
+  border: 1.5px solid var(--ink); border-radius: 9px; background: var(--ember); color: var(--ink); box-shadow: var(--bevel), 0 var(--lift) 0 var(--ink);
+  font: 700 15px/1 var(--sans); letter-spacing: -0.005em; text-decoration: none; white-space: nowrap; cursor: pointer;
+  transition: transform 0.09s steps(2), box-shadow 0.09s steps(2), background-color 0.12s; }
+.btn:hover { transform: translateY(calc(var(--lift) - 1px)); box-shadow: var(--bevel-pressed), 0 1px 0 var(--ink); background: var(--ember-glow); }
+.btn:active, .btn.is-loading { transform: translateY(var(--lift)); box-shadow: var(--bevel-pressed), 0 0 0 var(--ink); background: #C9741F; }
+.btn:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+.btn-paper { background: var(--paper-l); } .btn-paper:hover { background: var(--butter); } .btn-paper:active { background: #EFD98F; }
+.btn-sm { --lift: 3px; min-height: 38px; padding: 0 14px; font-size: 14px; border-radius: 8px; }
+.nav-cta { background: var(--ink); color: var(--paper-l); box-shadow: inset 2px 2px 0 rgb(255 255 255 / 0.2), inset -2px -3px 0 rgb(0 0 0 / 0.4), 0 var(--lift) 0 #000; }
+.nav-cta:hover { background: #33332E; box-shadow: inset 2px 3px 0 rgb(0 0 0 / 0.4), 0 1px 0 #000; } .nav-cta:active { background: #000; box-shadow: inset 2px 3px 0 rgb(0 0 0 / 0.5), 0 0 0 #000; }
+/* while sending, the segment bar fills the key */
+.btn .seg { display: none; position: absolute; inset: 12px 14px; border: 1.5px solid var(--ink); border-radius: 5px; background: var(--paper-l); }
+.btn .seg::before { content: ""; position: absolute; inset: 2.5px; background: repeating-linear-gradient(90deg, var(--ink) 0 7px, transparent 7px 10px); clip-path: inset(0 100% 0 0); }
+.btn.is-loading .btn-label { visibility: hidden; } .btn.is-loading .seg { display: block; } .btn.is-loading .seg::before { animation: seg-fill 0.9s steps(10) forwards; }
+@keyframes seg-fill { to { clip-path: inset(0); } }
+
+/* ── the menu: the same key as the buttons, which grows into the panel ── */
+.menu { position: relative; width: 112px; height: 41px; z-index: 2; }
+.menu-panel { --pw: 520px; --ph: 300px; --dx: 0px; position: absolute; top: 0; left: 50%; width: 112px; height: 38px; translate: -50% 0; overflow: hidden; border: 1.5px solid var(--ink); border-radius: 8px; background: var(--paper-l); box-shadow: var(--bevel), 0 3px 0 var(--ink);
+  transition: width 0.42s cubic-bezier(0.2, 1.08, 0.3, 1), height 0.42s cubic-bezier(0.2, 1.08, 0.3, 1), translate 0.42s cubic-bezier(0.2, 1.08, 0.3, 1), border-radius 0.2s, transform 0.09s steps(2), box-shadow 0.09s steps(2), background-color 0.12s; }
+.menu-panel:not(.open):hover { transform: translateY(2px); box-shadow: var(--bevel-pressed), 0 1px 0 var(--ink); background: var(--butter); }
+.menu-panel:not(.open):active { transform: translateY(3px); box-shadow: var(--bevel-pressed), 0 0 0 var(--ink); background: #EFD98F; }
+.menu-panel.open { width: var(--pw); height: var(--ph); translate: calc(-50% + var(--dx)) 0; border-radius: 16px; box-shadow: var(--bevel), 0 5px 0 var(--ink), 0 40px 70px -28px rgb(27 27 24 / 0.5); }
+.menu-btn { all: unset; box-sizing: border-box; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 9px; width: 100%; height: 35px; font: 700 14px/1 var(--sans); color: var(--ink); }
+.open .menu-btn:hover { background: var(--butter); } .menu-btn:focus-visible { outline: 2px solid var(--ink); outline-offset: -4px; }
+.menu-btn i { position: relative; width: 14px; height: 7px; }
+.menu-btn i::before, .menu-btn i::after { content: ""; position: absolute; left: 0; right: 0; height: 2px; background: var(--ink); transition: transform 0.16s steps(3), top 0.16s steps(3); }
+.menu-btn i::before { top: 0; } .menu-btn i::after { top: 5px; }
+.open .menu-btn i::before { top: 2.5px; transform: rotate(45deg); } .open .menu-btn i::after { top: 2.5px; transform: rotate(-45deg); }
+.menu-body { position: absolute; left: 0; top: 35px; width: 517px; padding: 0 22px 18px; }
+.menu-segs { display: flex; gap: 3px; height: 5px; margin: 0 -22px 20px; padding: 0 3px; }
+.menu-segs b { flex: 1; background: var(--ink); opacity: 0; } .open .menu-segs b { opacity: 1; transition: opacity 0s calc(var(--i) * 26ms); }
+.menu-segs b:nth-child(1) { --i: 1; } .menu-segs b:nth-child(2) { --i: 2; } .menu-segs b:nth-child(3) { --i: 3; } .menu-segs b:nth-child(4) { --i: 4; } .menu-segs b:nth-child(5) { --i: 5; } .menu-segs b:nth-child(6) { --i: 6; } .menu-segs b:nth-child(7) { --i: 7; } .menu-segs b:nth-child(8) { --i: 8; } .menu-segs b:nth-child(9) { --i: 9; }
+.menu nav { display: grid; align-content: start; gap: 3px; }
+.menu small { display: block; margin: 0 0 8px; font: 11px/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: #6B675E; }
+.menu nav a, .menu-foot p a { position: relative; justify-self: start; padding: 3px 0; font-size: 15px; color: #4A4842; text-decoration: none; }
+.menu nav a.big { font: 400 23px/1.18 var(--display); letter-spacing: -0.04em; color: var(--ink); }
+.menu nav a::after, .menu-foot p a::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: repeating-linear-gradient(90deg, var(--ink) 0 3px, transparent 3px 5px); transform: scaleX(0); transform-origin: 0 50%; transition: transform 0.18s steps(5); }
+.menu nav a:hover::after, .menu-foot p a:hover::after { transform: scaleX(1); }
+.menu-foot { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-top: 18px; padding-top: 14px; border-top: 1.5px dashed rgb(27 27 24 / 0.22); }
+.menu-foot p { display: flex; gap: 16px; margin: 0; } .menu-foot p a { color: var(--ink); padding: 2px 0; }
+.menu-cta { display: flex; gap: 8px; flex: none; }
+.menu-body :is(small, a) { opacity: 0; transform: translateY(6px); }
+.open .menu-body :is(small, a) { opacity: 1; transform: none; transition: opacity 0.14s steps(3) var(--d, 0.1s), transform 0.14s steps(3) var(--d, 0.1s); }
+.open nav a.big { --d: 0.09s; } .open nav a:not(.big) { --d: 0.2s; } .open .menu-foot :is(a, small) { --d: 0.27s; }
+
+/* ── the hero: the copy where the landing has it, and under it the video, which takes what is left of the screen and no more ── */
+.hero { position: relative; display: flex; flex-direction: column; align-items: center; height: 100svh; min-height: 520px; overflow: clip; padding: clamp(82px, 10svh, 112px) 24px clamp(20px, 3.4svh, 36px); }
+.copy { flex: none; display: flex; flex-direction: column; align-items: center; width: min(100%, 1040px); text-align: center; }
+.copy h1 { margin: 0; font: 400 clamp(2.8rem, 4.35vw, 4.65rem)/1.04 var(--display); letter-spacing: -0.05em; }
+.copy h1 .l { display: block; white-space: nowrap; }
+.hero-sub { max-width: 46ch; margin: 16px 0 0; font-size: clamp(17px, 2.6svh, 22px); line-height: 1.36; color: #4A4842; text-wrap: balance; }
+/* the email: a sunken slot with the key inside */
+.invite { display: flex; flex-direction: column; align-items: center; width: min(100%, 480px); margin-top: 20px; }
+.invite-row { display: flex; align-items: center; gap: 6px; padding: 5px 5px 5px 16px; border: 1.5px solid var(--ink); border-radius: 14px; background: var(--paper-l); box-shadow: var(--bevel-pressed); }
+.invite-row:focus-within { outline: 3px solid var(--ink); outline-offset: 3px; }
+.invite input[type="email"] { flex: 1; min-width: 0; height: 46px; border: 0; background: transparent; font: 500 18px/1 var(--sans); color: var(--ink); }
+.invite input::placeholder { color: #8A867C; } .invite input:focus-visible { outline: none; }
+.invite .btn { min-height: 48px; margin: 0 0 var(--lift); padding: 0 22px; border-radius: 10px; font-size: 17px; }
+.consent { order: 1; display: flex; align-items: center; gap: 7px; margin-top: 10px; font-size: 14px; line-height: 1.3; color: var(--text-2); cursor: pointer; }
+.consent input { flex: none; width: 17px; height: 17px; margin: 0; accent-color: var(--ember); } .consent a { color: inherit; }
+.form-note { order: 2; margin: 6px 0 0; font-size: 12.5px; line-height: 18px; color: var(--text-2); } .form-note:empty { display: none; }
+.hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+
+/* the video in a framed screen: as big as the space left under the form allows, 16:9, never past the fold. It waits on its poster until you press the key */
+.stage { flex: 1 1 0; min-height: 0; width: 100%; margin-top: clamp(20px, 3.4svh, 36px); container-type: size; display: flex; align-items: flex-start; justify-content: center; }
+.screen { position: relative; margin: 0; width: min(100cqw, 100cqh * 16 / 9, 1100px); aspect-ratio: 16 / 9; overflow: hidden; border: 1.5px solid var(--ink); border-radius: 14px; background: #000; }
+.screen video { display: block; width: 100%; height: 100%; object-fit: cover; }
+.play { position: absolute; left: 50%; top: 50%; translate: -50% -50%; margin: 0; }
+.play .tri { width: 0; height: 0; border-left: 11px solid var(--ink); border-top: 7px solid transparent; border-bottom: 7px solid transparent; }
+.screen.playing .play { display: none; }
+
+/* ── Tino in the corner: asleep with his z's; awake, he talks in the app's balloon (tail towards him) and pixels fly ── */
+.corner { --tw: clamp(150px, 14vw, 220px); position: absolute; z-index: 3; right: clamp(8px, 2vw, 32px); bottom: calc(var(--tw) * -0.06); width: var(--tw); aspect-ratio: 1; }
+.tino { position: absolute; inset: 0; cursor: pointer; opacity: 0; transition: opacity 0.4s; }
+.tino.on { opacity: 1; }
+.tino canvas { display: block; width: 100%; height: 100%; }
+.zzz { position: absolute; left: 62%; top: 18%; margin: 0; display: flex; gap: 6px; color: #8E97E6; font: 700 26px/1 var(--mono); opacity: 0; transition: opacity 0.4s; pointer-events: none; }
+.zzz.on { opacity: 1; }
+.zzz i { font-style: normal; animation: zzz 2.4s steps(4) infinite; } .zzz i:nth-child(2) { animation-delay: 0.4s; font-size: 20px; } .zzz i:nth-child(3) { animation-delay: 0.8s; font-size: 15px; }
+@keyframes zzz { 0% { transform: translateY(8px); opacity: 0; } 30% { opacity: 1; } 100% { transform: translateY(-22px); opacity: 0; } }
+.say { position: absolute; z-index: 2; right: 30%; bottom: 82%; width: max-content; max-width: min(300px, 70vw); margin: 0; padding: 12px 14px; border: 1.5px solid var(--ink); border-radius: 14px; background: var(--butter); color: var(--ink); box-shadow: var(--bevel); font-size: 15px; line-height: 1.4; text-wrap: pretty; opacity: 0; transition: opacity 0.2s; pointer-events: none; }
+.say.on { opacity: 1; } .say:empty { visibility: hidden; }
+.say::after { content: ""; position: absolute; right: 22px; bottom: -8px; width: 14px; height: 14px; background: var(--butter); border-right: 1.5px solid var(--ink); border-bottom: 1.5px solid var(--ink); rotate: 45deg; }
+.fx { position: absolute; inset: -60%; pointer-events: none; } .fx i { position: absolute; display: block; }
+
+@media (max-width: 760px) {
+  .mark { --ws: 24px; }
+  .menu, .menu-panel { width: 94px; } .menu-panel { left: 0; translate: 0 0; } .menu-panel.open { translate: var(--dx) 0; }
+  .menu nav a.big { font-size: 22px; } .menu-foot { flex-wrap: wrap; } .menu-foot p { gap: 12px; }
+  .hero { padding: 78px 20px 84px; }   /* room under the video for Tino */
+  .copy h1 { font-size: min(7vw, 4.8svh); }
+  .hero-sub { font-size: 17px; }
+  .invite input[type="email"] { height: 42px; font-size: 16px; } .invite .btn { min-height: 44px; padding: 0 16px; font-size: 16px; }
+  .stage { margin-top: 24px; }
+  .play { --lift: 3px; min-height: 38px; padding: 0 14px; font-size: 14px; border-radius: 8px; }
+  .corner { --tw: 112px; right: 0; }
+  .say { font-size: 14px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mark:hover .ear-l, .mark:hover .ear-r { animation: none; }
+  .navblur, .menu-panel, .menu-btn i::before, .menu-btn i::after, .menu-segs b, .menu-body :is(small, a), .menu nav a::after, .menu-foot p a::after, .tino, .say, .zzz { transition: none !important; }
+  .zzz i { animation: none; }
+}
+</style>
