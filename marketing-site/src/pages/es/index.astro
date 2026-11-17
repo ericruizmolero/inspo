@@ -1177,10 +1177,9 @@ html:not(.pie-on) .pie-tino { pointer-events: none; }
 .rc-print .rc-sharp { grid-template-rows: 1fr auto; padding: calc(var(--rw, 220px) * 0.039) calc(var(--rw, 220px) * 0.039) 0; border-radius: calc(var(--rw, 220px) * 0.02); } .rc-print .rc-img { border-radius: 2px; } .rc-print .rc-img img, .rc-print .rc-img canvas { object-position: 50% 0; }
 .rc-cap { margin: 0; height: calc(var(--rw, 220px) * 0.11); display: flex; align-items: center; overflow: hidden; white-space: nowrap; font: 500 calc(var(--rw, 220px) * 0.037)/1 var(--mono2, ui-monospace, monospace); }
 /* nuestras caras en cada comentario */
-.av, .r9 u { color: transparent !important; background: #D9CBB0 url(/assets/equipo/andoni.jpg) 50% 22% / cover no-repeat !important; box-shadow: 0 0 0 1px rgb(243 242 238 / 0.25); }
-.av.e, .r9 u.e { background-image: url(/assets/equipo/eric.jpg) !important; }
+.av { color: transparent !important; background: #D9CBB0 url(/assets/equipo/andoni.jpg) 50% 22% / cover no-repeat !important; box-shadow: 0 0 0 1px rgb(243 242 238 / 0.25); }
+.av.e { background-image: url(/assets/equipo/eric.jpg) !important; } .av.l { background-image: url(/assets/equipo/alberto.jpg) !important; }
 .av { width: 24px; height: 24px; } .pnow .av { width: 24px; height: 24px; }
-.r9 u { width: 30px; height: 30px; border-radius: 50%; }
 /* manifiesto: fotos pequeñas, juntas, en el marco retro */
 .mt-ph { --p: min(13svh, 7.8vw, 108px); --gap: 14px; gap: 14px; margin-top: clamp(16px, 2.8svh, 26px); }
 .mt-st { height: auto; }
@@ -1268,23 +1267,30 @@ html { transition: none; }
 .px { flex: none; width: clamp(70px, 14svh, 120px); margin: clamp(4px, 1svh, 10px) 0; overflow: visible; animation: px-b 2.4s steps(2) infinite; } .px-v { transform-box: fill-box; transform-origin: 50% 50%; animation: px-e 6s steps(1) infinite; }
 @keyframes px-b { 50% { transform: translateY(5%); } } @keyframes px-e { 0%, 88%, 100% { transform: none; } 90%, 94% { transform: scaleY(0.5); } }
 /* comentarios */
-.r9 { position: relative; flex: 1; min-height: 0; margin-top: clamp(12px, 2.2svh, 18px); }
-.r9 > i { position: absolute; inset: 0; border: 1.5px solid var(--ink); border-radius: 8px; background-size: cover; background-position: 0 0; }
-.r9 p { position: absolute; margin: 0; display: flex; align-items: center; gap: 6px; transform-origin: 0 50%; animation: r9 11.5s infinite both; } .r9 .p1 { left: 10px; top: 10px; } .r9 .p2 { left: 16%; bottom: 10px; animation-delay: 1.9s; }
-@keyframes r9 { 0%, 6% { opacity: 0; transform: scale(0.85); } 11%, 82% { opacity: 1; transform: none; } 88%, 100% { opacity: 0; transform: scale(0.95); } }
-.r9 u { flex: none; border: 1.5px solid var(--ink); text-decoration: none; }
-.r9 span { padding: 5px 9px; border: 1.5px solid var(--ink); border-radius: 8px; background: var(--paper-l); font-size: 12.5px; line-height: 1.2; }
 /* votar */
-.d9 { margin: 4px 0 0; font-size: 14px; }
-.v9 { position: relative; flex: 1; min-height: 0; margin-top: 10px; }
-.v9 i { position: absolute; left: 50%; top: 16px; width: 76%; aspect-ratio: 8 / 5; translate: -50% 0; border: 1.5px solid var(--ink); border-radius: 8px; background-size: cover; background-position: 50% 0; box-shadow: 0 3px 0 var(--ink); animation: v9 9.6s infinite both cubic-bezier(0.3, 0, 0.2, 1); }
-.v9 i:nth-child(2) { animation-delay: -3.2s; } .v9 i:nth-child(3) { animation-delay: -6.4s; }
-@keyframes v9 { 0% { opacity: 0; transform: translateY(-16px) scale(0.84); z-index: 1; } 4% { opacity: 1; } 30% { transform: translateY(-8px) scale(0.92); z-index: 2; } 60%, 84% { opacity: 1; transform: none; z-index: 3; } 100% { opacity: 0; transform: translateX(130%) rotate(14deg); z-index: 3; } }
-.v9 span { position: absolute; z-index: 5; right: 0; bottom: 0; padding: 6px 11px; border: 1.5px solid var(--ink); border-radius: 9px; background: var(--paper-l); font-size: 13px; font-weight: 500; box-shadow: 0 3px 0 var(--ink); animation: v9k 3.2s infinite steps(1); }
-@keyframes v9k { 0%, 44%, 66%, 100% { transform: none; background: var(--paper-l); box-shadow: 0 3px 0 var(--ink); } 46%, 62% { transform: translateY(3px); background: var(--butter); box-shadow: 0 0 0 var(--ink); } }
 .b9:not(.vis) * { animation-play-state: paused !important; }
+/* compartir: el enlace va al cliente por WhatsApp, con su vista previa, y el cliente contesta. Sin cuenta */
+.sub9 { margin: 4px 0 0; font-size: 14px; }
+.wa9 { margin-top: clamp(14px, 2.4svh, 22px); overflow: hidden; border-radius: 14px; background: #EFEAE2; color: #111B21; font: 400 13px/1.35 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; box-shadow: 0 0 0 1px rgb(27 27 24 / 0.08); }
+.wa9-top { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: #F0F2F5; } .wa9-top i { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: #DFE5E7; color: #54656F; font: 600 12px/1 inherit; font-style: normal; }
+.wa9-top span { display: grid; } .wa9-top b { font-weight: 600; font-size: 13px; } .wa9-top em { font-style: normal; font-size: 11px; color: #667781; }
+.wa9-body { display: grid; gap: 6px; padding: 10px; }
+.wa9-out { display: flex; flex-direction: column; align-items: flex-end; } .wa9-in { display: flex; }
+.wa9 p { margin: 0; }
+.wa9-card { display: flex; gap: 8px; width: 80%; padding: 4px; border-radius: 8px 8px 0 0; background: #D9FDD3; } .wa9-card i { flex: none; width: 48px; height: 40px; border-radius: 6px; background: #ddd center top / cover no-repeat; } .wa9-card span { display: grid; align-content: center; gap: 2px; padding: 2px 4px 2px 0; } .wa9-card b { font-size: 12.5px; } .wa9-card small { font-size: 11px; color: #667781; }
+.wa9-out > p { width: 80%; box-sizing: border-box; padding: 4px 8px 6px; border-radius: 0 0 8px 8px; background: #D9FDD3; }
+.wa9-in > p { max-width: 80%; padding: 6px 8px; border-radius: 8px; background: #FFFFFF; }
+.wa9 time { float: right; margin: 6px 0 -4px 10px; font-size: 10.5px; color: #667781; } .wa9 time u { text-decoration: none; color: #53BDEB; letter-spacing: -0.2em; margin-left: 2px; }
+/* versiones: el desplegable de la app (VersionPicker, .vpk-menu): cada cambio del tablero queda como versión y se puede volver a cualquiera */
+.vh9 { margin-top: clamp(12px, 2svh, 18px); padding: 4px; border-radius: 10px; border: 1px solid #4A4A44; background: #1E1E1C; color: #EDE6D6; font: 400 14px/1.3 "Geist", var(--sans); box-shadow: 0 16px 40px rgb(0 0 0 / 0.35); }
+.vh9 > p { margin: 0; padding: 8px 10px 6px; font-size: 13px; font-weight: 600; }
+.vh9 ol { margin: 0; padding: 0; list-style: none; }
+.vh9 li { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 10px; } .vh9 li.on { background: #32302C; }
+.vh9 li img, .vh9-ic { flex: none; width: 24px; height: 24px; border-radius: 50%; object-fit: cover; } .vh9-ic { display: grid; place-items: center; color: #8A847A; } .vh9-ic svg { width: 18px; height: 18px; }
+.vh9 li > span { display: grid; gap: 2px; min-width: 0; } .vh9 li b { font-weight: 600; } .vh9 li em { font-style: normal; font-size: 12px; color: #8A847A; }
+.vh9 li .m { margin-left: auto; justify-items: end; }
 @media (min-width: 901px) { .b9 { box-sizing: border-box; height: 100svh; min-height: 640px; display: flex; flex-direction: column; } .b9 .wrap { flex: 1; min-height: 0; display: flex; flex-direction: column; } .g12 { flex: 1; min-height: 0; grid-template-rows: repeat(2, minmax(0, 1fr)); } .t9 { min-height: 0; padding: clamp(18px, 3svh, 28px) clamp(20px, 2.2vw, 28px); } .c9 .u { margin-inline: calc(clamp(20px, 2.2vw, 28px) * -1); padding-inline: clamp(20px, 2.2vw, 28px); } }
-@media (max-width: 900px) { .g12 { grid-template-columns: minmax(0, 1fr); } .t9 { grid-column: auto; grid-row: auto; } .s9 { height: 110px; flex: none; } .r9 { height: 230px; flex: none; } .v9 { height: 210px; flex: none; } .c9 { justify-content: flex-start; margin-top: 18px; } .px { width: 96px; } }
+@media (max-width: 900px) { .g12 { grid-template-columns: minmax(0, 1fr); } .t9 { grid-column: auto; grid-row: auto; } .s9 { height: 110px; flex: none; } .vh9 { flex: none; } .c9 { justify-content: flex-start; margin-top: 18px; } .px { width: 96px; } }
 @media (prefers-reduced-motion: reduce) { .b9 * { animation: none !important; } }
 
 /* ── ronda 15 ── */
@@ -1373,23 +1379,33 @@ html.pie-on .pie-clip .pie-tino { pointer-events: auto; }
 /* (11-10) on a phone every card title holds in two lines: the dark card no longer outgrows the others; the demo's search hint reaches 4.5:1 */
 @media (max-width: 900px) { .t-b h3 { font-size: clamp(1.3rem, 3.5svh, 2rem); } }
 .dock-search .q { color: #9E978C; }
+/* (17-11) Tino talks in the app's balloon (.cr-balloon, components/criterio/criterio.css): butter, ink border, bevel and a tail that points at him (Alberto, 2026-11-17) */
+:is(.say, .ask-say, .pie-say) { border: 1.5px solid var(--ink); border-radius: 14px; background: var(--butter); color: var(--ink); box-shadow: var(--bevel); }
+:is(.say, .pie-say) { padding: 12px 14px; font-size: 15px; line-height: 1.4; }
+:is(.say, .pie-say)::after { content: ""; position: absolute; width: 14px; height: 14px; background: var(--butter); border-right: 1.5px solid var(--ink); border-bottom: 1.5px solid var(--ink); }
+.say[data-tail="down"]::after, .pie-say::after { left: calc(var(--tail-x, 50%) - 7px); bottom: -8px; rotate: 45deg; }
+.say[data-tail="up"]::after { left: calc(var(--tail-x, 50%) - 7px); top: -8px; rotate: 225deg; }
+.say[data-tail="left"]::after { left: -8px; top: calc(50% - 7px); rotate: 135deg; }
+.say-rest { visibility: hidden; }
+:is(.say, .pie-say):empty { visibility: hidden; }
+@media (max-width: 760px) { .say { font-size: 14px; } }
 /* (11-10) the landing drops the ornaments the taste review flags. Surfaces are told apart by fill, not by outline, bevel or key shadow;
    labels are set in Satoshi; the ground is a neutral bone instead of cream. The product inside .win and the terminal keep their own look (data-ui). */
 :root { --mono: var(--sans); --mono2: var(--sans); }
 [data-ui] { --mono: ui-monospace, "SF Mono", Menlo, monospace; --mono2: ui-monospace, "SF Mono", Menlo, monospace; }
 /* buttons and the email field keep their bevel, ink border and key: they are the brand (Alberto, 2026-11-10) */
-body :not([data-ui], [data-ui] *, .menu-panel, dialog, .btn, .btn2, .step, .ask-chips button, .key2, .menu-vid, .menu-vid *, .invite-row) { box-shadow: none !important; }
-:is(.rc-sharp, .rc-bar i, .marco, .t9, .q9, .r9 i, .r9 p span, .r9 p u, .v9 i, .v9 span, .ask-say, .w9-b, .w9-b i, .charge, .rio-ics .any i, .rio-tray, .rio-tray em, .rc-pick svg):not([data-ui] *) { border-color: transparent !important; }
+body :not([data-ui], [data-ui] *, .menu-panel, dialog, .btn, .btn2, .step, .ask-chips button, .key2, .menu-vid, .menu-vid *, .invite-row, .say, .ask-say, .pie-say) { box-shadow: none !important; }
+:is(.rc-sharp, .rc-bar i, .marco, .t9, .q9, .w9-b, .w9-b i, .charge, .rio-ics .any i, .rio-tray, .rio-tray em, .rc-pick svg):not([data-ui] *) { border-color: transparent !important; }
 :is(.rc-bar, .marco-b, .menu-foot):not([data-ui] *) { border-top-color: transparent !important; border-bottom-color: transparent !important; }
 .rc-bar:not([data-ui] *) { background: #E1DFD8; } .rc-bar u, .w9-b u { visibility: hidden; }
 .navblur { display: none; }
 :is(.menu-cols nav small, .menu-foot small) { font: 500 14px/1.2 var(--sans); text-transform: none; letter-spacing: 0; }
 :is(.mt-n, .mt-hint, .mt-hint span) { font-size: 14px; letter-spacing: 0; text-transform: none; }
-:is(.rc-bar span, .rc-bar em, .rc-cap, .r9 p span, .w9-b span, .marco-b i) { font-size: 13px; letter-spacing: 0; }
+:is(.rc-bar span, .rc-bar em, .rc-cap, .w9-b span, .marco-b i) { font-size: 13px; letter-spacing: 0; }
 .rio :is(.rc-bar, .rc-bar *, .rc-tag, .rc-cap) { font-family: var(--sans) !important; }
 :is(.btn, .btn2, .step, .ask-chips button, .key2, .menu-panel:not(.open), .menu-vid, .invite-row):not([data-ui] *) { --paper: #EDE6D6; --paper-l: #F6F1E6; --paper-pressed: #D9CFBA; }   /* controls keep the brand's paper */
 .lb-mark svg { display: block; width: 62%; height: 62%; fill: currentColor; } .lb-pin.lb-mark { background: #fff; color: #E60023; } .lb-pin.lb-mark svg { width: 100%; height: 100%; }
-.lb-cosmos.lb-mark { color: #111; box-shadow: none; } .rio-fu .lb-cosmos.lb-mark, .rio-ics .lb-cosmos.lb-mark { box-shadow: 0 3px 0 var(--ink), 0 0 0 1.5px var(--ink); }   /* the six dots replace the ring placeholder */
+.lb-cosmos.lb-mark { color: #111; box-shadow: none; } .lb-ext.lb-mark { background: var(--ember); color: var(--ink); } .lb-files.lb-mark { background: #4F6B3A; color: #EDE6D6; } .rio-fu .lb-cosmos.lb-mark, .rio-ics .lb-cosmos.lb-mark { box-shadow: 0 3px 0 var(--ink), 0 0 0 1.5px var(--ink); }   /* the six dots replace the ring placeholder */
 /* (11-10) no pinned scroll: the hero is a normal section, the scene below it is one screen and plays by itself */
 .flow { height: auto !important; } .hero { position: relative; top: auto; }
 .mt { margin-top: clamp(72px, 10svh, 112px) !important; } #manifiesto { scroll-margin-top: 0; }   /* the manifesto window opens below the product, not on it */
@@ -1413,19 +1429,86 @@ body :not([data-ui], [data-ui] *, .menu-panel, dialog, .btn, .btn2, .step, .ask-
 .st4-win { position: relative; flex: none; width: var(--ww, min(1120px, 92vw)); height: var(--wh, 62svh); }
 .st4-win > .win { position: absolute !important; left: 0 !important; top: 0 !important; transform: none !important; visibility: visible; opacity: 1; }   /* out of the hero, the window is no longer shown by .hero.ready / .flow.show-demo */
 .st4-win > .win-snap { pointer-events: none; } .st4-win.live > .win-snap { visibility: hidden; }
+/* paso 2, «Decidid juntos»: el tablero detrás, atenuado por un velo de papel, y delante tres piezas de la app tal cual, una por verbo:
+   el panel de comentarios del visor (CommentsPanel), dos baldosas del tablero con su nota (InspoCard) y el globo de Tino en Pulido (PolishView).
+   Medidas y colores sacados de la app (globals.css, criterio.css, HomeTino.css, PolishView.css); la letra es Geist, la de la app */
+@font-face { font-family: "Geist"; src: url("/assets/fonts/geist/Geist-Variable.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
+.dz-veil { position: absolute; inset: -1px; z-index: 4; border-radius: 18px; background: rgb(231 229 223 / 0.62); pointer-events: none; }
+.dz { --page: #161614; --raised: #201F1C; --line: #32302C; --strong: #43413B; --ink-app: #EDE6D6; --text2: #B8B1A3; --muted: #8A847A; --butter: #FBF1C7; --ink: #1B1B18;
+  position: absolute; inset: 0; z-index: 5; pointer-events: none; font: 400 15px/1.4 "Geist", var(--sans); -webkit-font-smoothing: antialiased; }
+.dz-p { position: absolute; margin: 0; display: grid; justify-items: start; gap: 8px; opacity: 0; transform: translateY(18px); transition: opacity 0.5s ease-out, transform 0.8s cubic-bezier(0.23, 1, 0.32, 1); }
+.dz.on .dz-p { opacity: 1; transform: none; } .dz.on .dz-x { transition-delay: 0.12s; } .dz.on .dz-v { transition-delay: 0.24s; }
+.dz-p figcaption { padding: 5px 11px; border-radius: 999px; background: var(--ink); color: #F3F2EE; font: 600 13px/1 var(--sans); }
+.dz-c { left: -7%; top: 6%; width: min(380px, 33%); rotate: -1.5deg; }
+.dz-x { right: -7%; top: -4%; width: min(460px, 40%); rotate: 1.5deg; }
+.dz-v { left: 50%; bottom: -8%; width: 340px; translate: -50% 0; }
+.dz-cm, .dz-board { width: 100%; overflow: hidden; border-radius: 20px; border: 1px solid #2F2E2A; background: var(--page); color: var(--ink-app); box-shadow: 0 20px 50px rgb(0 0 0 / 0.5); }
+/* el panel: cabecera (título 22 y cuántos), lista con hilo y respuesta, y el campo para escribir */
+.dz-cm header { display: flex; align-items: center; gap: 10px; padding: 16px 16px 16px 20px; border-bottom: 1px solid var(--line); }
+.dz-cm header b { flex: 1; font-size: 22px; line-height: 1.2; font-weight: 600; letter-spacing: -0.01em; } .dz-cm header span { font-size: 12px; color: var(--muted); }
+.dz-list { padding: 20px; }
+.dz-th { display: flex; flex-direction: column; gap: 6px; }
+.dz-msg { display: flex; flex-direction: column; gap: 6px; }
+.dz-h { display: flex; align-items: center; gap: 8px; } .dz-h b { font-weight: 600; } .dz-h small { margin-left: auto; font-size: 12px; color: var(--muted); }
+.dz-msg p { margin: 0; padding-left: 34px; line-height: 1.55; text-wrap: pretty; }
+.dz-av { flex: none; width: 26px; height: 26px; border-radius: 50%; object-fit: cover; }
+.dz-reps { margin: 4px 0 0 12px; padding: 2px 0 2px 14px; border-left: 1px solid var(--strong); }
+.dz-foot { display: flex; align-items: center; gap: 8px; margin: 2px 0 0 26px; font-size: 12px; } .dz-foot span { padding: 4px 8px; border-radius: 6px; font-weight: 600; } .dz-foot em { font-style: normal; color: var(--muted); }
+.dz-cmp { display: grid; gap: 8px; padding: 12px 20px 20px; }
+.dz-box { border-radius: 10px; border: 1.5px solid #6E695F; background: #0A0A09; box-shadow: inset 2px 2px 0 rgb(0 0 0 / 0.25); }
+.dz-box > span { display: block; min-height: 50px; padding: 10px 12px 2px; color: #8A847A; }
+.dz-bar { display: flex; align-items: center; justify-content: space-between; padding: 4px 6px 6px; }
+.dz-ib { display: grid; place-items: center; width: 32px; height: 32px; color: var(--ink-app); } .dz-ib svg { width: 18px; height: 18px; }
+.dz-send { display: inline-flex; align-items: center; height: 34px; padding: 0 14px; border-radius: 6px; border: 1px solid #B9B2A3; background: #E2DBCB; color: #6E695F; font-size: 13px; font-weight: 600; }
+.dz-cmp p { margin: 0; font-size: 12px; color: var(--muted); }
+/* el tablero: dos baldosas con su nota debajo, como en la app */
+.dz-board { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 16px; }
+.dz-img { overflow: hidden; border-radius: 14px; background: var(--raised); } .dz-img img { display: block; width: 100%; aspect-ratio: 16 / 10; object-fit: cover; object-position: top; }
+.dz-note { display: flex; gap: 8px; margin: 0; padding: 6px 2px 2px; font-size: 13px; line-height: 1.3; color: var(--text2); }
+.dz-note .dz-av { width: 20px; height: 20px; margin-top: -1.5px; } .dz-note b { color: var(--ink-app); font-weight: 500; } .dz-note span { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+/* el voto: el globo de Tino en Pulido, con lo que ya votó otro del equipo */
+.dz-tino { position: relative; width: 100%; padding: 12px 14px 14px; border-radius: 14px; border: 1px solid var(--ink); background: var(--butter); color: var(--ink); box-shadow: inset 2px 2px 0 rgb(255 255 255 / 0.65), inset -2px -3px 0 rgb(27 27 24 / 0.22), 0 20px 40px -20px rgb(27 27 24 / 0.5); }
+.dz-ttl { display: flex; flex-direction: column; gap: 2px; margin-bottom: 4px; font-weight: 600; line-height: 1.3; }
+.dz-who { display: flex; justify-content: space-between; font-size: 13px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; opacity: 0.7; } .dz-who span { letter-spacing: 0; font-variant-numeric: tabular-nums; }
+.dz-tx { margin: 0; font-size: 13px; line-height: 1.4; }
+.dz-acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.dz-btn { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 34px; padding: 0 14px; border-radius: 10px; border: 1px solid var(--ink); background: var(--ink-app); font-size: 13px; font-weight: 600; box-shadow: inset 2px 2px 0 rgb(255 255 255 / 0.65), inset -2px -3px 0 rgb(27 27 24 / 0.22); }
+.dz-btn kbd { padding: 0 5px; border-radius: 4px; border: 1px solid rgb(27 27 24 / 0.28); font: 500 12px/18px "Geist", var(--sans); opacity: 0.7; }
+.dz-tfoot { margin: 6px 0 0; font-size: 12px; line-height: 1.4; color: rgb(27 27 24 / 0.68); }
+.dz-tail { position: absolute; right: 34px; bottom: -8px; width: 14px; height: 14px; background: var(--butter); border-right: 1px solid var(--ink); border-bottom: 1px solid var(--ink); rotate: 45deg; }
+@media (max-width: 760px) { .dz-x { display: none; } .dz-c { left: 3%; top: 5%; width: 86%; rotate: -1deg; } .dz-cmp { display: none; } .dz-cm header { padding: 12px 14px; } .dz-cm header b { font-size: 18px; } .dz-list { padding: 14px; } .dz-v { bottom: auto; top: 62%; width: 90%; } }
+@media (prefers-reduced-motion: reduce) { .dz-p { transition: none; } }
 @media (max-width: 760px) { .st4 { padding: 64px 12px; } .st4 h2 { font-size: 1.45rem; } .st4 h2 span + span { font-size: 1.05rem; } }
 /* (11-10) step 1 on its own: the references set out above and below their source; they spread from the logo when the section arrives */
-.src4 { --rw: clamp(64px, 11.5vw, 190px); display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: clamp(10px, 1.6vw, 28px); width: min(1320px, 94vw); }
-.src4-col { display: grid; grid-template-rows: 1fr auto 1fr; justify-items: center; gap: clamp(10px, 1.4svh, 16px); }
-.src4-up, .src4-dn { display: grid; gap: 10px; justify-items: center; } .src4-up { align-self: end; } .src4-dn { align-self: start; }
-.src4-card { position: relative; width: calc(var(--rw) * var(--fw, 1)); max-width: 100%; aspect-ratio: calc(var(--fw, 1)) / calc(var(--fh, 0.74)); opacity: 0.85; transition: transform 0.8s cubic-bezier(0.23, 1, 0.32, 1) calc(var(--i) * 70ms), opacity 0.5s ease-out calc(var(--i) * 70ms); }
+/* paso 1: las seis fuentes en un círculo alrededor de Tino. Cada una (.src4-node, punto de anclaje en el centro) pone su etiqueta sobre el círculo
+   (radio --R, ángulo --a: tres a cada lado) y sus dos referencias del río a su lado, hacia fuera (--side); Tino (el 3D que baja contigo) se planta en el centro (#src-slot) */
+.src4 { --rw: clamp(104px, 10vw, 170px); --R: clamp(230px, 20vw, 350px); --off: calc(var(--rw) * 0.9 + 84px); position: relative; width: min(1440px, 98vw); height: calc(1.29 * var(--R) + var(--rw) * 1.5); }
+.src4::before { content: ""; position: absolute; left: 50%; top: 50%; width: calc(var(--R) * 2); aspect-ratio: 1; translate: -50% -50%; border-radius: 50%; border: 1.5px dashed rgb(27 27 24 / 0.16); pointer-events: none; }
+.src4-slot { position: absolute; left: 50%; top: 50%; width: clamp(170px, 17vw, 250px); aspect-ratio: 1; translate: -50% -50%; }
+.src4-node { --side: -1; position: absolute; left: 50%; top: 50%; width: 0; height: 0; } .src4-node.r { --side: 1; }
+.src4-node.n0 { --a: 220deg; } .src4-node.n1 { --a: 180deg; } .src4-node.n2 { --a: 140deg; } .src4-node.n3 { --a: 320deg; } .src4-node.n4 { --a: 0deg; } .src4-node.n5 { --a: 40deg; }
+.src4-ic { position: absolute; left: 0; top: 0; translate: calc(cos(var(--a)) * var(--R) - 50%) calc(sin(var(--a)) * var(--R) - 50%); }
+.src4-pair { position: absolute; left: 0; top: 0; width: calc(var(--rw) * 1.8); height: calc(var(--rw) * 0.96); translate: calc(cos(var(--a)) * var(--R) + var(--side) * var(--off) - 50%) calc(sin(var(--a)) * var(--R) - 50%); }
+.src4-card { position: absolute; width: calc(var(--rw) * var(--fw, 1)); aspect-ratio: calc(var(--fw, 1)) / calc(var(--fh, 0.74)); --r: -5deg; --dx: 40%; left: 0; top: 0; opacity: 0; transform: translateX(var(--dx)) scale(0.45); transition: transform 0.8s cubic-bezier(0.23, 1, 0.32, 1) calc(var(--i) * 70ms), opacity 0.5s ease-out calc(var(--i) * 70ms); }
+.src4-card + .src4-card { --r: 4deg; left: auto; top: auto; right: 0; bottom: 0; }
+.src4-node.r .src4-card { --dx: -40%; }
 .src4-card .rc-sharp { position: absolute; inset: 0; transform: none; }
-.src4-up .src4-card { transform: translateY(45%) scale(0.45); } .src4-dn .src4-card { transform: translateY(-45%) scale(0.45); }
-.src4.on .src4-card { transform: none; opacity: 1; }
-.src4-ic { position: relative; z-index: 2; display: grid; justify-items: center; gap: 7px; font: 500 15px/1 var(--sans); color: var(--ink); }
-.src4-ic .lb { display: grid; place-items: center; width: 52px; height: 52px; margin: 0; font-size: 21px; border-radius: 12px; } .src4-ic .lb-pin, .src4-ic .lb-cosmos { border-radius: 50%; }
-@media (max-width: 760px) { .src4 { --rw: 27vw; grid-template-columns: repeat(3, minmax(0, 1fr)); row-gap: 28px; } .src4-ic .lb { width: 40px; height: 40px; font-size: 16px; } .src4-ic { font-size: 13px; } }
-@media (prefers-reduced-motion: reduce) { .src4-card { transition: none; transform: none !important; opacity: 1; } }
+.src4-card .rc-bar { display: none; } .src4-card:is(.rc-web, .rc-win) .rc-sharp { grid-template-rows: 1fr; }   /* sin la barra de dirección: solo la referencia */
+.src4.on .src4-card { transform: rotate(var(--r)); opacity: 1; }
+.src4-ic { z-index: 2; display: inline-flex; align-items: center; gap: 10px; padding: 6px 16px 6px 6px; border-radius: 999px; background: var(--paper-l); font: 500 16px/1 var(--sans); color: var(--ink); white-space: nowrap; }
+.src4-ic .lb { display: grid; place-items: center; width: 36px; height: 36px; margin: 0; font-size: 15px; border-radius: 50%; }
+@media (max-width: 760px) {
+  .src4 { --rw: 27vw; height: auto; display: grid; grid-template-columns: 1fr 1fr; grid-template-areas: "mid mid" "a x" "p e" "c f"; row-gap: 26px; column-gap: 12px; }
+  .src4::before { display: none; }
+  .src4-slot { position: static; grid-area: mid; justify-self: center; width: 150px; translate: none; }
+  .src4-node { position: static; width: auto; height: auto; display: flex; flex-direction: column-reverse; align-items: center; gap: 10px; }
+  .src4-node.n0 { grid-area: a; } .src4-node.n1 { grid-area: p; } .src4-node.n2 { grid-area: c; } .src4-node.n3 { grid-area: x; } .src4-node.n4 { grid-area: e; } .src4-node.n5 { grid-area: f; }
+  .src4-ic, .src4-pair { position: relative; translate: none; }
+  .src4-pair { width: calc(var(--rw) * 1.55); }
+  .src4-card, .src4-node.r .src4-card { --dx: 0%; }
+  .src4-ic { font-size: 13px; padding: 5px 11px 5px 5px; } .src4-ic .lb { width: 26px; height: 26px; font-size: 12px; }
+}
+@media (prefers-reduced-motion: reduce) { .src4-card { transition: none; transform: rotate(var(--r)) !important; opacity: 1; } }
 .b9, .faq, .steps4 { background: #E7E5DF !important; }   /* "Every decision" has no window: it rises on its own light ground over the dark manifesto */
 /* (11-10) fluidity: the frames move by transform and clip, never by layout; the live window waits hidden until a step needs it */
 .z { left: calc(-1 * var(--d)) !important; right: calc(-1 * var(--d)) !important; transform-origin: 50% 0; will-change: transform; }
@@ -1534,8 +1617,8 @@ html.pie-on .nav { visibility: hidden; transition: opacity 0.2s, visibility 0s 0
 
 </div></section>
 <section class="steps4" id="pasos" aria-label="Cómo funciona">
-  <article class="st4 st4-src"><h2><span>Trae lo que ya guardaste.</span><span>Desde Are.na, Pinterest, Cosmos, X, la extensión o tus archivos.</span></h2><div class="src4" aria-hidden="true"></div></article>
-  <article class="st4" data-s="1"><h2><span>Decidid juntos.</span><span>Comentad, comparad y votad. No se borra nada.</span></h2><div class="st4-win"></div></article>
+  <article class="st4 st4-src"><h2><span>Trae lo que ya guardaste.</span><span>Desde Are.na, Pinterest, Cosmos, X, la extensión o tus archivos.</span></h2><div class="src4" aria-hidden="true"><span class="src4-slot" id="src-slot" data-s="Todo en un solo sitio. Me las leo todas."></span></div></article>
+  <article class="st4 st4-decide" data-s="1"><h2><span>Decidid juntos.</span><span>Comentad, comparad y votad. No se borra nada.</span></h2><div class="st4-win"><i class="dz-veil" aria-hidden="true"></i><div class="dz" aria-hidden="true" data-ui><figure class="dz-p dz-c"><figcaption>Comentar</figcaption><div class="dz-cm"><header><b>Comentarios</b><span>2 comentarios</span></header><div class="dz-list"><div class="dz-th"><div class="dz-msg"><div class="dz-h"><img class="dz-av" src="/assets/equipo/eric.jpg" alt="" width="26" height="26" loading="lazy"><b>Eric</b><small>13 oct</small></div><p>La serifa y look and feel de Granola.</p></div><div class="dz-reps"><div class="dz-msg"><div class="dz-h"><img class="dz-av" src="/assets/equipo/alberto.jpg" alt="" width="26" height="26" loading="lazy"><b>Alberto</b><small>14 oct</small></div><p>Para los titulares, sí. El texto sigue en sans.</p></div></div><div class="dz-foot"><span>Responder</span><em>1 respuesta</em></div></div></div><div class="dz-cmp"><div class="dz-box"><span>Añade un comentario, o pega una captura…</span><div class="dz-bar"><i class="dz-ib"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="14" height="12" rx="2"/><circle cx="7.5" cy="8.5" r="1.4"/><path d="m3.5 14.5 4.2-4 3 2.8 2.3-2 3.5 3.2"/></svg></i><span class="dz-send">Enviar</span></div></div><p>↩ envía, ⇧↩ salto de línea, ⌘V pega capturas</p></div></div></figure><figure class="dz-p dz-x"><figcaption>Comparar</figcaption><div class="dz-board"><div class="dz-tile"><div class="dz-img"><img src="/assets/producto/refs/granola.jpg" alt="" width="400" height="250" loading="lazy"></div><p class="dz-note"><img class="dz-av" src="/assets/equipo/eric.jpg" alt="" width="20" height="20" loading="lazy"><b>Eric</b><span>La serifa y look and feel de Granola.</span></p></div><div class="dz-tile"><div class="dz-img"><img src="/assets/producto/refs/flodesk.jpg" alt="" width="400" height="250" loading="lazy"></div><p class="dz-note"><img class="dz-av" src="/assets/equipo/alberto.jpg" alt="" width="20" height="20" loading="lazy"><b>Alberto</b><span>Limpieza y aire: transmite mucha paz.</span></p></div></div></figure><figure class="dz-p dz-v"><figcaption>Votar</figcaption><div class="dz-tino"><div class="dz-ttl"><span class="dz-who">Tino<span>1 / 9</span></span><span>¿Te la quedas?</span></div><p class="dz-tx">Eric ya se la queda.</p><div class="dz-acts"><span class="dz-btn"><kbd>←</kbd>Olvidar</span><span class="dz-btn">Conservar<kbd>→</kbd></span></div><p class="dz-tfoot">Vota todo el equipo: lo que todos olvidan, se va.</p><i class="dz-tail"></i></div></figure></div></div></article>
   <article class="st4" data-s="2"><h2><span>Conserva lo que importa.</span><span>Lo que el equipo conserva se vuelve una decisión, con su referencia.</span></h2><div class="st4-win"></div></article>
   <article class="st4" data-s="3"><h2><span>Entrégaselo a tu agente.</span><span>Lee criterio.md y construye la landing como lo decidisteis.</span></h2><div class="st4-win"></div></article>
 </section>
@@ -1559,8 +1642,8 @@ html.pie-on .nav { visibility: hidden; transition: opacity 0.2s, visibility 0s 0
   <div class="g12">
     <article class="t9 t-a"><h3>Pídeselo como lo dirías.</h3><div class="q9" aria-hidden="true"><svg class="ico"><use href="#i-search"/></svg><span>serif grande y mucha calma</span></div><div class="s9" aria-hidden="true"><i class="hit" style="background-image:url(/assets/producto/refs/granola.jpg)"></i><i style="background-image:url(/assets/producto/refs/extra-gumroad.jpg)"></i><i class="hit" style="background-image:url(/assets/producto/refs/mymind.jpg)"></i><i style="background-image:url(/assets/producto/refs/extra-departure-mono.jpg)"></i></div></article>
     <article class="t9 t-b"><h3>Tu agente diseña con vuestro criterio.</h3><a href="https://criterio.design/es/skills/">Las skills <i aria-hidden="true">→</i></a><div class="c9" data-ui aria-hidden="true"><p class="u"><span>&gt; /criterio:setup</span></p><svg class="px" viewBox="0 0 22 20" shape-rendering="crispEdges"><g fill="#B1B9F8"><rect x="11" y="0" width="1" height="1"/><rect x="4" y="1" width="1" height="1"/><rect x="11" y="1" width="2" height="1"/><rect x="4" y="2" width="2" height="1"/><rect x="10" y="2" width="3" height="1"/><rect x="3" y="3" width="4" height="1"/><rect x="10" y="3" width="4" height="1"/><rect x="3" y="4" width="5" height="1"/><rect x="10" y="4" width="4" height="1"/><rect x="3" y="5" width="5" height="1"/><rect x="9" y="5" width="5" height="1"/><rect x="3" y="6" width="5" height="1"/><rect x="9" y="6" width="5" height="1"/><rect x="4" y="7" width="12" height="1"/><rect x="4" y="8" width="14" height="1"/><rect x="2" y="9" width="18" height="1"/><rect x="1" y="10" width="20" height="1"/><rect x="1" y="11" width="11" height="1"/><rect x="20" y="11" width="1" height="1"/><rect x="0" y="12" width="12" height="1"/><rect x="20" y="12" width="2" height="1"/><rect x="0" y="13" width="22" height="1"/><rect x="0" y="14" width="22" height="1"/><rect x="0" y="15" width="22" height="1"/><rect x="0" y="16" width="22" height="1"/><rect x="1" y="17" width="20" height="1"/><rect x="2" y="18" width="18" height="1"/><rect x="4" y="19" width="15" height="1"/></g><g class="px-v" fill="#191B28"><rect x="12" y="11" width="8" height="1"/><rect x="12" y="12" width="8" height="1"/></g></svg><p class="m">Leí criterio.md y 1 carpeta</p><p><i>●</i>Tipografía: serif grande en titulares</p><p><i>●</i>Color: papel y tinta; una brasa por vista</p><p><i>●</i>Layout: una idea por pantalla</p><p class="o"><i>●</i>Motion: sin decidir. Os pregunto.</p><p class="m d">Baked for 15s</p></div></article>
-    <article class="t9 t-c"><h3>Opina sobre cada referencia.</h3><div class="r9" aria-hidden="true"><i style="background-image:url(/assets/producto/refs/alto/granola.jpg)"></i><p class="p1"><u class="e"></u><span>La serifa y el look de Granola.</span></p><p class="p2"><u></u><span>Esto, para los titulares.</span></p></div></article>
-    <article class="t9 t-d"><h3>Votad lo que se queda.</h3><p class="d9">Nada se borra.</p><div class="v9" aria-hidden="true"><i style="background-image:url(/assets/rio/res-logosystem-co.jpg)"></i><i style="background-image:url(/assets/producto/refs/mymind.jpg)"></i><i style="background-image:url(/assets/producto/refs/flodesk.jpg)"></i><span>Conservar →</span></div></article>
+    <article class="t9 t-c"><h3>Compártelo con tu cliente.</h3><p class="sub9">Sin cuenta. Comenta y da like.</p><div class="wa9" aria-hidden="true"><div class="wa9-top"><i>M</i><span><b>Marta (cliente)</b><em>en línea</em></span></div><div class="wa9-body"><div class="wa9-out"><div class="wa9-card"><i style="background-image:url(/assets/producto/refs/granola.jpg)"></i><span><b>Landing Criterio</b><small>criterio.design</small></span></div><p>Las referencias para tu landing. Marca las que te gusten.<time>10:42 <u>✓✓</u></time></p></div><div class="wa9-in"><p>He marcado dos. La de la serifa 😍<time>10:51</time></p></div></div></div></article>
+    <article class="t9 t-d"><h3>Vuelve a cualquier versión.</h3><div class="vh9" data-ui aria-hidden="true"><p>Versiones del tablero</p><ol><li class="on"><img src="/assets/equipo/andoni.jpg" alt="" width="24" height="24" loading="lazy"><span><b>Andoni</b><em>2 entran</em></span><span class="m"><b>v3</b><em>ahora</em></span></li><li><img src="/assets/equipo/alberto.jpg" alt="" width="24" height="24" loading="lazy"><span><b>Alberto</b><em>1 sale</em></span><span class="m"><b>v2</b><em>12 nov</em></span></li><li><i class="vh9-ic"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 10a6.5 6.5 0 1 0 1.9-4.6"/><path d="M3.5 3.5v3h3"/><path d="M10 6.5V10l2.5 1.5"/></svg></i><span><b>Así estaba</b><em>6 referencias</em></span><span class="m"><b>v1</b><em>10 nov</em></span></li></ol></div></article>
   </div>
 </div></section>
 <section class="faq" id="preguntas"><div class="wrap ask">
@@ -1619,14 +1702,14 @@ const ITEMS = [
   { id: "granola", src: "ext", who: "E", say: "La serifa y look and feel de Granola." },
   { id: "mymind", src: "cosmos", who: "A", say: "Transmite elegancia, diversión y calma." },
   { note: true, src: "x", who: "A", say: "Cómo me la imagino: la mascota explica el producto paso a paso." },
-  { id: "flodesk", src: "arena", who: "E", say: "Limpieza y aire: transmite mucha paz." },
+  { id: "flodesk", src: "arena", who: "L", say: "Limpieza y aire: transmite mucha paz." },
   { id: "tiny-computer", src: "ext", who: "A", say: "Un producto en miniatura y debajo una declaración de intenciones." },
   { id: "res-visualjournal-it", src: "pin", who: "E", say: "Papel, tinta y objetos de verdad. Esto se toca." },
   { id: "res-logosystem-co", src: "files", who: "A", say: "Cada logo con su sitio. Así se compara bien." },
 ];
 const ORDER = [0, 5, 2, 7, 3, 1, 4, 6, 8];   // llegan por fuentes: Are.na, Pinterest, Cosmos, X y la extensión
 const NOTE = `<div class="note"><small>Texto</small><strong>Landing: cómo me la imagino</strong><p>Nuestra mascota te va explicando el producto paso a paso. Empezamos con un hero donde salen referencias de forma caótica que al hacer scroll se ordenan en un moodboard…</p></div>`;
-const WHO = { A: "Andoni", E: "Eric" };
+const WHO = { A: "Andoni", E: "Eric", L: "Alberto" }, AV_CLASS = { E: "e", L: "l" };   // la cara de cada uno en las notas (.av: Andoni; .av.e y .av.l)
 // el pulido: el orden de las tarjetas en el tornado (la del hueco 2 está delante) y los cuatro votos, que caen sobre las de los huecos 2 a 5
 const TO = [7, 0, 2, 1, 3, 5, 6, 4, 8], FRONT = 2;
 const VOTES = [[2, 1], [1, 0], [3, 1], [5, 1]];   // [referencia, se queda]
@@ -1655,7 +1738,7 @@ const WALK_LINES = [["Otro día más en el tajo…", "Soy Tino. A ver qué me ha
 // ── montar el producto ──
 const hero = $("#hero"), win = $("#win"), winIn = $("#win-in"), copy = $("#copy"), flyers = $("#flyers"), imp = $("#imp");
 const pills = Object.fromEntries([...imp.querySelectorAll(".pill")].map((el) => [el.dataset.k, el]));
-$("#grid").innerHTML = ITEMS.map((it) => `<div class="cell"><div class="img"${it.note ? "" : ` style="background-image:url(${img(it.id)})"`}>${it.note ? NOTE : ""}</div><div class="cap"><span class="av${it.who === "E" ? " e" : ""}">${it.who}</span><p data-t="${esc(it.say)}"><b>${WHO[it.who]}</b> <span></span></p></div></div>`).join("");
+$("#grid").innerHTML = ITEMS.map((it) => `<div class="cell"><div class="img"${it.note ? "" : ` style="background-image:url(${img(it.id)})"`}>${it.note ? NOTE : ""}</div><div class="cap"><span class="av ${AV_CLASS[it.who] || ""}">${it.who}</span><p data-t="${esc(it.say)}"><b>${WHO[it.who]}</b> <span></span></p></div></div>`).join("");
 const cells = [...$("#grid").children], caps = cells.map((c) => c.querySelector(".cap p span")), imgs = cells.map((c) => c.querySelector(".img"));
 $("#thumbs").innerHTML = [5, 2, 3].map((i) => `<i style="background-image:url(${img(ITEMS[i].id)})"></i>`).join("");
 const stage3d = $("#stage3d");
@@ -1681,26 +1764,33 @@ const set = (el, prop, v) => { if (el[prop] !== v) el[prop] = v; };
 const tinoBox = $("#tino"), say = $("#say"), scan = $("#scan"), SC = Object.fromEntries(["cone", "tint", "frame", "sweep", "sweep-glow", "eye", "cone-g"].map((id) => [id, document.getElementById(id)]));
 let T = null;
 const engineReady = new Promise((ok) => { if (window.Peluche) return ok(); addEventListener("tino-engine", ok, { once: true }); setTimeout(ok, 5000); }).then(() => {
-  T = window.Peluche ? window.Peluche.create(tinoBox.querySelector("canvas"), { base: "/assets/mascota/tino-app/", frame: "center", look: [12, 0] }) : null;
+  T = window.Peluche ? window.Peluche.create(tinoBox.querySelector("canvas"), { base: "/assets/mascota/tino-app/", frame: "center", look: [90, 0] }) : null;
 });
 // las caras de Tino, como las nombra la app (moods.ts): cada una es una postura del motor y lo que pasa dentro del visor
 const FACES = { watching: ["reposo", "barrido"], following: ["siguiendo", "mirada"], thinking: ["pensando"], searching: ["buscando", "ecualizador"], skeptic: ["esceptica"], suspect: ["sospechosa"], smug: ["satisfecha"], admirer: ["admirada"], judge: ["descarta"], accomplice: ["complice"], asleep: ["dormida"], sad: ["error"], approve: ["aprueba"] };
 let tinoState = "";
+// dónde no sale Tino: del manifiesto a las preguntas se aparta (salvo mientras presenta a alguien del equipo); en el pie le releva el grande
+const AWAY = { quiet: false, intro: false, pie: false };
+const away = (why, on) => { if (AWAY[why] === on) return; AWAY[why] = on; const a = (AWAY.quiet && !AWAY.intro) || AWAY.pie; tinoBox.classList.toggle("away", a); say.classList.toggle("away", a); };
 const tino = (face) => { if (!T || face === tinoState) return; tinoState = face; const [st, show] = FACES[face] || FACES.watching; if (show) T.show(show); T.set(st); };
 let lookNow = "", reactUntil = 0;
 const lookRaw = (yaw, pitch) => { const key = yaw.toFixed(1) + "," + pitch.toFixed(1); if (T && key !== lookNow) { lookNow = key; T.look(yaw, pitch); } };
 const look = (yaw, pitch = -8, force) => { if (typeof TG !== "undefined" && TG.walk) return; if (!force && performance.now() < reactUntil) return; const key = yaw.toFixed(1) + "," + pitch.toFixed(1); if (T && key !== lookNow) { lookNow = key; T.look(yaw, pitch); } };
 const BACK = 270;   // de espaldas a nosotros, mirando el producto (0 = a la derecha, 90 = de frente, 180 = a la izquierda)
+const atTop = () => sP < 0.002 && window.__inScene !== false;   // solo arriba del todo, en la portada: pasado el héroe, sP vuelve a 0 y no debe darse la vuelta
 let sayText = "", sayTimer = 0, baseLine = "";
 function speak(text, aside) {
   // el bocadillo se escribe letra a letra. aside: una réplica suelta (al pasar el ratón); después vuelve a lo que estaba contando
-  if (!aside) { if (text === baseLine) return; baseLine = text; if (performance.now() < reactUntil) return; }
+  if (!aside) { if (text === baseLine) return; const was = baseLine; baseLine = text; if (performance.now() < reactUntil) return; if (!text && sayText !== was) return; }   // callar lo que contaba no borra una réplica suelta que esté diciendo
   if (text === sayText) return; sayText = text; clearTimeout(sayTimer); clearTimeout(sayHide); if (text) sayHide = setTimeout(() => { if (sayText === text && !rioSaid) speak("", true); }, 5600);   // cuenta y calla
   say.classList.toggle("on", !!text);
-  if (still || !text) { say.textContent = text; placeSay(); return; }
-  let i = 0; const step = () => { say.textContent = text.slice(0, ++i); placeSay(); if (i < text.length) sayTimer = setTimeout(step, 22); }; step();
+  if (!text) { if (!sayDone) say.textContent = ""; return; }   // se funde con su frase entera dentro; a medio escribir se vacía y se esconde al instante (si no, se fundía con una letra suelta)
+  if (still) { say.textContent = text; sayDone = true; placeSay(); return; }
+  const on = document.createElement("span"), rest = document.createElement("span"); rest.className = "say-rest";   // the whole sentence is laid out from the start, so the bubble never grows or jumps a line while it types
+  on.textContent = ""; rest.textContent = text; say.replaceChildren(on, rest); placeSay();
+  sayDone = false; let i = 0; const step = () => { i++; on.textContent = text.slice(0, i); rest.textContent = text.slice(i); if (i < text.length) sayTimer = setTimeout(step, 22); else sayDone = true; }; step();
 }
-let sayHide = 0, tx = 0, ty = 0, tk = 1, sayMode = "top", hopping = false, docked = false;
+let sayHide = 0, sayDone = true, tx = 0, ty = 0, tk = 1, sayMode = "top", hopping = false;
 const TG = { x: 0, y: 0, k: 1, on: false, ph: 0, walk: false, last: 0 };
 function tinoPaint(bob, tilt) {
   const s = M.tw * tk, cx = tx + s / 2, by = ty + s;
@@ -1726,19 +1816,20 @@ function tinoWalk(now) {
   const bob = Math.abs(Math.sin(TG.ph)) * size * 0.038 * TG.amp, tilt = Math.sin(TG.ph) * 3.4 * TG.amp;
   tinoPaint(bob, tilt);
   const moving = TG.amp > 0.32 && Math.abs(dx) > 8;
-  if (moving) { TG.walk = true; lookRaw(dx < 0 ? 138 : 42, -3); }
-  else if (TG.walk && TG.amp < 0.16) { TG.walk = false; lookNow = ""; if (performance.now() > reactUntil) lookRaw(sP < 0.002 ? BACK : 90, sP < 0.002 ? 8 : -3); }
+  if (moving) { TG.walk = true; lookRaw(90, -3); }
+  else if (TG.walk && TG.amp < 0.16) { TG.walk = false; lookNow = ""; if (performance.now() > reactUntil) lookRaw(atTop() ? BACK : 90, atTop() ? 8 : -3); }
 }
 requestAnimationFrame(tinoWalk);
-function placeSay() {   // encima de la cabeza (o a su derecha, en la franja de móvil) y sin salirse por los lados
+function placeSay() {   // encima de la cabeza (o a su lado) y sin salirse por los lados; el rabo del globo apunta a Tino
   if (!M) return;
-  const tw = M.tw * tk, sw = say.offsetWidth, sh = say.offsetHeight;
-  let x, y;
-  if (sayMode === "read") { say.style.transform = `translate(${Math.round(tx + tw * 0.94)}px, ${Math.round(ty + tw * 0.34 - sh / 2)}px)`; return; }   // en la cabecera, a su lado, delante de la pantalla
-  if (sayMode === "below") { say.style.transform = `translate(${Math.round(Math.max(8, Math.min(M.W - sw - 8, tx + tw / 2 - sw / 2)))}px, ${Math.round(ty + tw + 4)}px)`; return; }
-  if (sayMode === "right") { x = tx + tw * 0.9; y = ty + tw * 0.32 - sh / 2; }
-  else { x = tx + tw / 2 - sw / 2; y = ty + tw * 0.2 - sh; }
-  x = Math.max(16, Math.min(M.W - 16 - sw, x));
+  const tw = M.tw * tk, sw = say.offsetWidth, sh = say.offsetHeight, cx = tx + tw / 2;
+  let x, y, tail = "down";
+  if (sayMode === "read" && window.__inScene !== false) { x = tx + tw * 0.94; y = ty + tw * 0.34 - sh / 2; tail = "left"; }   // en la cabecera, a su lado, delante de la pantalla
+  else if (sayMode === "right") { x = tx + tw * 0.9; y = ty + tw * 0.32 - sh / 2; tail = "left"; }
+  else if (sayMode === "below") { x = cx - sw / 2; y = ty + tw + 12; tail = "up"; }
+  else { x = cx - sw / 2; y = ty + tw * 0.2 - sh - 8; }
+  if (tail !== "left") { x = Math.max(16, Math.min(M.W - 16 - sw, x)); say.style.setProperty("--tail-x", Math.round(Math.max(20, Math.min(sw - 20, cx - x))) + "px"); }
+  say.dataset.tail = tail;
   say.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px)`;
 }
 let beamOn = false, scanR = null, scanRaf = 0;
@@ -1952,12 +2043,11 @@ function placeWin(up) {
 const IN = { done: false, flys: [] };
 const rnd = (k) => { const x = Math.sin(k * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
 // the real marks of each source: Are.na (are.na/favicon.svg), Pinterest and X (Simple Icons, CC0), Cosmos redrawn from its icon (six dots in a ring)
-const MARK = {"arena": "<svg viewBox=\"0 0 180 180\" aria-hidden=\"true\"><path d=\"m177.4 111.3-24.6-19.4c-1.5-1.2-1.5-3.1 0-4.3l24.6-19.4c1.5-1.2 2.1-3.2 1.4-4.5-.7-1.3-2.8-1.7-4.6-.9l-29.4 11.7c-1.8.7-3.4-.2-3.8-2.1L136.6 41c-.2-1.9-1.7-3.4-3.2-3.4-1.4 0-3 1.5-3.2 3.4l-4.4 31.4c-.2 1.9-1.9 2.8-3.8 2.1L93.3 62.8c-1.8-.7-4.7-.7-6.5 0l-29 11.5c-1.8.7-3.4-.2-3.8-2.1l-4.3-31.4c-.2-1.9-1.7-3.4-3.2-3.4s-3 1.5-3.2 3.4L39 72.2c-.2 1.9-1.9 2.8-3.8 2.1L5.8 62.6c-1.8-.7-3.9-.2-4.6.9-.7 1.3-.1 3.3 1.4 4.5l24.6 19.4c1.5 1.2 1.5 3.1 0 4.3L2.6 111.1c-1.5 1.2-2.1 3.3-1.4 4.7s2.8 2 4.6 1.3L35 105.5c1.8-.7 3.4.2 3.7 2.1l4.1 31.6c.2 1.9 1.9 3.4 3.7 3.4 1.8 0 3.4-1.5 3.7-3.4l4.1-31.6c.2-1.9 1.9-2.8 3.7-2.1L86.6 117c1.8.7 4.7.7 6.5 0l28.7-11.5c1.8-.7 3.4.2 3.7 2.1l4.3 31.6c.2 1.9 1.9 3.4 3.7 3.4s3.4-1.5 3.7-3.4l4.1-31.6c.2-1.9 1.9-2.8 3.7-2.1l29.1 11.7c1.8.7 3.8.1 4.6-1.3.9-1.3.2-3.5-1.3-4.6zm-62.8-19.2-21.8 16.7c-1.5 1.2-4 1.2-5.6 0L65.5 92.1c-1.5-1.2-1.5-3.1 0-4.3l21.8-17.2c1.5-1.2 4-1.2 5.4 0l21.8 17.2c1.6 1.2 1.6 3.1.1 4.3z\"/></svg>", "pin": "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M12.017 0C5.396 0 .029 5.367.029 11.987c0 5.079 3.158 9.417 7.618 11.162-.105-.949-.199-2.403.041-3.439.219-.937 1.406-5.957 1.406-5.957s-.359-.72-.359-1.781c0-1.663.967-2.911 2.168-2.911 1.024 0 1.518.769 1.518 1.688 0 1.029-.653 2.567-.992 3.992-.285 1.193.6 2.165 1.775 2.165 2.128 0 3.768-2.245 3.768-5.487 0-2.861-2.063-4.869-5.008-4.869-3.41 0-5.409 2.562-5.409 5.199 0 1.033.394 2.143.889 2.741.099.12.112.225.085.345-.09.375-.293 1.199-.334 1.363-.053.225-.172.271-.401.165-1.495-.69-2.433-2.878-2.433-4.646 0-3.776 2.748-7.252 7.92-7.252 4.158 0 7.392 2.967 7.392 6.923 0 4.135-2.607 7.462-6.233 7.462-1.214 0-2.354-.629-2.758-1.379l-.749 2.848c-.269 1.045-1.004 2.352-1.498 3.146 1.123.345 2.306.535 3.55.535 6.607 0 11.985-5.365 11.985-11.987C23.97 5.39 18.592.026 11.985.026L12.017 0z\"/></svg>", "cosmos": "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"12.00\" cy=\"3.60\" r=\"2.9\"/><circle cx=\"19.27\" cy=\"7.80\" r=\"2.9\"/><circle cx=\"19.27\" cy=\"16.20\" r=\"2.9\"/><circle cx=\"12.00\" cy=\"20.40\" r=\"2.9\"/><circle cx=\"4.73\" cy=\"16.20\" r=\"2.9\"/><circle cx=\"4.73\" cy=\"7.80\" r=\"2.9\"/></svg>", "x": "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z\"/></svg>"};
+const MARK = {"arena": "<svg viewBox=\"0 0 180 180\" aria-hidden=\"true\"><path d=\"m177.4 111.3-24.6-19.4c-1.5-1.2-1.5-3.1 0-4.3l24.6-19.4c1.5-1.2 2.1-3.2 1.4-4.5-.7-1.3-2.8-1.7-4.6-.9l-29.4 11.7c-1.8.7-3.4-.2-3.8-2.1L136.6 41c-.2-1.9-1.7-3.4-3.2-3.4-1.4 0-3 1.5-3.2 3.4l-4.4 31.4c-.2 1.9-1.9 2.8-3.8 2.1L93.3 62.8c-1.8-.7-4.7-.7-6.5 0l-29 11.5c-1.8.7-3.4-.2-3.8-2.1l-4.3-31.4c-.2-1.9-1.7-3.4-3.2-3.4s-3 1.5-3.2 3.4L39 72.2c-.2 1.9-1.9 2.8-3.8 2.1L5.8 62.6c-1.8-.7-3.9-.2-4.6.9-.7 1.3-.1 3.3 1.4 4.5l24.6 19.4c1.5 1.2 1.5 3.1 0 4.3L2.6 111.1c-1.5 1.2-2.1 3.3-1.4 4.7s2.8 2 4.6 1.3L35 105.5c1.8-.7 3.4.2 3.7 2.1l4.1 31.6c.2 1.9 1.9 3.4 3.7 3.4 1.8 0 3.4-1.5 3.7-3.4l4.1-31.6c.2-1.9 1.9-2.8 3.7-2.1L86.6 117c1.8.7 4.7.7 6.5 0l28.7-11.5c1.8-.7 3.4.2 3.7 2.1l4.3 31.6c.2 1.9 1.9 3.4 3.7 3.4s3.4-1.5 3.7-3.4l4.1-31.6c.2-1.9 1.9-2.8 3.7-2.1l29.1 11.7c1.8.7 3.8.1 4.6-1.3.9-1.3.2-3.5-1.3-4.6zm-62.8-19.2-21.8 16.7c-1.5 1.2-4 1.2-5.6 0L65.5 92.1c-1.5-1.2-1.5-3.1 0-4.3l21.8-17.2c1.5-1.2 4-1.2 5.4 0l21.8 17.2c1.6 1.2 1.6 3.1.1 4.3z\"/></svg>", "pin": "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M12.017 0C5.396 0 .029 5.367.029 11.987c0 5.079 3.158 9.417 7.618 11.162-.105-.949-.199-2.403.041-3.439.219-.937 1.406-5.957 1.406-5.957s-.359-.72-.359-1.781c0-1.663.967-2.911 2.168-2.911 1.024 0 1.518.769 1.518 1.688 0 1.029-.653 2.567-.992 3.992-.285 1.193.6 2.165 1.775 2.165 2.128 0 3.768-2.245 3.768-5.487 0-2.861-2.063-4.869-5.008-4.869-3.41 0-5.409 2.562-5.409 5.199 0 1.033.394 2.143.889 2.741.099.12.112.225.085.345-.09.375-.293 1.199-.334 1.363-.053.225-.172.271-.401.165-1.495-.69-2.433-2.878-2.433-4.646 0-3.776 2.748-7.252 7.92-7.252 4.158 0 7.392 2.967 7.392 6.923 0 4.135-2.607 7.462-6.233 7.462-1.214 0-2.354-.629-2.758-1.379l-.749 2.848c-.269 1.045-1.004 2.352-1.498 3.146 1.123.345 2.306.535 3.55.535 6.607 0 11.985-5.365 11.985-11.987C23.97 5.39 18.592.026 11.985.026L12.017 0z\"/></svg>", "cosmos": "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"12.00\" cy=\"3.60\" r=\"2.9\"/><circle cx=\"19.27\" cy=\"7.80\" r=\"2.9\"/><circle cx=\"19.27\" cy=\"16.20\" r=\"2.9\"/><circle cx=\"12.00\" cy=\"20.40\" r=\"2.9\"/><circle cx=\"4.73\" cy=\"16.20\" r=\"2.9\"/><circle cx=\"4.73\" cy=\"7.80\" r=\"2.9\"/></svg>", "x": "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z\"/></svg>", "ext": "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M20.5 11H19V7a2 2 0 0 0-2-2h-4V3.5a2.5 2.5 0 0 0-5 0V5H4a2 2 0 0 0-2 2v3.8h1.5a2.7 2.7 0 0 1 0 5.4H2V20a2 2 0 0 0 2 2h3.8v-1.5a2.7 2.7 0 0 1 5.4 0V22H17a2 2 0 0 0 2-2v-4h1.5a2.5 2.5 0 0 0 0-5Z\"/></svg>", "files": "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M10 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-8l-2-2Z\"/></svg>"};
 const LOGO = (src) => `<i class="lb lb-${src}${MARK[src] ? " lb-mark" : ""}">${MARK[src] || { ext: "+", files: "↑", notes: "T" }[src]}</i>`;
 const START = 0.3, GAP = 0.42, INF = 0.8, OUTGAP = 0.17, OUTF = 0.75;
 const T_IN_END = START + (ORDER.length - 1) * GAP + INF, T_OUT = T_IN_END + 0.9, T_OUT_END = T_OUT + (ORDER.length - 1) * OUTGAP + OUTF;
 const charge = $("#charge"), chargeSegs = [...charge.querySelectorAll("b")], chargeN = $("#charge-n");
-const yawTo = (px) => 90 - Math.max(-1, Math.min(1, (px - (tx + M.tw * tk / 2)) / (M.W * 0.35))) * 50;
 function makeFlys() {   // cada casilla, su tarjeta de la cinta
   IN.flys = ORDER.map((i, k) => ({ i, src: ITEMS[i].src, out: T_OUT + k * OUTGAP, a: 0, el: null }));
   ORDER.forEach((i, k) => { IN.flys.find((f) => f.i === i).launch = START + k * GAP; });
@@ -2160,12 +2250,12 @@ function rioTick(now) {
   let who = -1;
   if (hot) rioCards.forEach((c, k) => { const u = (c.u0 + rioU) % 1; if (u >= RIO_A && u < RIO_B) who = k; });
   if (who !== rioReading) {
-    if (who < 0 && rioReading >= 0) { aim(null); scan.classList.remove("paper"); tino(hot ? RIO_FACE[rioReading] : "following"); clearTimeout(rioFaceT); rioFaceT = setTimeout(() => { if (rioReading < 0 && sP < 0.002 && !overTino) { tino("following"); speak("", true); rioSaid = false; } }, 1300); }
+    if (who < 0 && rioReading >= 0) { aim(null); scan.classList.remove("paper"); tino(hot ? RIO_FACE[rioReading] : "following"); clearTimeout(rioFaceT); rioFaceT = setTimeout(() => { if (rioReading < 0 && sP < 0.002 && window.__inScene !== false && !overTino) { tino("following"); speak("", true); rioSaid = false; } }, 1300); }
     if (who >= 0) { clearTimeout(rioFaceT); scan.classList.add("paper"); tino("searching"); speak(RIO_SAY[who], true); rioSaid = true; }
     rioReading = who;
   }
   if (who >= 0) { const r = rioCards[who].sharp.getBoundingClientRect(), hr = hero.getBoundingClientRect(); aim({ x: r.left - hr.left, y: r.top - hr.top, w: r.width, h: r.height }); }
-  if (P < 0.002 && !overTino && performance.now() > reactUntil) look(BACK, 8, true);
+  if (P < 0.002 && !overTino && performance.now() > reactUntil) { if (window.__inScene !== false) look(BACK, 8, true); else look(90, -4); }   // de espaldas, mirando el río, solo en la portada; pasado el héroe, de frente
 }
 let rioFaceT = 0, revealedRio = false, rioSaid = false;
 requestAnimationFrame(rioTick);
@@ -2198,7 +2288,7 @@ function reveal() {
 function boot() {
   booting = true; html.classList.add("booting");
   const bootY = M.H - 10 - M.tw, x1 = Math.round(M.W / 2 - M.tw / 2), x0 = Math.max(M.W * 0.12 - M.tw / 2, 8), y = bootY, t0 = performance.now() + 500, D = 3100;
-  placeTino(x0, y); tino("watching"); look(12, 0);   // entra andando hacia el centro
+  placeTino(x0, y); tino("watching"); look(90, 0);   // entra andando hacia el centro, mirándote
   tinoBox.animate([{ scale: 0 }, { scale: 1 }], { duration: 600, delay: 150, easing: "cubic-bezier(0.34, 1.7, 0.64, 1)", fill: "backwards" });
   const lines = WALK_LINES[Math.floor(Math.random() * WALK_LINES.length)];
   const timers = [];
@@ -2277,7 +2367,7 @@ const p2P = (p) => STEPS0 + (p - 0.12) / 0.88 * (1 - STEPS0);
 // one section per step: the live window plays the step whose section you are looking at; the others show a still copy of their end
 const SEGS = [[0.3, 0.42, 4], [0.42, 0.73, 12], [0.73, 1, 8]];   // P from, P to, seconds: Decide (Board), Keep (Polish), Hand it over (System)
 const ST4 = [...document.querySelectorAll(".st4:not(.st4-src)")], SLOT4 = ST4.map((el) => el.querySelector(".st4-win"));
-let act = -1, segT = 0, forceP = null, snapped = false; const played = [];   // a step plays once; after that its section keeps the end
+let act = -1, segT = 0, forceP = null, snapped = false; const played = [], segAt = [];   // a step plays once; after that its section keeps the end
 function stepGoal(now) {
   const dt = Math.min(0.1, (now - (stepGoal.last || now)) / 1000); stepGoal.last = now;
   if (forceP != null) return forceP;
@@ -2300,26 +2390,30 @@ function snapOne(i) {
 }
 function setAct(i, force) {
   if (i === act && !force) return;
+  if (act >= 0 && SLOT4[act] && !played[act]) { segAt[act] = segT; holdSnap(act); }   // the step you leave keeps what it was showing (no jump back to its start) and picks up there when you return
   SLOT4.forEach((sl) => sl && sl.classList.remove("live"));
   act = i; window.__stepAct = i;
   if (i < 0) { win.style.visibility = "hidden"; sP = 0; last = -1; return; }
   SLOT4[i].appendChild(win); SLOT4[i].classList.add("live"); win.style.visibility = ""; G = null;
-  segT = played[i] ? SEGS[i][2] : 0; sP = played[i] ? SEGS[i][1] : SEGS[i][0]; last = -1;
+  segT = played[i] ? SEGS[i][2] : segAt[i] || 0; sP = SEGS[i][0] + (SEGS[i][1] - SEGS[i][0]) * (segT / SEGS[i][2]); last = -1;
 }
-function buildSrc4() {   // step 1: each reference sits above or below the source it came from, cloned from the hero's river
-  const box = $(".src4"); if (!box || box.childElementCount || !rioCards.length) return;
-  box.innerHTML = RIO_SRCS.map((e, i) => `<div class="src4-col" style="--i:${i}"><div class="src4-up"></div><span class="src4-ic">${LOGO(e[0])}<small>${e[1]}</small></span><div class="src4-dn"></div></div>`).join("");
+function buildSrc4() {   // step 1: the six sources around Tino, three a side, each with its two references cloned from the hero's river
+  const box = $(".src4"); if (!box || box.querySelector(".src4-node") || !rioCards.length) return;
+  box.insertAdjacentHTML("beforeend", RIO_SRCS.map((e, i) => `<div class="src4-node n${i} ${i < 3 ? "l" : "r"}" style="--i:${i}"><div class="src4-pair"></div><span class="src4-ic">${LOGO(e[0])}<small>${e[1]}</small></span></div>`).join(""));
   rioCards.forEach((c, k) => {
-    const o = RIO_OUT[k], col = box.children[o[0]], card = document.createElement("div"), sh = c.sharp.cloneNode(true);
+    const pair = box.querySelector(".n" + RIO_OUT[k][0] + " .src4-pair"), card = document.createElement("div"), sh = c.sharp.cloneNode(true);
     card.className = "src4-card " + c.el.className.replace(/\brc\b/, "").trim(); card.style.setProperty("--fw", RIO_FMT[k][0]); card.style.setProperty("--fh", RIO_FMT[k][1]);
     sh.style.opacity = "1"; sh.querySelectorAll("canvas").forEach((e) => e.remove()); sh.querySelectorAll("[id]").forEach((e) => e.removeAttribute("id"));
-    card.appendChild(sh); col.querySelector(o[1] < 0 ? ".src4-up" : ".src4-dn").appendChild(card);
+    card.appendChild(sh); pair.appendChild(card);
   });
   new IntersectionObserver(([e], io) => { if (e.isIntersecting) { box.classList.add("on"); io.disconnect(); } }, { threshold: 0.35 }).observe(box);
 }
 function keepEnd() {   // when a step has played to its end, its still copy becomes that end, for when the live window leaves
   if (act < 0 || played[act] || segT < SEGS[act][2] || Math.abs(sP - SEGS[act][1]) > 1e-3) return;
-  played[act] = true; const c = win.cloneNode(true); c.removeAttribute("id"); c.querySelectorAll("[id]").forEach((e) => e.removeAttribute("id")); c.classList.add("win-snap"); c.style.visibility = ""; c.setAttribute("aria-hidden", "true"); SLOT4[act].querySelector(".win-snap")?.remove(); SLOT4[act].prepend(c);
+  played[act] = true; holdSnap(act);
+}
+function holdSnap(i) {   // the still copy of a step becomes what the live window shows right now
+  const c = win.cloneNode(true); c.removeAttribute("id"); c.querySelectorAll("[id]").forEach((e) => e.removeAttribute("id")); c.classList.add("win-snap"); c.style.visibility = ""; c.setAttribute("aria-hidden", "true"); SLOT4[i].querySelector(".win-snap")?.remove(); SLOT4[i].prepend(c);
 }
 // which step holds the screen comes from an IntersectionObserver, not from measuring every section on every frame
 const stepSeen = ST4.map(() => 0); let stepDirty = true;
@@ -2371,8 +2465,6 @@ function frame() {
     else aim(null);
   } else if (P >= RISE && P < STEPS0 - 0.005) aim(null);
   if (P >= RISE && P < IMP1) {   // importando: a la fuente que entra y luego a la casilla que se coloca
-    if (R.active) { const pr = cells[R.active.i].querySelector(".img").getBoundingClientRect(); look(yawTo(pr.left + pr.width / 2 - R.hr.left), -6); }
-    else if (tImp > T_OUT && !IN.done) { const kk = Math.max(0, Math.min(ITEMS.length - 1, Math.floor((tImp - T_OUT) / OUTGAP))), cc = cells[ORDER[kk]].querySelector(".img").getBoundingClientRect(); look(yawTo(cc.left + cc.width / 2 - R.hr.left), -4); }
     const line = tImp < T_IN_END ? "" : tImp < T_OUT_END ? "Las analizo… y las voy ordenando." : "";
     if (line !== sayText && performance.now() > reactUntil) speak(line);
     if (tinoState !== "asleep") tino(tImp < T_IN_END ? (R.active ? "following" : "thinking") : tImp < T_OUT_END ? "searching" : "smug");
@@ -2414,7 +2506,7 @@ function frame() {
   // la nota de la que está delante (abajo, en el centro)
   const front = VOTES[Math.min(k, VOTES.length - 1)], fi = ITEMS[front[0]], nowO = E(seg(p, 0.35, 0.38)) * (1 - E(seg(p, 0.585, 0.6))) * (s >= 0.6 && s < 0.98 ? 0.35 : 1);
   vis($("#pnow"), nowO);
-  set($("#pn-av"), "textContent", fi.who); $("#pn-av").classList.toggle("e", fi.who === "E");
+  set($("#pn-av"), "textContent", fi.who); $("#pn-av").classList.remove("e", "l"); if (AV_CLASS[fi.who]) $("#pn-av").classList.add(AV_CLASS[fi.who]);
   const ns = `<b>${WHO[fi.who]}</b> ${esc(fi.say)}`; if ($("#pn-say")._h !== ns) { $("#pn-say")._h = ns; $("#pn-say").innerHTML = ns; }
   // la copia que vuela a su pestaña
   let landed = 0, forgot = 0;
@@ -2439,8 +2531,9 @@ function frame() {
   $("#go-sys").classList.toggle("down", p > 0.655 && p < 0.668);
   // el bocadillo de Tino: pregunta, se pulsa la respuesta y él reacciona; al final, la ronda
   const bO = M.small ? E(seg(p, 0.35, 0.38)) * (1 - E(seg(p, 0.66, 0.68))) : E(seg(p, 0.35, 0.38)) * (1 - E(seg(p, 0.66, 0.69)));
-  vis(balloon, IN.done ? bO : 0); say.style.visibility = bO > 0.05 ? "hidden" : "";
-  if (bO > 0) {
+  const bShow = act === 1 ? bO : 0;   // SEGS[1], «Keep what matters»: the balloon does not follow Tino into the next step
+  vis(balloon, IN.done ? bShow : 0); say.style.visibility = bShow > 0.05 ? "hidden" : "";
+  if (bShow > 0) {
     const fin = p >= 0.6, keep = VOTES[k][1], reacting = !fin && s >= 0.62;
     set($("#b-n"), "textContent", fin ? "" : `${Math.min(ITEMS.length, landed + 1)} / ${ITEMS.length}`);
     set($("#b-q"), "textContent", fin ? "Te voy a dar ese punto." : reacting ? REPLY[keep][k % REPLY[keep].length] : ASK[k]);
@@ -2555,6 +2648,8 @@ Promise.all([engineReady, Promise.race([document.fonts ? document.fonts.ready : 
   const loop = (now) => { const hr = hero.getBoundingClientRect(); frame(); const inScene = hr.bottom > Math.min(M.H * 0.45, hr.height * 0.55);   /* Tino stays in the hero while most of it shows */ if (inScene && window.__inScene === false) last = -1; window.__tlOff = inScene ? hr.top : 0; window.__inScene = inScene;   /* back in the hero: draw it again, so Tino walks back to the centre */ scan.style.visibility = inScene ? "" : "hidden";   /* the reading beam belongs to Tino in the hero */ if (!snapped && !booting) snapSteps(); if (snapped && stepDirty) pickStep(); buildSrc4(); keepEnd(); tl.style.transform = inScene && hr.top ? "translateY(" + hr.top.toFixed(1) + "px)" : ""; if (!document.hidden && hr.bottom > 0) renderWorld(now); requestAnimationFrame(loop); }; requestAnimationFrame(loop);
 });
 
+// ── paso 2: las tres piezas de la interfaz (comentar, comparar, votar) entran al llegar ──
+{ const dz = $(".dz"); if (dz) new IntersectionObserver(([e], io) => { if (e.isIntersecting) { dz.classList.add("on"); io.disconnect(); } }, { threshold: 0.3 }).observe(dz); }
 // ── el bento: sus animaciones corren solo mientras se ve; cada tarjeta se inclina un poco hacia el cursor ──
 {
   const bento = $("#porque");
@@ -2564,19 +2659,11 @@ Promise.all([engineReady, Promise.race([document.fonts ? document.fonts.ready : 
     t.addEventListener("pointerleave", () => { t.style.setProperty("--ry", "0deg"); t.style.setProperty("--rx", "0deg"); });
   });
 }
-// ── después de los pasos, Tino se queda contigo abajo y comenta cada sección; en el correo se aparta (allí habla el Tino grande) ──
+// ── del manifiesto a las preguntas, Tino se aparta: mientras el centro de la pantalla cae en «quiénes somos» o en el bento ──
 {
-  const LINES = { manifiesto: ["Esto lo escribieron ellos. Yo solo lo leo.", "watching"] };
-  const said = new Set(); let quiet = 0;
-  const speakOnce = (id) => { if (said.has(id)) return; said.add(id); tino(LINES[id][1]); speak(LINES[id][0], true); clearTimeout(quiet); quiet = setTimeout(() => { speak("", true); tino("watching"); }, 3200); };
-  const ioL = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting && LINES[e.target.id]) speakOnce(e.target.id); }), { threshold: 0.25 });
-  Object.keys(LINES).forEach((id) => ioL.observe($("#" + id)));
-  // pasado el recorrido, a su esquina y pequeño, como en la app. En teléfono no sale, como en la app (HomeTino)
-  let footOn = false, footRaf = 0;
-  const seatFoot = () => { footRaf = 0; };
-  addEventListener("scroll", () => { if (!footRaf && docked) footRaf = requestAnimationFrame(seatFoot); }, { passive: true });
-  const hide = new Set();
-  { const io = new IntersectionObserver((es) => { es.forEach((e) => (e.isIntersecting ? hide.add(e.target.id) : hide.delete(e.target.id))); const away = hide.size > 0 && !window.__footOn; tinoBox.classList.toggle("away", away); say.classList.toggle("away", away); }, { threshold: 0.2 }); $("#tlayer").addEventListener("foot", () => { const away = hide.size > 0 && !window.__footOn; tinoBox.classList.toggle("away", away); }); }
+  const quiet = new Set();
+  const io = new IntersectionObserver((es) => { es.forEach((e) => (e.isIntersecting ? quiet.add(e.target.id) : quiet.delete(e.target.id))); away("quiet", quiet.size > 0); }, { rootMargin: "-50% 0px -50% 0px" });
+  io.observe($("#manifiesto")); io.observe($("#porque"));
 }
 
 { const r = document.documentElement, on = new Set(), io = new IntersectionObserver((es) => { es.forEach((e) => (e.isIntersecting ? on.add(e.target.id) : on.delete(e.target.id))); r.classList.toggle("pie-on", on.has("pie")); }, { rootMargin: "-5% 0px -92% 0px" }); io.observe($("#pie")); io.observe($("#pie")); }
@@ -2629,9 +2716,9 @@ document.addEventListener("click", (e) => { const a = e.target.closest('a[href="
   const dissolve = (c, delay) => { const x = c.getContext("2d"), N = 20, o = [], tok = c._tok = (c._tok || 0) + 1; c.style.display = ""; x.fillStyle = "#141412"; x.fillRect(0, 0, N, N); for (let i = 0; i < N * N; i++) o.push([Math.random() + (i % N) / N * 0.25, i]); o.sort((a, b) => a[0] - b[0]); const t0 = performance.now() + delay, D = 620; let k = 0; const step = (now) => { if (tok !== c._tok) return; const want = Math.floor(cl((now - t0) / D) * o.length); for (; k < want; k++) x.clearRect(o[k][1] % N, Math.floor(o[k][1] / N), 1, 1); if (k < o.length) requestAnimationFrame(step); else c.style.display = "none"; }; requestAnimationFrame(step); };
   const light = (i) => figs.forEach((f, k) => f.classList.toggle("lit", k === i));
   const follow = (v) => { if (T && T.track && T._tr !== v) { T._tr = v; T.track(v); } };
-  const stop = () => { clearTimeout(leaveT); cancelAnimationFrame(arr); arr = 0; if (act < 0) return; act = -1; window.__maniSlot = null; sayMode = "top"; light(-1); speak("", true); follow(true); };
-  const walk = () => { arr = 0; if (act < 0) return; const r = slots[act].getBoundingClientRect(), sz = M.tw * tk; if (M.small || Math.hypot(tx + sz / 2 - (r.left + r.width / 2), ty + sz - r.bottom) < 8 || performance.now() - tT0 > 3000) { reactUntil = performance.now() + 2400; lookRaw(M.small ? 90 : 150, -2); tino("accomplice"); speak(figs[act].dataset.s, true); } else arr = requestAnimationFrame(walk); };
-  const enter = (i) => { if (!rowOn) return; clearTimeout(leaveT); if (act === i) return; $("#mt-hint").classList.add("off"); act = i; sayMode = M.small ? "top" : "right"; follow(false); light(i); speak("", true); window.__maniSlot = M.small ? null : slots[i]; tT0 = performance.now(); cancelAnimationFrame(arr); arr = requestAnimationFrame(walk); };
+  const stop = () => { clearTimeout(leaveT); cancelAnimationFrame(arr); arr = 0; if (act < 0) return; act = -1; window.__maniSlot = null; away("intro", false); sayMode = "top"; light(-1); speak("", true); follow(true); };
+  const walk = () => { arr = 0; if (act < 0) return; const r = slots[act].getBoundingClientRect(), sz = M.tw * tk; if (M.small || Math.hypot(tx + sz / 2 - (r.left + r.width / 2), ty + sz - r.bottom) < 8 || performance.now() - tT0 > 3000) { reactUntil = performance.now() + 2400; lookRaw(90, -2); tino("accomplice"); speak(figs[act].dataset.s, true); } else arr = requestAnimationFrame(walk); };
+  const enter = (i) => { if (!rowOn) return; clearTimeout(leaveT); if (act === i) return; $("#mt-hint").classList.add("off"); act = i; away("intro", true); sayMode = M.small ? "top" : "right"; follow(false); light(i); speak("", true); window.__maniSlot = M.small ? null : slots[i]; tT0 = performance.now(); cancelAnimationFrame(arr); arr = requestAnimationFrame(walk); };
   const showRow = (on) => { if (on === rowOn) return; rowOn = on; sec.classList.toggle("two", on); more.classList.toggle("on", on); $("#mt-hint").classList.toggle("on", on); figs.forEach((f, i) => { const c = f.querySelector("canvas"); if (on) dissolve(c, 80 + i * 110); else { c._tok = (c._tok || 0) + 1; c.style.display = ""; } }); if (!on) stop(); };
   const sync = () => {
     const r = sec.getBoundingClientRect(), vh = innerHeight, pT = cl((vh * 0.85 - r.top) / (vh * 0.75));   // no pin: the text lights up while the section rises, fully lit when it reaches the top
@@ -2652,7 +2739,7 @@ document.addEventListener("click", (e) => { const a = e.target.closest('a[href="
 }
 // ── la ruta de Tino por la página: su esquina, las preguntas y el pie. Se acerca al venir hacia ti: la página tiene fondo ──
 {
-  const slot = $("#ask-slot"), pie = $("#pie"), big = $("#pie-tino"), cv = big.querySelector("canvas"); let W = null, pastFlow = false, B = null, bigOn = false, atFaq = false, first = true, asleep = false, bigReady = 0, C = 0;
+  const slot = $("#ask-slot"), srcSlot = $("#src-slot"), pie = $("#pie"), big = $("#pie-tino"), cv = big.querySelector("canvas"); let W = null, pastFlow = false, B = null, bigOn = false, atFaq = false, atSrc = false, first = true, asleep = false, bigReady = 0, C = 0;
   const makeBig = () => { if (B || !window.Peluche) return; B = window.Peluche.create(cv, { base: "/assets/mascota/tino-app/", frame: "center", dark: true, look: [90, 0] }); B.show && B.show("barrido"); B.set("reposo"); B.track && B.track(false); bigReady = performance.now() + 1400; };
   engineReady.then(() => new IntersectionObserver(([e], io) => { if (e.isIntersecting) { makeBig(); io.disconnect(); } }, { rootMargin: "130% 0px" }).observe(pie));
   const sizeBig = () => { C = M.small ? M.W * 1.7 : Math.min(M.H * 1.24, M.W * 1.3, 1240); big.style.width = big.style.height = Math.round(C) + "px"; };
@@ -2676,17 +2763,20 @@ document.addEventListener("click", (e) => { const a = e.target.closest('a[href="
     if (!W) W = { x: tx, y: ty + (window.__tlOff || 0), k: tk, t: performance.now() };   // leaves the scene from where Tino is
     { const now = performance.now(), dtW = Math.min(0.05, (now - W.t) / 1000); W.t = now; const d = Math.hypot(dst.x - W.x, dst.y - W.y), u = d < 1 ? 1 : Math.min(1, (ms ? 640 : M.small ? 170 : 340) * dtW / d); W.x += (dst.x - W.x) * u; W.y += (dst.y - W.y) * u; W.k += (dst.k - W.k) * u; }
     const c = W;
-    const fIn = 1 - seg(sr.top, vh * 0.62, vh * 1.05), fOut = 1 - seg(sr.bottom, vh * 0.02, vh * 0.3), fq = sine(fIn * (1 - fOut));
+    const pull = (r) => sine((1 - seg(r.top, vh * 0.62, vh * 1.05)) * seg(r.bottom, vh * 0.02, vh * 0.3));   // 0 lejos, 1 con el sitio en pantalla
+    const ss = srcSlot.getBoundingClientRect(), fs = pull(ss), fq = pull(sr), at = fs > fq ? ss : sr, fa = Math.max(fs, fq);
     const ff = sine(1 - seg(pr.top, Math.min(0, vh - pr.height), vh * 0.94));
-    let x = mix(c.x, sr.left, fq), y = mix(c.y, sr.top, fq), k = mix(c.k, sr.width / M.tw, fq);
+    let x = mix(c.x, at.left, fa), y = mix(c.y, at.top, fa), k = mix(c.k, at.width / M.tw, fa);
     if (ff > 0) { const end = { x: (M.W - C) / 2, y: pr.bottom - C * (M.small ? 0.66 : 0.75) }; x = mix(x, end.x, ff); y = mix(y, end.y, ff); k = mix(k, C / M.tw, ff); }
     TG.x = x; TG.y = y; TG.k = k;
+    // en el paso 1, en medio de las fuentes: te mira y lo cuenta
+    const nowSrc = fs > 0.92; if (nowSrc !== atSrc) { atSrc = nowSrc; if (nowSrc) { if (T) T.jump(16); tino("following"); speak(srcSlot.dataset.s, true); } else { speak("", true); tino("watching"); } }
     // ya en las preguntas: se planta y dispara
     const nowFaq = fq > 0.92; if (nowFaq !== atFaq) { atFaq = nowFaq; say.classList.toggle("hush", nowFaq); if (nowFaq) { speak("", true); if (T) T.jump(22); tino(first ? "accomplice" : "following"); first = false; } else tino("watching"); }
     // en el pie toma el relevo un lienzo mucho mayor, para que siga nítido
     const useBig = !!B && ff > 0.2 && performance.now() > bigReady && pr.top < ty;
-    if (useBig !== bigOn) { bigOn = useBig; big.classList.toggle("on", useBig); tinoBox.classList.toggle("away", useBig); say.classList.toggle("away", useBig); window.__pieT(0, 0); }
-    placeZ(ff); if (B && !hoverOn) { const sl = ff > 0.9; if (sl !== asleep) { asleep = sl; if (sl) { B.show && B.show("dormida"); B.set("dormida"); } else { B.show && B.show("barrido"); B.set("reposo"); } } if (ff > 0.05 && ff < 0.9) B.look(138, -3); else if (ff >= 0.9) B.look(90, 4); }
+    if (useBig !== bigOn) { bigOn = useBig; big.classList.toggle("on", useBig); away("pie", useBig); window.__pieT(0, 0); }
+    placeZ(ff); if (B && !hoverOn) { const sl = ff > 0.9; if (sl !== asleep) { asleep = sl; if (sl) { B.show && B.show("dormida"); B.set("dormida"); } else { B.show && B.show("barrido"); B.set("reposo"); } } if (ff > 0.05 && ff < 0.9) B.look(90, -3); else if (ff >= 0.9) B.look(90, 4); }
     if (bigOn) window.__pieT(0, 0);
   };
   addEventListener("resize", () => { C = 0; W = null; snapped = false; });
