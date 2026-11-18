@@ -241,7 +241,11 @@ export default function InspoCard({ item, text, tags, tagJob, score, reason, man
   // An uploaded image is its own thumbnail; a video shows its frame when the provider gives one away
   const kind = mediaKindOf(item.web);
   const video = kind === "video" ? videoEmbedOf(item.web) : null;
-  const thumbPath = board?.thumb ?? uploadedThumb ?? (kind === "image" ? item.web : video?.poster);
+  // On a shared board a post from X has no picture of ours to show (lib/url.ts staysInside): it is read from X
+  // (components/post-cache.ts) and its card draws X's own photo or frame, and plays X's own file
+  const live = usePost(readOnly && kind === "post" && !uploadedThumb ? item.web : null)?.post?.media[0];
+  const liveThumb = live ? (live.kind === "photo" ? live.src : live.poster) : undefined;
+  const thumbPath = board?.thumb ?? uploadedThumb ?? liveThumb ?? (kind === "image" ? item.web : video?.poster);
   const [thumbRetry, setThumbRetry] = useState(false);
   const wantedThumbnail = signedThumbnail && !thumbRetry ? signedThumbnail : thumbPath;
   // A zoom swaps the card copy for the original: the one already drawn stays until the other is decoded
@@ -249,12 +253,13 @@ export default function InspoCard({ item, text, tags, tagJob, score, reason, man
   const manualThumbnail = board ? decodedThumbnail : wantedThumbnail;
   const videoFile = video?.provider === "file" && !manualThumbnail;
   // A post from X plays in the thread too: its picture's name says whether it is a video or a gif
-  const postKind = kind === "post" ? postThumbKind(uploadedThumb) : null;
+  const postKind = kind !== "post" ? null : live ? (live.kind === "photo" ? null : live.kind) : postThumbKind(uploadedThumb);
   // Every recording of ours loops on its card, muted, while the card is on screen: a stored file, a screen
   // recording, a post's video or gif (its copy sits next to its frame, lib/posts.ts: poster-video.jpg → video.mp4).
   // YouTube and Vimeo keep their frame and play in the thread. A chosen thumbnail stays the picture, and the
   // recording plays under the pointer only (Eric, 08-10: no button, it plays on its own)
   const ownSrc = video?.provider === "file" || video?.loops ? video.src
+    : postKind && live ? live.src || null
     : postKind ? uploadedThumb!.replace(/poster-(video|gif)\.\w+$/, "$1.mp4")
     : null;
   const chosen = !!uploadedThumb && kind !== "post";

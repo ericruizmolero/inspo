@@ -18,3 +18,5 @@ kind: producto
 **Cómo aplicarlo.** Cualquier superficie nueva que se vea sin sesión (enlaces, ejemplos, escaparate, tarjetas para compartir) pasa las referencias por `staysInside` antes de enseñar una copia. Cualquier forma nueva de guardar un fichero ajeno rellena `source`. Si cambian los textos legales, se cambia `LEGAL_UPDATED` en el mismo commit.
 
 **Matiz** del 2026-11-06: en Añadir, las entradas Post y Tablero llevan el logo de X y de Pinterest para que se reconozca qué se puede pegar (Eric: "iconos reconocibles"). La importación sigue sin logos. → [decisión](2026-11-06-anadir-ensena-las-seis-entradas-como-la-extension.md)
+
+**Matiz** del 2026-11-18: un post de X sí se ve en el tablón compartido, leído de X al momento y con sus propios ficheros. Nuestra copia sigue sin salir. → [decisión](2026-11-18-un-post-de-x-en-un-enlace-se-ve-desde-x-nunca-desde-nuestra-copia.md)

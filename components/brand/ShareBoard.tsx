@@ -12,6 +12,7 @@ import ItemPanel from "../ItemPanel";
 import PageView from "../PageView";
 import TextPage from "../TextPage";
 import VideoPlayer from "../VideoPlayer";
+import PostView from "../PostView";
 import CommentsPanel from "../CommentsPanel";
 import PersonAvatar from "../PersonAvatar";
 import { useT } from "../I18nProvider";
@@ -270,6 +271,8 @@ function SharedPage({ item, shot, thumb, text, poster }: { item: InspoItem; shot
   const kind = mediaKindOf(item.web);
   if (kind === "video") return <div className="ip-media"><VideoPlayer web={item.web} title={item.name} /></div>;
   if (kind === "text") return <TextPage key={item.id} title={item.name} body={text} />;
+  // A post from X: who wrote it, its words and its photos or video, read from X and played from X (never our copy)
+  if (kind === "post") return <div className="ip-media"><PostView key={item.web} web={item.web} /></div>;
   const src = kind === "image" ? item.web : shot?.shotUrl || thumb || null;
   return <PageView key={item.web} src={src} alt={item.name} fit={kind === "image"}
     posters={kind === "image" ? undefined : [poster, shot?.tileUrl, thumb].filter((x): x is string => !!x)} />;

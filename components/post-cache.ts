@@ -22,7 +22,12 @@ export function loadPost(web: string): Promise<LoadedPost> {
   if (had) return Promise.resolve(had);
   let p = inflight.get(web);
   if (!p) {
-    p = fetch("/api/post", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ web }) })
+    // On a shared board (/s/<token>) there is no session: the link's own route reads the post from X as it is now,
+    // with X's files and none of our copies (app/s/[token]/post/route.ts)
+    const shared = typeof location === "undefined" ? null : location.pathname.match(/^\/s\/([\w-]+)/);
+    p = (shared
+      ? fetch(`/s/${shared[1]}/post?web=${encodeURIComponent(web)}`)
+      : fetch("/api/post", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ web }) }))
       // Only a real answer is kept: X gave the post, or said it has none (200 with post null). A refusal (404 while
       // the card is still being added, a lost session) keeps nothing, so the sheet or the next card asks again;
       // kept, a post pasted a second ago read "X no ha dado este post" for the whole session
