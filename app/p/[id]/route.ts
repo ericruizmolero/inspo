@@ -17,7 +17,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   const ctx = await getCtxOrLogin(`/p/${encodeURIComponent(id)}`);
   const [project] = await db.select({ organizationId: P.organizationId }).from(P).where(and(eq(P.id, id), inArray(P.organizationId, ctx.workspaces.map((w) => w.id)))).limit(1);
   if (!project) redirect("/");
-  // An agent's link opens the file; an email can ask for another view, or a part of the project
+  // A bare address opens the file, as an email's does; an agent's link asks for the board, and an email can ask for a part of the project
   const asked = new URL(req.url).searchParams;
   const to = new URL("/", req.url);
   to.searchParams.set("in", id);

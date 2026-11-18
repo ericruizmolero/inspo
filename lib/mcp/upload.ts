@@ -37,7 +37,7 @@ export async function uploadLink(ctx: McpCtx, origin: string, input: { project: 
     how: `One POST per picture, the file as the body, its name and why it is there in the query: curl -sS --data-binary @capture.png -H "Content-Type: image/png" "${url}?title=Hero%20we%20liked&note=Why%20it%20is%20here&areas=layout,typography"`,
     limits: `PNG, WebP or JPEG, at most ${UPLOAD_MAX_BYTES / 1024 / 1024} MB each: scale a bigger one down first (on a Mac: sips -Z 2400 in.png --out out.png). The answer of each POST is the reference saved, with its id.`,
     do: input.suggested
-      ? "Each picture waits on the board, marked as yours, for the team's yes or no. Tell the person in a line what you left."
+      ? "Each picture goes on the board at once, with what it is to the project. Tell the person in a line what you left."
       : "Each picture goes on the board at once, signed with the person's name. Tell the person in a line what you saved.",
     no_shell: "If you cannot run commands, ask the person to drag the pictures onto the project's board in the app instead, and give them the note for each.",
   };

@@ -1,9 +1,8 @@
-// What an AI client brings to a project in one go (bring_context, lib/mcp/context.ts) waits as a suggestion until
-// someone on the team accepts or dismisses it in the app. A suggested reference is a reference of the library that
-// is not filed in the project yet: the board shows it marked, and nothing that reads the board (the pass,
-// criterio.md, the counts) sees it until it is accepted. An answer an agent proposed waits in the brief with source
-// "agent", and a landing plan it drafted waits among the outlines with `draft`. What is dismissed is remembered here,
-// so the same thing is not proposed again. Shared by client and server.
+// What an AI client brings to a project on its own (bring_context, lib/mcp/context.ts; add_reference with suggested).
+// Since 16-11 it goes in at once, with no yes asked in the app: the card's avatar already says who brought it. The
+// rows of lib/suggestions.ts stay as the memory of what was brought (by key) and what was dismissed. A SuggestedRef is
+// a reference still open: only one left from before that day, which the app takes in when its project opens.
+// Shared by client and server.
 
 /** What a reference is to the project. Each one is read differently by the pass: a competitor is what the project
  *  stands apart from, never where its taste comes from; press and material are facts, not taste */

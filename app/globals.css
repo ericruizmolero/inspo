@@ -592,8 +592,11 @@ select.cr-input { appearance: none; padding-right: 32px; cursor: pointer;
 /* A card of the board in the air (components/card-drag.ts): the other projects' tabs wake up as places to leave it,
    and the one under it takes the chosen tab's glass. The card itself sinks back while it travels */
 :root[data-ref-drag] .island__tab--closable { color: var(--chrome-ink); }
+.island__tabs > a.island__tab.is-drop { color: var(--chrome-ink); }
 .island__tabs > .island__tab.is-drop { background: var(--glass-on); box-shadow: var(--glass-line); color: var(--chrome-ink); }
 .island__tab.is-drop .island__tab-x { visibility: hidden; }
+/* A project's tab dragged along the bar to change its place: the one left behind fades while its ghost travels */
+.island__tab[data-tab-drag] { opacity: 0.4; }
 .island__tab.is-drop * { pointer-events: none; }
 /* The picture and the links inside never start a drag of their own (their link, their file): the card does */
 .tile--board :is(img, a) { -webkit-user-drag: none; }
@@ -1008,14 +1011,6 @@ select.cr-input { appearance: none; padding-right: 32px; cursor: pointer;
 /* The GIF badge is the system's chrome Chip, a step smaller on a card */
 .tile__badge.cr-chip { position: absolute; top: 10px; left: 10px; z-index: 1; padding: 3px 8px; font-size: var(--fs-label); font-weight: var(--fw-semibold); cursor: default; pointer-events: none; }
 .tile__media.is-loading { aspect-ratio: 4 / 3; }
-/* A reference an agent brought, waiting for a yes or a no: butter, the colour of what the app suggests */
-.tile__suggest {
-  position: absolute; left: 10px; right: 10px; bottom: 10px; z-index: 2;
-  display: flex; align-items: center; gap: 6px; padding: 4px 4px 4px 10px;
-  background: var(--butter); color: var(--on-butter); border-radius: var(--radius-pill, 999px);
-  border: var(--stroke-control, 1.5px) solid var(--control-border);
-}
-.tile__suggest-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: var(--fw-semibold); }
 .tile__img {
   display: block; width: 100%; height: auto;
   max-height: 130cqw; object-fit: cover;

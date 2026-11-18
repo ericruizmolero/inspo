@@ -1,0 +1,2 @@
+ALTER TABLE "project_suggestion" DROP CONSTRAINT "project_suggestion_state_check";--> statement-breakpoint
+ALTER TABLE "project_suggestion" ADD CONSTRAINT "project_suggestion_state_check" CHECK ("project_suggestion"."state" in ('open', 'accepted', 'dismissed'));

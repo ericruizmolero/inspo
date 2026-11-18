@@ -1,7 +1,8 @@
 // bring_context: an agent that arrives with work already done (research, a brief, references, answers, a plan) leaves
-// all of it on the project in one call. Nothing of it is a decision: references wait on the board, answers wait in
-// the brief as the agent's, the plan waits as a draft, area proposals wait under their area. The team accepts or
-// dismisses each in the app (lib/suggestions.ts). The same call again updates instead of adding twice.
+// all of it on the project in one call, and it goes in at once (lib/suggestions.ts takeIn): references on the board,
+// its own answers in the brief, the plan as the project's. Nobody is asked for a yes in the app (Eric, 16-11). Only
+// area proposals still wait under their area, and what it read from a site waits for the person's word in
+// conversation. The same call again updates instead of adding twice.
 import "server-only";
 import { z } from "zod";
 import { HttpError } from "../workspace-core";
@@ -10,7 +11,7 @@ import { OUTLINE_SECTIONS_MAX, OUTLINE_TEXT_MAX, SECTION_KINDS, DIRECTIONS_MAX, 
 import { BRIEF_LIMITS, readBrief } from "@/types/brief";
 import { REF_ROLES, ORIGIN_MAX, type RefRole } from "@/types/suggestions";
 import { QUESTION_IDS, newProject, projectUrl, proposeDecision, resolveProject, setupStep, suggestPiece, versionAfterWrite } from "./pieces";
-import { answerKey, cleanOrigin, dismissedKeys, outlineKey } from "../suggestions";
+import { answerKey, cleanOrigin, dismissedKeys, outlineKey, takeIn } from "../suggestions";
 import { saveAnswers, saveBrief, type AnswerInput } from "../brief";
 import { getSystem, saveOutline } from "../system/areas";
 import { questionById } from "../playbook-questions";
@@ -60,7 +61,7 @@ export const ContextInput = z.object({
       cta: z.string().max(OUTLINE_TEXT_MAX).optional(),
       refs: z.array(RefName).max(12).default([]).describe("References it draws from: ids, or the addresses of references in this call."),
     })).min(1).max(OUTLINE_SECTIONS_MAX),
-  }).optional().describe("A draft of the landing's plan, as set_outline takes it. It waits as a draft for the team."),
+  }).optional().describe("The landing's plan, as set_outline takes it. It is kept as the project's plan."),
   directions: z.array(z.object({
     name: z.string().min(1).max(80),
     change: z.string().min(1).max(OUTLINE_TEXT_MAX).describe("What this hero does differently: type, layout, density or tone, never colour alone."),
@@ -75,8 +76,8 @@ export const ContextInput = z.object({
 });
 export type ContextIn = z.infer<typeof ContextInput>;
 
-type Tally = Record<"suggested" | "updated" | "on_board" | "dismissed" | "failed", number>;
-const tally = (): Tally => ({ suggested: 0, updated: 0, on_board: 0, dismissed: 0, failed: 0 });
+type Tally = Record<"added" | "updated" | "on_board" | "dismissed" | "failed", number>;
+const tally = (): Tally => ({ added: 0, updated: 0, on_board: 0, dismissed: 0, failed: 0 });
 
 export async function bringContext(ctx: McpCtx, origin: string, input: ContextIn) {
   const project = await resolveProject(ctx, input.project).catch(async (e) => {
@@ -121,7 +122,7 @@ export async function bringContext(ctx: McpCtx, origin: string, input: ContextIn
     if (!readBrief(row?.brief)?.about) await saveBrief(org, project.id, { about: input.about.trim() }, ctx.user.id);
   }
 
-  // Answers: an agent's answer waits for the team; one the team dismissed is not brought back
+  // Answers: an agent's own goes in with the rest; one the team dismissed before is not brought back
   const answers: Record<string, AnswerInput> = {};
   let answersSkipped = 0;
   for (const a of input.answers ?? []) {
@@ -155,19 +156,22 @@ export async function bringContext(ctx: McpCtx, origin: string, input: ContextIn
     if (out.proposed) proposed++;
   }
 
+  // Everything goes in now: references filed, the agent's answers the project's, the plan kept
+  await takeIn(org, project.id, ctx.user);
   versionAfterWrite(ctx, origin, project);
-  const waiting = refs.suggested + refs.updated + Object.values(answers).filter((a) => a.source !== "person").length + (outline && input.outline ? 1 : 0);
+  const left = refs.added + refs.updated + Object.keys(answers).length + (outline && input.outline ? 1 : 0);
   return {
     project: project.name, id: project.id, url: projectUrl(origin, project.id),
     brought: {
       references: refs,
       answers: { saved: Object.keys(answers).length, dismissed_before: answersSkipped },
-      ...(input.outline || directions ? { outline: outline ? { name: outline, directions: directions?.length ?? 0, state: "draft" } : { dismissed_before: outlineSkipped } } : {}),
+      ...(input.outline || directions ? { outline: outline ? { name: outline, directions: directions?.length ?? 0 } : { dismissed_before: outlineSkipped } } : {}),
       ...(input.proposals?.length ? { proposals: proposed } : {}),
     },
     ...(failed.length ? { not_saved: failed } : {}),
-    waiting_for_the_team: waiting + proposed,
-    do: `Tell the person in one or two short lines what you left (${waiting + proposed} things to review in the app, with the link) and what is still missing, from setup.ask. Do not list every piece. Things the team dismissed before were not brought back.`,
+    in_the_project: left,
+    ...(proposed ? { proposals_waiting: proposed } : {}),
+    do: `Tell the person in one or two short lines what you left (${left} things, already in the project, with the link)${proposed ? `, that ${proposed} area ${proposed === 1 ? "proposal waits" : "proposals wait"} for their yes or no in the app,` : ""} and what is still missing, from setup.ask. Do not list every piece. Things the team dismissed before were not brought back.`,
     setup: await setupStep(org, project.id),
   };
 }

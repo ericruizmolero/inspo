@@ -1,7 +1,8 @@
-// What an AI client brings to a project and the team has not answered yet (types/suggestions.ts). References wait as
-// library items not filed in the project, answers wait in the brief with source "agent", a drafted plan waits among
-// the outlines with `draft`. The team accepts or dismisses each, or all at once, in the app; what it dismisses is kept
-// by its key, so the same thing is not proposed again. Server only.
+// What an AI client brings to a project on its own (types/suggestions.ts). Since 16-11 nothing of it waits for a yes
+// in the app: every door that brings something ends with takeIn, which files the references (with their role and
+// areas), makes the agent's answers the project's and keeps a drafted plan. A row stays per reference, by its key, so
+// the same thing brought again updates instead of adding twice; what was dismissed before (remove_reference, or the
+// old ✕ on the card) is kept by its key too and is not brought back. Server only.
 import "server-only";
 import { and, eq, inArray, isNotNull, ne } from "drizzle-orm";
 import { db, schema } from "./db";
@@ -57,12 +58,13 @@ export interface Bringing {
   origin?: string;
 }
 
-export type Brought = { status: "suggested" | "updated" | "on_board" | "dismissed"; itemId?: string; name?: string };
+export type Brought = { status: "added" | "updated" | "on_board" | "dismissed"; itemId?: string; name?: string };
 
 /**
- * One reference an agent brought, left waiting on the project's board. The same key again updates what waits instead
- * of adding it twice; one already on the board stays as it is (its role is set when it had none); one the team
- * dismissed is not brought back.
+ * One reference an agent brought, left open on the project until takeIn files it (the caller's last step). The same
+ * key again updates it instead of adding it twice, and puts it back on the board if it was taken off; one already on
+ * the board by another door stays as it is (its role is set when it had none); one the team dismissed is not brought
+ * back.
  */
 export async function suggestReference(organizationId: string, projectId: string, b: Bringing, who: Who, via: string | null): Promise<Brought> {
   const [had] = await db.select().from(S).where(and(eq(S.projectId, projectId), eq(S.key, b.key))).limit(1);
@@ -86,7 +88,9 @@ export async function suggestReference(organizationId: string, projectId: string
       const [row] = await db.select({ web: T.web }).from(T).where(and(eq(T.organizationId, organizationId), eq(T.id, had.itemId))).limit(1);
       if (row) await rewriteText(organizationId, row.web, b.text);
     }
-    await db.update(S).set({ note: note || had.note, role: b.role ?? had.role, areas: b.areas?.length ? b.areas : had.areas, origin: origin || had.origin, via, byName: who.name || who.email, updatedAt: now }).where(eq(S.id, had.id));
+    // Still on the board: it stays as the team has it (archived, its areas). Taken off since: it goes back on
+    const [onBoard] = had.state === "accepted" ? await db.select({ id: PI.itemId }).from(PI).where(and(eq(PI.projectId, projectId), eq(PI.itemId, had.itemId))).limit(1) : [];
+    await db.update(S).set({ note: note || had.note, role: b.role ?? had.role, areas: b.areas?.length ? b.areas : had.areas, origin: origin || had.origin, via, byName: who.name || who.email, state: onBoard ? "accepted" : "open", updatedAt: now }).where(eq(S.id, had.id));
     return { status: "updated", itemId: had.itemId };
   }
 
@@ -97,7 +101,7 @@ export async function suggestReference(organizationId: string, projectId: string
     id: newId(), organizationId, projectId, kind: "reference", key: b.key, state: "open", itemId: item.id, madeItem: !existed,
     role: b.role ?? null, note, areas: b.areas ?? [], origin, via, byName: who.name || who.email, createdBy: who.id, createdAt: now, updatedAt: now,
   }).onConflictDoUpdate({ target: [S.projectId, S.key], set: { note, role: b.role ?? null, origin, updatedAt: now } });
-  return { status: "suggested", itemId: item.id, name: item.name };
+  return { status: "added", itemId: item.id, name: item.name };
 }
 
 /** Remembers that the team said no to something that is not a reference (an answer, a plan) */
@@ -110,7 +114,8 @@ async function remember(organizationId: string, projectId: string, kind: Suggest
 /** What the team answers: by kind, the ids it means (suggestion ids, question ids, outline ids), or everything open */
 export interface Answering { refs?: string[]; answers?: string[]; outlines?: string[]; all?: boolean }
 
-/** Everything an agent left on a project that waits for the team */
+/** Everything an agent left on a project that is not in yet. `brought` are the answers an agent brought from its own
+ *  work (source "agent"); `answers` also holds what it read from the site, which the person confirms in conversation */
 export async function pendingOf(organizationId: string, projectId: string) {
   // Only a project of this workspace: anything else is refused, not answered empty
   await projectRow(organizationId, projectId);
@@ -123,14 +128,23 @@ export async function pendingOf(organizationId: string, projectId: string) {
   return {
     refs: refs.map((r) => r.id),
     answers: Object.entries(brief?.answers ?? {}).filter(([, a]) => unconfirmed(a)).map(([id]) => id),
+    brought: Object.entries(brief?.answers ?? {}).filter(([, a]) => a.source === "agent").map(([id]) => id),
     outlines: (system.outlines ?? []).filter((o) => o.draft).map((o) => o.id),
   };
 }
 
-/** The team takes what an agent proposed: the references are filed (with their role and areas), the answers become
- *  the person's, a drafted plan stays as the project's. Returns how many of each */
-export async function acceptSuggestions(organizationId: string, projectId: string, what: Answering, who: Who) {
+/** What an agent brought goes in at once, with no yes asked in the app (Eric, 16-11): its references are filed, its
+ *  answers become the project's, its drafted plan stays. The last step of every door that brings something */
+export async function takeIn(organizationId: string, projectId: string, who: Who) {
   const pending = await pendingOf(organizationId, projectId);
+  if (!pending.refs.length && !pending.brought.length && !pending.outlines.length) return { refs: 0, answers: 0, outlines: 0 };
+  return acceptSuggestions(organizationId, projectId, { refs: pending.refs, answers: pending.brought, outlines: pending.outlines }, who, pending);
+}
+
+/** What an agent brought is taken in: the references are filed (with their role and areas), the answers become the
+ *  person's, a drafted plan stays as the project's. Returns how many of each */
+export async function acceptSuggestions(organizationId: string, projectId: string, what: Answering, who: Who, known?: Awaited<ReturnType<typeof pendingOf>>) {
+  const pending = known ?? await pendingOf(organizationId, projectId);
   const pick = (ids: string[] | undefined, open: string[]) => what.all ? open : (ids ?? []).filter((id) => open.includes(id));
   const refs = pick(what.refs, pending.refs), answers = pick(what.answers, pending.answers), outlines = pick(what.outlines, pending.outlines);
 
@@ -144,7 +158,8 @@ export async function acceptSuggestions(organizationId: string, projectId: strin
       for (const area of r.areas) await assignEvidence(organizationId, projectId, area, r.itemId, true, { id: who.id, name: who.name || who.email });
       if (r.role === "current-site") await setClientBrand(organizationId, projectId, r.itemId, who.id);
     }
-    await db.delete(S).where(and(eq(S.projectId, projectId), inArray(S.id, rows.map((r) => r.id))));
+    // Kept by its key, so the same thing brought again updates this reference instead of adding another
+    await db.update(S).set({ state: "accepted", updatedAt: new Date() }).where(and(eq(S.projectId, projectId), inArray(S.id, rows.map((r) => r.id))));
   }
   if (answers.length) await confirmAnswers(organizationId, projectId, answers, who.id);
   for (const id of outlines) await answerDraftOutline(organizationId, projectId, id, true);
