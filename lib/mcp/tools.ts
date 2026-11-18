@@ -17,6 +17,7 @@ import { TINO_VOICE } from "./tools-voice";
 import { ContextInput, bringContext } from "./context";
 import { REF_ROLES } from "@/types/suggestions";
 import { uploadLink } from "./upload";
+import { AddVaultInput, SearchVaultInput, addToVault, readVaultEntry, removeFromVault, searchVault } from "./vault";
 
 /** A landing's section, as set_outline takes it */
 const Section = z.object({
@@ -43,6 +44,8 @@ interface Tool<S extends z.ZodType = z.ZodType> {
   annotations: { readOnlyHint: boolean; destructiveHint?: boolean; idempotentHint?: boolean; openWorldHint?: boolean };
   /** Sent as the tool's _meta: an MCP App's address, which a client without MCP Apps ignores */
   meta?: Record<string, unknown>;
+  /** Only criterio's own team is offered it (the Vault's writes); the run checks it again */
+  partners?: boolean;
   run: (input: z.infer<S>, ctx: McpCtx, origin: string) => Promise<unknown>;
 }
 const tool = <S extends z.ZodType>(t: Tool<S>) => t as unknown as Tool;
@@ -108,13 +111,13 @@ export const TOOLS: Tool[] = [
     description: [
       "Saves a reference on a project's board: something that inspires or informs the project. A url (a site, a video, a post, an image file), a text kept whole, or a picture's bytes. It is saved under the person's name, marked as coming from this app.",
       "When the person pastes or drops a picture in the conversation to show what they mean (a capture of a site, a button, a render), it goes on the board with a note on what it shows, or it is lost when the conversation ends: a file on your disk goes through upload_link, never as base64. Pictures move a design more than text: bring them early.",
-      "When the person asked for it, it goes on the board at once. When you bring it on your own (from your research, from earlier in the conversation), pass suggested: it waits on the board, marked, for the team to accept or dismiss, so no yes is needed first. Give each a note saying why it is there. To bring a lot at once, use bring_context.",
+      "It goes on the board at once. When you bring it on your own (from your research, from earlier in the conversation), pass suggested with its role: no yes is needed first, and the same one brought again updates instead of adding twice. Give each a note saying why it is there. To bring a lot at once, use bring_context.",
       "areas: the areas of the system it brings something to, when that is clear. A reference changes no decision by itself; to change what an area says, use propose_decision.",
     ].join("\n"),
     input: z.object({
       ...piece,
       areas: Areas.describe("The areas it backs, if clear: typography, color, layout, motion, iconography, logo, imagery, voice."),
-      suggested: z.boolean().optional().describe("True when you bring it on your own and the person did not ask for it: it waits for the team's yes or no."),
+      suggested: z.boolean().optional().describe("True when you bring it on your own and the person did not ask for it. It goes on the board all the same."),
       role: z.enum(REF_ROLES).optional().describe("With suggested, what it is to the project: current-site, competitor, inspiration, press, material, brief, research."),
     }),
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
@@ -124,11 +127,11 @@ export const TOOLS: Tool[] = [
     name: "upload_link", title: "Get a link to upload pictures",
     description: [
       "An address to send pictures to from your shell, straight onto a project's board: captures the person pasted in the conversation, screenshots of what you built, renders, any image file on your disk. One call gives a link for many files; send each with curl as `how` says, with its title and a note on why it is there. The bytes never go through you, so use this for any picture bigger than a few KB instead of add_reference with image.",
-      "As add_reference: when the person asked for the pictures to be kept they go on the board at once; when you bring them on your own, pass suggested and they wait for the team. If you cannot run commands, ask the person to drag the pictures into the app.",
+      "As add_reference: the pictures go on the board at once; when you bring them on your own, pass suggested. If you cannot run commands, ask the person to drag the pictures into the app.",
     ].join("\n"),
     input: z.object({
       project: Project,
-      suggested: z.boolean().optional().describe("True when you bring them on your own and the person did not ask for them: they wait for the team's yes or no."),
+      suggested: z.boolean().optional().describe("True when you bring them on your own and the person did not ask for them. They go on the board all the same."),
       role: z.enum(REF_ROLES).optional().describe("With suggested, what they are to the project."),
     }),
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
@@ -264,7 +267,7 @@ export const TOOLS: Tool[] = [
     name: "bring_context", title: "Bring what you already know",
     description: [
       "Leaves everything you already worked out about a project on it, in one call: the brief, research notes with their sources, references (their site, competitors, press, inspiration), answers to the starting questions, a draft of the landing's plan, 2 or 3 directions for the hero and proposals for the areas. Makes the project when asked to (create).",
-      "Use it when you arrive with context from your own work or an earlier conversation, instead of asking the person what you already know. Nothing of it is a decision: references wait on the board marked as suggested, answers wait as yours, the plan waits as a draft, proposals wait under their area, and the team accepts or dismisses each in the app. So bring it without asking piece by piece. Never invent: what you did not find stays out, and figures go with their source.",
+      "Use it when you arrive with context from your own work or an earlier conversation, instead of asking the person what you already know. It goes in at once: references on the board, answers in the brief, the plan as the project's. Only proposals for the areas wait, under their area, for the team's yes or no. So bring it without asking piece by piece. Never invent: what you did not find stays out, and figures go with their source.",
       "Call it again with the same addresses, keys, questions and plan name to update what you brought: nothing is added twice, and what the team dismissed is not brought back. Then tell the person in a line or two what you left and what is missing.",
     ].join("\n"),
     input: ContextInput,
@@ -282,11 +285,45 @@ export const TOOLS: Tool[] = [
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
     run: (i, ctx, origin) => newProject(ctx, origin, i),
   }),
+  tool({
+    name: "search_vault", title: "Search the Vault",
+    description: [
+      "The Vault: pieces of a site that criterio's team built and documented with their code, by category: kinds of section (hero, nav, pricing, faq, footer…) and details (buttons, text, scroll, transitions, cursor, sliders, media, utilities). It is the same for every project.",
+      "Call it before building a section or a detail, with its category or a few words, and read_vault for the code of the one that fits. With no arguments it lists everything and how many each category holds.",
+    ].join("\n"),
+    input: SearchVaultInput,
+    annotations: { readOnlyHint: true },
+    run: (i, ctx, origin) => searchVault(ctx, origin, i),
+  }),
+  tool({
+    name: "read_vault", title: "Read a Vault entry",
+    description: "One entry of the Vault, whole: what it is, when to use it, its documentation block by block (the scripts to load, the HTML, the CSS, the JavaScript) and its picture. Use it as the start of a section: keep its structure and motion, and take type, color, spacing and copy from the project's criterio, which always comes first.",
+    input: z.object({ entry: z.string().min(1).max(80).describe("The entry's name, as search_vault and criterio.md give it.") }),
+    annotations: { readOnlyHint: true },
+    run: (i, ctx, origin) => readVaultEntry(ctx, origin, i.entry),
+  }),
+  tool({
+    name: "add_to_vault", title: "Add to the Vault", partners: true,
+    description: [
+      "Writes an entry of the Vault: a piece we built (a section or a detail) with its documentation, the code block by block as it is pasted. The same title or entry updates it; a field left out stays as it was, and blocks replaces every block.",
+      "A new entry is a draft only the team sees until publish is true. Its picture goes with the curl line in the answer (picture_upload), never as base64 through you; a loop of it running, for a piece its card cannot play live, goes the same way (video_upload) or by address (video_url). Write title, summary and use in English.",
+    ].join("\n"),
+    input: AddVaultInput,
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true },
+    run: (i, ctx, origin) => addToVault(ctx, origin, i),
+  }),
+  tool({
+    name: "remove_from_vault", title: "Remove from the Vault", partners: true,
+    description: "Deletes an entry of the Vault for good, with its picture. Only when the person asks; say which one first. To hide one instead, call add_to_vault with publish false.",
+    input: z.object({ entry: z.string().min(1).max(80).describe("The entry's name, as search_vault gives it.") }),
+    annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: false },
+    run: (i, ctx) => removeFromVault(ctx, i),
+  }),
 ];
 
 /** The tools as tools/list hands them out. io "input": the brand's schemas trim and uppercase on the way in, and a
  *  JSON Schema says what the model sends, not what comes out. */
-export const toolList = () => TOOLS.map((t) => {
+export const toolList = (partner = false) => TOOLS.filter((t) => partner || !t.partners).map((t) => {
   const { $schema: _s, ...inputSchema } = z.toJSONSchema(t.input, { io: "input" }) as Record<string, unknown>;
   return { name: t.name, title: t.title, description: t.description, inputSchema, annotations: { title: t.title, ...t.annotations }, ...(t.meta ? { _meta: t.meta } : {}) };
 });
@@ -299,8 +336,9 @@ export const INSTRUCTIONS = [
   "Before designing, writing or reviewing anything for a project, call read_criterio and follow it. A decided area is a rule. Where an area is open, ask the person; do not invent.",
   "Work with the person as criterio.md's \"Start here\" says: read it first (read_criterio, section \"guide\") and follow its phases and checkpoints.",
   "You never rewrite criterio.md. You add pieces: references (add_reference), proposals for what an area should say (propose_decision), which wait for the team's yes or no in the app, a brand's values (bring_brand), which the team edits or hands back in the app, the person's answers to the starting questions (answer_question) and what you learned with them (record_learning), which go straight in.",
-  "Two ways to work. In a conversation, ask one thing at a time and save what the person says. When you arrive with context already worked out (research, a brief, references, answers, a plan from your own work or another conversation), bring it all with bring_context, without asking piece by piece: it waits as suggestions the team reviews in the app. Then say in a line or two what you left and what is missing, and talk little.",
+  "Two ways to work. In a conversation, ask one thing at a time and save what the person says. When you arrive with context already worked out (research, a brief, references, answers, a plan from your own work or another conversation), bring it all with bring_context, without asking piece by piece: it goes straight into the project. Then say in a line or two what you left and what is missing, and talk little.",
   "To see a reference's picture, call read_reference with its id (list_references maps R1, R2… to ids): the picture comes inside the answer. Do not fetch the file links in criterio.md to look at a picture; they may be blocked where you run.",
   "A picture the person pastes or drops in the conversation goes on the board through upload_link (curl from your shell), never as base64 through you.",
-  "What you write straight in is only what the person asked for or agreed to. What you bring on your own goes in as a suggestion (bring_context, or add_reference with suggested).",
+  "Before building a section or a detail of a page, look in the Vault (search_vault, then read_vault for the code): pieces criterio's team built and documented. An entry gives structure and motion; the project's criterio decides type, color, spacing and copy.",
+  "What you bring on your own (bring_context, or add_reference with suggested) goes in at once too, so bring only what you found, never what you made up. What an area says is the one thing that waits for the team's yes.",
 ].join("\n");

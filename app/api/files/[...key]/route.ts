@@ -15,12 +15,13 @@ import { fileTokenValid, SIGNED_MARK } from "@/lib/file-links";
 import { describeStoredImage, readsOnlyText } from "@/lib/file-text";
 import { brandPrefix } from "@/lib/brand-files";
 import { log } from "@/lib/log";
+import { VAULT_PREFIX } from "@/lib/vault";
 
 // Every stored file goes through here (lib/storage.ts): the bucket is private.
 // A workspace's thumbnails, uploaded images, copied videos, comment screenshots and "why" captures are read by
 // its members, whichever workspace the session has active: a switch (components/LibraryHost.tsx) shows the new
 // library before the server has heard of it, and its images were asked for in that gap and refused.
-// DESIGN.md images, saved posts from X and Screen Studio videos are public content, shared by everyone signed in.
+// DESIGN.md images, saved posts from X, Screen Studio videos and the Vault's pictures are public content, shared by everyone signed in.
 // A link signed for one key (lib/file-links.ts) reads that key with no session: criterio.md read from outside the app.
 // With R2 the answer is a redirect to a signed R2 URL: the bytes, ranges included, come from R2,
 // so a 60 MB video never runs through a function. On disk (development) the file is streamed here.
@@ -46,7 +47,7 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/api/files/[...ke
     // The active workspace first: it answers nearly every request without looking further
     const mine = [session.workspace, ...session.workspaces.filter((w) => w.id !== session.workspace.id)].map((w) => w.id);
     const ownPrefixes = (ws: string) => [blobPrefix(ws), mediaPrefix(ws), brandPrefix(ws), videoPrefix(ws), textPrefix(ws), commentPrefix(ws), whyShotPrefix(ws)];
-    const allowed = [DESIGN_MD_PREFIX, POSTS_PREFIX, PAGES_PREFIX, SCREEN_STUDIO_PREFIX].some((p) => key.startsWith(p))
+    const allowed = [DESIGN_MD_PREFIX, POSTS_PREFIX, PAGES_PREFIX, SCREEN_STUDIO_PREFIX, VAULT_PREFIX].some((p) => key.startsWith(p))
       || mine.some((ws) => ownPrefixes(ws).some((p) => (original ?? key).startsWith(p)))
       // A thumbnail stored under another prefix but set on an item of one of their workspaces
       || (await ownsAnyThumbnail(mine, fileUrl(original ?? key)));

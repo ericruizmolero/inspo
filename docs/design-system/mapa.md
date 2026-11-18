@@ -14,6 +14,7 @@ La app vive en `/`. Lo que se ve depende de la query, sin cambiar de página, pa
 | `/?in=inbox` | Inbox: lo que no está en ningún proyecto |
 | `/?in=inbox&view=polish` | Pulido del Cajón: lo que se queda o se borra |
 | `/?in=library` | Toda la biblioteca |
+| `/?in=vault` | Descubrir: el Vault, las piezas que curamos nosotros con su código. `&entry=<slug>` abre la ficha de una entrada (es también la dirección que da el conector); su "Verlo en directo" carga `/api/vault/<slug>/preview`, con sesión y aislado → [decisión](decisiones/2026-11-18-el-vault-son-piezas-nuestras-con-su-codigo-y-el-conector-las-entrega.md) |
 | `/?in=templates` | Descubrir: los ejemplos. Sin pestaña en la Isla: desde el menú del espacio y los espacios vacíos → [decisión](decisiones/2026-10-13-descubrir-sale-de-la-isla-y-aparece-donde-no-hay-referencias.md) |
 | `/?in=discover` | Descubrir: los recursos, la lista de la web de marketing con la miniatura que sigue al puntero |
 | `/?in=skills` | Descubrir: las skills para agentes, la lista de la web de marketing como tarjetas |
@@ -50,7 +51,7 @@ Se da acceso con `npm run admin -- <correo>`. Las invitaciones también salen de
 | --- | --- |
 | `/login` | Acceso con collage fijo; con sesión, salta a `next` |
 | `/invite/[id]` | Aceptar una invitación (pasa el proxy, pero la página pide sesión) |
-| `/p/[id]`, `/w/[id]` | Direcciones de fuera de la app: un proyecto (`/p/`, lo que da un agente o un correo) o el Inbox de un espacio (`/w/`, "Abrir la librería" tras importar con la extensión). Hacen activo ese espacio si es otro de la persona y abren `?in=` (el proyecto, o `inbox` por defecto); uno que no es suyo va a la portada sin decir nada |
+| `/p/[id]`, `/w/[id]` | Direcciones de fuera de la app: un proyecto (`/p/`, lo que da un agente o un correo) o el Inbox de un espacio (`/w/`, "Abrir la librería" tras importar con la extensión). Hacen activo ese espacio si es otro de la persona y abren `?in=` (el proyecto, o `inbox` por defecto). El enlace que da un agente (`projectUrl` en `lib/mcp/pieces.ts`) pide `?view=board` y abre el Tablón; el de un correo, sin vista, abre el Sistema. Uno que no es suyo va a la portada sin decir nada |
 | `/s/[token]` | El tablón de un proyecto compartido por enlace (todo o una selección), para que el cliente comente y elija. El token es el del enlace o el de una persona invitada (`share_guest`); un enlace solo para invitados no abre por su dirección general. Sin sesión; no se indexa: la página lo dice en sus metadatos y todo `/s/*` lleva `X-Robots-Tag: noindex, nofollow` desde `next.config.ts` |
 | `/privacy`, `/terms`, `/extension/privacy` | Redirección permanente (308, `next.config.ts`) a la misma página de la web de marketing (`MARKETING_URL` en `lib/site.ts`). → [decisión](decisiones/2026-10-11-las-paginas-legales-y-los-recursos-viven-en-la-web-de-marketing.md) |
 | `/unsubscribe?u=&k=&s=` | El enlace de un clic al pie de cada correo del equipo: apaga ese tipo de correo al abrirse, sin sesión (la firma `s` es la prueba, `lib/notify.ts`), y ofrece volver a activarlo. `/api/unsubscribe` recibe el POST del botón "Cancelar suscripción" del cliente de correo (`List-Unsubscribe`) |

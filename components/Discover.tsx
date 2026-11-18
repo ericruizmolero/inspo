@@ -1,5 +1,5 @@
 "use client";
-// Discover: the examples (whole systems to start a project from), the resources (the places we look, as a list group
+// Discover: the Vault (the pieces we curate, with their code: components/Vault.tsx), the examples (whole systems to start a project from), the resources (the places we look, as a list group
 // by group in the list's own order: one line per site, its name, what it is and its domain; a click opens it) and
 // the skills for agents, a list of their own with its topics in the same menu. On top: everything, what just came in
 // or what we open most, and the kinds in a menu. The three share one head, in the column of the content. The
@@ -11,6 +11,7 @@ import Clouds from "@/components/Clouds";
 import { FEATURED_URLS, RESOURCES, isNewSite, plain, siteHost, siteShot, type Resource } from "@/lib/resources";
 import { SKILLS, SKILL_TOPICS, isNewSkill, type SkillTopic } from "@/lib/agent-skills";
 import DiscoverSkills from "./DiscoverSkills";
+import Vault from "./Vault";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useT } from "./I18nProvider";
 import { cue } from "@/lib/ui-sounds";
@@ -20,8 +21,8 @@ import "./Discover.css";
 
 /** Everything, what came in lately (the last 30 days), or what we open most */
 type Shelf = "all" | "new" | "featured";
-export type DiscoverSection = "templates" | "sites" | "skills";
-const SECTIONS: readonly DiscoverSection[] = ["templates", "sites", "skills"];
+export type DiscoverSection = "vault" | "templates" | "sites" | "skills";
+const SECTIONS: readonly DiscoverSection[] = ["vault", "templates", "sites", "skills"];
 const ALL = RESOURCES.flatMap((g) => g.items);
 const FRESH = ALL.filter((s) => isNewSite(s)).length;
 /** The skills that came in lately: as with the resources, criterio.design's own carry no date */
@@ -38,7 +39,11 @@ function rowTick(e: React.PointerEvent) {
 const inShelf = (s: Resource, shelf: Shelf) => shelf === "all" || (shelf === "new" ? isNewSite(s) : FEATURED_URLS.includes(s.url));
 
 /** Discover: the examples, the places to look and the skills for agents */
-export default function Discover({ section, onSection, templates, initialGroup = null }: {
+export default function Discover({ section, onSection, templates, initialGroup = null, projects = [], vault = false }: {
+  /** The Vault's tab is offered: it holds something, or this is criterio's own team */
+  vault?: boolean;
+  /** The workspace's projects, for "Use in a project" on a Vault entry */
+  projects?: readonly { id: string; name: string }[];
   section: DiscoverSection;
   onSection: (s: DiscoverSection) => void;
   /** The examples' own view, rendered when that section is chosen, under the page's head */
@@ -59,6 +64,7 @@ export default function Discover({ section, onSection, templates, initialGroup =
   // (the page's h1) on top with what the open section holds, and below one row with the sections on the left and, on
   // the right, what the open one is looked through with. It scrolls away with the page, so its tabs are the paper
   // SegmentedControl, as a project's are, in the toolbar size (s, 34) so the row does not outweigh the titles
+  const tabs = vault ? SECTIONS : SECTIONS.filter((k) => k !== "vault");
   const head = (lead: string, side?: React.ReactNode) => (
     <>
       <header className="disc-head">
@@ -66,8 +72,8 @@ export default function Discover({ section, onSection, templates, initialGroup =
         <p className="t-body disc-lead">{lead}</p>
       </header>
       <div className="disc-bar">
-        <SegmentedControl tone="paper" size="s" label={t.discover.sections.label} active={SECTIONS.indexOf(section)} onChange={(i) => afterPaint(() => onSection(SECTIONS[i]))}
-          items={SECTIONS.map((k) => ({ label: t.discover.sections[k] }))} />
+        <SegmentedControl tone="paper" size="s" label={t.discover.sections.label} active={tabs.indexOf(section)} onChange={(i) => afterPaint(() => onSection(tabs[i]))}
+          items={tabs.map((k) => ({ label: t.discover.sections[k] }))} />
         {side && <div className="disc-bar__side">{side}</div>}
       </div>
     </>
@@ -105,6 +111,7 @@ export default function Discover({ section, onSection, templates, initialGroup =
       </PopoverContent>
     </Popover>
   );
+  if (section === "vault") return <Vault projects={projects} query={query} head={(lead, picker) => head(lead, <>{search(t.vault.search)}{picker}</>)} />;
   if (section === "skills") {
     return <DiscoverSkills topic={topic} shelf={skillShelf} query={query} head={head(t.discover.skills.lead, (
       <>

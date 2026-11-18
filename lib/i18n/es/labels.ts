@@ -15,6 +15,7 @@ export const labels: typeof EnLabels = {
     system: "Sistema",
     sheet: "Ficha",
     search: "Búsqueda",
+    vault: "Vault",
     directory: "Recursos",
     examples: "Ejemplos",
     example: "Un ejemplo abierto",

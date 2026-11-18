@@ -294,6 +294,38 @@ export const routes: Record<string, Surface> = {
   "route:app/mcp/route.ts#GET": { exempt: "answers 401 or 405 and reads nothing: the connector only takes POST" },
   "route:app/mcp/route.ts#DELETE": { exempt: "answers 401 or 405 and reads nothing: the connector keeps no session to end" },
   "mcp:measure_site": { exempt: "a public address, measured for anyone signed in: it reads and stores no workspace data" },
+  "mcp:search_vault": { exempt: "the Vault belongs to no workspace (vault_item has no organization): the same published entries for anyone signed in" },
+  "mcp:read_vault": { exempt: "the Vault belongs to no workspace (vault_item has no organization): the same published entry and its code for anyone signed in" },
+  "mcp:add_to_vault": { exempt: "the Vault belongs to no workspace (vault_item has no organization): only criterio's own team writes it (isAdmin in lib/mcp/vault.ts), and it is not offered to anyone else" },
+  "mcp:remove_from_vault": { exempt: "the Vault belongs to no workspace (vault_item has no organization): only criterio's own team deletes from it (isAdmin in lib/mcp/vault.ts)" },
+  "route:app/api/vault/route.ts#GET": { exempt: "the Vault belongs to no workspace (vault_item has no organization): its cards, the same for anyone signed in; drafts only for criterio's own team" },
+  "route:app/api/vault/[entry]/route.ts#GET": { exempt: "the Vault belongs to no workspace (vault_item has no organization): one entry, the same for anyone signed in; its code and drafts only for criterio's own team" },
+  "route:app/api/vault/[entry]/preview/route.ts#GET": { exempt: "the Vault belongs to no workspace (vault_item has no organization): one entry's demo page, the same for anyone signed in, served sandboxed with no origin" },
+  "route:app/api/vault/[entry]/video/route.ts#POST": { exempt: "the Vault belongs to no workspace (vault_item has no organization): only criterio's own team sets an entry's loop (isAdmin); anyone else gets 404" },
+  "route:app/api/vault/[entry]/video/route.ts#DELETE": { exempt: "the Vault belongs to no workspace (vault_item has no organization): only criterio's own team removes an entry's loop (isAdmin); anyone else gets 404" },
+  "route:app/api/vault/[entry]/projects/route.ts#GET": {
+    probe: async (fx) => {
+      const { GET } = await import("@/app/api/vault/[entry]/projects/route");
+      asB(fx);
+      const res = await GET(request("/api/vault/nothing/projects"), params({ entry: "nothing" }));
+      expect(await res.text(), "B is told of no project of A's").not.toContain(fx.a.project);
+    },
+  },
+  "route:app/api/vault/[entry]/projects/route.ts#POST": {
+    probe: async (fx) => {
+      const { POST } = await import("@/app/api/vault/[entry]/projects/route");
+      asB(fx);
+      await expectDenied(fx, await POST(request("/api/vault/nothing/projects", { method: "POST", body: { projectId: fx.a.project } }), params({ entry: "nothing" })), "a Vault entry chosen for A's project");
+    },
+  },
+  "route:app/api/vault/[entry]/projects/route.ts#DELETE": {
+    probe: async (fx) => {
+      const { DELETE } = await import("@/app/api/vault/[entry]/projects/route");
+      asB(fx);
+      await expectDenied(fx, await DELETE(request("/api/vault/nothing/projects", { method: "DELETE", body: { projectId: fx.a.project } }), params({ entry: "nothing" })), "a Vault pick taken off A's project");
+    },
+  },
+  "route:app/api/mcp/vault/[token]/route.ts#POST": { exempt: "the Vault belongs to no workspace (vault_item has no organization): the signed link names one entry and one person, who must still be on criterio's own team; it stores that entry's picture" },
   "mcp:run_pass": { probe: async (fx) => { await refusedTool(fx, "run_pass", { project: fx.a.project }); } },
   "mcp:set_outline": { probe: async (fx) => { await refusedTool(fx, "set_outline", { project: fx.a.project, name: "x", goal: "x", sections: [{ kind: "hero", job: "x", refs: [] }] }); } },
   "mcp:check_landing": { probe: async (fx) => { await refusedTool(fx, "check_landing", { project: fx.a.project, url: "https://example.com" }); } },

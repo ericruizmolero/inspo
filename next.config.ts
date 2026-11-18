@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import { MARKETING_URL } from "./lib/site";
+import { VAULT_PREVIEW_CSP } from "./lib/vault-preview";
 
 // Chromium for screenshots: the binary (.br) isn't found through imports, so it has
 // to be added by hand to the bundle of the routes that launch it. Without this, Vercel fails
@@ -41,7 +42,10 @@ const nextConfig: NextConfig = {
       { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=()" },
     ];
     return [
-      { source: "/((?!mcp/authorize).*)", headers: [...base, { key: "Content-Security-Policy", value: "frame-ancestors 'self'" }, { key: "X-Frame-Options", value: "SAMEORIGIN" }] },
+      // A Vault entry's live preview runs our team's scripts: its own policy gives it no origin (lib/vault-preview.ts),
+      // and the catch-all leaves it out so nothing replaces that policy
+      { source: "/api/vault/:entry/preview", headers: [...base.filter((h) => h.key !== "Referrer-Policy"), { key: "Referrer-Policy", value: "no-referrer" }, { key: "Content-Security-Policy", value: VAULT_PREVIEW_CSP }, { key: "X-Frame-Options", value: "SAMEORIGIN" }] },
+      { source: "/((?!mcp/authorize|api/vault/[^/]+/preview).*)", headers: [...base, { key: "Content-Security-Policy", value: "frame-ancestors 'self'" }, { key: "X-Frame-Options", value: "SAMEORIGIN" }] },
       { source: "/mcp/authorize", headers: [...base, { key: "Content-Security-Policy", value: "frame-ancestors 'none'" }, { key: "X-Frame-Options", value: "DENY" }] },
       // A shared link is for whoever was sent it: its page says noindex in its metadata, and its files (md,
       // download, fonts) are route handlers with no metadata, so the header covers all of /s/ at once

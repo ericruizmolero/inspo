@@ -27,7 +27,7 @@ import { addComment, listItemComments } from "../comments";
 import { refInfoOf } from "../ref-info";
 import { dictOf } from "../i18n";
 import { normalizeWebUrl, mediaKindOf, nameFromFile, webKeyOf } from "../url";
-import { answerKey, dismissSuggestions, dismissedKeys, suggestReference, textKey, type Brought } from "../suggestions";
+import { answerKey, dismissSuggestions, dismissedKeys, suggestReference, takeIn, textKey, type Brought } from "../suggestions";
 import type { RefRole } from "@/types/suggestions";
 import { fetchFile } from "../remote-file";
 import { MEDIA_TYPES, MAX_MEDIA_BYTES, newMediaKey } from "../media";
@@ -60,6 +60,7 @@ import { PLAYBOOK_QUESTIONS, openQuestions, questionById, questionText } from ".
 import { SYSTEM_AREAS, cleanDecision, NEVER_MAX, LEARNING_NOTE_MAX, type SystemArea } from "@/types/system";
 import { BRIEF_LIMITS, readBrief } from "@/types/brief";
 import type { McpCtx } from "./auth";
+import { vaultMd } from "./vault";
 
 const P = schema.project;
 const PI = schema.projectItem;
@@ -67,9 +68,9 @@ const T = schema.inspoItem;
 
 /** The argument every tool names a project by, as resolveProject reads it */
 export const ProjectArg = z.string().min(1).max(120).describe("The project: its id or its name, as list_projects gives them.");
-/** The address of a project's system in the app, for the person to open */
-/** Through /p/, which moves to the project's workspace first: the person may be in another one */
-export const projectUrl = (origin: string, projectId: string) => `${origin}/p/${projectId}`;
+/** The address of a project in the app, for the person to open: its board, where what the agent left waits to be reviewed.
+ * Through /p/, which moves to the project's workspace first: the person may be in another one */
+export const projectUrl = (origin: string, projectId: string) => `${origin}/p/${projectId}?view=board`;
 export const authorOf = (ctx: McpCtx) => ({ id: ctx.user.id, name: ctx.user.name || ctx.user.email, image: ctx.user.image ?? null });
 
 // ─── Projects ────────────────────────────────────────────────────────────────
@@ -147,7 +148,7 @@ export async function readCriterio(ctx: McpCtx, origin: string, ref: string, sec
   // What an agent read is a version of the file: kept when it changed since the last one left the app
   inBackground(async () => { await recordVersion({ organizationId: project.workspace.id, projectId: project.id, via: "mcp", viaName: ctx.via, byName: ctx.user.name, locale: ctx.user.language, origin, view }); });
   const md = section === "all" ? view.markdown : partMd(view.blocks, section);
-  return section === "all" || section === "guide" ? md + await broughtMd(project.workspace.id, project.id) : md;
+  return section === "all" || section === "guide" ? md + await broughtMd(project.workspace.id, project.id) + await vaultMd(project.workspace.id, project.id) : md;
 }
 
 /** What an agent brought and the team has not answered: context to read, never a rule. Only in what the connector
@@ -311,7 +312,8 @@ function imageBytes(data: string): { body: Buffer; type: string } {
   return { body, type };
 }
 
-/** A reference an agent brings on its own: it waits on the board for the team (lib/suggestions.ts) */
+/** A reference an agent brings on its own, with its role and where it came from. It is on the board once the caller
+ *  ends with takeIn (lib/suggestions.ts): nothing waits for a yes */
 export async function suggestPiece(ctx: McpCtx, project: { id: string; workspace: Workspace }, input: { url?: string; text?: string; image?: string; title?: string; note?: string; areas?: readonly string[]; role?: RefRole | null; origin?: string; key?: string }): Promise<Brought> {
   const web = input.url?.trim() ? normalizeWebUrl(input.url) : null;
   if (input.url?.trim() && !web) throw new HttpError(400, `"${input.url}" is not an address that can be saved.`);
@@ -337,10 +339,11 @@ export async function addPiece(ctx: McpCtx, origin: string, input: NewPiece) {
   const areas = cleanAreas(input.areas);
   if (input.suggested) {
     const brought = await suggestPiece(ctx, project, { ...input, note, areas });
+    if (brought.status !== "dismissed") { await takeIn(org, project.id, ctx.user); versionAfterWrite(ctx, origin, project); }
     return {
       setup: await setupStep(org, project.id),
       id: brought.itemId, name: brought.name, brought: brought.status, project: project.name,
-      status: brought.status === "dismissed" ? "The team dismissed this one before: it was not brought back." : brought.status === "on_board" ? "It is on the board already." : "It waits on the board for the team's yes or no.",
+      status: brought.status === "dismissed" ? "The team dismissed this one before: it was not brought back." : brought.status === "on_board" ? "It is on the board already." : "It is on the board, signed with the person's name and this app.",
       url: projectUrl(origin, project.id),
     };
   }
@@ -535,6 +538,8 @@ export async function answerQuestion(ctx: McpCtx, origin: string, input: { proje
     return { saved: false, reason: "The team dismissed this same answer before.", project: project.name, question: q.id, url: projectUrl(origin, project.id) };
   }
   await saveAnswer(project.workspace.id, project.id, q.id, { text, by: ctx.user.name || ctx.user.email, via: ctx.via, source: input.source, from: input.from }, ctx.user.id);
+  // What an agent brought from its own work goes in at once, like the rest of what it brings (lib/suggestions.ts)
+  if (input.source === "agent") await takeIn(project.workspace.id, project.id, ctx.user);
   versionAfterWrite(ctx, origin, project);
   const open = await stillOpen(project.workspace.id, project.id, ctx.user.language === "es" ? "es" : "en");
   return {

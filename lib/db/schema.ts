@@ -341,9 +341,9 @@ export const projectItem = pgTable("project_item", {
   index("project_item_added_by_idx").on(t.addedBy),
 ]);
 
-/** What an AI client brought to a project in one go and the team has not answered yet, and what the team dismissed
- *  (types/suggestions.ts). An open reference points at a library item not filed in the project: accepting files it
- *  and deletes the row. A dismissed row of any kind stays, by its key, so the same thing is not proposed again. */
+/** What an AI client brought to a project on its own (types/suggestions.ts), one row per thing by its key. A
+ *  reference is open only until the call that brought it files it (lib/suggestions.ts takeIn), then accepted: the row
+ *  stays so the same thing brought again updates it. A dismissed row of any kind stays too, so it is not brought back. */
 export const projectSuggestion = pgTable("project_suggestion", {
   id: text("id").primaryKey(),
   organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
@@ -352,7 +352,7 @@ export const projectSuggestion = pgTable("project_suggestion", {
   kind: text("kind").notNull(),
   /** What makes it the same suggestion when it comes again: url:<web key>, text:<key>, answer:<question>:<hash>, outline:<name> */
   key: text("key").notNull(),
-  /** open: waiting on the board. dismissed: the team said no, and it is not proposed again */
+  /** open: brought, not filed yet. accepted: on the board. dismissed: the team said no, and it is not brought again */
   state: text("state").notNull().default("open"),
   itemId: text("item_id").references(() => inspoItem.id, { onDelete: "cascade" }),
   /** The suggestion made the item: dismissing it deletes the item too, when no project holds it */
@@ -371,7 +371,7 @@ export const projectSuggestion = pgTable("project_suggestion", {
   index("project_suggestion_org_idx").on(t.organizationId),
   index("project_suggestion_item_idx").on(t.itemId),
   oneOf("project_suggestion_kind_check", t.kind, ["reference", "answer", "outline"]),
-  oneOf("project_suggestion_state_check", t.state, ["open", "dismissed"]),
+  oneOf("project_suggestion_state_check", t.state, ["open", "accepted", "dismissed"]),
 ]);
 
 /** Polish as a team (components/PolishView.tsx): what one person said about one reference of a project's board,
@@ -1070,4 +1070,56 @@ export const storedFile = pgTable("stored_file", {
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
 }, (t) => [
   index("stored_file_org_idx").on(t.organizationId),
+]);
+
+// ─── The Vault (lib/vault.ts) ────────────────────────────────────────────────
+/** One entry of the Vault: a piece of a site we curated (a hero, a pricing table, a button), with the code that
+ *  makes it. It belongs to no workspace: partners write it (through the connector), everyone signed in reads it,
+ *  and the connector hands its code to an agent. */
+export const vaultItem = pgTable("vault_item", {
+  id: text("id").primaryKey(),
+  /** Its name in an address and in the connector ("folder-tabs") */
+  slug: text("slug").notNull(),
+  title: text("title").notNull(),
+  /** A kind of section or a detail (types/vault.ts VAULT_CATEGORIES) */
+  category: text("category").notNull(),
+  tags: jsonb("tags").$type<string[]>().notNull().default([]),
+  /** What it is, in a sentence */
+  summary: text("summary").notNull().default(""),
+  /** When to reach for it and what makes it good: what an agent reads to choose */
+  use: text("use").notNull().default(""),
+  /** The documentation, step by step: each block's code as it is pasted (types/vault.ts VaultBlock) */
+  blocks: jsonb("blocks").$type<{ title: string; lang: string; code: string; note?: string }[]>().notNull().default([]),
+  /** A whole HTML document that shows it running, for the live preview; null puts one together from the blocks (lib/vault-preview.ts) */
+  demo: text("demo"),
+  /** A short loop of it running (mp4 or webm, under vault/), for the pieces a card cannot play live: the card plays it on hover in place of the piece; null plays the piece */
+  videoKey: text("video_key"),
+  /** The colour it stands on (#rrggbb), in its picture and in the preview put together from its blocks, so a card does not change ground when its piece starts; null is the plain paper one */
+  ground: text("ground"),
+  /** Its picture's key in storage (lib/storage.ts, under vault/), or null */
+  imageKey: text("image_key"),
+  liveUrl: text("live_url"),
+  sourceUrl: text("source_url"),
+  /** null = a draft only partners see */
+  publishedAt: timestamp("published_at", { withTimezone: true, mode: "date" }),
+  createdBy: text("created_by").references(() => user.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
+}, (t) => [
+  uniqueIndex("vault_item_slug_idx").on(t.slug),
+  index("vault_item_category_idx").on(t.category),
+]);
+
+/** A Vault entry a team chose for one of its projects ("Use in a project", components/Vault.tsx): criterio.md read by
+ *  an agent names it first, as the team's pick (lib/mcp/vault.ts vaultMd). The entry itself stays the Vault's */
+export const projectVault = pgTable("project_vault", {
+  projectId: text("project_id").notNull().references(() => project.id, { onDelete: "cascade" }),
+  vaultId: text("vault_id").notNull().references(() => vaultItem.id, { onDelete: "cascade" }),
+  organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
+  addedBy: text("added_by").references(() => user.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
+}, (t) => [
+  primaryKey({ columns: [t.projectId, t.vaultId] }),
+  index("project_vault_org_idx").on(t.organizationId),
+  index("project_vault_vault_idx").on(t.vaultId),
 ]);

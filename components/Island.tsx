@@ -33,6 +33,8 @@ const MAX_FACES = 7;
 const GAP = 4;
 /** A name past this many characters is cut by the tab's max-width: the tooltip keeps it whole */
 const LONG_NAME = 24;
+/** What a project's tab carries while it is dragged along the bar to change its place */
+const TAB_TYPE = "application/x-criterio-tab";
 /** The selected tab can give up room down to this (a few letters of its name, its ring, its ⌄ and ×) when the
     island is short of it anyway: a measure that ran before the fonts, or a right-hand pill that just grew */
 const SHORT_TAB = 150;
@@ -91,8 +93,8 @@ function NewProject({ onCreate, onDone }: { onCreate: (name: string) => Promise<
   );
 }
 
-export default function Island({ user, workspace, workspaces, isAdmin, items, links, projects, systems = {}, members = [], space, onSpace, bellNews = "",
-  onCreateProject, onRenameProject, onDeleteProject, onDuplicateProject, onMoveProject, onShareProject, onDropRef, onPerson, quota, onMenuOpen }: {
+export default function Island({ user, workspace, workspaces, isAdmin, vault = false, items, links, projects, systems = {}, members = [], space, onSpace, bellNews = "",
+  onCreateProject, onRenameProject, onDeleteProject, onDuplicateProject, onMoveProject, onShareProject, onDropRef, onDropInbox, onPerson, quota, onMenuOpen }: {
   user: SessionUser; workspace: Workspace; workspaces: Workspace[]; isAdmin: boolean;
   items: InspoItem[]; links: ProjectLinks; projects: Project[];
   /** Each project's system: a ring on its tab says how much of it is decided */
@@ -107,6 +109,8 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
   /** "all", "inbox" or a project id */
   space: string;
   onSpace: (space: string) => void;
+  /** The Vault holds something (or this is criterio's own team): its door is offered */
+  vault?: boolean;
   onCreateProject: (name: string) => Promise<Project | null>;
   onRenameProject: (id: string, name: string) => void;
   onDeleteProject: (project: Project) => void;
@@ -117,6 +121,8 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
   onShareProject?: (project: Project) => void;
   /** A card of the board let go on a project's tab: it is filed there too (components/card-drag.ts) */
   onDropRef?: (project: Project, itemId: string) => void;
+  /** A card let go on the Inbox tab: it leaves every project and goes back there */
+  onDropInbox?: (itemId: string) => void;
   quota: QuotaView | null;
 }) {
   const { t, locale } = useT();
@@ -189,6 +195,16 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
     const current = openTabs.find((p) => p.id === space);
     return current ? [current, ...openTabs.filter((p) => p !== current)] : openTabs;
   }, [openTabs, space]);
+  // A tab dragged along the bar takes the place it is let go in: the order is the person's, kept with the open tabs
+  const [dragTab, setDragTab] = useState<string | null>(null);
+  const dragTabRef = useRef<string | null>(null);
+  const moveTab = (id: string, target: string, after: boolean) => setOpenIds((ids) => {
+    const next = (ids ?? openTabs.map((p) => p.id)).filter((x) => x !== id);
+    const at = next.indexOf(target);
+    if (at < 0) return ids;
+    next.splice(at + (after ? 1 : 0), 0, id);
+    return next;
+  });
   const closeTab = (id: string) => {
     setOpenIds((ids) => (ids ?? openTabs.map((p) => p.id)).filter((x) => x !== id));
     if (space === id) onSpace("home");
@@ -280,14 +296,46 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
       onClick={(e) => { e.preventDefault(); e.stopPropagation(); closeTab(p.id); }} />
   );
   /** A tab of another project takes a card dragged from the board: it lights while the card is over it */
-  const dropProps = (p: Project) => onDropRef ? {
-    onDragOver: (e: React.DragEvent) => { if (!carriesRef(e)) return; e.preventDefault(); e.dataTransfer.dropEffect = "copy"; setDropOn(p.id); },
-    onDragLeave: (e: React.DragEvent) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDropOn((d) => (d === p.id ? null : d)); },
-    onDrop: (e: React.DragEvent) => { const id = droppedRef(e); setDropOn(null); if (!id) return; e.preventDefault(); onDropRef(p, id); },
+  const dropOnto = (key: string, take: ((itemId: string) => void) | undefined): React.HTMLAttributes<HTMLElement> => take ? {
+    onDragOver: (e: React.DragEvent) => { if (!carriesRef(e)) return; e.preventDefault(); e.dataTransfer.dropEffect = "copy"; setDropOn(key); },
+    onDragLeave: (e: React.DragEvent) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDropOn((d) => (d === key ? null : d)); },
+    onDrop: (e: React.DragEvent) => { const id = droppedRef(e); setDropOn(null); if (!id) return; e.preventDefault(); take(id); },
   } : {};
+  const dropProps = (p: Project) => dropOnto(p.id, onDropRef && ((id) => onDropRef(p, id)));
+  /** A project's tab: it can be dragged to another place in the bar, and (when it is not the open one) takes cards */
+  const tabProps = (p: Project, takesCards: boolean): React.HTMLAttributes<HTMLElement> => {
+    const cards = takesCards ? dropProps(p) : {};
+    return {
+      draggable: true,
+      onDragStart: (e) => {
+        e.dataTransfer.clearData();
+        e.dataTransfer.setData(TAB_TYPE, p.id);
+        e.dataTransfer.effectAllowed = "move";
+        dragTabRef.current = p.id;
+        // After the browser's snapshot, so the ghost is the tab as it was and only the one left behind fades
+        requestAnimationFrame(() => setDragTab(dragTabRef.current));
+      },
+      onDragEnd: () => { dragTabRef.current = null; setDragTab(null); },
+      onDragOver: (e) => {
+        const id = dragTabRef.current;
+        if (!id || !e.dataTransfer.types.includes(TAB_TYPE)) { cards.onDragOver?.(e); return; }
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+        if (id === p.id) return;
+        // It changes place once the pointer is past the middle of the tab it is over, so the two never flicker
+        const r = e.currentTarget.getBoundingClientRect(), after = e.clientX > r.left + r.width / 2;
+        const from = openTabs.findIndex((x) => x.id === id), to = openTabs.findIndex((x) => x.id === p.id);
+        if ((from < to && after) || (from > to && !after)) moveTab(id, p.id, after);
+      },
+      onDragLeave: cards.onDragLeave,
+      onDrop: (e) => { if (e.dataTransfer.types.includes(TAB_TYPE)) { e.preventDefault(); return; } cards.onDrop?.(e); },
+    };
+  };
+  // The Inbox takes a card too, from a project's board: there it is a move, out of every project
+  const inboxDrop = dropOnto("inbox", space !== "inbox" ? onDropInbox : undefined);
   const tab = (id: string, name: string, n: number, fixed?: boolean) => (
-    <a key={id} href={hrefOf(id)} className={`island__tab${space === id ? " is-on" : ""}`} aria-current={space === id ? "page" : undefined}
-      data-tip={name.length > LONG_NAME ? name : undefined} data-fixed={fixed || undefined} onClick={go(id)}>
+    <a key={id} href={hrefOf(id)} className={`island__tab${space === id ? " is-on" : ""}${dropOn === id ? " is-drop" : ""}`} aria-current={space === id ? "page" : undefined}
+      {...(id === "inbox" ? inboxDrop : {})} data-tip={name.length > LONG_NAME ? name : undefined} data-fixed={fixed || undefined} onClick={go(id)}>
       {/* The Cajón (the Inbox) is the one tab with an icon, a drawer: it is not a project (Eric, 06-11) */}
       {id === "inbox" && <Icon name="inbox" size={16} />}
       {label(name, n, fixed ? undefined : id)}
@@ -324,6 +372,7 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
           {/* Discover is no tab of the bar (meeting of 13-10: it read as one more project, and the first, "lo primero que
               encuentras es descubrir, que no tiene que ver con el producto"): its three sections open from here ("tienes
               recursos y tienes skills y vas directamente"), and its examples also from wherever a space is still empty */}
+          {vault && <MenuItem icon="grid" onClick={() => onSpace("vault")}>{t.ws.vault}</MenuItem>}
           <MenuItem icon="compass" onClick={() => onSpace("templates")}>{t.ws.examples}</MenuItem>
           <MenuItem icon="search" onClick={() => onSpace("discover")}>{t.ws.resources}</MenuItem>
           <MenuItem icon="file" onClick={() => onSpace("skills")}>{t.ws.skills}</MenuItem>
@@ -348,9 +397,9 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
             onSubmit={(name) => { setNaming(null); onRenameProject(p.id, name); }} />
         ) : p.id === space ? (
           // The selected project: its name goes to it, its ⌄ renames or deletes it
-          <span key={p.id} className="island__tab is-on island__tab--split"
+          <span key={p.id} className="island__tab is-on island__tab--split" data-tab-drag={dragTab === p.id ? "" : undefined} {...tabProps(p, false)}
             style={activeWidth ? { width: activeWidth, minWidth: Math.min(activeWidth, SHORT_TAB) } : undefined}>
-            <a href={hrefOf(p.id)} className="island__tab-main" aria-current="page"
+            <a href={hrefOf(p.id)} className="island__tab-main" aria-current="page" draggable={false}
               data-tip={p.name.length > LONG_NAME ? p.name : undefined} onClick={go(p.id)}>
               {label(p.name, counts.byProject[p.id] ?? 0, p.id)}
             </a>
@@ -376,8 +425,8 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
             {closeX(p)}
           </span>
         ) : (
-          <span key={p.id} className={`island__tab island__tab--split island__tab--closable${dropOn === p.id ? " is-drop" : ""}`} {...dropProps(p)}>
-            <a href={hrefOf(p.id)} className="island__tab-main" data-tip={p.name.length > LONG_NAME ? p.name : undefined} onClick={go(p.id)}>
+          <span key={p.id} className={`island__tab island__tab--split island__tab--closable${dropOn === p.id ? " is-drop" : ""}`} data-tab-drag={dragTab === p.id ? "" : undefined} {...tabProps(p, true)}>
+            <a href={hrefOf(p.id)} className="island__tab-main" draggable={false} data-tip={p.name.length > LONG_NAME ? p.name : undefined} onClick={go(p.id)}>
               {label(p.name, counts.byProject[p.id] ?? 0, p.id)}
             </a>
             {closeX(p)}

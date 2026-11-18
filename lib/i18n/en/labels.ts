@@ -19,6 +19,7 @@ export const labels = {
     system: "System",
     sheet: "Reference sheet",
     search: "Search",
+    vault: "Vault",
     directory: "Resources",
     examples: "Examples",
     example: "An example, open",

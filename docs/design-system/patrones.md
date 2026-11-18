@@ -48,7 +48,7 @@ Cada acción de la app existe como botón **y** como acción del agente (`lib/ag
 - Texto editable en el sitio, sin botón Editar ni recuadro; autoguardado. En criterio.md lo es todo, títulos incluidos. → [decisión](decisiones/2026-10-05-todo-el-md-editable.md)
 - Lo que se escribe en un proyecto es siempre una pieza del tablero (una referencia o la decisión de un área), nunca un documento suelto: así hay una sola fuente de verdad y el MD se deriva de ella. → [decisión](decisiones/2026-10-05-resultados-en-vez-de-presentacion.md)
 - Lo mismo para un cliente de IA conectado por MCP: lee el MD, escribe piezas, y una decisión suya es una propuesta que espera al equipo. Lo que viene de fuera dice de dónde viene ("Eric vía Claude"). Los valores de una marca (paleta, fuentes, logo) entran por `bring_brand` como secciones de la Presentación que el equipo edita o devuelve, con su fuente a la vista; nunca como decisión. → [decisión](decisiones/2026-10-06-conector-mcp-lee-el-md-y-escribe-piezas.md), [la marca por el conector](decisiones/2026-10-13-el-conector-trae-la-marca-a-la-presentacion.md)
-- Un agente que llega con contexto ya trabajado lo deja todo de una vez (`bring_context`) sin pedir permiso pieza a pieza, porque entra como sugerencia: las referencias se ven marcadas en el tablero y el equipo las acepta o descarta ahí, una a una o todas. Lo que la persona pide entra directo; lo que el agente trae por su cuenta, sugerido. En la app no hay formularios de datos del proyecto: crear pide solo el nombre y el resto llega por el MCP. → [decisión](decisiones/2026-11-09-fuera-los-formularios-crear-un-proyecto-es-solo-el-nombre-y-el-resto-llega-por-el-mcp.md)
+- Un agente que llega con contexto ya trabajado lo deja todo de una vez (`bring_context`) sin pedir permiso pieza a pieza, y entra directo: las referencias van al tablero como cualquier otra, sin marca ni sí o no (→ [decisión](decisiones/2026-11-16-lo-que-trae-un-agente-entra-directo-sin-si-ni-no-en-la-app.md)). Solo esperan al equipo las propuestas de área. En la app no hay formularios de datos del proyecto: crear pide solo el nombre y el resto llega por el MCP. → [decisión](decisiones/2026-11-09-fuera-los-formularios-crear-un-proyecto-es-solo-el-nombre-y-el-resto-llega-por-el-mcp.md)
 - Pedirle a Tino un cambio con palabras (el dock de Agent y Human) deja propuestas en las áreas que toca, nunca las escribe; cada propuesta se ve en su área tachada y encendida con su `TinoNote`. → [decisión](decisiones/2026-10-20-tino-en-el-sistema-dock-notas-y-version-del-fichero.md)
 - Comentar es una herramienta aparte (tecla C) que deja pines tipo Figma con respuestas, en el documento. No hay anotaciones posicionales sobre las páginas de referencia.
 
@@ -58,12 +58,12 @@ Cada acción de la app existe como botón **y** como acción del agente (`lib/ag
 
 ## Arrastrar una tarjeta a otro proyecto
 
-Una tarjeta del tablón (del Cajón o de un proyecto) se coge y se suelta en la pestaña de otro proyecto de la Isla: queda archivada también ahí y sigue donde estaba. Es añadir, no mover; mover sigue en la barra de selección.
+Una tarjeta del tablón (del Cajón o de un proyecto) se coge y se suelta en la pestaña de otro proyecto de la Isla: queda archivada también ahí y sigue donde estaba. Es añadir, no mover; mover a otro proyecto sigue en la barra de selección. Soltada en la pestaña del Cajón desde el tablón de un proyecto sí es mover: sale de todos los proyectos que la tienen, como la papelera del tablón (`onDropInbox`).
 
 - Lo lleva el arrastre nativo del navegador (`draggable` en `.tile--board`, `components/card-drag.ts`), así el clic, el rectángulo de selección y el scroll no cambian. Viaja solo el id, en el tipo `application/x-criterio-ref`: un fichero o un enlace traído de fuera no enciende las pestañas, y una tarjeta no cuenta como enlace soltado en otro sitio (`carriesRef`).
 - Si la tarjeta está seleccionada, van todas las seleccionadas, y el fantasma dice cuántas (`.ref-ghost__n`).
 - El fantasma es la imagen de la tarjeta a 112 px (`.ref-ghost`, dibujada en un canvas), para ver las pestañas a las que va; la tarjeta se queda al 45 % mientras viaja (`.tile[data-dragging]`).
-- Al soltar, un aviso corto: "Añadida a X", "N referencias añadidas a X" o "Ya estaba en X". Si el servidor falla, vuelve atrás con el aviso de siempre.
+- Al soltar, un aviso corto: "Añadida a X", "N referencias añadidas a X", "Movida al Cajón" o "Ya estaba en X". Si el servidor falla, vuelve atrás con el aviso de siempre.
 - Solo con ratón o lápiz (`pointer: fine`): la Isla es de escritorio. La imagen y los enlaces de dentro no arrancan su propio arrastre (`-webkit-user-drag: none`).
 
 ## Confirmaciones y vacíos

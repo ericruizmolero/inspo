@@ -3,10 +3,10 @@
    the name (the page's h1, display) and what the open section holds (.t-body, muted), then one row with the sections
    on the left (the paper SegmentedControl) and its controls on the right. It all scrolls away with the page: over
    the content only the top bar floats */
-.disc-head { max-width: 1040px; margin: 0 auto; }
+.disc-head { max-width: 1360px; margin: 0 auto; }
 .disc-title { margin: 0; color: var(--text); }
 .disc-lead { margin: var(--space-2) 0 0; max-width: 62ch; color: var(--text-2); }
-.disc-bar { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2) var(--space-4); flex-wrap: wrap; min-width: 0; max-width: 1040px; margin: var(--space-5) auto var(--space-6); }
+.disc-bar { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2) var(--space-4); flex-wrap: wrap; min-width: 0; max-width: 1360px; margin: var(--space-5) auto var(--space-6); }
 .disc-bar__side { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; min-width: 0; }
 .disc-bar .cr-seg { flex-shrink: 0; max-width: 100%; }
 .disc-bar .cr-seg-item { white-space: nowrap; }
@@ -30,7 +30,7 @@
 /* The resources as a list, group by group. The gutter of the scrollbar is kept in every section (as .tpls keeps it),
    so the column never shifts between a short one and a long one */
 .disc-list { position: absolute; inset: 0; overflow-y: auto; scrollbar-gutter: stable; padding: 132px 28px 72px; background: var(--bg); }
-.disc-list__group { max-width: 1040px; margin: 0 auto 40px; display: flex; flex-direction: column; gap: 10px; }
+.disc-list__group { max-width: 1360px; margin: 0 auto 40px; display: flex; flex-direction: column; gap: 10px; }
 /* A group's name is an h2 for the outline but reads at title-m (20): at title-l it outweighed the rows (Eric, 07-10) */
 .disc-list__head h2 { color: var(--text); }
 .disc-list__head p { margin: 4px 0 0; font-size: var(--fs-small); color: var(--text-2); }
@@ -50,7 +50,7 @@
    (opacity, transform); never catches the pointer */
 .disc-peek { position: fixed; top: 0; left: 0; z-index: 55; width: 216px; height: 135px; border-radius: var(--radius-md); overflow: hidden; background: var(--surface-raised); border: 1px solid var(--border); box-shadow: var(--shadow-pop); pointer-events: none; opacity: 0; transform: scale(0.85); will-change: translate, transform, opacity; }
 .disc-peek img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
-.disc-list__none { margin: 0 auto; max-width: 1040px; font-size: var(--fs-ui); color: var(--text-2); }
+.disc-list__none { margin: 0 auto; max-width: 1360px; font-size: var(--fs-ui); color: var(--text-2); }
 
 /* ─── Discover › Skills (components/DiscoverSkills.tsx): cards with the author, what it does and its install command,
    grouped by topic under the page's head ─── */

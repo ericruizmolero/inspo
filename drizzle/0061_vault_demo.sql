@@ -1,0 +1,1 @@
+ALTER TABLE "vault_item" ADD COLUMN "demo" text;

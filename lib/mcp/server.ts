@@ -12,6 +12,7 @@ import { INSTRUCTIONS, TOOLS, toolList } from "./tools";
 import { promptGet, promptList } from "./prompts";
 import { TINO_APP_MIME, TINO_APP_URI, tinoApp } from "./tino-app";
 import { listProjects, readCriterio, hasPictures } from "./pieces";
+import { isAdmin } from "../activity";
 
 /** The protocol versions this server speaks, newest first. A client asking for another one is offered the newest. */
 const VERSIONS = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
@@ -86,7 +87,8 @@ export async function handleRpc(msg: RpcRequest, ctx: McpCtx, origin: string): P
       });
     }
     case "ping": return ok(id, {});
-    case "tools/list": return ok(id, { tools: toolList() });
+    // The Vault's writes are offered to criterio's own team only
+    case "tools/list": return ok(id, { tools: toolList(await isAdmin(ctx.user.email)) });
     case "tools/call": {
       const result = await callTool(p, ctx, origin);
       return result ? ok(id, result) : fail(id, -32602, `Unknown tool: ${String(p?.name)}`);

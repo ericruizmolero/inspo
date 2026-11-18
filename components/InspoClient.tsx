@@ -6,7 +6,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useMemo, useEffect, useLayoutEffect, useRef, useCallback } from "react";
 import type { InspoItem, Project, ProjectLinks, ProjectRoles, PolishVote, ItemsPage } from "@/types/inspo";
 import type { SuggestedRef } from "@/types/suggestions";
-import SuggestedLine, { SUGGESTED_LINE_H, type Pending } from "./SuggestedLine";
 import { SystemHistoryButton, type SystemHistory } from "./VersionPicker";
 import { BoardHistoryButton, BoardVersionBar, BOARD_VERSION_BAR_H, useBoardVersions } from "./BoardHistory";
 import { boardVersionAt, restoreBoard } from "@/app/actions/board-versions";
@@ -188,7 +187,7 @@ export default function InspoClient({
   const inParam = sp.get("in");
   // Bare "/" asks what you are making (the chooser); ?in=library is the whole board; ?in=inbox; ?in=<project>
   // ?in=home is the chooser asked for (the island's house); the bare address lands on the last project (below)
-  const space = inParam === "inbox" || inParam === "templates" || inParam === "discover" || inParam === "skills" || (inParam && projects.some((p) => p.id === inParam)) ? inParam : inParam === "library" || items.length === 0 ? "all" : "home";
+  const space = inParam === "inbox" || inParam === "vault" || inParam === "templates" || inParam === "discover" || inParam === "skills" || (inParam && projects.some((p) => p.id === inParam)) ? inParam : inParam === "library" || items.length === 0 ? "all" : "home";
   const currentProject = projects.find((p) => p.id === space) ?? null;
   const currentSystem = currentProject ? systems[currentProject.id] ?? null : null;
   // Inside a project the board comes first; polishing it (?view=polish) and the system (?view=system) are modes.
@@ -335,8 +334,6 @@ export default function InspoClient({
     setBoardAt(null);
     setToast({ title: t.boardVersions.restored(n), detail: r.data.missing ? t.boardVersions.missing(r.data.missing) : "", ok: true });
   };
-  // The current board's waiting references, by item
-  const suggestedHere = useMemo(() => new Map(suggested.filter((x) => x.projectId === space).map((x) => [x.itemId, x])), [suggested, space]);
   // Polish in the Cajón: kept stays, forgotten is deleted on leaving Polish (hooks/use-inbox-polish.ts)
   const inboxPolishing = useInboxPolish({
     workspaceId: workspace.id, userId: user.id, active: inboxPolish, inbox: space === "inbox" ? spaceItems : EMPTY_ITEMS,
@@ -355,6 +352,14 @@ export default function InspoClient({
   const startHere = !!currentProject && projectView === "board" && spaceItems.length === 0 && items.length > 0;
   const [pickingLibrary, setPickingLibrary] = useState(false);
   // Tino sends a starting board to one kind of resource: Discover opens narrowed to it, once
+  // The Vault is offered once it holds something: until then only criterio's own team sees its door (they fill it)
+  const [vaultOpen, setVaultOpen] = useState(isAdmin);
+  useEffect(() => {
+    if (isAdmin) return;
+    let alive = true;
+    fetch("/api/vault").then((r) => (r.ok ? r.json() : null)).then((d: { entries?: unknown[] } | null) => { if (alive && d?.entries?.length) setVaultOpen(true); }).catch(() => {});
+    return () => { alive = false; };
+  }, [isAdmin]);
   const [discoverGroup, setDiscoverGroup] = useState<string | null>(null);
   const openResources = (group: string) => { setDiscoverGroup(group); setSpace("discover"); };
   useEffect(() => { if (space !== "discover" && discoverGroup) setDiscoverGroup(null); }, [space]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -574,7 +579,7 @@ export default function InspoClient({
   const area = projectView === "polish" ? "polish"
     : panelItem ? "sheet"
     : showAdd ? "add"
-    : space === "discover" ? "directory" : space === "skills" ? "skills" : space === "templates" ? (exampleOpen ? "example" : "examples")
+    : space === "vault" ? "vault" : space === "discover" ? "directory" : space === "skills" ? "skills" : space === "templates" ? (exampleOpen ? "example" : "examples")
     : filtering ? "search"
     : currentProject ? projectView
     : space === "inbox" ? "inbox"
@@ -595,42 +600,32 @@ export default function InspoClient({
   }, [setSystem]);
   const { selected, bar, setBar, selectItem, marqueeSelect, clearSelection, selectAll, selectionIn, fileSelection, moveSelection, removeSelection, deleteSelection, createForSelection } = useSelection({ t, items, setItems, setThumbMap, boardItems, space, projectView, links, setLinks, currentProject, confirm, refreshSystem, projectFailed, setToast, createProject });
 
-  // What an agent left on the open project and has no card: its answers and a drafted plan, read when the project
-  // opens and whenever its waiting references move (the pulse brings those)
-  const [pendingRest, setPendingRest] = useState<Pick<Pending, "answers" | "outlines"> | null>(null);
+  // Nothing an agent brings waits for a yes any more (lib/suggestions.ts takeIn, 16-11). What one left open before
+  // that day (references off the board, its own answers, a drafted plan) is taken in when its project opens: on
+  // screen first, then the server; the pulse settles the rest
   const waitingKey = currentProject ? suggested.filter((x) => x.projectId === currentProject.id).map((x) => x.id).join() : "";
+  const takenIn = useRef("");
   useEffect(() => {
-    if (!currentProject) { setPendingRest(null); return; }
-    let alive = true;
-    void pendingSuggestions(currentProject.id).then((r) => { if (alive && r.ok) setPendingRest(r.data); });
-    return () => { alive = false; };
-  }, [currentProject?.id, waitingKey]); // eslint-disable-line react-hooks/exhaustive-deps
-  const waitingHere: Pending | null = useMemo(() => {
-    if (!currentProject) return null;
-    const refs = [...suggestedHere.values()];
-    const answers = pendingRest?.answers ?? [], outlines = pendingRest?.outlines ?? [];
-    if (!refs.length && !answers.length && !outlines.length) return null;
-    const origin = refs.find((x) => x.origin)?.origin || answers.find(([, a]) => a.origin)?.[1].origin || outlines.find((o) => o.draft?.origin)?.draft?.origin || "";
-    return { refs: refs.length, answers, outlines, origin };
-  }, [currentProject, suggestedHere, pendingRest]);
-  /** Accept or dismiss what an agent left: on screen first, then the server; the pulse settles the rest */
-  const answerPending = async (accept: boolean, what: { refs?: string[]; answers?: string[]; outlines?: string[]; all?: boolean }) => {
     const projectId = currentProject?.id;
     if (!projectId) return;
-    const prev = { suggested, links, pendingRest };
-    const taken = new Set(what.all ? suggested.filter((x) => x.projectId === projectId).map((x) => x.id) : what.refs ?? []);
-    const moving = suggested.filter((x) => taken.has(x.id));
-    setSuggested((list) => list.filter((x) => !taken.has(x.id)));
-    if (accept && moving.length) setLinks((l) => { const next = { ...l }; for (const x of moving) next[x.itemId] = [...new Set([...(next[x.itemId] ?? []), projectId])]; return next; });
-    setPendingRest((r) => r && {
-      answers: what.all ? [] : r.answers.filter(([id]) => !what.answers?.includes(id)),
-      outlines: what.all ? [] : r.outlines.filter((o) => !what.outlines?.includes(o.id)),
+    let alive = true;
+    void pendingSuggestions(projectId).then(async (r) => {
+      if (!alive || !r.ok) return;
+      const waiting = suggested.filter((x) => x.projectId === projectId);
+      const what = { refs: waiting.map((x) => x.id), answers: r.data.answers.filter(([, a]) => a.source === "agent").map(([id]) => id), outlines: r.data.outlines.map((o) => o.id) };
+      const key = [projectId, ...what.refs, ...what.answers, ...what.outlines].join();
+      // Once per set: one that failed is not asked again until something moves
+      if (key === projectId || takenIn.current === key) return;
+      takenIn.current = key;
+      const taken = new Set(what.refs);
+      setSuggested((list) => list.filter((x) => !taken.has(x.id)));
+      setLinks((l) => { const next = { ...l }; for (const x of waiting) next[x.itemId] = [...new Set([...(next[x.itemId] ?? []), projectId])]; return next; });
+      const done = await answerSuggestions(projectId, true, what);
+      if (done.ok) refreshSystem(projectId);
+      else setSuggested((list) => [...list, ...waiting.filter((x) => !list.some((y) => y.id === x.id))]);
     });
-    const r = await answerSuggestions(projectId, accept, what);
-    if (!r.ok) { setSuggested(prev.suggested); setLinks(prev.links); setPendingRest(prev.pendingRest); setToast({ title: t.suggested.failed, detail: r.error }); return; }
-    if (accept) refreshSystem(projectId);
-  };
-  const answerSuggestion = (id: string, accept: boolean) => void answerPending(accept, { refs: [id] });
+    return () => { alive = false; };
+  }, [currentProject?.id, waitingKey]); // eslint-disable-line react-hooks/exhaustive-deps
   // A card dragged onto a project's tab (components/card-drag.ts): filed there too, and it stays where it was. A
   // picked card takes the whole selection with it
   useEffect(() => setPickedCount(selected.size), [selected]);
@@ -642,7 +637,17 @@ export default function InspoClient({
     void fileMany(fresh, project.id);
     setToast({ title: t.projects.dropped(fresh.length, project.name), detail: "", ok: true });
   };
-  gridActions.current = { select: selectItem, openItem, deleteItem, handleThumbnailUpload, handleThumbnailRemove, toggleFiled, createAndFile, toggleArea, measure, answerSuggestion };
+  // Let go on the Inbox tab it is a move: out of every project that holds it, as the bin on a project's board does
+  const dropOnInbox = (itemId: string) => {
+    const picked = items.filter((i) => i.id && (selected.has(itemId) ? selected.has(i.id) : i.id === itemId));
+    const filed = picked.filter((i) => (links[i.id!] ?? []).length > 0);
+    if (!picked.length) return;
+    if (!filed.length) { setToast({ title: t.projects.alreadyInbox(picked.length), detail: "", ok: true }); return; }
+    for (const i of filed) for (const p of links[i.id!] ?? []) void toggleFiled(i, p, false);
+    if (selected.has(itemId)) clearSelection();
+    setToast({ title: t.projects.droppedInbox(filed.length), detail: "", ok: true });
+  };
+  gridActions.current = { select: selectItem, openItem, deleteItem, handleThumbnailUpload, handleThumbnailRemove, toggleFiled, createAndFile, toggleArea, measure };
 
   const [openArea, setOpenArea] = useState<SystemArea | null>(null);
   const [focusArea, setFocusArea] = useState<{ area: SystemArea; n: number } | null>(null);
@@ -744,10 +749,9 @@ export default function InspoClient({
       spaceName={workspace.name}
       takeOutOf={currentProject?.id}
       text={item.id ? textBodies[item.id] : undefined}
-      suggested={item.id ? suggestedHere.get(item.id) : undefined}
       actions={gridActions}
     />
-  ), [suggestedHere, textBodies, workspace.name, ratioOf, tagMap, tagJobs, jevScores, reasons, commentMap, authorImages, thumbMap, signed, designMdIndex, pageShots, projects, links, currentProject, backsOf, areasByItem, selected, canManage, user, polishVotes]);
+  ), [textBodies, workspace.name, ratioOf, tagMap, tagJobs, jevScores, reasons, commentMap, authorImages, thumbMap, signed, designMdIndex, pageShots, projects, links, currentProject, backsOf, areasByItem, selected, canManage, user, polishVotes]);
 
   // The board stays mounted under Polish and under the system, inert and hidden: coming back is instant, and the
   // cards fly from the tornado onto a board already laid out (components/view-morph.ts). The same element first in
@@ -825,9 +829,8 @@ export default function InspoClient({
       handleRef={gridRef}
       onMarquee={marqueeSelect}
       renderCard={boardAt ? (item, level) => item.id && boardAt.added.has(item.id) ? <div className="bh-fresh" style={{ display: "contents" }}>{renderCard(item, level)}</div> : renderCard(item, level) : renderCard}
-      head={boardAt && boardRows && projectView === "board" ? <BoardVersionBar n={boardAt.n} rows={boardRows} restoring={restoring} onPick={pickBoardVersion} onRestore={() => void restoreBoardVersion()} />
-        : waitingHere && projectView === "board" ? <SuggestedLine pending={waitingHere} onAnswer={answerPending} /> : undefined}
-      headHeight={boardAt ? BOARD_VERSION_BAR_H : SUGGESTED_LINE_H}
+      head={boardAt && boardRows && projectView === "board" ? <BoardVersionBar n={boardAt.n} rows={boardRows} restoring={restoring} onPick={pickBoardVersion} onRestore={() => void restoreBoardVersion()} /> : undefined}
+      headHeight={BOARD_VERSION_BAR_H}
     />
   );
   return (
@@ -916,10 +919,10 @@ export default function InspoClient({
           <span className="topbar__trigger">
             <SidebarTrigger aria-label={t.app.menu} />
           </span>
-          <Island user={user} workspace={workspace} workspaces={workspaces} isAdmin={isAdmin}
+          <Island user={user} workspace={workspace} workspaces={workspaces} isAdmin={isAdmin} vault={vaultOpen}
             items={items} links={links} projects={projects} systems={systems} space={space} onSpace={setSpace} bellNews={bellNews}
             onCreateProject={createProject} onRenameProject={renameProject} onDeleteProject={deleteProject}
-            onDuplicateProject={duplicateProject} onMoveProject={moveProject} onShareProject={(p) => setSharing({ projectId: p.id })} onDropRef={dropOnProject}
+            onDuplicateProject={duplicateProject} onMoveProject={moveProject} onShareProject={(p) => setSharing({ projectId: p.id })} onDropRef={dropOnProject} onDropInbox={dropOnInbox}
             members={members} onPerson={(name) => {
               // What someone saved is looked at inside a project: the open one, or the one being worked in
               if (!currentProject) { const to = saveTarget(); if (to) setParams({ in: to, view: "board" }); }
@@ -960,9 +963,9 @@ export default function InspoClient({
             onImportBoard={importBoard}
             onDone={(projectId) => { setWelcome(false); if (projectId) setSpace(projectId); loadSteps(); }}
           />
-        ) : space === "templates" || space === "discover" || space === "skills" ? (
-          // Discover: the examples (whole systems to start a project from), the resources (the places we look) and the skills for agents
-          <Discover initialGroup={discoverGroup} section={space === "discover" ? "sites" : space} onSection={(s) => setSpace(s === "sites" ? "discover" : s)}
+        ) : space === "vault" || space === "templates" || space === "discover" || space === "skills" ? (
+          // Discover: the Vault (the pieces we curate, with their code), the examples (whole systems to start a project from), the resources (the places we look) and the skills for agents
+          <Discover vault={vaultOpen || space === "vault"} projects={projects} initialGroup={discoverGroup} section={space === "discover" ? "sites" : space} onSection={(s) => setSpace(s === "sites" ? "discover" : s)}
             templates={(head) => <TemplatesView key={workspace.id} workspaceId={workspace.id} head={head} onOpenChange={setExampleOpen} onStarted={(p) => {
               // The template's references are not in this page's library until a project holds them, so the page is
               // read again on the new project: its board comes with them, their pictures and their tags
@@ -1126,7 +1129,7 @@ export default function InspoClient({
         )}
         {/* The music is in the corner of every view. The boards and Polish have it in their zoom's pill; the others
             have nothing to zoom, and the pill is the music alone */}
-        {!(space !== "templates" && space !== "discover" && space !== "skills" && space !== "home" && items.length > 0
+        {!(space !== "vault" && space !== "templates" && space !== "discover" && space !== "skills" && space !== "home" && items.length > 0
           && !(currentProject && projectView === "system")
           && (projectView === "polish" || startHere || !(spaceItems.length === 0 && (currentProject || space === "inbox"))))
           && (space === "home" ? (
