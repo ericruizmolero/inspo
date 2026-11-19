@@ -289,7 +289,7 @@ export const TOOLS: Tool[] = [
     name: "search_vault", title: "Search the Vault",
     description: [
       "The Vault: pieces of a site that criterio's team built and documented with their code, by category: kinds of section (hero, nav, pricing, faq, footer…) and details (buttons, text, scroll, transitions, cursor, sliders, media, utilities). It is the same for every project.",
-      "Call it before building a section or a detail, with its category or a few words, and read_vault for the code of the one that fits. With no arguments it lists everything and how many each category holds.",
+      "Call it before building a section or a detail, with its category or a few words, and read_vault for the code of the one that fits. With no arguments it lists everything and how many each category holds. A few words find whatever holds any of them, the fullest match first. Every answer also brings always_apply: the rules (utilities) that hold across whatever you build, to read and apply even if you did not look for them.",
     ].join("\n"),
     input: SearchVaultInput,
     annotations: { readOnlyHint: true },

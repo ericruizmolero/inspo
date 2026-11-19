@@ -13,7 +13,7 @@ import { fetchFile } from "../remote-file";
 import { readOutlines } from "@/types/landing";
 import { canPreview } from "../vault-preview";
 import { VAULT_VIDEO_MAX, chosenFor, setVaultVideo, videoFromLink } from "../vault";
-import { VAULT_IMAGE_MAX, listVault, missingEs, readVault, removeVault, saveVault, setVaultPicture } from "../vault";
+import { VAULT_IMAGE_MAX, listVault, missingEs, readVault, removeVault, saveVault, setVaultPicture, vaultWords } from "../vault";
 import { VAULT_CATEGORIES, VAULT_LIMITS as L, type VaultCard } from "@/types/vault";
 import type { McpCtx } from "./auth";
 import type { WithPictures } from "./pieces";
@@ -33,19 +33,42 @@ export const SearchVaultInput = z.object({
   query: z.string().max(120).optional().describe("A few words to find by: a name, a technique, a library (\"tabs\", \"marquee\", \"gsap\")."),
 });
 
+/** The category whose entries are not pieces to place but rules to apply: corrections that hold across whatever is
+ *  built (an optical alignment, a reset). An agent building a hero does not go looking for them, so they come along:
+ *  with every search, and in criterio.md as an agent reads it */
+export const VAULT_RULES = "utilities";
+const RULES_DO = "These are rules, not a component: do not place the demo. Once what you are building is laid out, look for each case the entry names and apply its line where the case holds; where it does not, leave it out.";
+
+/** The words of a query that say nothing by themselves, in English and Spanish */
+const FILLER = new Set(["a", "an", "the", "and", "or", "with", "without", "for", "of", "in", "on", "to", "that", "this", "is", "as", "by", "un", "una", "el", "la", "los", "las", "y", "o", "con", "sin", "para", "de", "del", "en", "que"]);
+/** A word as it is looked for: "buttons" finds "button" and the other way round */
+const stem = (w: string) => (w.length > 3 ? w.replace(/(es|s)$/, "") : w);
+
 /** The Vault's entries, narrowed by a category and a few words. With neither, all of them and how many each category holds */
 export async function searchVault(ctx: McpCtx, origin: string, input: z.infer<typeof SearchVaultInput>) {
-  const all = await listVault({ drafts: await isAdmin(ctx.user.email) });
-  const words = plain(input.query ?? "").split(/\s+/).filter(Boolean);
-  const found = all.filter((c) => (!input.category || c.category === input.category) && words.every((w) => plain([c.title, c.category, c.summary, c.tags.join(" ")].join(" ")).includes(w)));
+  const [all, more] = await Promise.all([listVault({ drafts: await isAdmin(ctx.user.email) }), vaultWords()]);
+  const words = [...new Set(plain(input.query ?? "").split(/[^a-z0-9]+/).filter((w) => w && !FILLER.has(w)).map(stem))];
+  const inCategory = all.filter((c) => !input.category || c.category === input.category);
+  // How many of the words an entry holds, in its name, category, sentence, tags, when to use it, and its Spanish
+  const hits = (c: VaultCard) => { const text = plain([c.title, c.category, c.summary, c.tags.join(" "), more[c.id] ?? ""].join(" ")); return words.filter((w) => text.includes(w)).length; };
+  const scored = inCategory.map((c) => ({ c, n: hits(c) }));
+  // Every word, when some entry has them all; otherwise whatever holds any of them, the fullest match first:
+  // "button with icon" must not come back empty because no entry says all three
+  const whole = scored.filter((x) => x.n === words.length);
+  const found = (whole.length || !words.length ? whole : scored.filter((x) => x.n > 0).sort((a, b) => b.n - a.n)).map((x) => x.c);
+  const rules = all.filter((c) => c.category === VAULT_RULES && c.published && !found.some((f) => f.id === c.id));
   const counts: Record<string, number> = {};
   for (const c of all) counts[c.category] = (counts[c.category] ?? 0) + 1;
   return {
     entries: found.map(brief(origin)),
+    ...(rules.length ? { always_apply: rules.map(brief(origin)) } : {}),
     categories: counts,
-    do: found.length
-      ? "Pick what fits the section you are building and the project's criterio, then call read_vault with its entry for the code. An entry is a starting point: the project's decisions (type, color, voice, every Never line) come first, and its copy is the project's own."
-      : "Nothing in the Vault for that yet. Build it from the project's criterio and references.",
+    do: [
+      found.length
+        ? "Pick what fits the section you are building and the project's criterio, then call read_vault with its entry for the code. An entry is a starting point: the project's decisions (type, color, voice, every Never line) come first, and its copy is the project's own."
+        : "Nothing in the Vault for that yet. Build it from the project's criterio and references.",
+      rules.length ? "always_apply holds rules, not pieces: whatever you build, read each one with read_vault and apply it where its cases turn up (an icon in a button, a play triangle, tracked capitals), whether or not you searched for it." : "",
+    ].filter(Boolean).join(" "),
   };
 }
 
@@ -63,7 +86,7 @@ export async function readVaultEntry(ctx: McpCtx, origin: string, ref: string): 
     ...(e.published ? {} : { draft: true }),
     url: vaultUrl(origin, e.slug),
     documentation: e.blocks ?? [],
-    do: "Adapt it, do not paste it: keep the structure and the motion, and take every value (type, color, radius, spacing, copy) from the project's criterio. Load the scripts a block names before the code that needs them.",
+    do: e.category === VAULT_RULES ? RULES_DO : "Adapt it, do not paste it: keep the structure and the motion, and take every value (type, color, radius, spacing, copy) from the project's criterio. Load the scripts a block names before the code that needs them.",
   };
   return { result, pictures: f && f.size <= VAULT_IMAGE_MAX ? [{ data: f.body.toString("base64"), mimeType: f.contentType }] : [] };
 }
@@ -195,14 +218,17 @@ export async function vaultMd(org: string, projectId: string): Promise<string> {
   const kinds = [...new Set(readOutlines(head?.outlines).flatMap((o) => o.sections.map((s) => s.kind)))];
   const chosen = await chosenFor(org, projectId);
   const row = (c: VaultCard) => `- \`${c.slug}\` ${c.title}${c.summary ? `: ${c.summary}` : ""}`;
-  const planned = kinds.map((k) => ({ kind: k, entries: all.filter((c) => c.category === k && !chosen.some((x) => x.id === c.id)).slice(0, 4) })).filter((g) => g.entries.length);
+  // Rules travel with the file whatever its plans name: nobody building a section asks for them
+  const rules = all.filter((c) => c.category === VAULT_RULES).slice(0, 6);
+  const planned = kinds.filter((k) => k !== VAULT_RULES).map((k) => ({ kind: k, entries: all.filter((c) => c.category === k && !chosen.some((x) => x.id === c.id)).slice(0, 4) })).filter((g) => g.entries.length);
   const counts: Record<string, number> = {};
   for (const c of all) counts[c.category] = (counts[c.category] ?? 0) + 1;
-  const rest = Object.entries(counts).filter(([k]) => !planned.some((g) => g.kind === k)).map(([k, n]) => `${k} (${n})`).join(", ");
+  const rest = Object.entries(counts).filter(([k]) => k !== VAULT_RULES && !planned.some((g) => g.kind === k)).map(([k, n]) => `${k} (${n})`).join(", ");
   return [
     "\n\n## From the Vault\n",
     "> Pieces criterio's team built and documented, with their code: a way to start a section from something that already works. Call read_vault with an entry's name for its code, and search_vault for the rest. An entry gives structure and motion; type, color, spacing and copy are this project's, from the decisions above.\n",
     chosen.length ? `### Chosen by the team\n\n> The team picked these for this project: start from them where they fit, before any other entry.\n\n${chosen.map((c) => `${row(c)} (${c.category})`).join("\n")}\n` : "",
+    rules.length ? `### Rules for whatever you build\n\n> Not pieces to place: corrections to apply. After laying out any interface, read each one with read_vault and apply it wherever its cases turn up, whether or not the plan names it.\n\n${rules.map(row).join("\n")}\n` : "",
     ...planned.map((g) => `### ${g.kind}\n\n${g.entries.map(row).join("\n")}\n`),
     rest ? `${planned.length ? "Also in the Vault" : "In the Vault"}: ${rest}.\n` : "",
   ].filter(Boolean).join("\n");

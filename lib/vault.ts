@@ -75,6 +75,12 @@ export async function listVault(o: { drafts?: boolean; categories?: readonly str
   return rows.map((r) => cardOf(r, o.locale));
 }
 
+/** What a search looks through besides a card's own words: when to use it, and its Spanish. By entry id */
+export async function vaultWords(): Promise<Record<string, string>> {
+  const rows = await db.select({ id: V.id, use: V.use, es: V.es }).from(V);
+  return Object.fromEntries(rows.map((r) => [r.id, [r.use, r.es?.title, r.es?.summary, r.es?.use, r.es?.tags?.join(" ")].filter(Boolean).join(" ")]));
+}
+
 async function rowOf(ref: string): Promise<Row | null> {
   const key = String(ref ?? "").trim();
   if (!key) return null;
@@ -166,10 +172,18 @@ export async function saveVault(input: VaultInput, userId: string): Promise<{ en
 }
 
 /** The document an entry's live preview shows, or null when it has nothing to run */
-export async function vaultPreview(ref: string, o: { drafts?: boolean } = {}): Promise<string | null> {
+export async function vaultPreview(ref: string, o: { drafts?: boolean } = {}): Promise<{ doc: string; slug: string; title: string; summary: string; version: string } | null> {
   const r = await rowOf(ref);
   if (!r || (!r.publishedAt && !o.drafts)) return null;
-  return previewDoc(r);
+  const doc = previewDoc(r);
+  // version: the entry's last change, so the card a shared link shows is asked for again when the entry changes
+  return doc ? { doc, slug: r.slug, title: r.title, summary: r.summary, version: r.updatedAt.getTime().toString(36) } : null;
+}
+
+/** What the card of a shared link is made of (app/api/vault/[entry]/og): a published entry's name, category, ground and picture */
+export async function vaultShare(ref: string): Promise<{ title: string; category: string; ground: string | null; imageKey: string | null } | null> {
+  const r = await rowOf(ref);
+  return r?.publishedAt ? { title: r.title, category: r.category, ground: r.ground, imageKey: r.imageKey } : null;
 }
 
 /** Sets an entry's picture from its bytes. The type is what the bytes say; the one before is deleted */

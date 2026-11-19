@@ -301,6 +301,7 @@ export const routes: Record<string, Surface> = {
   "route:app/api/vault/route.ts#GET": { exempt: "the Vault belongs to no workspace (vault_item has no organization): its cards, the same for anyone signed in; drafts only for criterio's own team" },
   "route:app/api/vault/[entry]/route.ts#GET": { exempt: "the Vault belongs to no workspace (vault_item has no organization): one entry, the same for anyone signed in; its code and drafts only for criterio's own team" },
   "route:app/api/vault/[entry]/preview/route.ts#GET": { exempt: "the Vault belongs to no workspace (vault_item has no organization): one entry's demo page, public and the same for everyone (proxy.ts PUBLIC), served sandboxed with no origin" },
+  "route:app/api/vault/[entry]/og/route.ts#GET": { exempt: "the Vault belongs to no workspace (vault_item has no organization): the card a shared link to a published entry's preview shows (its name, category and picture), public and the same for everyone (proxy.ts PUBLIC)" },
   "route:app/api/vault/[entry]/video/route.ts#POST": { exempt: "the Vault belongs to no workspace (vault_item has no organization): only criterio's own team sets an entry's loop (isAdmin); anyone else gets 404" },
   "route:app/api/vault/[entry]/video/route.ts#DELETE": { exempt: "the Vault belongs to no workspace (vault_item has no organization): only criterio's own team removes an entry's loop (isAdmin); anyone else gets 404" },
   "route:app/api/vault/[entry]/projects/route.ts#GET": {

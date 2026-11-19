@@ -24,8 +24,8 @@ import { SIGNED_IN_COOKIE, SIGNED_IN_COOKIE_MAX_AGE, signedInCookieDomain } from
 // /mcp, /api/mcp/ and /.well-known/: the MCP connector and its OAuth endpoints; an AI client gets in with a bearer
 // token (lib/mcp/auth.ts), never a cookie. /mcp/authorize is not here: approving an app takes a session
 // /api/vault/<entry>/preview: a Vault piece running by itself, a link that is passed around (Eric, 19-11: "se tiene que
-// hacer públicas las previews"). Sandboxed with no origin and the same for everyone; the entry's sheet and its documentation still take a session
-const PUBLIC = [/^\/$/, /^\/api\/access\/mode$/, /^\/login(\/|$)/, /^\/api\/auth(\/|$)/, /^\/api\/ext\//, /^\/api\/cron\//, /^\/api\/queue\//, /^\/api\/health(\/|$)/, /^\/api\/dev-login(\/|$)/, /^\/invite\//, /^\/unsubscribe(\/|$)/, /^\/api\/unsubscribe(\/|$)/, /^\/s\//, /^\/a\//, /^\/extension\/download$/, /^\/mcp$/, /^\/api\/mcp\//, /^\/api\/vault\/[^/]+\/preview$/, /^\/\.well-known\//];
+// hacer públicas las previews"), and /og, the card that link shows where it is pasted. Sandboxed with no origin and the same for everyone; the entry's sheet and its documentation still take a session
+const PUBLIC = [/^\/$/, /^\/api\/access\/mode$/, /^\/login(\/|$)/, /^\/api\/auth(\/|$)/, /^\/api\/ext\//, /^\/api\/cron\//, /^\/api\/queue\//, /^\/api\/health(\/|$)/, /^\/api\/dev-login(\/|$)/, /^\/invite\//, /^\/unsubscribe(\/|$)/, /^\/api\/unsubscribe(\/|$)/, /^\/s\//, /^\/a\//, /^\/extension\/download$/, /^\/mcp$/, /^\/api\/mcp\//, /^\/api\/vault\/[^/]+\/(preview|og)$/, /^\/\.well-known\//];
 
 // Auto-login in development (see lib/auth.ts): with no cookie, /api/dev-login is used instead of /login
 const DEV_AUTO_LOGIN = process.env.NODE_ENV !== "production" && !!process.env.DEV_LOGIN_EMAIL;

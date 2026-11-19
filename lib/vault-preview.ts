@@ -46,6 +46,34 @@ export function withIcon(doc: string): string {
   return head ? doc.slice(0, head.index + head[0].length) + "\n" + link + doc.slice(head.index + head[0].length) : doc;
 }
 
+const attr = (s: string) => s.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+
+/** The preview as a link that is passed around: its tab says the piece's name, and where the link is pasted
+ *  (WhatsApp, Slack, X) it unfurls with that name, what the piece is and its own card (app/api/vault/[entry]/og).
+ *  The document's own title, if it brought one, gives way to ours */
+export function withShare(doc: string, m: { title: string; description: string; url: string; image: string }): string {
+  const title = `${m.title} · Criterio Vault`;
+  const tags = [
+    `<title>${esc(title)}</title>`,
+    m.description ? `<meta name="description" content="${attr(m.description)}">` : "",
+    '<meta property="og:type" content="website">', '<meta property="og:site_name" content="Criterio">',
+    `<meta property="og:title" content="${attr(title)}">`,
+    m.description ? `<meta property="og:description" content="${attr(m.description)}">` : "",
+    `<meta property="og:url" content="${attr(m.url)}">`,
+    `<meta property="og:image" content="${attr(m.image)}">`, '<meta property="og:image:width" content="1200">', '<meta property="og:image:height" content="630">',
+    `<meta property="og:image:alt" content="${attr(m.title)}">`,
+    '<meta name="twitter:card" content="summary_large_image">', `<meta name="twitter:title" content="${attr(title)}">`,
+    m.description ? `<meta name="twitter:description" content="${attr(m.description)}">` : "",
+    `<meta name="twitter:image" content="${attr(m.image)}">`,
+  ].filter(Boolean).join("\n");
+  const bare = doc.replace(/<title[^>]*>[\s\S]*?<\/title>/i, "");
+  const head = /<head[^>]*>/i.exec(bare);
+  if (head) return bare.slice(0, head.index + head[0].length) + "\n" + tags + bare.slice(head.index + head[0].length);
+  const html = /<html[^>]*>/i.exec(bare);
+  const at = html ? html.index + html[0].length : (/^\s*<!doctype[^>]*>/i.exec(bare)?.[0].length ?? 0);
+  return bare.slice(0, at) + "\n<head>\n" + tags + "\n</head>" + bare.slice(at);
+}
+
 /** The ground a put-together preview stands on and the ink that reads on it. One fixed colour, never the viewer's
  *  theme: the entry's picture is taken on it, and a card must not change ground when its piece starts */
 export const PREVIEW_GROUND = "#F4F0E6";

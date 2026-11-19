@@ -27,6 +27,21 @@ interface Listing { entries: VaultCard[]; partner: boolean; picks: Record<string
 // Read once per visit: coming back from an entry, or from another section, shows the cards at once
 let cache: Listing | null = null;
 
+// An entry read once in a visit is kept, and the ones beside the open one are read ahead: stepping to a neighbour has
+// its whole sheet at hand, so the stage and the column come in together and at once
+const entries = new Map<string, VaultEntry>();
+const reading = new Map<string, Promise<VaultEntry>>();
+function readEntry(slug: string): Promise<VaultEntry> {
+  const have = entries.get(slug);
+  if (have) return Promise.resolve(have);
+  let p = reading.get(slug);
+  if (!p) {
+    p = fetch(`/api/vault/${encodeURIComponent(slug)}`).then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status))))).then((e: VaultEntry) => { entries.set(slug, e); return e; }).finally(() => reading.delete(slug));
+    reading.set(slug, p);
+  }
+  return p;
+}
+
 const entryInUrl = () => new URLSearchParams(window.location.search).get("entry");
 function setEntryInUrl(slug: string | null) {
   const url = new URL(window.location.href);
@@ -162,7 +177,7 @@ export default function Vault({ query, head, projects }: { projects: readonly { 
   return (
     <>
       {open && data && (
-        <VaultSheet slug={open} onPrev={before ? () => step(before.slug) : undefined} onNext={after ? () => step(after.slug) : undefined} card={opened} partner={data.partner} projects={projects} used={opened ? data.picks?.[opened.id] ?? [] : []} onPicks={(v) => { if (opened) setPicks(opened.id, v); }} labelOf={labelOf} onClose={() => show(null)}
+        <VaultSheet slug={open} near={[before?.slug, after?.slug]} onPrev={before ? () => step(before.slug) : undefined} onNext={after ? () => step(after.slug) : undefined} card={opened} partner={data.partner} projects={projects} used={opened ? data.picks?.[opened.id] ?? [] : []} onPicks={(v) => { if (opened) setPicks(opened.id, v); }} labelOf={labelOf} onClose={() => show(null)}
           onPatch={(fields) => { if (opened) patch(opened.id, fields); }} onCategory={(c) => { setCategory(c); show(null); }} />
       )}
       <div className="disc-list" ref={scroller}>
@@ -306,14 +321,23 @@ function VaultTile({ entry: e, kind, blank, projects, used, onPicks, onShape, on
  *  or filling it when it runs live; down the right, what it is, who made it, the ways to use it, its facts and tags.
  *  For partners the stage has a second view, its documentation. The arrows (and the keys, and a swipe on a phone) walk
  *  the grid in its order, in the same sheet. Esc, the veil or the cross close it */
-function VaultSheet({ slug, card, partner, projects, used, onPicks, onPatch, labelOf, onClose, onCategory, onPrev, onNext }: {
+function VaultSheet({ slug, near, card, partner, projects, used, onPicks, onPatch, labelOf, onClose, onCategory, onPrev, onNext }: {
   /** The entry before and after this one in the grid; absent at either end */
   onPrev?: () => void; onNext?: () => void;
+  /** The entries beside this one, read ahead */
+  near?: readonly (string | undefined)[];
   slug: string; card: VaultCard | null; partner: boolean; projects: readonly { id: string; name: string }[]; used: readonly string[]; onPicks: (projects: string[]) => void; onPatch: (fields: Partial<VaultCard>) => void; labelOf: (key: string) => string; onClose: () => void; onCategory: (c: string) => void;
 }) {
   const { t, locale } = useT();
-  const [entry, setEntry] = useState<VaultEntry | null>(null);
+  const [entry, setEntry] = useState<VaultEntry | null>(() => entries.get(slug) ?? null);
   const [missing, setMissing] = useState(false);
+  // Which way the last step went (1 the next entry, -1 the one before, 0 just opened): what comes in, comes from there
+  const [dir, setDir] = useState(0);
+  const before = near?.[0], after = near?.[1];
+  useEffect(() => { for (const s of [before, after]) if (s) void readEntry(s).catch(() => {}); }, [before, after]);
+  // The column scrolls by itself: a cloud at its foot while there is more below
+  const side = useRef<HTMLElement>(null);
+  const [more, setMore] = useState(false);
   const [view, setView] = useState<"piece" | "docs">("piece");
   // The piece runs on the stage from the start; the picture holds it until the frame has loaded
   const [running, setRunning] = useState(false);
@@ -322,11 +346,11 @@ function VaultSheet({ slug, card, partner, projects, used, onPicks, onPatch, lab
   const [shape, setShape] = useState<number | null>(card?.video ? card.videoRatio : null);
   // Another entry in the same sheet starts from its own card; the view (the piece or its documentation) stays
   const [shown, setShown] = useState(slug);
-  if (shown !== slug) { setShown(slug); setEntry(null); setMissing(false); setRunning(false); setVideo(card?.video ?? null); setShape(card?.video ? card.videoRatio : null); }
+  if (shown !== slug) { setShown(slug); setEntry(entries.get(slug) ?? null); setMissing(false); setRunning(false); setVideo(card?.video ?? null); setShape(card?.video ? card.videoRatio : null); }
   useEffect(() => { if (entry) { setVideo(entry.video); if (entry.videoRatio) setShape(entry.videoRatio); } }, [entry]);
   useEffect(() => {
     let alive = true;
-    fetch(`/api/vault/${encodeURIComponent(slug)}`).then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status))))).then((e: VaultEntry) => { if (alive) setEntry(e); }).catch(() => { if (alive) setMissing(true); });
+    readEntry(slug).then((e) => { if (alive) setEntry(e); }).catch(() => { if (alive) setMissing(true); });
     return () => { alive = false; };
   }, [slug]);
 
@@ -354,8 +378,10 @@ function VaultSheet({ slug, card, partner, projects, used, onPicks, onPatch, lab
   }, []);
 
   // The arrows walk the grid in its order, unless a field or another dialog has them
-  const steps = useRef({ onPrev, onNext });
-  steps.current = { onPrev, onNext };
+  const goPrev = onPrev && (() => { setDir(-1); onPrev(); });
+  const goNext = onNext && (() => { setDir(1); onNext(); });
+  const steps = useRef({ onPrev: goPrev, onNext: goNext });
+  steps.current = { onPrev: goPrev, onNext: goNext };
   const navigable = !!(onPrev || onNext);
   useEffect(() => {
     if (!navigable) return;
@@ -379,18 +405,30 @@ function VaultSheet({ slug, card, partner, projects, used, onPicks, onPatch, lab
     if (!from) return;
     const dx = ev.changedTouches[0].clientX - from.x, dy = ev.changedTouches[0].clientY - from.y;
     if (Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 2) return;
-    if (dx < 0) onNext?.(); else onPrev?.();
+    if (dx < 0) goNext?.(); else goPrev?.();
   };
 
   // The card's own fields paint at once; the rest arrives with the entry (never the one before's, while the next loads)
   const e = (entry?.slug === slug ? entry : null) ?? card;
+  const ready = !!entry || missing;
+  useEffect(() => {
+    const el = side.current;
+    if (!el) return;
+    const read = () => setMore(el.scrollTop + el.clientHeight < el.scrollHeight - 8);
+    read();
+    el.addEventListener("scroll", read, { passive: true });
+    const ro = new ResizeObserver(read);
+    ro.observe(el);
+    for (const c of el.children) ro.observe(c);
+    return () => { el.removeEventListener("scroll", read); ro.disconnect(); };
+  }, [slug, ready, view]);
   const previewUrl = `/api/vault/${encodeURIComponent(slug)}/preview`;
   const live = !!e && !video && e.preview;
   const when = e ? fmtDate(e.createdAt, locale, { day: "numeric", month: "long", year: "numeric" }) : "";
   return createPortal(
     <div className={`ip-layer${navigable ? " has-nav" : ""}`}>
       <div ref={dim} className="ip-dim" onClick={leave} aria-hidden />
-      <aside ref={sheet} className="ip cr-viewer vault-ip" role="dialog" aria-modal="true" aria-label={e?.title ?? t.vault.name}>
+      <aside ref={sheet} className="ip cr-viewer vault-ip" style={{ "--from": dir } as React.CSSProperties} role="dialog" aria-modal="true" aria-label={e?.title ?? t.vault.name}>
         <header className="ip-bar cr-viewer-head">
           <div className="cr-viewer-titles">
             <div className="cr-viewer-title">{e?.title ?? t.vault.name}</div>
@@ -418,7 +456,7 @@ function VaultSheet({ slug, card, partner, projects, used, onPicks, onPatch, lab
         ) : (
           <div className="ip-bento cr-viewer-body" onTouchStart={navigable ? onTouchStart : undefined} onTouchEnd={navigable ? onTouchEnd : undefined}>
             <div className="ip-stage cr-viewer-stage">
-              {navigable && <IconButton icon="chevron-left" variant="default" size="l" className="ip-nav is-prev" label={t.panel.previous} onClick={onPrev} disabled={!onPrev} />}
+              {navigable && <IconButton icon="chevron-left" variant="default" size="l" className="ip-nav is-prev" label={t.panel.previous} onClick={goPrev} disabled={!goPrev} />}
               {view === "docs" ? (
                 <section className="vault-docs">
                   <header className="vault-docs__head">
@@ -431,7 +469,7 @@ function VaultSheet({ slug, card, partner, projects, used, onPicks, onPatch, lab
                 </section>
               ) : (
                 // A loop gives the box its own shape, as large as the stage lets it be; the piece running fills the stage
-                <div className={`vault-sheet__shot${live ? " is-live" : ""}`} style={video && shape ? ({ "--shape": shape } as React.CSSProperties) : undefined}>
+                <div key={slug} className={`vault-sheet__shot${live ? " is-live" : ""}${ready ? " is-ready" : ""}`} style={video && shape ? ({ "--shape": shape } as React.CSSProperties) : undefined}>
                   {e.image ? <img src={e.image} alt="" decoding="async" /> : <span className="vault-card__blank">{labelOf(e.category)}</span>}
                   {/* With a loop, the box plays the loop, as its card does; the piece itself is one press away ("Live preview") */}
                   {video && <LoopVideo key={video} className="vault-sheet__loop" src={video} onSize={shape ? undefined : (w, h) => { setShape(w / h); onPatch({ videoRatio: w / h }); }} />}
@@ -442,11 +480,12 @@ function VaultSheet({ slug, card, partner, projects, used, onPicks, onPatch, lab
                   {live && <iframe key={slug} className={`vault-sheet__live-frame${running ? " is-ready" : ""}`} src={previewUrl} title={`${e.title}: ${t.vault.live}`} sandbox="allow-scripts" referrerPolicy="no-referrer" onLoad={() => setRunning(true)} />}
                 </div>
               )}
-              {navigable && <IconButton icon="chevron-right" variant="default" size="l" className="ip-nav is-next" label={t.panel.next} onClick={onNext} disabled={!onNext} />}
+              {navigable && <IconButton icon="chevron-right" variant="default" size="l" className="ip-nav is-next" label={t.panel.next} onClick={goNext} disabled={!goNext} />}
             </div>
             {/* Down the right, where a reference has its conversation: what it is, who made it and when, the ways to see and use it, where it sits and its tags */}
-            {/* From one entry to the next the column comes in whole, once the entry is read: nothing pops in line by line */}
-            <section key={slug} className={`ip-card--talk cr-viewer-aside vault-sheet__side${entry || missing ? " is-ready" : ""}`}>
+            {/* From one entry to the next the column comes in whole, once the entry is read, and in step with the piece on
+                the stage: the same moment, the same curve, from the side the step went */}
+            <section key={slug} ref={side} className={`ip-card--talk cr-viewer-aside vault-sheet__side${ready ? " is-ready" : ""}${more ? " has-more" : ""}`}>
               {e.summary && <p className="vault-sheet__what">{e.summary}</p>}
               {entry?.by && (
                 <div className="vault-by">
@@ -481,7 +520,7 @@ function VaultSheet({ slug, card, partner, projects, used, onPicks, onPatch, lab
                 </section>
               )}
               {entry && !partner && <p className="vault-sheet__note">{t.vault.docsViaAgent}</p>}
-              {partner && entry && <VideoControl slug={slug} video={video} onChange={(v, ratio) => { setVideo(v); setShape(ratio); onPatch({ video: v, videoRatio: ratio }); }} />}
+              {partner && entry && <VideoControl slug={slug} video={video} onChange={(v, ratio) => { setVideo(v); setShape(ratio); onPatch({ video: v, videoRatio: ratio }); const kept = entries.get(slug); if (kept) entries.set(slug, { ...kept, video: v, videoRatio: ratio }); }} />}
             </section>
           </div>
         )}
