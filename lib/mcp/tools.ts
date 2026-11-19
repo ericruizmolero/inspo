@@ -306,7 +306,7 @@ export const TOOLS: Tool[] = [
     name: "add_to_vault", title: "Add to the Vault", partners: true,
     description: [
       "Writes an entry of the Vault: a piece we built (a section or a detail) with its documentation, the code block by block as it is pasted. The same title or entry updates it; a field left out stays as it was, and blocks replaces every block.",
-      "A new entry is published at once, for everyone; publish false keeps it a draft only the team sees. Its picture goes with the curl line in the answer (picture_upload), never as base64 through you; a loop of it running, for a piece its card cannot play live, goes the same way (video_upload) or by address (video_url). Write title, summary and use in English.",
+      "An entry is published as it is written, for everyone: there are no drafts. Its picture goes with the curl line in the answer (picture_upload), never as base64 through you; a loop of it running, for a piece its card cannot play live, goes the same way (video_upload) or by address (video_url). Write title, summary and use in English.",
     ].join("\n"),
     input: AddVaultInput,
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true },
@@ -314,7 +314,7 @@ export const TOOLS: Tool[] = [
   }),
   tool({
     name: "remove_from_vault", title: "Remove from the Vault", partners: true,
-    description: "Deletes an entry of the Vault for good, with its picture. Only when the person asks; say which one first. To hide one instead, call add_to_vault with publish false.",
+    description: "Deletes an entry of the Vault for good, with its picture. Only when the person asks; say which one first.",
     input: z.object({ entry: z.string().min(1).max(80).describe("The entry's name, as search_vault gives it.") }),
     annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: false },
     run: (i, ctx) => removeFromVault(ctx, i),

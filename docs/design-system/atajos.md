@@ -13,7 +13,7 @@ Todos los que maneja la app. Al añadir uno: que no choque con estos, que no sal
 | / con el ratón sobre una tarjeta | Se la entrega al agente como "esto" |
 | ⌘B / Ctrl+B | Pliega o despliega la barra lateral |
 | ⌘B · ⌘I · ⌘K (escribiendo una referencia de texto) | Negrita, cursiva y enlace en Markdown sobre lo seleccionado; ahí no pliegan la barra ni abren el buscador o la paleta. Enter sigue una lista y Esc sale del texto |
-| ⌘/Ctrl + rueda, o pellizco | Zoom de columnas del tablero; en Pulido, tamaño del tornado |
+| ⌘/Ctrl + rueda, o pellizco | Zoom de columnas del tablero y de la rejilla del Vault; en Pulido, tamaño del tornado |
 | ⌘/Ctrl/Shift/Alt + clic en una pestaña | Lo que haría el navegador con un enlace |
 | ⌘/Ctrl o Shift + clic en una tarjeta | La selecciona; con Shift, el tramo desde la última elegida |
 | Arrastrar desde el hueco del tablero (ratón) | Dibuja un rectángulo, como el de una captura: selecciona en vivo las tarjetas que toca; con ⌘/Shift las suma a lo ya elegido. Cerca del borde de arriba o de abajo el tablero se desplaza solo |

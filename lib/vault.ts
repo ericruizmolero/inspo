@@ -90,7 +90,7 @@ const address = (s: unknown) => { const u = line(s, 2000); return /^https?:\/\//
 
 export interface VaultInput {
   title: string; category: string; slug?: string; summary?: string; use?: string; tags?: readonly string[];
-  blocks?: readonly VaultBlock[]; demo?: string; ground?: string; live_url?: string; source_url?: string; publish?: boolean;
+  blocks?: readonly VaultBlock[]; demo?: string; ground?: string; live_url?: string; source_url?: string;
 }
 
 /** Writes an entry: a new one, or the one with that slug, whole fields at a time (what is not passed stays) */
@@ -114,15 +114,15 @@ export async function saveVault(input: VaultInput, userId: string): Promise<{ en
     ...(input.ground !== undefined ? { ground: /^#[0-9a-f]{6}$/i.test(input.ground.trim()) ? input.ground.trim().toUpperCase() : null } : {}),
     ...(input.live_url !== undefined ? { liveUrl: address(input.live_url) } : {}),
     ...(input.source_url !== undefined ? { sourceUrl: address(input.source_url) } : {}),
-    ...(input.publish === undefined ? {} : { publishedAt: input.publish ? existing?.publishedAt ?? now : null }),
+    // There are no drafts: an entry is published as it is written, and one left unpublished from before is published by its next write
+    publishedAt: existing?.publishedAt ?? now,
     updatedAt: now,
   };
   if (existing) {
     const [entry] = await db.update(V).set(set).where(eq(V.id, existing.id)).returning();
     return { entry, created: false };
   }
-  // A new entry is published as it is written: only an explicit publish false keeps it a draft
-  const [entry] = await db.insert(V).values({ id: newId(), slug, createdBy: userId, createdAt: now, ...set, ...(input.publish === undefined ? { publishedAt: now } : {}) }).returning();
+  const [entry] = await db.insert(V).values({ id: newId(), slug, createdBy: userId, createdAt: now, ...set }).returning();
   return { entry, created: true };
 }
 

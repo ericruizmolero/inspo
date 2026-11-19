@@ -10,7 +10,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { createPortal } from "react-dom";
 import Clouds from "@/components/Clouds";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
-import { Avatar, Button, Chip, Icon, IconButton, MenuItem, SegmentedControl, toneFor } from "@/components/criterio";
+import { Avatar, Button, Icon, IconButton, MenuItem, SegmentedControl, toneFor } from "@/components/criterio";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { fmtDate } from "@/lib/i18n/format";
 import { plain } from "@/lib/resources";
@@ -19,6 +19,8 @@ import type { VaultCard, VaultEntry } from "@/types/vault";
 import { useT } from "./I18nProvider";
 import { growFromPress, shrinkAway } from "./ItemPanel";
 import LoopVideo from "./LoopVideo";
+import SoundControl from "./SoundControl";
+import ZoomPill from "./ZoomPill";
 import "./Vault.css";
 
 interface Listing { entries: VaultCard[]; partner: boolean; picks: Record<string, string[]> }
@@ -65,6 +67,12 @@ export default function Vault({ query, head, projects }: { projects: readonly { 
   }, []);
   // The projects each entry is chosen for, as the team changes them from a card or a sheet: kept with the listing
   const setPicks = useCallback((id: string, projects: string[]) => setData((d) => { if (!d) return d; const next = { ...d, picks: { ...d.picks, [id]: projects } }; cache = next; return next; }), []);
+  // The zoom, as on the board: columns away from the usual number (positive is closer, fewer columns), kept for the next visit
+  const [zoom, setZoomState] = useState(0);
+  useLayoutEffect(() => {
+    try { const z = Number(localStorage.getItem(ZOOM_KEY) ?? NaN); if (Number.isInteger(z) && Math.abs(z) < 8) setZoomState(z); } catch { /* no storage */ }
+  }, []);
+  const setZoom = useCallback((z: number) => { setZoomState(z); try { localStorage.setItem(ZOOM_KEY, String(z)); } catch { /* no storage */ } }, []);
   // An entry's loop, as the team just changed it from its sheet, or its shape as a browser measured it (a loop whose file did not say)
   const patch = useCallback((id: string, fields: Partial<VaultCard>) => setData((d) => { if (!d) return d; const next = { ...d, entries: d.entries.map((x) => (x.id === id ? { ...x, ...fields } : x)) }; cache = next; return next; }), []);
   const show = useCallback((slug: string | null) => { setEntryInUrl(slug); setOpen(slug); }, []);
@@ -85,21 +93,50 @@ export default function Vault({ query, head, projects }: { projects: readonly { 
     return entries.filter((e) => (!category || e.category === category) && words.every((w) => plain([e.title, labelOf(e.category), e.summary, e.tags.join(" ")].join(" ")).includes(w)));
   }, [entries, category, query, labelOf]);
 
+  // How many columns: the usual number is as many as fit at 300 or more (100%), and the zoom moves away from it, down
+  // to two and up to where a card can still be read. A phone takes its own from its width
+  const fit = (min: number) => Math.floor((width + GRID_GAP) / (min + GRID_GAP));
+  const phone = !!width && width < 640;
+  const maxCols = Math.max(COLUMNS_MIN, Math.min(COLUMNS_MAX, fit(COLUMN_SMALLEST)));
+  const clampCols = (n: number) => Math.min(maxCols, Math.max(COLUMNS_MIN, n));
+  const base = clampCols(fit(COLUMN_MIN));
+  const cols = phone ? Math.max(1, fit(COLUMN_MIN)) : clampCols(base - zoom);
+  // A step from the columns on screen, not from the kept number: past either end the buttons don't pile up steps
+  const stepZoom = useRef((_by: number) => {});
+  stepZoom.current = (by) => { const next = clampCols(cols + by); if (!phone && width && next !== cols) setZoom(base - next); };
+  // A pinch on the trackpad, or ctrl/⌘ + wheel, zooms the grid instead of the page: pinching in is more columns
+  const scroller = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = scroller.current;
+    if (!el) return;
+    let sum = 0, last = 0;
+    const onWheel = (ev: WheelEvent) => {
+      if (!ev.ctrlKey && !ev.metaKey) return;
+      ev.preventDefault();
+      if (ev.timeStamp - last > 300) sum = 0;
+      last = ev.timeStamp;
+      sum += ev.deltaY;
+      if (Math.abs(sum) < 40) return;
+      stepZoom.current(sum > 0 ? 1 : -1);
+      sum = 0;
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, []);
   // The masonry: as many columns as fit, and each card, in the list's order, goes to the shortest one so far. Every
   // height is known before anything loads (the shot's shape, and a foot that is always the same), so nothing moves
   const columns = useMemo(() => {
     if (!width) return [];
-    const n = Math.max(1, Math.floor((width + GRID_GAP) / (COLUMN_MIN + GRID_GAP)));
-    const shot = (width - GRID_GAP * (n - 1)) / n - CARD_EDGE;
-    const cols = Array.from({ length: n }, () => ({ height: 0, entries: [] as VaultCard[] }));
+    const shot = (width - GRID_GAP * (cols - 1)) / cols - CARD_EDGE;
+    const stacks = Array.from({ length: cols }, () => ({ height: 0, entries: [] as VaultCard[] }));
     for (const e of shown) {
-      let to = cols[0];
-      for (const c of cols) if (c.height < to.height - 1) to = c;
+      let to = stacks[0];
+      for (const c of stacks) if (c.height < to.height - 1) to = c;
       to.entries.push(e);
       to.height += shot / shapeOf(e) + CARD_FOOT + GRID_GAP;
     }
-    return cols.map((c) => c.entries);
-  }, [shown, width]);
+    return stacks.map((c) => c.entries);
+  }, [shown, width, cols]);
 
   const opened = open ? entries.find((e) => e.slug === open) ?? null : null;
   // The entries before and after the open one, in the order the grid lists them (the category and the search count)
@@ -112,7 +149,7 @@ export default function Vault({ query, head, projects }: { projects: readonly { 
         <VaultSheet slug={open} onPrev={before ? () => step(before.slug) : undefined} onNext={after ? () => step(after.slug) : undefined} card={opened} partner={data.partner} projects={projects} used={opened ? data.picks?.[opened.id] ?? [] : []} onPicks={(v) => { if (opened) setPicks(opened.id, v); }} labelOf={labelOf} onClose={() => show(null)}
           onPatch={(fields) => { if (opened) patch(opened.id, fields); }} onCategory={(c) => { setCategory(c); show(null); }} />
       )}
-      <div className="disc-list">
+      <div className="disc-list" ref={scroller}>
         {head(t.vault.lead, rail.length > 0 && (
           // The categories wait in a menu on the right of the row, as the kinds of resource do: all of them, or one,
           // each with how many it holds. Only the ones that hold something
@@ -146,6 +183,14 @@ export default function Vault({ query, head, projects }: { projects: readonly { 
         ) : <p className="disc-list__none">{t.vault.none}</p>}
       </div>
       <Clouds />
+      {/* The corner pill, the board's own: the zoom (minus, %, plus) where there is a grid to zoom, and the music after a hairline */}
+      <ZoomPill className="board-zoom" zoom={width && !phone && columns.length ? {
+        pct: Math.round((base / cols) * 100), label: t.zoom.columns(cols),
+        canOut: cols < maxCols, canIn: cols > COLUMNS_MIN,
+        onOut: () => stepZoom.current(1), onIn: () => stepZoom.current(-1), onReset: () => setZoom(0),
+      } : null}>
+        <SoundControl />
+      </ZoomPill>
     </>
   );
 }
@@ -157,6 +202,11 @@ const STAGE_H = 600;
 // shot at the sides (padding and hairline) and under it (the foot with the name and the category)
 const GRID_GAP = 16;
 const COLUMN_MIN = 300;
+/** Zoomed out, a column gets no narrower than this, and there are never fewer than two nor more than eight */
+const COLUMN_SMALLEST = 200;
+const COLUMNS_MIN = 2;
+const COLUMNS_MAX = 8;
+const ZOOM_KEY = "inspo:vault-zoom:1";
 const CARD_EDGE = 18;
 const CARD_FOOT = 86;
 /** A card's shot, width over height: its loop's own shape, held between a tall phone and a wide strip; without a loop,
@@ -220,7 +270,6 @@ function VaultTile({ entry: e, kind, blank, projects, used, onPicks, onShape, on
           <UseInProject slug={e.slug} projects={projects} used={used} onChange={onPicks} compact />
           {e.preview && <IconButton icon="eye" variant="strong" size="s" label={t.vault.live} onClick={() => window.open(`/api/vault/${encodeURIComponent(e.slug)}/preview`, "_blank", "noopener,noreferrer")} />}
         </span>
-        {!e.published && <Chip tone="butter" className="vault-card__draft">{t.vault.draft}</Chip>}
       </span>
       <span className="vault-card__foot">
         <span className="vault-card__text">
@@ -317,7 +366,7 @@ function VaultSheet({ slug, card, partner, projects, used, onPicks, onPatch, lab
   const e = (entry?.slug === slug ? entry : null) ?? card;
   const previewUrl = `/api/vault/${encodeURIComponent(slug)}/preview`;
   const live = !!e && !video && e.preview;
-  const when = e ? (e.published ? fmtDate(e.createdAt, locale, { day: "numeric", month: "long", year: "numeric" }) : t.vault.draft) : "";
+  const when = e ? fmtDate(e.createdAt, locale, { day: "numeric", month: "long", year: "numeric" }) : "";
   return createPortal(
     <div className={`ip-layer${navigable ? " has-nav" : ""}`}>
       <div ref={dim} className="ip-dim" onClick={leave} aria-hidden />
@@ -399,7 +448,7 @@ function VaultSheet({ slug, card, partner, projects, used, onPicks, onPatch, lab
               </div>
               <dl className="vault-facts">
                 <div><dt>{t.vault.category}</dt><dd><button type="button" className="vault-facts__link" onClick={() => onCategory(e.category)}>{labelOf(e.category)}</button></dd></div>
-                {!entry?.by && <div><dt>{e.published ? t.vault.published : t.vault.state}</dt><dd>{when}</dd></div>}
+                {!entry?.by && <div><dt>{t.vault.published}</dt><dd>{when}</dd></div>}
                 {entry?.sourceUrl && partner && <div><dt>{t.vault.source}</dt><dd><a className="vault-facts__link" href={entry.sourceUrl} target="_blank" rel="noopener noreferrer">{hostOf(entry.sourceUrl)}</a></dd></div>}
               </dl>
               {e.tags.length > 0 && <ul className="vault-tags">{e.tags.map((tag) => <li key={tag}>{tag}</li>)}</ul>}

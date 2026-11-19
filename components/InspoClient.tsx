@@ -1129,7 +1129,8 @@ export default function InspoClient({
         )}
         {/* The music is in the corner of every view. The boards and Polish have it in their zoom's pill; the others
             have nothing to zoom, and the pill is the music alone */}
-        {!(space !== "vault" && space !== "templates" && space !== "discover" && space !== "skills" && space !== "home" && items.length > 0
+        {/* The Vault draws its own pill: its grid zooms (components/Vault.tsx) */}
+        {space !== "vault" && !(space !== "templates" && space !== "discover" && space !== "skills" && space !== "home" && items.length > 0
           && !(currentProject && projectView === "system")
           && (projectView === "polish" || startHere || !(spaceItems.length === 0 && (currentProject || space === "inbox"))))
           && (space === "home" ? (
