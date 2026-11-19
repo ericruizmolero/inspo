@@ -26,7 +26,7 @@ async function partner(ctx: McpCtx): Promise<void> {
 
 /** Lowercase and without accents, to look through the entries */
 const plain = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
-const brief = (origin: string) => (c: VaultCard) => ({ entry: c.slug, title: c.title, category: c.category, ...(c.summary ? { what_it_is: c.summary } : {}), ...(c.tags.length ? { tags: c.tags } : {}), ...(c.published ? {} : { draft: true }), url: vaultUrl(origin, c.slug) });
+const brief = (origin: string) => (c: VaultCard) => ({ entry: c.slug, title: c.title, category: c.category, ...(c.summary ? { what_it_is: c.summary } : {}), ...(c.tags.length ? { tags: c.tags } : {}), ...(c.category === VAULT_RULES ? { rule: true } : {}), ...(c.published ? {} : { draft: true }), url: vaultUrl(origin, c.slug) });
 
 export const SearchVaultInput = z.object({
   category: z.enum(VAULT_CATEGORIES).optional().describe("One category: a kind of section (hero, nav, pricing, faq, footer…, the same words a landing's plan uses) or a detail (buttons, text, scroll, transitions, cursor, sliders, media, utilities)."),
@@ -67,6 +67,7 @@ export async function searchVault(ctx: McpCtx, origin: string, input: z.infer<ty
       found.length
         ? "Pick what fits the section you are building and the project's criterio, then call read_vault with its entry for the code. An entry is a starting point: the project's decisions (type, color, voice, every Never line) come first, and its copy is the project's own."
         : "Nothing in the Vault for that yet. Build it from the project's criterio and references.",
+      found.some((c) => c.category === VAULT_RULES) ? "An entry marked rule is not a piece to place: it is a set of corrections to apply wherever its cases turn up in what you build." : "",
       rules.length ? "always_apply holds rules, not pieces: whatever you build, read each one with read_vault and apply it where its cases turn up (an icon in a button, a play triangle, tracked capitals), whether or not you searched for it." : "",
     ].filter(Boolean).join(" "),
   };
