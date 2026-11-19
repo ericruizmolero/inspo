@@ -469,7 +469,7 @@ function VaultSheet({ slug, near, card, partner, projects, used, onPicks, onPatc
                 </section>
               ) : (
                 // A loop gives the box its own shape, as large as the stage lets it be; the piece running fills the stage
-                <div key={slug} className={`vault-sheet__shot${live ? " is-live" : ""}${ready ? " is-ready" : ""}`} style={video && shape ? ({ "--shape": shape } as React.CSSProperties) : undefined}>
+                <div key={slug} className={`vault-sheet__shot${live ? " is-live" : ""}`} style={video && shape ? ({ "--shape": shape } as React.CSSProperties) : undefined}>
                   {e.image ? <img src={e.image} alt="" decoding="async" /> : <span className="vault-card__blank">{labelOf(e.category)}</span>}
                   {/* With a loop, the box plays the loop, as its card does; the piece itself is one press away ("Live preview") */}
                   {video && <LoopVideo key={video} className="vault-sheet__loop" src={video} onSize={shape ? undefined : (w, h) => { setShape(w / h); onPatch({ videoRatio: w / h }); }} />}
@@ -483,9 +483,9 @@ function VaultSheet({ slug, near, card, partner, projects, used, onPicks, onPatc
               {navigable && <IconButton icon="chevron-right" variant="default" size="l" className="ip-nav is-next" label={t.panel.next} onClick={goNext} disabled={!goNext} />}
             </div>
             {/* Down the right, where a reference has its conversation: what it is, who made it and when, the ways to see and use it, where it sits and its tags */}
-            {/* From one entry to the next the column comes in whole, once the entry is read, and in step with the piece on
-                the stage: the same moment, the same curve, from the side the step went */}
-            <section key={slug} ref={side} className={`ip-card--talk cr-viewer-aside vault-sheet__side${ready ? " is-ready" : ""}${more ? " has-more" : ""}`}>
+            {/* From one entry to the next the column comes in with the piece on the stage: the same moment, the same curve,
+                from the side the step went. At once, with what the card holds: it never waits for the entry to be read */}
+            <section key={slug} ref={side} className={`ip-card--talk cr-viewer-aside vault-sheet__side${more ? " has-more" : ""}`}>
               {e.summary && <p className="vault-sheet__what">{e.summary}</p>}
               {entry?.by && (
                 <div className="vault-by">
