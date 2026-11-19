@@ -12,3 +12,5 @@ supersedes: el dibujo de "El favicon es Tino, el mismo de la landing" (2026-11-0
 **Por qué.** Eric: "este si lo escalas a dimensión favicon funciona", "pon esta variante de favicon icono logo (blanco y negro) en todo, respetando los tamaños en cada sitio". Que el píxel lea mejor a 16 px que el dibujo liso es interpretación nuestra.
 
 **Cómo aplicarlo.** Un icono o logo nuevo de Criterio sale de este trazado (el de `components/TinoMark.tsx`), nunca de una reducción del dibujo liso. El peluche 3D y su dibujo plano de descarga (`public/tino/tino-plano.svg`) no cambian.
+
+**Matiz** del 2026-11-18: el favicon lleva un píxel más de contorno; el logo y la extensión siguen con este dibujo. → [decisión](2026-11-18-el-favicon-es-tino-con-un-pixel-mas-de-contorno.md)

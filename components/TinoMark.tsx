@@ -1,4 +1,5 @@
-/** Tino in pixels, the brand mark: the favicon's drawing (app/icon.svg) inline, in currentColor, so it takes the app's
+/** Tino in pixels, the brand mark: Eric's drawing inline (the favicon, app/icon.svg, is this one grown a cell all round
+ *  so it holds at 16 px), in currentColor, so it takes the app's
  *  theme instead of the system's. Eric's pixel drawing (22 × 20 cells, centred on a 24 × 24 canvas); the visor is a hole in the body, so whatever
  *  is behind shows through. */
 const TINO_PIXELS = "M12 2h1v1h-1zM5 3h1v1h-1zM12 3h2v1h-2zM5 4h2v1h-2zM11 4h3v1h-3zM4 5h4v1h-4zM11 5h4v1h-4zM4 6h5v1h-5zM11 6h4v1h-4zM4 7h5v1h-5zM10 7h5v1h-5zM4 8h5v1h-5zM10 8h5v1h-5zM5 9h12v1h-12zM5 10h14v1h-14zM3 11h18v1h-18zM2 12h20v1h-20zM2 13h11v1h-11zM21 13h1v1h-1zM1 14h12v1h-12zM21 14h2v1h-2zM1 15h22v1h-22zM1 16h22v1h-22zM1 17h22v1h-22zM1 18h22v1h-22zM2 19h20v1h-20zM3 20h18v1h-18zM5 21h15v1h-15z";
