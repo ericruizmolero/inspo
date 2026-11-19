@@ -98,6 +98,25 @@ const Block = z.object({
   note: z.string().max(L.blockNote).optional().describe("A line on what to change or watch out for."),
 });
 
+const EsInput = z.object({
+  title: z.string().max(L.title).optional().describe("The name in Spanish, as a Spanish designer would call the piece. A term the trade keeps in English stays (\"Slider\", \"Hero\")."),
+  summary: z.string().max(L.summary).optional().describe("summary in Spanish."),
+  use: z.string().max(L.use).optional().describe("use in Spanish."),
+  tags: z.array(z.string().max(L.tag)).max(L.tags).optional().describe("tags in Spanish, one for each tag and in the same order. A library's name or a term kept in English stays as it is (GSAP, Hover)."),
+  blocks: z.array(z.object({ title: z.string().max(L.blockTitle).optional(), note: z.string().max(L.blockNote).optional() })).max(L.blocks).optional().describe("Each block's title and note in Spanish, one for each block and in the same order; never the code."),
+});
+/** `es` as it arrives: the object, or the same object as JSON text. A client that loaded this tool before the field
+ *  existed has no shape for it and sends it as text; refusing that would leave its session unable to write at all */
+function readEs(v: z.infer<typeof AddVaultInput>["es"]): z.infer<typeof EsInput> {
+  if (v === undefined) return {};
+  if (typeof v !== "string") return v;
+  let parsed: unknown;
+  try { parsed = JSON.parse(v); } catch { throw new HttpError(400, 'es is not valid JSON. Send it as an object, or as the same object in JSON text: {"title":"…","summary":"…","use":"…","tags":["…"],"blocks":[{"title":"…","note":"…"}]}.'); }
+  const got = EsInput.safeParse(parsed);
+  if (!got.success) throw new HttpError(400, `es does not have the right shape: ${got.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ")}.`);
+  return got.data;
+}
+
 export const AddVaultInput = z.object({
   title: z.string().min(1).max(L.title).describe("The entry's name, as a card shows it: \"Folder Tabs\", \"Comparison Table (Basic)\"."),
   category: z.enum(VAULT_CATEGORIES).describe("A kind of section (hero, nav, pricing, faq, footer…) or a detail (buttons, text, scroll, transitions, cursor, sliders, media, utilities)."),
@@ -106,13 +125,7 @@ export const AddVaultInput = z.object({
   use: z.string().max(L.use).optional().describe("When to reach for it and what makes it good: what an agent reads to choose it over another."),
   tags: z.array(z.string().max(L.tag)).max(L.tags).optional().describe("Techniques, libraries and behaviours: GSAP, SplitText, Tabs, Hover, Responsive."),
   blocks: z.array(Block).max(L.blocks).optional().describe("The documentation, in the order it is set up. Passing it replaces every block."),
-  es: z.object({
-    title: z.string().max(L.title).optional().describe("The name in Spanish, as a Spanish designer would call the piece. A term the trade keeps in English stays (\"Slider\", \"Hero\")."),
-    summary: z.string().max(L.summary).optional().describe("summary in Spanish."),
-    use: z.string().max(L.use).optional().describe("use in Spanish."),
-    tags: z.array(z.string().max(L.tag)).max(L.tags).optional().describe("tags in Spanish, one for each tag and in the same order. A library's name or a term kept in English stays as it is (GSAP, Hover)."),
-    blocks: z.array(z.object({ title: z.string().max(L.blockTitle).optional(), note: z.string().max(L.blockNote).optional() })).max(L.blocks).optional().describe("Each block's title and note in Spanish, one for each block and in the same order; never the code."),
-  }).optional().describe("The same words in Spanish (Spain: \"en directo\", not \"en vivo\"), for whoever reads the app in Spanish: the English fields are what an agent reads, these are what a person sees. Every text you pass in this call needs its Spanish here; without it the call is refused."),
+  es: z.union([EsInput, z.string().max(20_000)]).optional().describe("The same words in Spanish (Spain: \"en directo\", not \"en vivo\"), for whoever reads the app in Spanish: the English fields are what an agent reads, these are what a person sees. Every text you pass in this call needs its Spanish here; without it the call is refused. An object; the same object as JSON text is taken too."),
   demo: z.string().max(L.demo).optional().describe("A whole, self-contained HTML document that shows the piece running, for the live preview in the app: the blocks' code plus what a demo needs around it (a ground, real-looking content, pictures by public address). Scripts load from a CDN. Left out, the preview is put together from the html, css and js blocks, centred on a plain ground. An empty string removes it."),
   ground: z.string().max(7).optional().describe("The colour the piece stands on, as #rrggbb, for a preview put together from the blocks (light or dark: the text colour follows). Take its picture on this same ground, or the card changes colour when the piece starts on hover. A demo sets its own."),
   live_url: z.string().max(2000).optional().describe("A public page where it runs, when there is one besides the preview."),
@@ -155,7 +168,7 @@ export async function readVaultUpload(token: string): Promise<{ entryId: string;
 export async function addToVault(ctx: McpCtx, origin: string, input: z.infer<typeof AddVaultInput>) {
   await partner(ctx);
   // Whatever text this call writes comes with its Spanish: the app is read in both, and nothing translates it later
-  const es = input.es ?? {};
+  const es = readEs(input.es);
   const owed = [
     es.title ? "" : "es.title",
     !input.summary || es.summary ? "" : "es.summary",
@@ -164,8 +177,8 @@ export async function addToVault(ctx: McpCtx, origin: string, input: z.infer<typ
     !input.blocks?.length || (es.blocks?.length === input.blocks.length && input.blocks.every((b, i) => es.blocks![i]?.title && (!b.note || es.blocks![i]?.note))) ? "" : `es.blocks (${input.blocks.length}, in the order of blocks: each one's title, and its note where the block has one)`,
   ].filter(Boolean);
   const before = await readVault(input.entry || input.title, { drafts: true });
-  if (owed.length && !(owed.length === 1 && owed[0] === "es.title" && before)) throw new HttpError(400, `The Vault is read in Spanish too. Send the call again with the Spanish of what it writes: ${owed.join("; ")}.`);
-  const { entry, created } = await saveVault({ ...input, slug: input.entry }, ctx.user.id);
+  if (owed.length && !(owed.length === 1 && owed[0] === "es.title" && before)) throw new HttpError(400, `The Vault is read in Spanish too. Send the call again with the Spanish of what it writes, in es: ${owed.join("; ")}. If your copy of this tool has no es field, pass es anyway, as JSON text: {"title":"…","summary":"…","use":"…","tags":["…"],"blocks":[{"title":"…","note":"…"}]}.`);
+  const { entry, created } = await saveVault({ ...input, es, slug: input.entry }, ctx.user.id);
   const lacks = missingEs(entry);
   let picture = !!entry.imageKey;
   let pictureFailed = "";
