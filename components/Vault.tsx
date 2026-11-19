@@ -68,6 +68,8 @@ export default function Vault({ query, head, projects }: { projects: readonly { 
   // An entry's loop, as the team just changed it from its sheet, or its shape as a browser measured it (a loop whose file did not say)
   const patch = useCallback((id: string, fields: Partial<VaultCard>) => setData((d) => { if (!d) return d; const next = { ...d, entries: d.entries.map((x) => (x.id === id ? { ...x, ...fields } : x)) }; cache = next; return next; }), []);
   const show = useCallback((slug: string | null) => { setEntryInUrl(slug); setOpen(slug); }, []);
+  // From one open entry to the next: the same sheet, and the same step of history (Back still closes it)
+  const step = useCallback((slug: string) => { const url = new URL(window.location.href); url.searchParams.set("entry", slug); window.history.replaceState(null, "", url); setOpen(slug); }, []);
 
   const labelOf = useCallback((key: string) => (t.taxonomy.section as Record<string, string>)[key] ?? (t.vault.details as Record<string, string>)[key] ?? key, [t]);
   const entries = useMemo(() => data?.entries ?? [], [data]);
@@ -100,10 +102,14 @@ export default function Vault({ query, head, projects }: { projects: readonly { 
   }, [shown, width]);
 
   const opened = open ? entries.find((e) => e.slug === open) ?? null : null;
+  // The entries before and after the open one, in the order the grid lists them (the category and the search count)
+  const at = open ? shown.findIndex((e) => e.slug === open) : -1;
+  const before = at > 0 ? shown[at - 1] : null;
+  const after = at >= 0 && at < shown.length - 1 ? shown[at + 1] : null;
   return (
     <>
       {open && data && (
-        <VaultSheet key={open} slug={open} card={opened} partner={data.partner} projects={projects} used={opened ? data.picks?.[opened.id] ?? [] : []} onPicks={(v) => { if (opened) setPicks(opened.id, v); }} labelOf={labelOf} onClose={() => show(null)}
+        <VaultSheet slug={open} onPrev={before ? () => step(before.slug) : undefined} onNext={after ? () => step(after.slug) : undefined} card={opened} partner={data.partner} projects={projects} used={opened ? data.picks?.[opened.id] ?? [] : []} onPicks={(v) => { if (opened) setPicks(opened.id, v); }} labelOf={labelOf} onClose={() => show(null)}
           onPatch={(fields) => { if (opened) patch(opened.id, fields); }} onCategory={(c) => { setCategory(c); show(null); }} />
       )}
       <div className="disc-list">
@@ -229,8 +235,11 @@ function VaultTile({ entry: e, kind, blank, projects, used, onPicks, onShape, on
 
 /** One entry, open: the board's own Viewer over the grid (.ip, .cr-viewer). The piece on the stage, at its loop's shape
  *  or filling it when it runs live; down the right, what it is, who made it, the ways to use it, its facts and tags.
- *  For partners the stage has a second view, its documentation. Esc, the veil or the cross close it */
-function VaultSheet({ slug, card, partner, projects, used, onPicks, onPatch, labelOf, onClose, onCategory }: {
+ *  For partners the stage has a second view, its documentation. The arrows (and the keys, and a swipe on a phone) walk
+ *  the grid in its order, in the same sheet. Esc, the veil or the cross close it */
+function VaultSheet({ slug, card, partner, projects, used, onPicks, onPatch, labelOf, onClose, onCategory, onPrev, onNext }: {
+  /** The entry before and after this one in the grid; absent at either end */
+  onPrev?: () => void; onNext?: () => void;
   slug: string; card: VaultCard | null; partner: boolean; projects: readonly { id: string; name: string }[]; used: readonly string[]; onPicks: (projects: string[]) => void; onPatch: (fields: Partial<VaultCard>) => void; labelOf: (key: string) => string; onClose: () => void; onCategory: (c: string) => void;
 }) {
   const { t, locale } = useT();
@@ -242,6 +251,9 @@ function VaultSheet({ slug, card, partner, projects, used, onPicks, onPatch, lab
   // The loop and its shape, as the team just set them from here (the entry's own until then)
   const [video, setVideo] = useState<string | null>(card?.video ?? null);
   const [shape, setShape] = useState<number | null>(card?.video ? card.videoRatio : null);
+  // Another entry in the same sheet starts from its own card; the view (the piece or its documentation) stays
+  const [shown, setShown] = useState(slug);
+  if (shown !== slug) { setShown(slug); setEntry(null); setMissing(false); setRunning(false); setVideo(card?.video ?? null); setShape(card?.video ? card.videoRatio : null); }
   useEffect(() => { if (entry) { setVideo(entry.video); if (entry.videoRatio) setShape(entry.videoRatio); } }, [entry]);
   useEffect(() => {
     let alive = true;
@@ -272,13 +284,42 @@ function VaultSheet({ slug, card, partner, projects, used, onPicks, onPatch, lab
     return () => document.removeEventListener("keydown", onKey);
   }, []);
 
-  // The card's own fields paint at once; the rest arrives with the entry
-  const e = entry ?? card;
+  // The arrows walk the grid in its order, unless a field or another dialog has them
+  const steps = useRef({ onPrev, onNext });
+  steps.current = { onPrev, onNext };
+  const navigable = !!(onPrev || onNext);
+  useEffect(() => {
+    if (!navigable) return;
+    const onKey = (ev: KeyboardEvent) => {
+      if ((ev.key !== "ArrowLeft" && ev.key !== "ArrowRight") || ev.defaultPrevented || ev.metaKey || ev.ctrlKey || ev.altKey || ev.shiftKey) return;
+      if ((ev.target as HTMLElement | null)?.closest("input, textarea, select, pre, [contenteditable]:not([contenteditable=false]), [role=slider], [role=tablist]")) return;
+      if (document.querySelector("[role=dialog][data-open], .modal-backdrop")) return;
+      const go = ev.key === "ArrowLeft" ? steps.current.onPrev : steps.current.onNext;
+      if (!go) return;
+      ev.preventDefault();
+      go();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [navigable]);
+  // A phone: a horizontal swipe over the sheet steps too, as on the board
+  const swipe = useRef<{ x: number; y: number } | null>(null);
+  const onTouchStart = (ev: React.TouchEvent) => { const t0 = ev.touches[0]; swipe.current = { x: t0.clientX, y: t0.clientY }; };
+  const onTouchEnd = (ev: React.TouchEvent) => {
+    const from = swipe.current; swipe.current = null;
+    if (!from) return;
+    const dx = ev.changedTouches[0].clientX - from.x, dy = ev.changedTouches[0].clientY - from.y;
+    if (Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 2) return;
+    if (dx < 0) onNext?.(); else onPrev?.();
+  };
+
+  // The card's own fields paint at once; the rest arrives with the entry (never the one before's, while the next loads)
+  const e = (entry?.slug === slug ? entry : null) ?? card;
   const previewUrl = `/api/vault/${encodeURIComponent(slug)}/preview`;
   const live = !!e && !video && e.preview;
   const when = e ? (e.published ? fmtDate(e.createdAt, locale, { day: "numeric", month: "long", year: "numeric" }) : t.vault.draft) : "";
   return createPortal(
-    <div className="ip-layer">
+    <div className={`ip-layer${navigable ? " has-nav" : ""}`}>
       <div ref={dim} className="ip-dim" onClick={leave} aria-hidden />
       <aside ref={sheet} className="ip cr-viewer vault-ip" role="dialog" aria-modal="true" aria-label={e?.title ?? t.vault.name}>
         <header className="ip-bar cr-viewer-head">
@@ -307,8 +348,9 @@ function VaultSheet({ slug, card, partner, projects, used, onPicks, onPatch, lab
         {!e ? (
           <div className="ip-bento cr-viewer-body"><div className="ip-stage cr-viewer-stage">{missing && <p className="disc-list__none">{t.vault.gone}</p>}</div></div>
         ) : (
-          <div className="ip-bento cr-viewer-body">
+          <div className="ip-bento cr-viewer-body" onTouchStart={navigable ? onTouchStart : undefined} onTouchEnd={navigable ? onTouchEnd : undefined}>
             <div className="ip-stage cr-viewer-stage">
+              {navigable && <IconButton icon="chevron-left" variant="default" size="l" className="ip-nav is-prev" label={t.panel.previous} onClick={onPrev} disabled={!onPrev} />}
               {view === "docs" ? (
                 <section className="vault-docs">
                   <header className="vault-docs__head">
@@ -329,9 +371,10 @@ function VaultSheet({ slug, card, partner, projects, used, onPicks, onPatch, lab
                       The invitation leaves once the pointer is inside */}
                   {video ? <span className="vault-sheet__mark" aria-label={t.vault.isVideo} data-tip={t.vault.isVideo}><Icon name="film" size={16} /></span>
                     : e.preview ? <span className="vault-sheet__try" aria-hidden><i />{t.vault.tryIt}</span> : null}
-                  {live && <iframe className={`vault-sheet__live-frame${running ? " is-ready" : ""}`} src={previewUrl} title={`${e.title}: ${t.vault.live}`} sandbox="allow-scripts" referrerPolicy="no-referrer" onLoad={() => setRunning(true)} />}
+                  {live && <iframe key={slug} className={`vault-sheet__live-frame${running ? " is-ready" : ""}`} src={previewUrl} title={`${e.title}: ${t.vault.live}`} sandbox="allow-scripts" referrerPolicy="no-referrer" onLoad={() => setRunning(true)} />}
                 </div>
               )}
+              {navigable && <IconButton icon="chevron-right" variant="default" size="l" className="ip-nav is-next" label={t.panel.next} onClick={onNext} disabled={!onNext} />}
             </div>
             {/* Down the right, where a reference has its conversation: what it is, who made it and when, the ways to see and use it, where it sits and its tags */}
             <section className="ip-card--talk cr-viewer-aside vault-sheet__side">

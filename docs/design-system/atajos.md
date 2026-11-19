@@ -44,6 +44,13 @@ Todos los que maneja la app. Al añadir uno: que no choque con estos, que no sal
 | Doble clic en la papelera de una tarjeta | Borra la referencia (el primer clic pide el segundo) |
 | Esc en una tarjeta | Cancela el borrado a medias (también se cancela al sacar el puntero o solo a los 6 s) |
 
+## Ficha de una entrada del Vault
+
+| Tecla | Qué hace |
+| --- | --- |
+| ← → | Entrada anterior o siguiente, en el orden de la rejilla (no dentro de un campo ni del código) |
+| Esc | Cierra la ficha |
+
 ## Pulido
 
 | Tecla | Qué hace |

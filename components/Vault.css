@@ -57,8 +57,9 @@
    facts down the right where a reference has its conversation ─── */
 /* The box on the stage. With a loop it has the loop's shape (--shape, width over height) and is as large as the
    stage lets it be: the stage is a size container, so the width is its own or the one its height allows. A picture
-   alone keeps its 4:3; the piece running fills the stage */
-.vault-sheet__shot { position: relative; flex: none; width: min(100cqw, calc(100cqh * var(--shape, 4 / 3))); aspect-ratio: var(--shape, 4 / 3); margin: auto; border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; background: var(--surface-raised); }
+   alone keeps its 4:3; the piece running fills the stage. With the arrows to its sides it gives them their room
+   (it shrinks, and its height follows its shape) */
+.vault-sheet__shot { position: relative; flex: 0 1 auto; min-width: 0; width: min(100cqw, calc(100cqh * var(--shape, 4 / 3))); aspect-ratio: var(--shape, 4 / 3); margin: auto; border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; background: var(--surface-raised); }
 .vault-sheet__shot.is-live { width: 100cqw; height: 100cqh; aspect-ratio: auto; }
 /* In the box's corner. A loop: a small ink key with a film mark. The piece itself: a pill that asks to be tried, a
    moss dot beating beside the words, gone once the pointer is in the box */
