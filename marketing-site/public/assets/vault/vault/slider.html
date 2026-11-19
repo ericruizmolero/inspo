@@ -1,0 +1,544 @@
+<!doctype html>
+<html lang="en">
+<head>
+
+<title>Cascading Case Slider · Criterio Vault</title>
+<meta name="description" content="An accordion of case-study photos: the open one takes most of the row and its neighbours step down in width, with the case's line of text and link swapping underneath.">
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>*,*::before,*::after{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px;background:#FFFFFF;color:#1B1B18;font-family:ui-sans-serif,system-ui,sans-serif}body>*{max-width:100%}</style>
+<style>
+/* Cascading Case Slider
+   Structure and motion only. Type, colour and spacing come from the project:
+   text inherits its font, size and colour from wherever the component is placed. */
+.cascade_component {
+  width: 100%;   /* fills its container, up to --cascade-max, and centres itself */
+  max-width: var(--cascade-max);
+  margin-inline: auto;
+  --cascade-max: 75rem;   /* set to none to follow the project's own container */
+  --cascade-ground: #fff;   /* the colour the component stands on: the open photo fades into it */
+  --cascade-height: 28.75rem;
+  --cascade-gap: 1rem;
+  --cascade-radius: 0.5rem;
+  --cascade-ease: cubic-bezier(0.62, 0.05, 0.01, 0.99);
+
+  /* How much room each slide takes, by distance from the active one. */
+  --cascade-flex-1: 18;
+  --cascade-flex-2: 6;
+  --cascade-flex-3: 3;
+  --cascade-flex-4: 1.2;
+  --cascade-flex-5: 0.2;
+}
+
+/* ---------- The accordion ---------- */
+
+.cascade_viewport {
+  display: flex;
+  gap: var(--cascade-gap);
+  height: var(--cascade-height);
+  overflow-x: clip;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.cascade_slide {
+  position: relative;
+  flex: var(--cascade-flex-5);
+  min-width: 0;
+  height: 100%;
+  cursor: pointer;
+  transition: flex 0.8s var(--cascade-ease), opacity 0.4s;
+}
+
+.cascade_slide[data-level="1"] { flex: var(--cascade-flex-1); cursor: default; }
+.cascade_slide[data-level="2"] { flex: var(--cascade-flex-2); }
+.cascade_slide[data-level="3"] { flex: var(--cascade-flex-3); }
+.cascade_slide[data-level="4"] { flex: var(--cascade-flex-4); }
+.cascade_slide[data-level="5"] { flex: var(--cascade-flex-5); }
+
+.cascade_img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: var(--cascade-radius);
+  pointer-events: none;
+}
+
+/* The bottom of the open photo fades into the ground so the logo reads on any picture.
+   It is a plain layer of ground colour on top of the photo, a hair wider than the slide
+   and not clipped by its rounded corners, so no edge of the photo can show through
+   in any browser. The stops are eased: a two-stop gradient ends in a visible line. */
+.cascade_slide::after {
+  content: "";
+  position: absolute;
+  inset: 55% -1px -1px -1px;
+  z-index: 2;
+  background: linear-gradient(to bottom,
+    transparent 10%,
+    color-mix(in srgb, var(--cascade-ground) 20%, transparent) 28%,
+    color-mix(in srgb, var(--cascade-ground) 50%, transparent) 46%,
+    color-mix(in srgb, var(--cascade-ground) 75%, transparent) 62%,
+    color-mix(in srgb, var(--cascade-ground) 90%, transparent) 73%,
+    color-mix(in srgb, var(--cascade-ground) 97%, transparent) 81%,
+    var(--cascade-ground) 87%);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+}
+
+/* Swap the demo wordmark for the brand's logo: an <img> or an inline SVG. */
+.cascade_logo {
+  position: absolute;
+  left: 1.25rem;
+  right: 1.25rem;
+  bottom: 1.25rem;
+  z-index: 3;
+  overflow-x: clip;   /* the slide no longer clips, so the logo keeps itself inside it */
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.cascade_mark {
+  width: 1.5rem;
+  height: 1.5rem;
+  flex: none;
+}
+
+.cascade_logo img {
+  display: block;
+  max-width: 8rem;
+  max-height: 4.5rem;
+  object-fit: contain;
+}
+
+/* The fade and the logo come in once the slide has finished opening. */
+.cascade_logo {
+  opacity: 0;
+  transform: translateY(15px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.cascade_slide[data-level="1"] .cascade_logo {
+  opacity: 1;
+  transform: none;
+  transition-delay: 0.4s;
+}
+
+.cascade_slide[data-level="1"]::after {
+  opacity: 1;
+  transition-delay: 0.4s;
+}
+
+/* ---------- The caption under it ---------- */
+
+.cascade_caption {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 2rem;
+  min-height: 8rem;   /* room for the longest caption, so nothing below jumps */
+  padding-top: 1.5rem;
+}
+
+/* Only the text and its link swap; the arrows stay put. */
+.cascade_caption.is-swapping .cascade_copy {
+  opacity: 0;
+  transform: translateY(10px);
+  transition-duration: 0.3s;
+  transition-timing-function: ease-in;
+}
+
+.cascade_copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1rem;
+  max-width: 50rem;
+  transition: opacity 0.4s ease-out, transform 0.4s ease-out;
+}
+
+.cascade_text { text-wrap: pretty; }
+
+.cascade_text p { margin: 0; }
+
+.cascade_text em {
+  font-style: normal;
+  opacity: 0.6;
+}
+
+.cascade_actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: none;
+}
+
+.cascade_link {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: inherit;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.cascade_arrow {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, currentColor 15%, transparent);
+  border-radius: var(--cascade-radius);
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  transition: opacity 0.35s, background-color 0.4s ease;
+}
+
+.cascade_arrow:hover {
+  background-color: color-mix(in srgb, currentColor 5%, transparent);
+}
+
+.cascade_arrow:disabled {
+  opacity: 0.2;
+  pointer-events: none;
+}
+
+/* ---------- Tablet and down: one slide at a time ---------- */
+
+@media (max-width: 991px) {
+  .cascade_component { --cascade-height: 26.25rem; }
+
+  .cascade_viewport { gap: 0; }
+
+  .cascade_slide[data-level="1"] { flex: 0 0 100%; }
+
+  .cascade_slide:not([data-level="1"]) {
+    flex: 0 0 0%;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .cascade_caption {
+    min-height: 12rem;
+  }
+}
+
+@media (max-width: 479px) {
+  .cascade_component { --cascade-height: 18.75rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cascade_slide,
+  .cascade_slide::after,
+  .cascade_logo,
+  .cascade_copy {
+    transition-duration: 0.01s !important;
+    transition-delay: 0s !important;
+  }
+}
+</style>
+</head>
+<body>
+<div class="cascade_component" data-cascade data-cascade-autoplay="2000" role="group" aria-roledescription="carousel" aria-label="Case studies">
+  <div class="cascade_viewport" data-cascade-viewport>
+
+    <div class="cascade_slide" data-cascade-slide role="button" tabindex="0" aria-label="Arca Home case study">
+      <img class="cascade_img" src="img/photo-1503602642458-232111445657.jpg" alt="" loading="lazy" draggable="false" />
+      <div class="cascade_logo" role="img" aria-label="Arca Home">
+        <svg class="cascade_mark" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="2" y="2" width="9" height="20"/><rect x="13" y="10" width="9" height="12"/></svg>
+        <span style="font-family:Georgia,serif;font-style:italic;font-weight:400;font-size:1.1em">Arca</span>
+      </div>
+      <div data-cascade-source hidden>
+        <p>Arca Home turned a showroom favourite into an online bestseller, <em>with a store that makes good furniture easy to buy.</em></p>
+        <a href="#">View case study</a>
+      </div>
+    </div>
+
+    <div class="cascade_slide" data-cascade-slide role="button" tabindex="0" aria-label="Lente case study">
+      <img class="cascade_img" src="img/photo-1511499767150-a48a237f0083.jpg" alt="" loading="lazy" draggable="false" />
+      <div class="cascade_logo" role="img" aria-label="Lente">
+        <svg class="cascade_mark" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M2 12a10 10 0 0 1 20 0z"/><rect x="2" y="15" width="20" height="3"/></svg>
+        <span style="font-weight:500;letter-spacing:0.28em;text-transform:uppercase;font-size:0.8em">Lente</span>
+      </div>
+      <div data-cascade-source hidden>
+        <p>Lente makes sunglasses in small batches and sells every pair, <em>with a waiting list that does the marketing for them.</em></p>
+        <a href="#">View case study</a>
+      </div>
+    </div>
+
+    <div class="cascade_slide" data-cascade-slide role="button" tabindex="0" aria-label="Norte case study">
+      <img class="cascade_img" src="img/photo-1553062407-98eeb64c6a62.jpg" alt="" loading="lazy" draggable="false" />
+      <div class="cascade_logo" role="img" aria-label="Norte">
+        <svg class="cascade_mark" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l10 20H2z"/></svg>
+        <span style="font-weight:800;letter-spacing:-0.03em">Norte</span>
+      </div>
+      <div data-cascade-source hidden>
+        <p>Norte makes bags meant to last a decade, <em>and a repair programme that turns first-time buyers into customers for life.</em></p>
+        <a href="#">View case study</a>
+      </div>
+    </div>
+
+    <div class="cascade_slide" data-cascade-slide data-cascade-start role="button" tabindex="0" aria-label="Brasa Coffee case study">
+      <img class="cascade_img" src="img/photo-1517668808822-9ebb02f2a0e6.jpg" alt="" loading="lazy" draggable="false" />
+      <div class="cascade_logo" role="img" aria-label="Brasa Coffee">
+        <svg class="cascade_mark" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2c5 5 8 8 8 12a8 8 0 0 1-16 0c0-4 3-7 8-12z"/></svg>
+        <span style="font-family:Georgia,serif;font-weight:400;letter-spacing:0.01em">Brasa</span>
+      </div>
+      <div data-cascade-source hidden>
+        <p>Brasa Coffee roasts to order and ships the same day, <em>so every bag reaches the kitchen at its very best.</em></p>
+        <a href="#">View case study</a>
+      </div>
+    </div>
+
+    <div class="cascade_slide" data-cascade-slide role="button" tabindex="0" aria-label="Verde case study">
+      <img class="cascade_img" src="img/photo-1602143407151-7111542de6e8.jpg" alt="" loading="lazy" draggable="false" />
+      <div class="cascade_logo" role="img" aria-label="Verde">
+        <svg class="cascade_mark" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M11 3a9 9 0 0 0 0 18zM13 3a9 9 0 0 1 0 18z"/></svg>
+        <span style="font-weight:600;letter-spacing:0.12em;text-transform:uppercase;font-size:0.85em">Verde</span>
+      </div>
+      <div data-cascade-source hidden>
+        <p>Verde makes one bottle meant to replace a thousand, <em>and a refill programme that keeps customers coming back for years.</em></p>
+        <a href="#">View case study</a>
+      </div>
+    </div>
+
+    <div class="cascade_slide" data-cascade-slide role="button" tabindex="0" aria-label="Alba Ceramics case study">
+      <img class="cascade_img" src="img/photo-1610701596007-11502861dcfa.jpg" alt="" loading="lazy" draggable="false" />
+      <div class="cascade_logo" role="img" aria-label="Alba Ceramics">
+        <svg class="cascade_mark" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="12" r="7" fill="none" stroke="currentColor" stroke-width="6"/></svg>
+        <span style="font-weight:700;letter-spacing:-0.04em;text-transform:lowercase">alba</span>
+      </div>
+      <div data-cascade-source hidden>
+        <p>Alba Ceramics went from weekend markets to shipping nationwide, <em>keeping the care of a small studio in every parcel.</em></p>
+        <a href="#">View case study</a>
+      </div>
+    </div>
+
+    <div class="cascade_slide" data-cascade-slide role="button" tabindex="0" aria-label="Solene case study">
+      <img class="cascade_img" src="img/photo-1523275335684-37898b6baf30.jpg" alt="" loading="lazy" draggable="false" />
+      <div class="cascade_logo" role="img" aria-label="Solene">
+        <svg class="cascade_mark" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M2 22V12a10 10 0 0 1 20 0v10h-6V12a4 4 0 0 0-8 0v10z"/></svg>
+        <span style="font-family:ui-monospace,Menlo,monospace;font-weight:500;letter-spacing:-0.02em;text-transform:lowercase">solene</span>
+      </div>
+      <div data-cascade-source hidden>
+        <p>Solene sells one watch and sells it well, <em>with a product page that answers every question before a customer thinks to ask it.</em></p>
+        <a href="#">View case study</a>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="cascade_caption" data-cascade-caption aria-live="polite">
+    <div class="cascade_copy">
+      <div class="cascade_text" data-cascade-text></div>
+      <a class="cascade_link" href="#" data-cascade-link>
+        <span data-cascade-link-label>View case study</span>
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M5.8335 10.5L9.3335 7L5.8335 3.5" stroke="currentColor" stroke-width="1.5" /></svg>
+      </a>
+    </div>
+    <div class="cascade_actions">
+      <button class="cascade_arrow" type="button" data-cascade-prev aria-label="Previous case study">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M8.1665 10.5L4.6665 7L8.1665 3.5" stroke="currentColor" stroke-width="1.5" /></svg>
+      </button>
+      <button class="cascade_arrow" type="button" data-cascade-next aria-label="Next case study">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M5.8335 10.5L9.3335 7L5.8335 3.5" stroke="currentColor" stroke-width="1.5" /></svg>
+      </button>
+    </div>
+  </div>
+</div>
+<script>
+/* Cascading Case Slider — no dependencies.
+   Each slide carries its own caption and link in a hidden [data-cascade-source];
+   the script copies the active one into the caption under the slider. */
+(function () {
+  var MOBILE = '(max-width: 991px)'; // keep in step with the CSS breakpoint
+  var SWIPE = 60;                    // px of drag that counts as a swipe
+  var SWAP_MS = 300;                 // caption fade-out, matches .is-swapping
+
+  function initCascade(root) {
+    if (root.dataset.cascadeReady) return;
+    root.dataset.cascadeReady = 'true';
+
+    var viewport = root.querySelector('[data-cascade-viewport]');
+    var slides = Array.prototype.slice.call(root.querySelectorAll('[data-cascade-slide]'));
+    var caption = root.querySelector('[data-cascade-caption]');
+    var textTarget = root.querySelector('[data-cascade-text]');
+    var linkTarget = root.querySelector('[data-cascade-link]');
+    var linkLabel = root.querySelector('[data-cascade-link-label]');
+    var prevBtn = root.querySelector('[data-cascade-prev]');
+    var nextBtn = root.querySelector('[data-cascade-next]');
+    if (!viewport || !slides.length) return;
+
+    var mobile = window.matchMedia(MOBILE);
+    var total = slides.length;
+    var active = Math.max(0, slides.findIndex(function (s) { return s.hasAttribute('data-cascade-start'); }));
+    var swapTimer = null;
+
+    function setLevels() {
+      slides.forEach(function (slide, i) {
+        var level = Math.min(Math.abs(i - active) + 1, 5);
+        slide.setAttribute('data-level', level);
+        slide.setAttribute('aria-current', level === 1 ? 'true' : 'false');
+      });
+    }
+
+    // On desktop the arrows loop; on mobile they stop at the ends.
+    function setArrows() {
+      if (prevBtn) prevBtn.disabled = mobile.matches && active === 0;
+      if (nextBtn) nextBtn.disabled = mobile.matches && active === total - 1;
+    }
+
+    function fillCaption() {
+      var source = slides[active].querySelector('[data-cascade-source]');
+      if (!source) return;
+      var link = source.querySelector('a');
+      if (textTarget) {
+        textTarget.innerHTML = '';
+        Array.prototype.forEach.call(source.children, function (child) {
+          if (child !== link) textTarget.appendChild(child.cloneNode(true));
+        });
+      }
+      if (linkTarget && link) {
+        linkTarget.setAttribute('href', link.getAttribute('href'));
+        if (linkLabel) linkLabel.textContent = link.textContent;
+      }
+    }
+
+    function swapCaption() {
+      if (!caption) return;
+      clearTimeout(swapTimer);
+      caption.classList.add('is-swapping');
+      swapTimer = setTimeout(function () {
+        fillCaption();
+        caption.classList.remove('is-swapping');
+      }, SWAP_MS);
+    }
+
+    function goTo(index, loop) {
+      var next = mobile.matches && !loop
+        ? Math.max(0, Math.min(total - 1, index))
+        : (index + total) % total;
+      if (next === active) return;
+      active = next;
+      setLevels();
+      setArrows();
+      swapCaption();
+    }
+
+    // Arrows
+    if (prevBtn) prevBtn.addEventListener('click', function () { goTo(active - 1); });
+    if (nextBtn) nextBtn.addEventListener('click', function () { goTo(active + 1); });
+
+    // Click or swipe on the slides
+    var startX = null;
+    var dragged = false;
+
+    viewport.addEventListener('pointerdown', function (e) {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      startX = e.clientX;
+      dragged = false;
+    });
+
+    window.addEventListener('pointerup', function (e) {
+      if (startX === null) return;
+      var dx = e.clientX - startX;
+      startX = null;
+      if (Math.abs(dx) < SWIPE) return;
+      dragged = true;
+      goTo(active + (dx < 0 ? 1 : -1));
+    });
+
+    window.addEventListener('pointercancel', function () { startX = null; });
+
+    slides.forEach(function (slide, i) {
+      slide.addEventListener('click', function () {
+        if (dragged) { dragged = false; return; }
+        goTo(i);
+      });
+    });
+
+    // Keyboard, only while focus is inside this slider
+    root.addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowRight') { goTo(active + 1); }
+      else if (e.key === 'ArrowLeft') { goTo(active - 1); }
+      else if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('[data-cascade-slide]')) {
+        e.preventDefault();
+        goTo(slides.indexOf(e.target));
+      }
+    });
+
+    mobile.addEventListener('change', setArrows);
+
+    // Autoplay: data-cascade-autoplay="2000" opens a random slide every 2s
+    // and stops for good the first time the visitor touches the slider.
+    var delay = root.hasAttribute('data-cascade-autoplay')
+      ? parseInt(root.getAttribute('data-cascade-autoplay'), 10) || 2000
+      : 0;
+    var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (delay && total > 1 && !reduced) {
+      var inView = true;
+      var timer = setInterval(function () {
+        if (!inView || document.hidden) return;
+        // A random slide, never the one already open.
+        var jump = 1 + Math.floor(Math.random() * (total - 1));
+        goTo(active + jump, true);
+      }, delay);
+
+      if ('IntersectionObserver' in window) {
+        new IntersectionObserver(function (entries) {
+          inView = entries[0].isIntersecting;
+        }).observe(root);
+      }
+
+      var stop = function () {
+        clearInterval(timer);
+        root.removeEventListener('pointerdown', stop);
+        root.removeEventListener('keydown', stop);
+      };
+      root.addEventListener('pointerdown', stop);
+      root.addEventListener('keydown', stop);
+    }
+
+    setLevels();
+    setArrows();
+    fillCaption();
+  }
+
+  function initAll() {
+    document.querySelectorAll('[data-cascade]').forEach(initCascade);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initAll);
+  } else {
+    initAll();
+  }
+})();
+</script>
+<script>(function(){function fit(){var els=[].filter.call(document.body.children,function(el){return !/^(SCRIPT|STYLE|LINK)$/.test(el.tagName)});els.forEach(function(el){el.style.zoom=""});var w=0,h=0;els.forEach(function(el){var r=el.getBoundingClientRect();w=Math.max(w,r.width);h+=r.height});if(!w||!h)return;var k=Math.min(4,0.42*innerWidth/w,0.3*innerHeight/h);if(k>1.05)els.forEach(function(el){el.style.zoom=k})}addEventListener("load",fit);addEventListener("resize",fit);if(document.fonts&&document.fonts.ready)document.fonts.ready.then(fit)})()</script>
+</body>
+</html>

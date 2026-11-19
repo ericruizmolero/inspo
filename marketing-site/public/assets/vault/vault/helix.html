@@ -1,0 +1,555 @@
+<!doctype html>
+<html lang="en">
+<head>
+
+<title>Brick Helix Work Index · Criterio Vault</title>
+<meta name="description" content="A row of 3D bricks, one per project, turning as a slow helix; the cursor lights, lifts and parts them, and a click opens a shelf of spines with the chosen cover wide.">
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<style>
+*, *::before, *::after { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  /* the row sits exactly in the middle: title in the space above, caption hanging below */
+  display: grid; grid-template-rows: minmax(min-content, 1fr) auto minmax(min-content, 1fr); overflow: hidden;
+  padding: 4vh clamp(20px, 5vw, 72px);
+  background: #f6f5f0; color: #141513;
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+.demo__head { text-align: center; align-self: end; margin: 0 0 5vh; }
+.demo__eyebrow { margin: 0 0 18px; font-size: 15px; line-height: 1; opacity: 0.55; }
+.demo__title { margin: 0; font-weight: 500; font-size: clamp(32px, min(5.2vw, 6.4vh), 64px); line-height: 1; letter-spacing: -0.04em; }
+.helix__caption { position: absolute; inset: 100% 0 auto; }
+img { max-width: 100%; }
+/* ---------- Brick Helix Index ---------- */
+.helix {
+  /* resting faces */
+  --helix-brick: #cdd3c8;
+  --helix-brick-light: #eef1ea;
+  --helix-brick-dark: #111311;
+  /* spines of the open shelf */
+  --helix-ink: #111311;
+  --helix-paper: #e9e7df;
+  /* geometry and motion. 1 unit; a brick is 0.3 x 0.6 x 1.5 units */
+  --helix-unit-max: 160px;
+  --helix-unit-min: 64px;   /* below this the row stops shrinking and scrolls sideways instead */
+  --helix-twist: 300;       /* degrees the row turns from first to last brick */
+  --helix-speed: 20s;       /* one full turn */
+  --helix-lift: 0.35;       /* extra scale under the cursor */
+  --helix-rest-cover: 0.85; /* how much of the cover shows on a brick at rest (0 = plain bricks) */
+  --helix-open: 84%;        /* the most of the row the open cover may take */
+
+  position: relative;
+  container-type: inline-size;
+  width: 100%; /* a size container has no width of its own: without this it collapses to 0 in a centering parent */
+  max-width: 1800px;
+  margin-inline: auto;
+}
+.helix { grid-row: 2; --helix-unit-max: min(160px, 15vh); } /* demo only */
+
+.helix__scene, .helix__shelf {
+  --u: clamp(var(--helix-unit-min), 100cqw / (var(--n, 16) * 0.55 + 1.9), var(--helix-unit-max));
+}
+/* on a narrow screen the bricks keep their size and the row is swiped sideways */
+.helix__viewport {
+  overflow-x: auto; overflow-y: hidden; scrollbar-width: none; overscroll-behavior-x: contain;
+  mask-image: linear-gradient(to right, transparent, #000 24px, #000 calc(100% - 24px), transparent);
+}
+.helix__viewport::-webkit-scrollbar { display: none; }
+.helix.is-open .helix__viewport { pointer-events: none; }
+.helix__scene {
+  position: relative;
+  height: max(var(--u) * 3.1, 200px);
+  width: calc(var(--u) * (var(--n, 16) * 0.55 + 1.9)); /* exactly the row, so the fade lands on the bricks */
+  margin-inline: auto;
+  cursor: zoom-in;
+  -webkit-tap-highlight-color: transparent;
+  /* both ends dissolve into the page, whatever its color */
+  mask-image: linear-gradient(to right, transparent, #000 14%, #000 86%, transparent);
+  /* arrives once, the first time it is seen */
+  opacity: 0; translate: 0 12px;
+  transition: opacity 1.2s cubic-bezier(0.2, 0.7, 0.2, 1), translate 1.2s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.helix.is-seen .helix__scene { opacity: 1; translate: none; }
+
+/* the 3D stage. Keep mask, opacity and overflow off this element and its
+   children: any of them flattens the bricks and breaks their depth order. */
+.helix__row {
+  position: absolute; inset: 0;
+  transform-style: preserve-3d; /* no perspective: the view is orthographic */
+}
+
+.helix__brick,
+.helix__spin,
+.helix__body { position: absolute; transform-style: preserve-3d; }
+
+/* place along the row + sideways push away from the cursor */
+.helix__brick {
+  left: 50%; top: 50%;
+  transform: translateX(calc(
+    (var(--i) - (var(--n) - 1) / 2) * 0.55 * var(--u) + var(--push, 0) * 0.24 * var(--u)
+  ));
+}
+
+/* every brick turns on the shared axis, each one a little further along */
+.helix__spin {
+  animation: helix-spin var(--helix-speed) linear infinite paused;
+  animation-delay: calc((30 + var(--i) * var(--helix-twist) / var(--n)) / 360 * var(--helix-speed) * -1);
+}
+.helix.is-inview .helix__spin { animation-play-state: running; }
+@keyframes helix-spin {
+  from { transform: rotateX(0deg); }
+  to { transform: rotateX(360deg); }
+}
+
+.helix__body {
+  width: calc(var(--u) * 0.3); height: calc(var(--u) * 0.6);
+  left: calc(var(--u) * -0.15); top: calc(var(--u) * -0.3);
+  transform:
+    rotateY(33deg)
+    rotateX(calc(var(--tilt, 0) * 45deg))
+    scale3d(
+      calc(1 + var(--lift, 0) * var(--helix-lift)),
+      calc(1 + var(--lift, 0) * var(--helix-lift)),
+      calc(1 + var(--lift, 0) * var(--helix-lift))
+    );
+}
+
+.helix__face {
+  --lit-light: color-mix(in srgb, var(--color), #fff 68%);
+  position: absolute; left: 50%; top: 50%; translate: -50% -50%;
+  backface-visibility: hidden;
+  outline: 1px solid transparent; /* smooths the edges while turning */
+  background: color-mix(in srgb, var(--rest), var(--lit) calc(var(--tone, 0) * 100%));
+}
+/* ends */
+.helix__face--zp, .helix__face--zn { width: 100%; height: 100%; --rest: var(--helix-brick); --lit: var(--color); }
+.helix__face--zp { transform: translateZ(calc(var(--u) * 0.75)); }
+.helix__face--zn { transform: rotateY(180deg) translateZ(calc(var(--u) * 0.75)); }
+/* wide sides */
+.helix__face--xp, .helix__face--xn { width: calc(var(--u) * 1.5); height: 100%; }
+.helix__face--xp { transform: rotateY(90deg) translateZ(calc(var(--u) * 0.15)); --rest: var(--helix-brick); --lit: var(--helix-brick-dark); }
+.helix__face--xn { transform: rotateY(-90deg) translateZ(calc(var(--u) * 0.15)); --rest: var(--helix-brick-dark); --lit: var(--lit-light); }
+/* narrow sides */
+.helix__face--yp, .helix__face--yn { width: 100%; height: calc(var(--u) * 1.5); --rest: var(--helix-brick-light); --lit: var(--lit-light); }
+.helix__face--yp { transform: rotateX(90deg) translateZ(calc(var(--u) * 0.3)); }
+.helix__face--yn { transform: rotateX(-90deg) translateZ(calc(var(--u) * 0.3)); }
+/* data-covers: the cover wraps the long sides. At rest it is there in the
+   brick's own tone (one static layer); near the cursor its colors fade in on top. */
+.helix[data-covers] :is(.helix__face--xp, .helix__face--xn, .helix__face--yp, .helix__face--yn)::after,
+.helix[data-covers] :is(.helix__face--xp, .helix__face--yp, .helix__face--yn)::before {
+  content: ''; position: absolute; inset: 0;
+  background: var(--cover, none) center / cover;
+}
+.helix[data-covers] .helix__face::before {
+  background-color: var(--rest); background-blend-mode: luminosity;
+  opacity: var(--helix-rest-cover);
+}
+/* never fully 0, so the color layer is decoded before the first hover */
+.helix[data-covers] .helix__face::after { opacity: calc(var(--tone, 0) * 0.998 + 0.002); }
+.helix[data-covers] :is(.helix__face--yp, .helix__face--yn):is(::before, ::after) {
+  inset: auto; left: 50%; top: 50%; translate: -50% -50%; rotate: 90deg;
+  width: calc(var(--u) * 1.5); height: calc(var(--u) * 0.3);
+}
+
+/* caption: one line, the active project */
+.helix__caption {
+  display: grid; grid-template-columns: 1fr auto; margin-top: clamp(20px, 3vw, 40px);
+  border-top: 1px solid color-mix(in srgb, currentColor 16%, transparent);
+}
+.helix__list { grid-area: 1 / 1; margin: 0; padding: 0; list-style: none; display: grid; }
+.helix__list a {
+  display: grid; grid-template-columns: 2.4ch auto auto 1fr; align-items: baseline; gap: 16px;
+  padding-block: 12px; color: inherit; text-decoration: none;
+}
+/* optional cover: drop the <img> and the row still works */
+.helix__cover { width: clamp(72px, 9vw, 120px); aspect-ratio: 5 / 2; object-fit: cover; display: block; }
+.helix__list a:not(:has(.helix__cover)) { grid-template-columns: 2.4ch auto 1fr; }
+/* covers on the bricks: the caption does not repeat them */
+.helix[data-covers].is-ready .helix__cover { display: none; }
+.helix[data-covers].is-ready .helix__list a { grid-template-columns: 2.4ch auto 1fr; }
+/* one family, three sizes: the name carries the line, the rest stays quiet beside it */
+.helix__num, .helix__meta { font-size: 15px; line-height: 1.2; opacity: 0.5; }
+.helix__num { font-variant-numeric: tabular-nums; }
+.helix__meta { display: flex; gap: 0.6em; }
+.helix__title { font-size: clamp(24px, 2.4vw, 32px); line-height: 1.1; letter-spacing: -0.025em; font-weight: 500; }
+.helix__list a:focus-visible { outline: 2px solid currentColor; outline-offset: 4px; }
+
+/* with JS: the list collapses into the caption line */
+.helix.is-ready .helix__list > li { grid-area: 1 / 1; opacity: 0; pointer-events: none; }
+/* fades only once it is running, so nothing flashes while the page loads */
+.helix.is-seen .helix__list > li { transition: opacity 0.15s; }
+.helix.is-ready .helix__list > li.is-active { opacity: 1; pointer-events: auto; }
+/* at rest the line is not there at all: the bricks stand alone */
+.helix.is-ready .helix__caption { border-color: transparent; }
+.helix.is-seen .helix__caption { transition: border-color 0.2s; }
+/* where scripts run, the plain list never shows before the bricks are built */
+@media (scripting: enabled) { .helix:not(.is-ready) .helix__caption { visibility: hidden; } }
+.helix.is-ready.has-active .helix__caption { border-color: color-mix(in srgb, currentColor 16%, transparent); }
+/* without JS: no bricks, a plain readable list */
+.helix:not(.is-ready) .helix__scene { display: none; }
+
+/* click: the row hands over to a shelf of covers. One strip per project,
+   in the same order as the bricks, and the chosen one opens wide. */
+.helix.is-open .helix__scene { opacity: 0; pointer-events: none; transition-duration: 0.35s; }
+.helix.is-open .helix__spin { animation-play-state: paused; }
+.helix__shelf {
+  position: absolute; inset: 0 0 auto; height: max(var(--u) * 3.1, 200px);
+  display: flex; gap: clamp(1px, 0.2cqw, 3px);
+  pointer-events: none; touch-action: pan-y; user-select: none;
+}
+.helix.is-open .helix__shelf { pointer-events: auto; }
+.helix__panel {
+  position: relative; flex: 1 1 0px; min-width: 0; overflow: hidden;
+  background: var(--color); color: #fff; text-decoration: none;
+  clip-path: inset(50% 0); /* closed: folded onto the axis the bricks turn on */
+  transition:
+    flex-grow 0.8s cubic-bezier(0.3, 0.7, 0.1, 1),
+    flex-basis 0.8s cubic-bezier(0.3, 0.7, 0.1, 1),
+    clip-path 0.6s cubic-bezier(0.3, 0.7, 0.1, 1) calc(var(--d, 0) * 30ms);
+}
+.helix.is-open .helix__panel { clip-path: inset(0); }
+/* open: exactly as wide as its cover (5:2), so nothing is cropped while there is room */
+.helix__panel.is-current { flex: 0 0 min(max(var(--u) * 3.1, 200px) * 2.5, var(--helix-open)); }
+.helix__shelf.is-instant .helix__panel { transition-property: clip-path; }
+/* the cover keeps its size; the strip is a window that widens over it */
+.helix__panel img {
+  position: absolute; top: 0; left: 50%; translate: -50% 0;
+  height: 100%; min-width: 100%; max-width: none; aspect-ratio: 5 / 2; object-fit: cover;
+  opacity: 0; transition: opacity 0.4s; -webkit-user-drag: none;
+}
+.helix__panel.is-current img { opacity: 1; }
+@media (hover: hover) {
+  .helix__panel:not(.is-current):hover { flex-grow: 1.7; }
+}
+/* the spine: what a closed strip shows. Four treatments of the project's color, in turn. */
+.helix__spine {
+  position: absolute; inset: 0; overflow: hidden;
+  display: flex; flex-direction: column; align-items: center; gap: 14px; padding-block: 14px;
+  background: var(--spine-bg); color: var(--spine-ink);
+  transition: opacity 0.35s;
+}
+.helix__panel.is-current .helix__spine { opacity: 0; }
+.helix__panel[data-spine='0'] { --spine-bg: var(--color); --spine-ink: var(--helix-ink); }
+.helix__panel[data-spine='1'] { --spine-bg: var(--helix-ink); --spine-ink: var(--color); }
+.helix__panel[data-spine='2'] { --spine-bg: var(--helix-paper); --spine-ink: var(--helix-ink); }
+.helix__panel[data-spine='3'] { --spine-bg: color-mix(in srgb, var(--color), #fff 68%); --spine-ink: var(--helix-ink); }
+.helix__spine-title, .helix__spine-meta { writing-mode: vertical-rl; white-space: nowrap; }
+.helix__spine-title { font-size: clamp(13px, 1.05cqw, 17px); line-height: 1; letter-spacing: -0.01em; font-weight: 500; }
+.helix__spine-num, .helix__spine-meta { font-size: 11px; line-height: 1; font-variant-numeric: tabular-nums; }
+.helix__panel[data-spine='2'] .helix__spine-num { color: color-mix(in srgb, var(--color), var(--helix-ink) 20%); }
+.helix__spine-meta { margin-top: auto; opacity: 0.7; }
+.helix__tag {
+  position: absolute; right: 16px; bottom: 14px; white-space: nowrap; pointer-events: none;
+  font-size: 13px; line-height: 1;
+  padding: 9px 12px; background: #111; color: #fff; opacity: 0; transition: opacity 0.2s;
+}
+.helix.is-open .helix__panel.is-current .helix__tag { opacity: 1; transition: opacity 0.4s 0.45s; }
+.helix__panel:focus-visible { outline: 2px solid currentColor; outline-offset: -4px; }
+
+/* previous / next / close live in the caption line, as plain words */
+.helix__controls { grid-area: 1 / 2; display: none; align-self: center; gap: 28px; }
+.helix.is-open .helix__controls { display: flex; }
+.helix__controls button {
+  padding: 10px 0; border: 0; background: none; color: inherit; cursor: pointer;
+  font: inherit; font-size: 15px; line-height: 1.2;
+  opacity: 0.5; transition: opacity 0.2s;
+}
+.helix__controls button:hover, .helix__controls button:focus-visible { opacity: 1; }
+@container (max-width: 640px) {
+  .helix__spine > * { display: none; } /* too narrow to read: the spine is its color */
+  /* the open cover is shown whole: the shelf takes the cover's height, centered on the row */
+  .helix__shelf { --h: 36cqw; height: var(--h); top: calc((max(var(--u) * 3.1, 200px) - var(--h)) / 2); }
+  .helix__panel.is-current { flex: 0 0 90%; }
+  .helix__tag { right: 8px; bottom: 8px; padding: 6px 8px; font-size: 12px; }
+  .helix__controls { grid-area: 2 / 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .helix__panel, .helix__panel img, .helix__tag { transition: none !important; }
+  .helix__spin {
+    animation: none;
+    transform: rotateX(calc((30 + var(--i) * var(--helix-twist) / var(--n)) * 1deg));
+  }
+  .helix__scene { transition: none; translate: none; }
+}
+</style>
+</head>
+<body>
+<header class="demo__head">
+  <p class="demo__eyebrow">Selected work</p>
+  <h1 class="demo__title">Sixteen projects,<br />one long shelf.</h1>
+</header>
+<section class="helix" data-helix data-covers aria-label="Selected work">
+  <div class="helix__viewport"><div class="helix__scene" aria-hidden="true"></div></div>
+  <div class="helix__caption"><ol class="helix__list"></ol></div>
+</section>
+<script>
+// demo content: sixteen made-up projects, each with a cover drawn as an inline SVG
+(() => {
+  const C = ['#ff5a2b', '#2f6bff', '#f4b400', '#12a454', '#d94fd0'];
+  const P = [['Northwind', 'Identity', 2026], ['Atlas & Co', 'Website', 2026], ['Halcyon', 'Product', 2025], ['Meridian', 'Campaign', 2025],
+    ['Fieldwork', 'Editorial', 2025], ['Outpost', 'Website', 2025], ['Lumen', 'Identity', 2024], ['Kiln', 'Packaging', 2024],
+    ['Tessera', 'Product', 2024], ['Harbor', 'Website', 2024], ['Sundial', 'Campaign', 2023], ['Parallel', 'Identity', 2023],
+    ['Quarry', 'Editorial', 2023], ['Ember', 'Website', 2022], ['Vessel', 'Packaging', 2022], ['Longhand', 'Product', 2022]];
+  const F = "font-family='Helvetica Neue,Helvetica,Arial,sans-serif'";
+  const art = {
+    Identity: (n, c) => `<rect width='500' height='200' fill='${c}'/><text x='16' y='186' ${F} font-size='128' font-weight='700' letter-spacing='-7' fill='#111'>${n}</text><circle cx='430' cy='58' r='34' fill='#111'/>`,
+    Website: (n, c) => `<rect width='500' height='200' fill='#dedcd3'/><rect x='66' y='26' width='368' height='200' rx='5' fill='#fbfaf6'/><circle cx='80' cy='38' r='2.5' fill='#bbb'/><circle cx='89' cy='38' r='2.5' fill='#bbb'/><text x='84' y='92' ${F} font-size='32' font-weight='500' letter-spacing='-1.4' fill='#111'>${n}</text><rect x='84' y='108' width='110' height='4' fill='#ddd'/><rect x='84' y='118' width='110' height='4' fill='#ddd'/><rect x='270' y='62' width='146' height='140' fill='${c}'/><circle cx='392' cy='196' r='52' fill='#111'/>`,
+    Product: (n, c) => `<rect width='500' height='200' fill='#efeee8'/><rect width='500' height='200' fill='${c}' opacity='.22'/><text x='16' y='182' ${F} font-size='46' font-weight='500' letter-spacing='-2' fill='#111'>${n}</text><g transform='rotate(-6 300 120)'><rect x='252' y='22' width='94' height='200' rx='15' fill='#fbfaf6'/><rect x='262' y='52' width='74' height='38' rx='7' fill='${c}'/><rect x='262' y='96' width='74' height='16' rx='5' fill='#e6e4dd'/><rect x='262' y='117' width='74' height='16' rx='5' fill='#e6e4dd'/></g><g transform='rotate(5 400 130)'><rect x='356' y='48' width='94' height='200' rx='15' fill='#111'/><rect x='366' y='78' width='74' height='16' rx='5' fill='#333'/><rect x='366' y='100' width='74' height='38' rx='7' fill='${c}'/></g>`,
+    Campaign: (n, c) => `<rect width='500' height='200' fill='${c}'/><circle cx='250' cy='236' r='128' fill='#111'/><text x='250' y='112' text-anchor='middle' font-family='Georgia,Times,serif' font-style='italic' font-size='104' letter-spacing='-3' fill='#fbfaf6'>${n}</text>`,
+    Editorial: (n, c, i) => `<rect width='500' height='200' fill='#d9d6cb'/><rect x='78' y='22' width='172' height='200' fill='#fbfaf6'/><rect x='250' y='22' width='172' height='200' fill='${c}'/><text x='92' y='64' font-family='Georgia,Times,serif' font-size='30' letter-spacing='-1' fill='#111'>${n}</text><text x='92' y='92' font-family='Georgia,Times,serif' font-style='italic' font-size='30' letter-spacing='-1' fill='#111'>Quarterly</text><rect x='92' y='112' width='64' height='3' fill='#ccc'/><rect x='92' y='121' width='64' height='3' fill='#ccc'/><rect x='168' y='112' width='64' height='3' fill='#ccc'/><rect x='168' y='121' width='64' height='3' fill='#ccc'/><text x='262' y='104' font-family='Georgia,Times,serif' font-style='italic' font-size='92' fill='#111'>${i + 1}</text>`,
+    Packaging: (n, c) => `<rect width='500' height='200' fill='#efeee8'/><rect width='500' height='200' fill='${c}' opacity='.14'/><rect y='160' width='500' height='40' fill='${c}'/><rect x='86' y='58' width='72' height='102' fill='#fbfaf6'/><rect x='86' y='92' width='72' height='30' fill='${c}'/><rect x='170' y='30' width='52' height='130' fill='#111'/><rect x='170' y='70' width='52' height='36' fill='${c}'/><rect x='234' y='86' width='94' height='74' fill='${c}'/><rect x='234' y='108' width='94' height='24' fill='#fbfaf6'/><rect x='344' y='42' width='46' height='118' rx='23' fill='#fbfaf6'/><rect x='344' y='78' width='46' height='28' fill='${c}'/><rect x='402' y='66' width='46' height='94' rx='23' fill='#111'/><rect x='402' y='96' width='46' height='24' fill='${c}'/>`,
+  };
+  const esc = (t) => t.replace(/&/g, '&amp;');
+  document.querySelector('.helix__list').innerHTML = P.map(([n, k, y], i) => {
+    const c = C[i % C.length];
+    const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 500 200'>${art[k](esc(n), c, i)}</svg>`;
+    return `<li style="--color:${c}"><a href="#${i + 1}"><span class="helix__num">${String(i + 1).padStart(2, '0')}</span>` +
+      `<img class="helix__cover" src="data:image/svg+xml,${encodeURIComponent(svg)}" alt="" />` +
+      `<span class="helix__title">${esc(n)}</span><span class="helix__meta"><span>${k}</span><span>${y}</span></span></a></li>`;
+  }).join('');
+})();
+</script>
+<script>
+(() => {
+  const SPACING = 0.55; // units between bricks, same number as the CSS
+  const HOVER = 2.2;    // units around the cursor that light up and lift
+  const REPEL = 5.2;    // units around the cursor that get pushed and tilted
+  const FACES = ['zp', 'zn', 'xp', 'xn', 'yp', 'yn'];
+  const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+  const smooth = (x, a, b) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+
+  function init(root) {
+    const scene = root.querySelector('.helix__scene');
+    const items = [...root.querySelectorAll('.helix__list > li')];
+    const links = items.map((li) => li.querySelector('a'));
+    const n = items.length;
+    if (!scene || !n) return;
+    root.style.setProperty('--n', n);
+    const row = document.createElement('div');
+    row.className = 'helix__row';
+    scene.append(row);
+
+    // one brick per list item
+    const bricks = items.map((li, i) => {
+      const brick = document.createElement('div');
+      brick.className = 'helix__brick';
+      brick.style.setProperty('--i', i);
+      brick.style.setProperty('--color', li.style.getPropertyValue('--color') || 'currentColor');
+      const cover = li.querySelector('.helix__cover');
+      if (cover) brick.style.setProperty('--cover', `url("${cover.currentSrc || cover.src}")`);
+      brick.innerHTML = `<div class="helix__spin"><div class="helix__body">${FACES.map(
+        (f) => `<i class="helix__face helix__face--${f}"></i>`
+      ).join('')}</div></div>`;
+      row.append(brick);
+      return brick;
+    });
+    const xs = bricks.map((_, i) => (i - (n - 1) / 2) * SPACING);
+    const state = bricks.map(() => ({ lift: 0, tone: 0, rep: 0 }));
+    root.classList.add('is-ready');
+
+    let inside = false, target = 0, cursor = null, active = -1, raf = 0, last = 0, pointerType = 'mouse', open = false;
+
+    // click on the row: every project stands up as a strip of its cover, the chosen one open
+    const hasCovers = items.some((li) => li.querySelector('.helix__cover'));
+    const shelf = document.createElement('div');
+    shelf.className = 'helix__shelf';
+    shelf.inert = true;
+    const panels = items.map((li, i) => {
+      const cover = li.querySelector('.helix__cover');
+      const a = document.createElement('a');
+      a.className = 'helix__panel';
+      a.href = links[i].href;
+      a.draggable = false;
+      a.style.setProperty('--color', li.style.getPropertyValue('--color'));
+      a.setAttribute('aria-label', links[i].textContent.trim().replace(/\s+/g, ' '));
+      if (cover) { const img = new Image(); img.alt = ''; img.draggable = false; img.src = cover.currentSrc || cover.src; a.append(img); }
+      // closed, a strip is the project's spine: number, name down the side, type and year
+      const text = (sel) => li.querySelector(sel)?.textContent.trim().replace(/\s+/g, ' ') ?? '';
+      const spine = document.createElement('span');
+      spine.className = 'helix__spine';
+      [['num', text('.helix__num')], ['title', text('.helix__title')], ['meta', [...li.querySelectorAll('.helix__meta > *')].map((m) => m.textContent.trim()).join('  ')]]
+        .forEach(([k, v]) => { const el = document.createElement('span'); el.className = `helix__spine-${k}`; el.textContent = v; spine.append(el); });
+      a.dataset.spine = i % 4;
+      a.append(spine);
+      a.insertAdjacentHTML('beforeend', '<span class="helix__tag">View project</span>');
+      shelf.append(a);
+      return a;
+    });
+    const viewport = scene.closest('.helix__viewport') ?? scene;
+    viewport.after(shelf);
+    // start in the middle of the row, and come back to the brick that was open
+    const centerOn = (i, smooth) => viewport.scrollTo({
+      left: (i < 0 ? 0.5 : (i + 0.5) / n) * viewport.scrollWidth - viewport.clientWidth / 2,
+      behavior: smooth ? 'smooth' : 'instant',
+    });
+    centerOn(-1);
+
+    const controls = document.createElement('div');
+    controls.className = 'helix__controls';
+    controls.innerHTML =
+      '<button type="button" data-go="-1" aria-label="Previous project">Previous</button>' +
+      '<button type="button" data-go="1" aria-label="Next project">Next</button>' +
+      '<button type="button" data-close>Close</button>';
+    root.querySelector('.helix__caption')?.append(controls);
+
+    let shown = -1;
+    const show = (i) => {
+      panels[shown]?.classList.remove('is-current');
+      panels[i].classList.add('is-current');
+      shown = i;
+    };
+    // strips unfold outwards from the chosen one, and fold back the same way
+    const stagger = (i) => panels.forEach((p, j) => p.style.setProperty('--d', Math.abs(j - i)));
+    const openAt = (i) => {
+      if (!hasCovers) return false;
+      shelf.classList.add('is-instant'); // no width animation on the way in
+      show(i);
+      stagger(i);
+      shelf.offsetWidth;
+      shelf.classList.remove('is-instant');
+      open = true;
+      shelf.inert = false;
+      root.classList.add('is-open');
+      return true;
+    };
+    const close = () => {
+      if (!open) return;
+      stagger(shown);
+      centerOn(shown);
+      open = false;
+      shelf.inert = true;
+      root.classList.remove('is-open');
+    };
+    const goTo = (i) => {
+      if (!open || i === shown) return;
+      show(i);
+      target = xs[i]; inside = true; // the bricks follow underneath, ready for the way back
+      setActive(i);
+      wake();
+    };
+    const go = (dir) => goTo((shown + dir + n) % n);
+    controls.addEventListener('click', (e) => {
+      const b = e.target.closest('button');
+      if (!b) return;
+      if (b.dataset.go) go(+b.dataset.go); else close();
+    });
+    // a strip opens its cover; the open cover is the link to the project
+    let downX = null, swiped = false;
+    shelf.addEventListener('dragstart', (e) => e.preventDefault());
+    shelf.addEventListener('pointerdown', (e) => { downX = e.clientX; swiped = false; });
+    shelf.addEventListener('pointerup', (e) => {
+      if (downX !== null && Math.abs(e.clientX - downX) > 40) { swiped = true; go(e.clientX < downX ? 1 : -1); }
+      downX = null;
+    });
+    shelf.addEventListener('click', (e) => {
+      const j = panels.indexOf(e.target.closest('.helix__panel'));
+      if (swiped || j !== shown) e.preventDefault();
+      if (!swiped && j >= 0) goTo(j);
+      swiped = false;
+    });
+
+    const setActive = (i) => {
+      if (i === active) return;
+      items[active]?.classList.remove('is-active');
+      items[i]?.classList.add('is-active');
+      active = i;
+      root.classList.toggle('has-active', i >= 0);
+    };
+    const wake = () => { if (!raf) { last = performance.now(); raf = requestAnimationFrame(frame); } };
+
+    function frame(now) {
+      const dt = Math.min(0.05, (now - last) / 1000); last = now;
+      if (inside) cursor = cursor === null ? target : cursor + (target - cursor) * (1 - Math.exp(-10 * dt));
+      const on = inside ? 1 : 0;
+      const fast = 1 - Math.exp(-20 * dt), slow = 1 - Math.exp(-10 * dt);
+      let energy = 0;
+      for (let i = 0; i < n; i++) {
+        const s = state[i], off = xs[i] - (cursor ?? 0), d = Math.abs(off);
+        const near = on * (1 - smooth(d, 0, HOVER));
+        const wide = 1 - smooth(d, 0, REPEL);
+        s.lift += (near - s.lift) * fast;
+        s.tone += (near - s.tone) * slow;
+        s.rep += (on * wide - s.rep) * fast;
+        energy += s.lift + s.tone + s.rep;
+        // write only what moved, so bricks at rest cost nothing
+        const key = s.lift.toFixed(3) + s.tone.toFixed(3) + s.rep.toFixed(3);
+        if (key === s.key) continue;
+        s.key = key;
+        const st = bricks[i].style;
+        st.setProperty('--lift', s.lift.toFixed(3));
+        st.setProperty('--tone', s.tone.toFixed(3));
+        st.setProperty('--tilt', Math.min(s.rep, wide).toFixed(3));
+        st.setProperty('--push', (clamp(off / (REPEL * 0.2), -1, 1) * s.rep).toFixed(3));
+      }
+      if (!inside && energy < 0.002) { raf = 0; cursor = null; return; }
+      raf = requestAnimationFrame(frame);
+    }
+
+    // a page that loads under a resting cursor gets one pointermove from the browser:
+    // only a cursor that has actually moved selects a project
+    let seenAt = null;
+    const pointAt = (e) => {
+      if (open) return;
+      if (e.type === 'pointermove') {
+        const at = e.clientX + ',' + e.clientY, first = seenAt === null || seenAt === at;
+        seenAt = at;
+        if (first && !inside) return;
+      }
+      const rect = scene.getBoundingClientRect();
+      const unit = bricks[0].firstChild.firstChild.offsetWidth / 0.3;
+      target = (e.clientX - rect.left - rect.width / 2) / unit;
+      pointerType = e.pointerType;
+      inside = true;
+      setActive(clamp(Math.round(target / SPACING + (n - 1) / 2), 0, n - 1));
+      wake();
+    };
+    const rest = () => { if (open) return; inside = false; setActive(-1); wake(); };
+
+    scene.addEventListener('pointermove', pointAt);
+    scene.addEventListener('pointerdown', pointAt);
+    // mouse: leaving the whole block puts it to rest. touch: the last tap stays selected.
+    root.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse' && !root.contains(document.activeElement)) rest(); });
+    document.addEventListener('pointerdown', (e) => { if (!root.contains(e.target)) { close(); rest(); } });
+    document.addEventListener('keydown', (e) => {
+      if (!open) return;
+      if (e.key === 'Escape') close();
+      if (e.key === 'ArrowRight') go(1);
+      if (e.key === 'ArrowLeft') go(-1);
+    });
+    // click: open the shelf on the active project; outside, Esc or Close puts it back.
+    // The open cover and the caption are the links to the project.
+    scene.addEventListener('click', () => {
+      if (active >= 0 && !openAt(active) && pointerType === 'mouse') links[active].click();
+    });
+
+    // keyboard: focusing a link selects its brick
+    links.forEach((a, i) => a.addEventListener('focus', () => { target = xs[i]; inside = true; setActive(i); wake(); }));
+    root.addEventListener('focusout', (e) => { if (!root.contains(e.relatedTarget) && !root.matches(':hover')) rest(); });
+
+    new IntersectionObserver(([entry]) => {
+      root.classList.toggle('is-inview', entry.isIntersecting);
+      if (entry.isIntersecting) root.classList.add('is-seen');
+    }).observe(root);
+  }
+
+  document.querySelectorAll('[data-helix]').forEach(init);
+})();
+</script>
+</body>
+</html>

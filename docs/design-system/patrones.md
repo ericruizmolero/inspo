@@ -84,7 +84,9 @@ Ver principio 18. Además: en el idioma del equipo, frases que se lean de golpe,
 
 Sin IA, sin descargas de blobs ni análisis de imágenes al renderizar. Lo precomputado va en build, script o segundo plano. → [login instantáneo](decisiones/2026-09-22-login-sin-trabajo-pesado.md)
 
-Mientras reunimos la lista de espera, la portada es solo el héroe: el mismo titular, subheadline y formulario en su sitio, y debajo el vídeo de Criterio, quieto en su póster hasta que lo pones, sin pasar de la pantalla; Tino duerme en la esquina y se despierta al pasarle por encima, al escribir tu correo o para mirar el vídeo. La landing completa espera en `/landing/`. → [decisión](decisiones/2026-11-17-mientras-reunimos-la-lista-de-espera-la-portada-es-solo-el-heroe-con-el-video.md)
+Desde el 19/11 la portada enseña la ventana del producto funcionando, con el Vault como rejilla de piezas vivas, y esa ventana es la tecla que abre el vídeo. → [decisión](decisiones/2026-11-19-la-portada-es-la-ventana-del-producto-con-el-vault-y-el-video-nuevo.md)
+
+Antes (17/11), mientras reuníamos la lista de espera, la portada era solo el héroe: el mismo titular, subheadline y formulario en su sitio, y debajo el vídeo de Criterio, quieto en su póster hasta que lo pones, sin pasar de la pantalla; Tino duerme en la esquina y se despierta al pasarle por encima, al escribir tu correo o para mirar el vídeo. La landing completa espera en `/landing/`. → [decisión](decisiones/2026-11-17-mientras-reunimos-la-lista-de-espera-la-portada-es-solo-el-heroe-con-el-video.md)
 
 La landing completa abre con una promesa clara, subheadline y formulario sobre el río de referencias, con Tino en el centro. Después, una sección normal por paso, cada una con su elemento y visible desde el principio, que se anima cuando llegas. Nada bloquea el scroll ni hay animación de carga inicial. → [decisión](decisiones/2026-11-10-la-demo-de-la-landing-es-una-seccion-por-paso-sin-scroll-atrapado.md)
 
