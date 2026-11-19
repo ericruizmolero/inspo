@@ -35,7 +35,7 @@ export async function POST(req: Request, ctx: RouteContext<"/api/vault/[entry]/v
       if (Number(req.headers.get("content-length") ?? 0) > VAULT_IMAGE_MAX) throw new HttpError(413, "The file is too large to send from here: pass a link to it instead.");
       body = Buffer.from(await req.arrayBuffer());
     }
-    return NextResponse.json({ video: await setVaultVideo(entry, body) });
+    return NextResponse.json(await setVaultVideo(entry, body));
   } catch (e) { return fail(e); }
 }
 
@@ -44,6 +44,6 @@ export async function DELETE(_req: Request, ctx: RouteContext<"/api/vault/[entry
   if (no) return no;
   try {
     await setVaultVideo((await ctx.params).entry, null);
-    return NextResponse.json({ video: null });
+    return NextResponse.json({ video: null, ratio: null });
   } catch (e) { return fail(e); }
 }

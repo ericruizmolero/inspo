@@ -14,7 +14,7 @@ La app vive en `/`. Lo que se ve depende de la query, sin cambiar de página, pa
 | `/?in=inbox` | Inbox: lo que no está en ningún proyecto |
 | `/?in=inbox&view=polish` | Pulido del Cajón: lo que se queda o se borra |
 | `/?in=library` | Toda la biblioteca |
-| `/?in=vault` | Descubrir: el Vault, las piezas que curamos nosotros con su código. `&entry=<slug>` abre la ficha de una entrada (es también la dirección que da el conector); su "Verlo en directo" carga `/api/vault/<slug>/preview`, con sesión y aislado → [decisión](decisiones/2026-11-18-el-vault-son-piezas-nuestras-con-su-codigo-y-el-conector-las-entrega.md) |
+| `/?in=vault` | Descubrir: el Vault, las piezas que curamos nosotros con su código. `&entry=<slug>` abre la ficha de una entrada sobre la rejilla (es también la dirección que da el conector); su "Verlo en directo" carga `/api/vault/<slug>/preview`, con sesión y aislado → [decisión](decisiones/2026-11-18-el-vault-son-piezas-nuestras-con-su-codigo-y-el-conector-las-entrega.md) |
 | `/?in=templates` | Descubrir: los ejemplos. Sin pestaña en la Isla: desde el menú del espacio y los espacios vacíos → [decisión](decisiones/2026-10-13-descubrir-sale-de-la-isla-y-aparece-donde-no-hay-referencias.md) |
 | `/?in=discover` | Descubrir: los recursos, la lista de la web de marketing con la miniatura que sigue al puntero |
 | `/?in=skills` | Descubrir: las skills para agentes, la lista de la web de marketing como tarjetas |

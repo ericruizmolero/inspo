@@ -88,9 +88,9 @@ export const AddVaultInput = z.object({
   live_url: z.string().max(2000).optional().describe("A public page where it runs, when there is one besides the preview."),
   source_url: z.string().max(2000).optional().describe("The site it was learnt from, when there is one."),
   image_url: z.string().max(2000).optional().describe("A public address of its picture (PNG, WebP or JPEG). A file on your disk goes through the upload link in the answer instead."),
-  video_url: z.string().max(2000).optional().describe("A public address of a short loop of the piece running: the file itself, or a Screen Studio share link (MP4 or WebM, a few seconds, 4:3, no sound). Only for a piece its card cannot play live: one that moves on scroll, needs a click or a drag, or is heavy to start. With it the card plays the loop on hover in place of the piece. A file on your disk of up to 4 MB goes through the upload link instead."),
+  video_url: z.string().max(2000).optional().describe("A public address of a short loop of the piece running: the file itself, or a Screen Studio share link (MP4 or WebM, a few seconds, no sound, at the shape the piece asks for: the card takes the video's own). Only for a piece its card cannot play live: one that moves on scroll, needs a click or a drag, or is heavy to start. With it the card plays the loop, always, in place of the piece. A file on your disk of up to 4 MB goes through the upload link instead."),
   remove_video: z.boolean().optional().describe("True takes the loop away: the card plays the piece itself again."),
-  publish: z.boolean().optional().describe("True shows it to everyone; false makes it a draft only the team sees. A new entry starts as a draft."),
+  publish: z.boolean().optional().describe("False makes it a draft only the team sees; true shows it to everyone again. A new entry is published at once unless this is false; left out on an update, it stays as it was."),
 });
 
 // The link an entry's picture is sent to: signed, not stored, for one entry and one person, for half an hour
@@ -151,8 +151,8 @@ export async function addToVault(ctx: McpCtx, origin: string, input: z.infer<typ
     ...(videoFailed ? { video_failed: videoFailed } : {}),
     do: [
       picture ? "" : `It has no picture yet, and a card without one says nothing: capture it running on its ground or its demo, at 1600×1200 (4:3, as the card shows it) (PNG, WebP or JPEG, at most ${VAULT_IMAGE_MAX / 1024 / 1024} MB) and send it with picture_upload, within ${UPLOAD_MINUTES} minutes.`,
-      video ? "Its card plays the loop on hover." : "Its card plays the piece itself on hover. If it only moves on scroll, needs a click or is heavy to start, record a loop of a few seconds (MP4, 4:3) and send it with video_upload (up to 4 MB) or video_url.",
-      entry.publishedAt ? "It is published: everyone sees it and every agent can read its code." : "It is a draft only the team sees. Call add_to_vault again with publish true once the person has looked at it.",
+      video ? "Its card plays the loop, always, at the video's own shape." : "Its card plays the piece itself on hover. If it only moves on scroll, needs a click or is heavy to start, record a loop of a few seconds (MP4, at the shape the piece asks for) and send it with video_upload (up to 4 MB) or video_url.",
+      entry.publishedAt ? "It is published: everyone sees it and every agent can read its code." : "It is a draft only the team sees. Call add_to_vault again with publish true to show it to everyone.",
     ].filter(Boolean).join(" "),
   };
 }

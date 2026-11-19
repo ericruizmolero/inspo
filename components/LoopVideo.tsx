@@ -3,11 +3,13 @@
 // the frame until it has something to show, so a slow load never blanks the picture.
 import { useEffect, useRef, useState, type RefObject } from "react";
 
-export default function LoopVideo({ src, className = "", progressRef }: {
+export default function LoopVideo({ src, className = "", progressRef, onSize }: {
   src: string;
   className?: string;
   /** The card's scrub line: its fill follows the playback by transform alone (no render, a few writes a second) */
   progressRef?: RefObject<HTMLElement | null>;
+  /** The recording's own size, once the file says it */
+  onSize?: (width: number, height: number) => void;
 }) {
   const ref = useRef<HTMLVideoElement>(null);
   const [ready, setReady] = useState(false);
@@ -27,7 +29,7 @@ export default function LoopVideo({ src, className = "", progressRef }: {
   return (
     <video ref={ref} className={`${className}${ready ? "" : " is-hidden"}`} src={src} muted autoPlay loop playsInline preload="metadata"
       style={{ position: "absolute", inset: 0, width: "100%", height: "100%", maxHeight: "none", objectFit: "cover", objectPosition: "top", opacity: ready ? 1 : 0 }}
-      onPlaying={() => setReady(true)} onError={() => setFailed(true)}
+      onPlaying={() => setReady(true)} onLoadedMetadata={onSize ? (e) => { const v = e.currentTarget; if (v.videoWidth && v.videoHeight) onSize(v.videoWidth, v.videoHeight); } : undefined} onError={() => setFailed(true)}
       onTimeUpdate={progressRef ? (e) => {
         const v = e.currentTarget, el = progressRef.current;
         if (el && v.duration) el.style.transform = `scaleX(${v.currentTime / v.duration})`;

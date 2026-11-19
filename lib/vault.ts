@@ -25,11 +25,40 @@ export const VAULT_VIDEO_MAX = 25 * 1024 * 1024;
 export const videoTypeOf = (b: Buffer): "video/mp4" | "video/webm" | null =>
   b.subarray(4, 8).toString("latin1") === "ftyp" ? "video/mp4" : b[0] === 0x1a && b[1] === 0x45 && b[2] === 0xdf && b[3] === 0xa3 ? "video/webm" : null;
 
+/** An MP4's picture, width over height, from its first track with a size (moov › trak › tkhd, whose last eight bytes
+ *  are the two as 16.16 fixed point); null when the file says none, or is a WebM: the browser measures those */
+export function videoRatioOf(b: Buffer): number | null {
+  const boxes = function* (from: number, to: number): Generator<{ type: string; start: number; end: number }> {
+    for (let at = from; at + 8 <= to;) {
+      let size = b.readUInt32BE(at), head = 8;
+      if (size === 1 && at + 16 <= to) { size = Number(b.readBigUInt64BE(at + 8)); head = 16; }
+      else if (size === 0) size = to - at;
+      if (size < head || at + size > to) return;
+      yield { type: b.subarray(at + 4, at + 8).toString("latin1"), start: at + head, end: at + size };
+      at += size;
+    }
+  };
+  try {
+    for (const moov of boxes(0, b.length)) {
+      if (moov.type !== "moov") continue;
+      for (const trak of boxes(moov.start, moov.end)) {
+        if (trak.type !== "trak") continue;
+        for (const tkhd of boxes(trak.start, trak.end)) {
+          if (tkhd.type !== "tkhd" || tkhd.end - tkhd.start < 8) continue;
+          const w = b.readUInt32BE(tkhd.end - 8) / 65536, h = b.readUInt32BE(tkhd.end - 4) / 65536;
+          if (w >= 16 && h >= 16) return Math.round((w / h) * 1000) / 1000;
+        }
+      }
+    }
+  } catch { /* a cut or odd file: no size */ }
+  return null;
+}
+
 type Row = typeof V.$inferSelect;
 
 const cardOf = (r: Row): VaultCard => ({
   id: r.id, slug: r.slug, title: r.title, category: r.category, tags: r.tags, summary: r.summary,
-  image: r.imageKey ? fileUrl(r.imageKey) : null, video: r.videoKey ? fileUrl(r.videoKey) : null, liveUrl: r.liveUrl, published: !!r.publishedAt, preview: canPreview(r), createdAt: (r.publishedAt ?? r.createdAt).toISOString(),
+  image: r.imageKey ? fileUrl(r.imageKey) : null, video: r.videoKey ? fileUrl(r.videoKey) : null, videoRatio: r.videoKey ? r.videoRatio : null, liveUrl: r.liveUrl, published: !!r.publishedAt, preview: canPreview(r), createdAt: (r.publishedAt ?? r.createdAt).toISOString(),
 });
 
 /** The Vault's cards, newest first. Drafts only for partners */
@@ -92,7 +121,8 @@ export async function saveVault(input: VaultInput, userId: string): Promise<{ en
     const [entry] = await db.update(V).set(set).where(eq(V.id, existing.id)).returning();
     return { entry, created: false };
   }
-  const [entry] = await db.insert(V).values({ id: newId(), slug, createdBy: userId, createdAt: now, ...set }).returning();
+  // A new entry is published as it is written: only an explicit publish false keeps it a draft
+  const [entry] = await db.insert(V).values({ id: newId(), slug, createdBy: userId, createdAt: now, ...set, ...(input.publish === undefined ? { publishedAt: now } : {}) }).returning();
   return { entry, created: true };
 }
 
@@ -119,20 +149,22 @@ export async function setVaultPicture(ref: string, body: Buffer): Promise<string
 }
 
 /** Sets an entry's loop from its bytes, or takes it away (null): the card then plays the piece itself again */
-export async function setVaultVideo(ref: string, body: Buffer | null): Promise<string | null> {
+export async function setVaultVideo(ref: string, body: Buffer | null): Promise<{ video: string | null; ratio: number | null }> {
   const r = await rowOf(ref);
   if (!r) throw new HttpError(404, `No Vault entry "${ref}".`);
   let key: string | null = null;
+  let ratio: number | null = null;
   if (body) {
     const type = videoTypeOf(body);
     if (!type) throw new HttpError(415, "The video is not an MP4 or a WebM.");
-    if (body.length > VAULT_VIDEO_MAX) throw new HttpError(413, `The video is over ${VAULT_VIDEO_MAX / 1024 / 1024} MB: a loop of a few seconds at 1600×1200 fits in far less.`);
+    if (body.length > VAULT_VIDEO_MAX) throw new HttpError(413, `The video is over ${VAULT_VIDEO_MAX / 1024 / 1024} MB: a loop of a few seconds fits in far less.`);
     key = `${VAULT_PREFIX}${r.id}/${createHash("sha256").update(body).digest("hex").slice(0, 16)}.${EXT[type]}`;
     await putFile(key, body, type);
+    ratio = videoRatioOf(body);
   }
-  await db.update(V).set({ videoKey: key, updatedAt: new Date() }).where(eq(V.id, r.id));
+  await db.update(V).set({ videoKey: key, videoRatio: ratio, updatedAt: new Date() }).where(eq(V.id, r.id));
   if (r.videoKey && r.videoKey !== key) await deleteFiles([r.videoKey]).catch(() => {});
-  return key ? fileUrl(key) : null;
+  return { video: key ? fileUrl(key) : null, ratio };
 }
 
 const VIDEO_TYPE = (t: string) => /^video\/(mp4|webm|quicktime)$/.test(t);
@@ -156,7 +188,7 @@ export async function videoFromLink(link: string): Promise<Buffer | null> {
 
 /** A file sent to an entry's upload link: a picture or a loop, told apart by its bytes */
 export async function setVaultMedia(ref: string, body: Buffer): Promise<{ picture: string } | { video: string }> {
-  return videoTypeOf(body) ? { video: (await setVaultVideo(ref, body))! } : { picture: await setVaultPicture(ref, body) };
+  return videoTypeOf(body) ? { video: (await setVaultVideo(ref, body)).video! } : { picture: await setVaultPicture(ref, body) };
 }
 
 /** Deletes an entry, its picture and its loop */

@@ -3,7 +3,7 @@
 // are the ones Better Auth 1.7 expects (organization plugin included).
 // inspo_item is ours: each row belongs to a workspace (organization).
 import { sql } from "drizzle-orm";
-import { pgTable, text, integer, bigint, boolean, timestamp, jsonb, index, uniqueIndex, check, primaryKey, vector, type AnyPgColumn } from "drizzle-orm/pg-core";
+import { pgTable, text, integer, bigint, boolean, real, timestamp, jsonb, index, uniqueIndex, check, primaryKey, vector, type AnyPgColumn } from "drizzle-orm/pg-core";
 import type { InspoTags, UserTags } from "@/types/inspo";
 import type { Brief } from "@/types/brief";
 import type { DesignSpec } from "@/types/design";
@@ -1092,8 +1092,10 @@ export const vaultItem = pgTable("vault_item", {
   blocks: jsonb("blocks").$type<{ title: string; lang: string; code: string; note?: string }[]>().notNull().default([]),
   /** A whole HTML document that shows it running, for the live preview; null puts one together from the blocks (lib/vault-preview.ts) */
   demo: text("demo"),
-  /** A short loop of it running (mp4 or webm, under vault/), for the pieces a card cannot play live: the card plays it on hover in place of the piece; null plays the piece */
+  /** A short loop of it running (mp4 or webm, under vault/), for the pieces a card cannot play live: the card plays it, always, in place of the piece; null plays the piece on hover */
   videoKey: text("video_key"),
+  /** The loop's width over its height, read from the file when it is set: its card and its sheet take that shape; null (a WebM, or a loop from before this) is measured by the browser */
+  videoRatio: real("video_ratio"),
   /** The colour it stands on (#rrggbb), in its picture and in the preview put together from its blocks, so a card does not change ground when its piece starts; null is the plain paper one */
   ground: text("ground"),
   /** Its picture's key in storage (lib/storage.ts, under vault/), or null */

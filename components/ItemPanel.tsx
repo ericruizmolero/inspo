@@ -21,6 +21,23 @@ if (typeof window !== "undefined") {
   window.addEventListener("pointerdown", (e) => { lastPress = { x: e.clientX, y: e.clientY, at: Date.now() }; }, { capture: true, passive: true });
 }
 
+/** A sheet that has just opened grows out of the last press: its origin goes on it before its first paint */
+export function growFromPress(el: HTMLElement | null) {
+  if (!el || !lastPress || Date.now() - lastPress.at > 1000) return;
+  const r = el.getBoundingClientRect();
+  el.style.transformOrigin = `${lastPress.x - r.left}px ${lastPress.y - r.top}px`;
+}
+/** A sheet closed by a click goes back into where it came from, quicker than it came, and the dim lifts with it.
+ *  With reduced motion only the fade stays */
+export function shrinkAway(el: HTMLElement, dim: HTMLElement | null, done: () => void) {
+  const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const timing = { duration: 150, easing: "cubic-bezier(0.23, 1, 0.32, 1)", fill: "forwards" as const };
+  dim?.animate([{ opacity: 1 }, { opacity: 0 }], timing);
+  el.animate(still
+    ? [{ opacity: 1 }, { opacity: 0 }]
+    : [{ transform: "none", opacity: 1 }, { transform: "scale(0.96)", opacity: 0 }], timing).finished.then(done, done);
+}
+
 export default function ItemPanel({ item, isSite, page, criterio, thread, onClose, onPrev, onNext, libraryName }: {
   item: InspoItem;
   /** A site (not an image, a video, a post or a text): its favicon and its address head the sheet */
@@ -89,12 +106,7 @@ export default function ItemPanel({ item, isSite, page, criterio, thread, onClos
     if (dx < 0) onNext?.(); else onPrev?.();
   };
   const dimRef = useRef<HTMLDivElement>(null);
-  useLayoutEffect(() => {
-    const el = asideRef.current;
-    if (!el || !lastPress || Date.now() - lastPress.at > 1000) return;
-    const r = el.getBoundingClientRect();
-    el.style.transformOrigin = `${lastPress.x - r.left}px ${lastPress.y - r.top}px`;
-  }, []);
+  useLayoutEffect(() => growFromPress(asideRef.current), []);
 
   // Closed by a click it goes back into where it came from, quicker than it came, and the dim lifts with it.
   // With reduced motion only the fade stays. Escape (a key) closes at once.
@@ -104,12 +116,7 @@ export default function ItemPanel({ item, isSite, page, criterio, thread, onClos
     if (leaving.current) return;
     if (!el) { onClose(); return; }
     leaving.current = true;
-    const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const timing = { duration: 150, easing: "cubic-bezier(0.23, 1, 0.32, 1)", fill: "forwards" as const };
-    dimRef.current?.animate([{ opacity: 1 }, { opacity: 0 }], timing);
-    el.animate(still
-      ? [{ opacity: 1 }, { opacity: 0 }]
-      : [{ transform: "none", opacity: 1 }, { transform: "scale(0.96)", opacity: 0 }], timing).finished.then(onClose, onClose);
+    shrinkAway(el, dimRef.current, onClose);
   };
 
   // A copied picture or video links to the page it was found on

@@ -3,13 +3,17 @@
 /* A category's count in the menu: after its name, in muted tabular figures */
 .vault-menu__n { margin-left: var(--space-2); font-size: var(--fs-small); font-variant-numeric: tabular-nums; color: var(--muted); }
 
-.vault-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: var(--space-4); max-width: 1360px; margin: 0 auto; padding: 0; list-style: none; }
+/* A masonry: as many columns as fit at 300 or more, and Vault.tsx deals the cards among them, each to the shortest
+   so far (it counts with these same numbers: the 16 of the gap and the 300) */
+.vault-grid { display: flex; align-items: flex-start; gap: var(--space-4); max-width: 1360px; margin: 0 auto; }
+.vault-col { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: var(--space-4); margin: 0; padding: 0; list-style: none; }
 
 /* A card: a raised tile (one hairline, no bevel, no shadow), with the picture inside it and the
    name under. On hover the hairline darkens, the picture gives way to the piece running, and a chevron comes in */
 .vault-card { display: flex; flex-direction: column; min-width: 0; padding: var(--space-2); border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface-raised); color: var(--text); text-decoration: none; outline: none; transition: border-color 0.2s var(--ease-out); }
 @media (hover: hover) { .vault-card:hover { border-color: var(--border-strong); } }
 .vault-card:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+/* The shot is 4:3, the shape a piece is captured and run at; a card with a loop takes the loop's own (set inline) */
 .vault-card__shot { position: relative; display: block; aspect-ratio: 4 / 3; border-radius: var(--radius-md); overflow: hidden; background: var(--surface-2); }
 .vault-card__shot img, .vault-sheet__shot img { display: block; width: 100%; height: 100%; object-fit: cover; }
 /* The piece itself, at the size its picture was taken and scaled to the card (the scale is set inline). It fades in
@@ -17,8 +21,8 @@
 /* Until it has loaded it takes no pointer: a click in that moment is the card's own and opens the entry */
 .vault-card__live { position: absolute; top: 0; left: 0; border: 0; transform-origin: 0 0; opacity: 0; pointer-events: none; transition: opacity 0.25s var(--ease-out); }
 .vault-card__live.is-ready { opacity: 1; pointer-events: auto; }
-/* The entry's loop, in place of the piece: over the picture, never in the pointer's way */
-.vault-card__loop, .vault-sheet__loop { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+/* The entry's loop, in place of the piece (LoopVideo lays it over the picture): never in the pointer's way */
+.vault-card__loop, .vault-sheet__loop { pointer-events: none; transition: opacity 0.25s var(--ease-out); }
 /* The drawn pointer over a button's picture: the plain arrow of a desktop, ink with a paper edge so it reads on any
    ground, its tip just inside the piece's lower right. A picture of a cursor, not an icon of ours. Gone on hover,
    when the real one is there */
@@ -49,12 +53,13 @@
 .vault-empty .t-title-m { margin: 0 0 var(--space-1); color: var(--text); }
 .vault-empty p { margin: 0; max-width: 56ch; }
 
-/* ─── An entry, open: back to the Vault, its name, the picture with its facts beside it, then the documentation ─── */
-.vault-sheet { max-width: 1360px; margin: 0 auto; }
-.vault-back { padding: 0; border: 0; background: none; font-family: inherit; cursor: pointer; }
-.vault-sheet__head { margin: var(--space-5) 0 var(--space-6); }
-.vault-sheet__top { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: var(--space-6); align-items: start; }
-.vault-sheet__shot { position: relative; aspect-ratio: 16 / 10; border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; background: var(--surface-raised); }
+/* ─── An entry, open: the board's Viewer (.ip, .cr-viewer in globals.css) over the grid. The piece on the stage, its
+   facts down the right where a reference has its conversation ─── */
+/* The box on the stage. With a loop it has the loop's shape (--shape, width over height) and is as large as the
+   stage lets it be: the stage is a size container, so the width is its own or the one its height allows. A picture
+   alone keeps its 4:3; the piece running fills the stage */
+.vault-sheet__shot { position: relative; flex: none; width: min(100cqw, calc(100cqh * var(--shape, 4 / 3))); aspect-ratio: var(--shape, 4 / 3); margin: auto; border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; background: var(--surface-raised); }
+.vault-sheet__shot.is-live { width: 100cqw; height: 100cqh; aspect-ratio: auto; }
 /* In the box's corner. A loop: a small ink key with a film mark. The piece itself: a pill that asks to be tried, a
    moss dot beating beside the words, gone once the pointer is in the box */
 .vault-sheet__mark, .vault-sheet__try { position: absolute; top: var(--space-3); right: var(--space-3); z-index: 2; display: inline-flex; align-items: center; background: var(--ink); color: var(--paper); }
@@ -65,9 +70,11 @@
 @keyframes vault-beat { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.6); opacity: 0.45; } }
 @media (prefers-reduced-motion: reduce) { .vault-sheet__try i { animation: none; } }
 
-/* The side: a raised panel (one hairline, no bevel), so the facts have a ground of their own and do not float on
-   the page. Its parts are told apart by hairlines inside, not by boxes in boxes */
-.vault-sheet__side { display: flex; flex-direction: column; gap: var(--space-4); min-width: 0; padding: var(--space-4); border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface-raised); }
+/* The side: the Viewer's aside, a column that scrolls by itself. Its parts are told apart by hairlines, not by boxes */
+.vault-sheet__side.cr-viewer-aside { gap: var(--space-4); padding: var(--space-4); overflow-y: auto; }
+.vault-sheet__side > * { flex-shrink: 0; }
+.vault-sheet__what { margin: 0; font-size: var(--fs-ui); line-height: var(--lh-body); color: var(--text-2); }
+.vault-sheet__side .vault-sheet__note { margin: 0; font-size: var(--fs-small); line-height: var(--lh-small); }
 .vault-by { display: flex; align-items: center; gap: var(--space-3); min-width: 0; }
 .vault-by__text { display: flex; flex-direction: column; min-width: 0; }
 .vault-by__name { font-size: var(--fs-ui); font-weight: var(--fw-semibold); line-height: var(--lh-ui); color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -99,13 +106,14 @@
 .vault-video__row .cr-input { flex: 1; min-width: 0; }
 .vault-video__error { margin: 0; font-size: var(--fs-label); line-height: var(--lh-label); color: var(--danger, var(--ember)); }
 
-.vault-sheet__part { max-width: 860px; margin-top: var(--space-7); }
-.vault-sheet__part > h2 { margin: 0 0 var(--space-4); color: var(--text); }
 .vault-sheet__note { margin: 0 0 var(--space-3); max-width: 62ch; font-size: var(--fs-ui); line-height: var(--lh-ui); color: var(--text-2); }
 /* "When to use it": a note set apart on a raised ground with a moss rule down its left, not one more paragraph */
-.vault-use { padding: var(--space-4) var(--space-5); border: 1px solid var(--border); border-left: 3px solid var(--moss-light); border-radius: var(--radius-md); background: var(--surface-raised); }
+.vault-use { padding: var(--space-3) var(--space-4); border: 1px solid var(--border); border-left: 3px solid var(--moss-light); border-radius: var(--radius-md); background: var(--surface-raised); }
 .vault-use > h2 { margin: 0 0 var(--space-2); color: var(--text); }
-.vault-use > p { margin: 0; max-width: 68ch; color: var(--text-2); white-space: pre-line; }
+.vault-use > p { margin: 0; font-size: var(--fs-small); line-height: var(--lh-body); color: var(--text-2); white-space: pre-line; }
+/* The documentation, the stage's second view (partners): a column that reads at 860 and scrolls inside the stage */
+.vault-docs { align-self: stretch; flex: 1; min-width: 0; overflow-y: auto; padding: var(--space-3) var(--space-3) var(--space-5); }
+.vault-docs > * { max-width: 860px; margin-inline: auto; }
 /* The documentation's head: its name and, beside it, how many steps */
 .vault-docs__head { display: flex; align-items: baseline; gap: var(--space-3); margin-bottom: var(--space-5); }
 .vault-docs__head h2 { margin: 0; color: var(--text); }
@@ -134,8 +142,3 @@
 .vault-code__line { display: block; padding-right: var(--space-4); counter-increment: line; }
 .vault-code__line::before { content: counter(line); display: inline-block; width: 44px; padding-right: var(--space-3); text-align: right; color: var(--muted); opacity: 0.6; font-variant-numeric: tabular-nums; user-select: none; }
 .vault-tk-k { color: var(--tk-k); } .vault-tk-s { color: var(--tk-s); } .vault-tk-a { color: var(--tk-a); } .vault-tk-n { color: var(--tk-n); } .vault-tk-c { color: var(--tk-c); font-style: italic; }
-
-/* Narrow: the facts go under the picture */
-@media (max-width: 860px) {
-  .vault-sheet__top { grid-template-columns: minmax(0, 1fr); gap: var(--space-5); }
-}

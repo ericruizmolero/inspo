@@ -254,9 +254,10 @@ export const ui: typeof EnUi = {
     source: "Aprendida de",
     use: "Cuándo usarla",
     docs: "Documentación",
+    piece: "Pieza",
     video: {
       title: "Vídeo", team: "Solo equipo",
-      none: "La tarjeta y esta ficha reproducen la pieza. Un vídeo la sustituye: graba a 4:3.",
+      none: "La tarjeta y esta ficha reproducen la pieza. Un vídeo la sustituye: graba a la forma que pida la pieza.",
       has: "La tarjeta y esta ficha reproducen este vídeo en lugar de la pieza.",
       link: "MP4 o enlace de Screen Studio", use: "Usar", upload: "Subir MP4", busy: "Enviando", remove: "Quitar",
       tooBig: "Pasa de 4 MB: pásalo como enlace.", failed: "No se ha podido guardar.",

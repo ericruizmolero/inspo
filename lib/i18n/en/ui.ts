@@ -261,9 +261,10 @@ export const ui = {
     source: "Learnt from",
     use: "When to use it",
     docs: "Documentation",
+    piece: "Piece",
     video: {
       title: "Video", team: "Team only",
-      none: "The card and this page play the piece itself. A loop replaces it: record at 4:3.",
+      none: "The card and this page play the piece itself. A loop replaces it: record at the shape the piece asks for.",
       has: "The card and this page play this loop in place of the piece.",
       link: "MP4 or Screen Studio link", use: "Use", upload: "Upload MP4", busy: "Sending", remove: "Remove",
       tooBig: "Over 4 MB: pass it as a link.", failed: "It could not be saved.",

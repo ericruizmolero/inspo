@@ -1,19 +1,24 @@
 "use client";
 // Discover › Vault: the pieces we curate ourselves (types/vault.ts), as cards with their picture, sorted by what they
-// are: a kind of section or a detail. The categories wait in a menu on the right of Discover's row, as the kinds of resource do, with how many each holds; a card
-// opens the entry in the same place (?entry=<slug>), with its picture, what it is and its tags. There the piece itself runs in
-// the picture's place, in a sandboxed frame (app/api/vault/[entry]/preview), or its loop where it has one, and "Live preview" opens the piece alone in a tab. The documentation
-// (the code, block by block) is shown to partners only: everyone else's agent reads it through the connector, which
+// are: a kind of section or a detail, laid as a masonry: a card with a loop takes the loop's own shape and plays it for as long as
+// it is in view. The categories wait in a menu on the right of Discover's row, as the kinds of resource do, with how many each holds; a card
+// opens the entry as a sheet over the grid (?entry=<slug>), the board's own Viewer: the piece on the stage and, down its right, what it is, its facts and its tags. On the stage the piece itself runs,
+// in a sandboxed frame (app/api/vault/[entry]/preview), or its loop where it has one, and "Live preview" opens the piece alone in a tab. The documentation
+// (the code, block by block) is a second view of the stage, for partners only: everyone else's agent reads it through the connector, which
 // is where it is used. Entries are written from an agent (add_to_vault), not here.
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Clouds from "@/components/Clouds";
-import { Avatar, Button, Chip, Icon, IconButton, MenuItem, toneFor } from "@/components/criterio";
+import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
+import { Avatar, Button, Chip, Icon, IconButton, MenuItem, SegmentedControl, toneFor } from "@/components/criterio";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { fmtDate } from "@/lib/i18n/format";
 import { plain } from "@/lib/resources";
 import { tokenLines } from "@/lib/code-tokens";
 import type { VaultCard, VaultEntry } from "@/types/vault";
 import { useT } from "./I18nProvider";
+import { growFromPress, shrinkAway } from "./ItemPanel";
+import LoopVideo from "./LoopVideo";
 import "./Vault.css";
 
 interface Listing { entries: VaultCard[]; partner: boolean; picks: Record<string, string[]> }
@@ -34,7 +39,17 @@ export default function Vault({ query, head, projects }: { projects: readonly { 
   const [category, setCategory] = useState<string | null>(null);
   const [open, setOpen] = useState<string | null>(null);
   const [menu, setMenu] = useState(false);
-  const scroller = useRef<HTMLDivElement>(null);
+  // The grid's node, held as state: it comes and goes with what is shown, and its width decides the columns
+  const [grid, setGrid] = useState<HTMLDivElement | null>(null);
+  const [width, setWidth] = useState(0);
+  useLayoutEffect(() => {
+    if (!grid) return;
+    const read = () => setWidth(grid.clientWidth);
+    read();
+    const ro = new ResizeObserver(read);
+    ro.observe(grid);
+    return () => ro.disconnect();
+  }, [grid]);
 
   useEffect(() => {
     let alive = true;
@@ -50,7 +65,9 @@ export default function Vault({ query, head, projects }: { projects: readonly { 
   }, []);
   // The projects each entry is chosen for, as the team changes them from a card or a sheet: kept with the listing
   const setPicks = useCallback((id: string, projects: string[]) => setData((d) => { if (!d) return d; const next = { ...d, picks: { ...d.picks, [id]: projects } }; cache = next; return next; }), []);
-  const show = useCallback((slug: string | null) => { setEntryInUrl(slug); setOpen(slug); scroller.current?.scrollTo({ top: 0 }); }, []);
+  // An entry's loop, as the team just changed it from its sheet, or its shape as a browser measured it (a loop whose file did not say)
+  const patch = useCallback((id: string, fields: Partial<VaultCard>) => setData((d) => { if (!d) return d; const next = { ...d, entries: d.entries.map((x) => (x.id === id ? { ...x, ...fields } : x)) }; cache = next; return next; }), []);
+  const show = useCallback((slug: string | null) => { setEntryInUrl(slug); setOpen(slug); }, []);
 
   const labelOf = useCallback((key: string) => (t.taxonomy.section as Record<string, string>)[key] ?? (t.vault.details as Record<string, string>)[key] ?? key, [t]);
   const entries = useMemo(() => data?.entries ?? [], [data]);
@@ -66,21 +83,30 @@ export default function Vault({ query, head, projects }: { projects: readonly { 
     return entries.filter((e) => (!category || e.category === category) && words.every((w) => plain([e.title, labelOf(e.category), e.summary, e.tags.join(" ")].join(" ")).includes(w)));
   }, [entries, category, query, labelOf]);
 
+  // The masonry: as many columns as fit, and each card, in the list's order, goes to the shortest one so far. Every
+  // height is known before anything loads (the shot's shape, and a foot that is always the same), so nothing moves
+  const columns = useMemo(() => {
+    if (!width) return [];
+    const n = Math.max(1, Math.floor((width + GRID_GAP) / (COLUMN_MIN + GRID_GAP)));
+    const shot = (width - GRID_GAP * (n - 1)) / n - CARD_EDGE;
+    const cols = Array.from({ length: n }, () => ({ height: 0, entries: [] as VaultCard[] }));
+    for (const e of shown) {
+      let to = cols[0];
+      for (const c of cols) if (c.height < to.height - 1) to = c;
+      to.entries.push(e);
+      to.height += shot / shapeOf(e) + CARD_FOOT + GRID_GAP;
+    }
+    return cols.map((c) => c.entries);
+  }, [shown, width]);
+
   const opened = open ? entries.find((e) => e.slug === open) ?? null : null;
-  if (open && data) {
-    return (
-      <>
-        <div className="disc-list" ref={scroller}>
-          <VaultSheet key={open} slug={open} card={opened} partner={data.partner} projects={projects} used={opened ? data.picks?.[opened.id] ?? [] : []} onPicks={(v) => { if (opened) setPicks(opened.id, v); }} labelOf={labelOf} onBack={() => show(null)}
-            onCategory={(c) => { setCategory(c); show(null); }} />
-        </div>
-        <Clouds />
-      </>
-    );
-  }
   return (
     <>
-      <div className="disc-list" ref={scroller}>
+      {open && data && (
+        <VaultSheet key={open} slug={open} card={opened} partner={data.partner} projects={projects} used={opened ? data.picks?.[opened.id] ?? [] : []} onPicks={(v) => { if (opened) setPicks(opened.id, v); }} labelOf={labelOf} onClose={() => show(null)}
+          onPatch={(fields) => { if (opened) patch(opened.id, fields); }} onCategory={(c) => { setCategory(c); show(null); }} />
+      )}
+      <div className="disc-list">
         {head(t.vault.lead, rail.length > 0 && (
           // The categories wait in a menu on the right of the row, as the kinds of resource do: all of them, or one,
           // each with how many it holds. Only the ones that hold something
@@ -104,9 +130,13 @@ export default function Vault({ query, head, projects }: { projects: readonly { 
             <p>{data.partner ? t.vault.emptyPartner : t.vault.empty}</p>
           </div>
         ) : shown.length ? (
-          <ul className="vault-grid">
-            {shown.map((e) => <li key={e.id}><VaultTile entry={e} kind={category ? null : labelOf(e.category)} blank={labelOf(e.category)} projects={projects} used={data.picks?.[e.id] ?? []} onPicks={(v) => setPicks(e.id, v)} onOpen={() => show(e.slug)} /></li>)}
-          </ul>
+          <div className="vault-grid" ref={setGrid}>
+            {columns.map((col, i) => (
+              <ul className="vault-col" key={i}>
+                {col.map((e) => <li key={e.id}><VaultTile entry={e} kind={category ? null : labelOf(e.category)} blank={labelOf(e.category)} projects={projects} used={data.picks?.[e.id] ?? []} onPicks={(v) => setPicks(e.id, v)} onShape={(videoRatio) => patch(e.id, { videoRatio })} onOpen={() => show(e.slug)} /></li>)}
+              </ul>
+            ))}
+          </div>
         ) : <p className="disc-list__none">{t.vault.none}</p>}
       </div>
       <Clouds />
@@ -117,17 +147,26 @@ export default function Vault({ query, head, projects }: { projects: readonly { 
 // The size a piece is shown at inside a card: the one its picture was taken at, scaled down to the card
 const STAGE_W = 800;
 const STAGE_H = 600;
+// The grid's numbers, the same Vault.css draws with: the gap, the narrowest a column gets, what a card adds to its
+// shot at the sides (padding and hairline) and under it (the foot with the name and the category)
+const GRID_GAP = 16;
+const COLUMN_MIN = 300;
+const CARD_EDGE = 18;
+const CARD_FOOT = 86;
+/** A card's shot, width over height: its loop's own shape, held between a tall phone and a wide strip; without a loop,
+ *  the 4:3 its picture is taken at and its piece runs at */
+const shapeOf = (e: VaultCard) => (e.video && e.videoRatio ? Math.min(2.4, Math.max(0.6, e.videoRatio)) : STAGE_W / STAGE_H);
 /** How long the pointer rests on a card before its piece starts: passing over the grid starts nothing */
 const PLAY_AFTER_MS = 140;
 
 /** A card: a raised tile with the picture inside and the name under it. Resting on it with a mouse plays the piece
  *  itself over the picture (the sandboxed preview, scaled to the card): what moves by itself moves, and what answers
- *  to the pointer answers. An entry with a loop plays that instead. A click anywhere, the piece included, opens the entry */
-function VaultTile({ entry: e, kind, blank, projects, used, onPicks, onOpen }: { entry: VaultCard; kind: string | null; blank: string; projects: readonly { id: string; name: string }[]; used: readonly string[]; onPicks: (projects: string[]) => void; onOpen: () => void }) {
+ *  to the pointer answers. An entry with a loop plays that instead, by itself and for as long as the card is in view,
+ *  and the card takes the loop's shape. A click anywhere, the piece included, opens the entry */
+function VaultTile({ entry: e, kind, blank, projects, used, onPicks, onShape, onOpen }: { entry: VaultCard; kind: string | null; blank: string; projects: readonly { id: string; name: string }[]; used: readonly string[]; onPicks: (projects: string[]) => void; onShape: (ratio: number) => void; onOpen: () => void }) {
   const { t } = useT();
   const shot = useRef<HTMLSpanElement>(null);
   const frame = useRef<HTMLIFrameElement>(null);
-  const loop = useRef<HTMLVideoElement>(null);
   const timer = useRef<number>(undefined);
   const [play, setPlay] = useState<{ scale: number } | null>(null);
   const [ready, setReady] = useState(false);
@@ -143,16 +182,11 @@ function VaultTile({ entry: e, kind, blank, projects, used, onPicks, onOpen }: {
   }, [play]);
   const enter = (ev: React.PointerEvent) => {
     if (ev.pointerType !== "mouse") return;
-    if (e.video) { void loop.current?.play().catch(() => {}); return; }
-    if (!e.preview) return;
+    if (e.video || !e.preview) return;
     window.clearTimeout(timer.current);
     timer.current = window.setTimeout(() => setPlay({ scale: (shot.current?.clientWidth ?? STAGE_W) / STAGE_W }), PLAY_AFTER_MS);
   };
-  const leave = () => {
-    window.clearTimeout(timer.current); setPlay(null); setReady(false);
-    // Back to the first frame, which is the card's still
-    if (loop.current) { loop.current.pause(); loop.current.currentTime = 0.001; }
-  };
+  const leave = () => { window.clearTimeout(timer.current); setPlay(null); setReady(false); };
   return (
     <a className="vault-card" href={`/?in=vault&entry=${encodeURIComponent(e.slug)}`} onPointerEnter={enter} onPointerLeave={leave}
       onClick={(ev) => {
@@ -161,11 +195,12 @@ function VaultTile({ entry: e, kind, blank, projects, used, onPicks, onOpen }: {
         if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.button !== 0) return;
         ev.preventDefault(); onOpen();
       }}>
-      <span className="vault-card__shot" ref={shot}>
+      <span className="vault-card__shot" ref={shot} style={{ aspectRatio: shapeOf(e) }}>
         {e.image ? <img src={e.image} alt="" loading="lazy" decoding="async" /> : <span className="vault-card__blank">{blank}</span>}
-        {/* A loop, where the entry brings one (a piece that moves on scroll, or is heavy to start), in place of the piece.
-            It is its own still: it waits on its first frame, so the card shows exactly what will move, and plays on hover */}
-        {e.video && <video ref={loop} className="vault-card__loop" src={`${e.video}#t=0.001`} muted loop playsInline preload="metadata" aria-hidden />}
+        {/* A loop, where the entry brings one (a piece that moves on scroll, or is heavy to start), in place of the piece:
+            it plays by itself while the card is in view, over the picture until it has a frame to show. A loop whose
+            file did not say its size tells the grid here, and the card takes its shape */}
+        {e.video && <LoopVideo className="vault-card__loop" src={e.video} onSize={e.videoRatio ? undefined : (w, h) => onShape(w / h)} />}
         {play && !e.video && (
           <iframe ref={frame} className={`vault-card__live${ready ? " is-ready" : ""}`} src={`/api/vault/${encodeURIComponent(e.slug)}/preview?card=1${e.category === "buttons" ? "&hover=1" : ""}`} title="" aria-hidden tabIndex={-1}
             sandbox="allow-scripts" referrerPolicy="no-referrer" onLoad={() => setReady(true)}
@@ -192,103 +227,154 @@ function VaultTile({ entry: e, kind, blank, projects, used, onPicks, onOpen }: {
   );
 }
 
-/** One entry, open: its picture, what it is, where it sits in the Vault and, for partners, its documentation */
-function VaultSheet({ slug, card, partner, projects, used, onPicks, labelOf, onBack, onCategory }: {
-  slug: string; card: VaultCard | null; partner: boolean; projects: readonly { id: string; name: string }[]; used: readonly string[]; onPicks: (projects: string[]) => void; labelOf: (key: string) => string; onBack: () => void; onCategory: (c: string) => void;
+/** One entry, open: the board's own Viewer over the grid (.ip, .cr-viewer). The piece on the stage, at its loop's shape
+ *  or filling it when it runs live; down the right, what it is, who made it, the ways to use it, its facts and tags.
+ *  For partners the stage has a second view, its documentation. Esc, the veil or the cross close it */
+function VaultSheet({ slug, card, partner, projects, used, onPicks, onPatch, labelOf, onClose, onCategory }: {
+  slug: string; card: VaultCard | null; partner: boolean; projects: readonly { id: string; name: string }[]; used: readonly string[]; onPicks: (projects: string[]) => void; onPatch: (fields: Partial<VaultCard>) => void; labelOf: (key: string) => string; onClose: () => void; onCategory: (c: string) => void;
 }) {
   const { t, locale } = useT();
   const [entry, setEntry] = useState<VaultEntry | null>(null);
   const [missing, setMissing] = useState(false);
-  // The piece runs in the picture's place from the start; the picture holds it until the frame has loaded
+  const [view, setView] = useState<"piece" | "docs">("piece");
+  // The piece runs on the stage from the start; the picture holds it until the frame has loaded
   const [running, setRunning] = useState(false);
-  // The card's loop, as the team just set it from here (the entry's own until then)
+  // The loop and its shape, as the team just set them from here (the entry's own until then)
   const [video, setVideo] = useState<string | null>(card?.video ?? null);
-  useEffect(() => { if (entry) setVideo(entry.video); }, [entry]);
+  const [shape, setShape] = useState<number | null>(card?.video ? card.videoRatio : null);
+  useEffect(() => { if (entry) { setVideo(entry.video); if (entry.videoRatio) setShape(entry.videoRatio); } }, [entry]);
   useEffect(() => {
     let alive = true;
     fetch(`/api/vault/${encodeURIComponent(slug)}`).then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status))))).then((e: VaultEntry) => { if (alive) setEntry(e); }).catch(() => { if (alive) setMissing(true); });
     return () => { alive = false; };
   }, [slug]);
+
+  // It grows out of the card that was pressed and goes back into it; Escape, a key, closes at once
+  const sheet = useRef<HTMLElement>(null);
+  const dim = useRef<HTMLDivElement>(null);
+  const leaving = useRef(false);
+  useLayoutEffect(() => growFromPress(sheet.current), []);
+  const close = useRef(onClose);
+  close.current = onClose;
+  const leave = () => {
+    if (leaving.current) return;
+    if (!sheet.current) { onClose(); return; }
+    leaving.current = true;
+    shrinkAway(sheet.current, dim.current, onClose);
+  };
+  useEffect(() => {
+    const onKey = (ev: KeyboardEvent) => {
+      if (ev.key !== "Escape" || ev.defaultPrevented) return;
+      if (document.querySelector("[role=dialog][data-open], .modal-backdrop")) return;
+      close.current();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, []);
+
   // The card's own fields paint at once; the rest arrives with the entry
   const e = entry ?? card;
-  const back = (
-    <button type="button" className="back vault-back" onClick={onBack}>
-      <span className="back__icon" aria-hidden><Icon name="chevron-left" size={12} /></span>
-      <span className="back__label">{t.vault.name}</span>
-    </button>
-  );
   const previewUrl = `/api/vault/${encodeURIComponent(slug)}/preview`;
-  if (!e) return <div className="vault-sheet">{back}{missing && <p className="disc-list__none">{t.vault.gone}</p>}</div>;
-  return (
-    <article className="vault-sheet">
-      {back}
-      <header className="vault-sheet__head">
-        <h1 className="disc-title">{e.title}</h1>
-        {e.summary && <p className="t-body disc-lead">{e.summary}</p>}
-      </header>
-      <div className="vault-sheet__top">
-        <div className="vault-sheet__shot">
-          {e.image ? <img src={e.image} alt="" decoding="async" /> : <span className="vault-card__blank">{labelOf(e.category)}</span>}
-          {/* With a loop, the box plays the loop, as its card does; the piece itself is one press away ("Live preview") */}
-          {video && <video key={video} className="vault-sheet__loop" src={video} autoPlay muted loop playsInline aria-hidden />}
-          {/* What the box holds, said in its corner: a loop (a film mark), or the piece itself, which asks to be tried.
-              The invitation leaves once the pointer is inside */}
-          {video ? <span className="vault-sheet__mark" aria-label={t.vault.isVideo} data-tip={t.vault.isVideo}><Icon name="film" size={16} /></span>
-            : e.preview ? <span className="vault-sheet__try" aria-hidden><i />{t.vault.tryIt}</span> : null}
-          {!video && e.preview && <iframe className={`vault-sheet__live-frame${running ? " is-ready" : ""}`} src={previewUrl} title={`${e.title}: ${t.vault.live}`} sandbox="allow-scripts" referrerPolicy="no-referrer" onLoad={() => setRunning(true)} />}
-        </div>
-        {/* Beside the piece, one raised panel: who made it and when, the way to see it alone, where it sits and its tags */}
-        <aside className="vault-sheet__side">
-          {entry?.by && (
-            <div className="vault-by">
-              <Avatar initials={entry.by.slice(0, 1).toUpperCase()} name={entry.by} tone={toneFor(entry.by)} src={entry.byImage ?? undefined} size={36} />
-              <div className="vault-by__text">
-                <span className="vault-by__name">{entry.by}</span>
-                <span className="vault-by__when">{e.published ? fmtDate(e.createdAt, locale, { day: "numeric", month: "long", year: "numeric" }) : t.vault.draft}</span>
-              </div>
-            </div>
-          )}
-          {(e.preview || e.liveUrl) && (
-            <div className="vault-sheet__actions">
-              {/* The piece by itself, in a tab of its own: the same sandboxed page the box beside shows. A quiet paper key: the ember is only in its eye, the same one a card shows */}
-              {e.preview && <a className="cr-btn cr-btn-secondary cr-btn-s vault-sheet__go" href={previewUrl} target="_blank" rel="noopener noreferrer"><Icon name="eye" size={16} className="vault-sheet__eye" />{t.vault.live}<Icon name="arrow-up-right" size={16} /></a>}
-              {e.liveUrl && <a className="cr-btn cr-btn-quiet cr-btn-s vault-sheet__go" href={e.liveUrl} target="_blank" rel="noopener noreferrer">{t.vault.site}<Icon name="arrow-up-right" size={18} /></a>}
-            </div>
-          )}
-          {/* For everyone: ask for this piece without ever holding its code. Choose it for a project (the project's
-              criterio.md then names it to the agent), or copy a line that names it for an agent with Criterio connected */}
-          <div className="vault-sheet__actions">
-            <UseInProject slug={slug} projects={projects} used={used} onChange={onPicks} />
-            <CopyForAgent text={t.vault.prompt(e.title, e.slug, labelOf(e.category))} />
+  const live = !!e && !video && e.preview;
+  const when = e ? (e.published ? fmtDate(e.createdAt, locale, { day: "numeric", month: "long", year: "numeric" }) : t.vault.draft) : "";
+  return createPortal(
+    <div className="ip-layer">
+      <div ref={dim} className="ip-dim" onClick={leave} aria-hidden />
+      <aside ref={sheet} className="ip cr-viewer vault-ip" role="dialog" aria-modal="true" aria-label={e?.title ?? t.vault.name}>
+        <header className="ip-bar cr-viewer-head">
+          <span className="cr-avatar cr-avatar-chrome is-square ip-bar__source" aria-hidden>{(e?.title ?? t.vault.name).slice(0, 1).toUpperCase()}</span>
+          <div className="cr-viewer-titles">
+            <div className="cr-viewer-title">{e?.title ?? t.vault.name}</div>
+            <Breadcrumb className="cr-viewer-crumb ip-bar__crumbs">
+              <BreadcrumbList>
+                <BreadcrumbItem><button type="button" className="ip-bar__crumb" onClick={leave}>{t.vault.name}</button></BreadcrumbItem>
+                {e && (
+                  <>
+                    <BreadcrumbSeparator />
+                    <BreadcrumbItem><button type="button" className="ip-bar__crumb" onClick={() => onCategory(e.category)}>{labelOf(e.category)}</button></BreadcrumbItem>
+                  </>
+                )}
+              </BreadcrumbList>
+            </Breadcrumb>
           </div>
-          <dl className="vault-facts">
-            <div><dt>{t.vault.category}</dt><dd><button type="button" className="vault-facts__link" onClick={() => onCategory(e.category)}>{labelOf(e.category)}</button></dd></div>
-            {!entry?.by && <div><dt>{e.published ? t.vault.published : t.vault.state}</dt><dd>{e.published ? fmtDate(e.createdAt, locale, { day: "numeric", month: "long", year: "numeric" }) : t.vault.draft}</dd></div>}
-            {entry?.sourceUrl && partner && <div><dt>{t.vault.source}</dt><dd><a className="vault-facts__link" href={entry.sourceUrl} target="_blank" rel="noopener noreferrer">{hostOf(entry.sourceUrl)}</a></dd></div>}
-          </dl>
-          {e.tags.length > 0 && <ul className="vault-tags">{e.tags.map((tag) => <li key={tag}>{tag}</li>)}</ul>}
-          {partner && entry && <VideoControl slug={slug} video={video} onChange={(v) => { setVideo(v); if (cache) cache = { ...cache, entries: cache.entries.map((x) => (x.slug === slug ? { ...x, video: v } : x)) }; }} />}
-        </aside>
-      </div>
-      {entry?.use && (
-        // What an agent reads to choose it, set apart from the rest as a note: a moss rule on its left
-        <section className="vault-sheet__part vault-use">
-          <h2 className="t-title-s">{t.vault.use}</h2>
-          <p className="t-body">{entry.use}</p>
-        </section>
-      )}
-      <section className="vault-sheet__part">
-        <header className="vault-docs__head">
-          <h2 className="t-title-m">{t.vault.docs}</h2>
-          {!!entry?.blocks?.length && <span className="vault-docs__count">{t.vault.steps(entry.blocks.length)}</span>}
+          {/* The code is the team's to read here: everyone else's agent reads it through the connector */}
+          {partner && e && (
+            <SegmentedControl className="ip-bar__tabs" label={t.panel.views} items={[{ label: t.vault.piece }, { label: t.vault.docs }]}
+              active={view === "piece" ? 0 : 1} onChange={(i) => setView(i === 0 ? "piece" : "docs")} />
+          )}
+          <IconButton icon="close" variant="quiet" size="m" className="ip-bar__close" label={t.common.close} onClick={leave} />
         </header>
-        {entry?.blocks ? (
-          entry.blocks.length
-            ? <ol className="vault-steps">{entry.blocks.map((b, i) => <CodeBlock key={i} n={i + 1} title={b.title} lang={b.lang} code={b.code} note={b.note} />)}</ol>
-            : <p className="vault-sheet__note">{t.vault.noDocs}</p>
-        ) : entry ? <p className="vault-sheet__note">{t.vault.docsViaAgent}</p> : null}
-      </section>
-    </article>
+        {!e ? (
+          <div className="ip-bento cr-viewer-body"><div className="ip-stage cr-viewer-stage">{missing && <p className="disc-list__none">{t.vault.gone}</p>}</div></div>
+        ) : (
+          <div className="ip-bento cr-viewer-body">
+            <div className="ip-stage cr-viewer-stage">
+              {view === "docs" ? (
+                <section className="vault-docs">
+                  <header className="vault-docs__head">
+                    <h2 className="t-title-m">{t.vault.docs}</h2>
+                    {!!entry?.blocks?.length && <span className="vault-docs__count">{t.vault.steps(entry.blocks.length)}</span>}
+                  </header>
+                  {entry?.blocks?.length
+                    ? <ol className="vault-steps">{entry.blocks.map((b, i) => <CodeBlock key={i} n={i + 1} title={b.title} lang={b.lang} code={b.code} note={b.note} />)}</ol>
+                    : entry ? <p className="vault-sheet__note">{t.vault.noDocs}</p> : null}
+                </section>
+              ) : (
+                // A loop gives the box its own shape, as large as the stage lets it be; the piece running fills the stage
+                <div className={`vault-sheet__shot${live ? " is-live" : ""}`} style={video && shape ? ({ "--shape": shape } as React.CSSProperties) : undefined}>
+                  {e.image ? <img src={e.image} alt="" decoding="async" /> : <span className="vault-card__blank">{labelOf(e.category)}</span>}
+                  {/* With a loop, the box plays the loop, as its card does; the piece itself is one press away ("Live preview") */}
+                  {video && <LoopVideo key={video} className="vault-sheet__loop" src={video} onSize={shape ? undefined : (w, h) => { setShape(w / h); onPatch({ videoRatio: w / h }); }} />}
+                  {/* What the box holds, said in its corner: a loop (a film mark), or the piece itself, which asks to be tried.
+                      The invitation leaves once the pointer is inside */}
+                  {video ? <span className="vault-sheet__mark" aria-label={t.vault.isVideo} data-tip={t.vault.isVideo}><Icon name="film" size={16} /></span>
+                    : e.preview ? <span className="vault-sheet__try" aria-hidden><i />{t.vault.tryIt}</span> : null}
+                  {live && <iframe className={`vault-sheet__live-frame${running ? " is-ready" : ""}`} src={previewUrl} title={`${e.title}: ${t.vault.live}`} sandbox="allow-scripts" referrerPolicy="no-referrer" onLoad={() => setRunning(true)} />}
+                </div>
+              )}
+            </div>
+            {/* Down the right, where a reference has its conversation: what it is, who made it and when, the ways to see and use it, where it sits and its tags */}
+            <section className="ip-card--talk cr-viewer-aside vault-sheet__side">
+              {e.summary && <p className="vault-sheet__what">{e.summary}</p>}
+              {entry?.by && (
+                <div className="vault-by">
+                  <Avatar initials={entry.by.slice(0, 1).toUpperCase()} name={entry.by} tone={toneFor(entry.by)} src={entry.byImage ?? undefined} size={36} />
+                  <div className="vault-by__text">
+                    <span className="vault-by__name">{entry.by}</span>
+                    <span className="vault-by__when">{when}</span>
+                  </div>
+                </div>
+              )}
+              <div className="vault-sheet__actions">
+                {/* The piece by itself, in a tab of its own: the same sandboxed page the stage shows. A quiet paper key: the ember is only in its eye, the same one a card shows */}
+                {e.preview && <a className="cr-btn cr-btn-secondary cr-btn-s vault-sheet__go" href={previewUrl} target="_blank" rel="noopener noreferrer"><Icon name="eye" size={16} className="vault-sheet__eye" />{t.vault.live}<Icon name="arrow-up-right" size={16} /></a>}
+                {e.liveUrl && <a className="cr-btn cr-btn-quiet cr-btn-s vault-sheet__go" href={e.liveUrl} target="_blank" rel="noopener noreferrer">{t.vault.site}<Icon name="arrow-up-right" size={18} /></a>}
+                {/* For everyone: ask for this piece without ever holding its code. Choose it for a project (the project's
+                    criterio.md then names it to the agent), or copy a line that names it for an agent with Criterio connected */}
+                <UseInProject slug={slug} projects={projects} used={used} onChange={onPicks} />
+                <CopyForAgent text={t.vault.prompt(e.title, e.slug, labelOf(e.category))} />
+              </div>
+              <dl className="vault-facts">
+                <div><dt>{t.vault.category}</dt><dd><button type="button" className="vault-facts__link" onClick={() => onCategory(e.category)}>{labelOf(e.category)}</button></dd></div>
+                {!entry?.by && <div><dt>{e.published ? t.vault.published : t.vault.state}</dt><dd>{when}</dd></div>}
+                {entry?.sourceUrl && partner && <div><dt>{t.vault.source}</dt><dd><a className="vault-facts__link" href={entry.sourceUrl} target="_blank" rel="noopener noreferrer">{hostOf(entry.sourceUrl)}</a></dd></div>}
+              </dl>
+              {e.tags.length > 0 && <ul className="vault-tags">{e.tags.map((tag) => <li key={tag}>{tag}</li>)}</ul>}
+              {entry?.use && (
+                // What an agent reads to choose it, set apart from the rest as a note: a moss rule on its left
+                <section className="vault-use">
+                  <h2 className="t-title-s">{t.vault.use}</h2>
+                  <p>{entry.use}</p>
+                </section>
+              )}
+              {entry && !partner && <p className="vault-sheet__note">{t.vault.docsViaAgent}</p>}
+              {partner && entry && <VideoControl slug={slug} video={video} onChange={(v, ratio) => { setVideo(v); setShape(ratio); onPatch({ video: v, videoRatio: ratio }); }} />}
+            </section>
+          </div>
+        )}
+      </aside>
+    </div>,
+    document.body,
   );
 }
 
@@ -361,7 +447,7 @@ const VIDEO_FILE_MAX = 4 * 1024 * 1024;
 
 /** For the team only: the loop the card plays in place of the piece. A link (the file, or a Screen Studio share) or
  *  an MP4 from disk puts one; "Remove" goes back to the piece itself */
-function VideoControl({ slug, video, onChange }: { slug: string; video: string | null; onChange: (v: string | null) => void }) {
+function VideoControl({ slug, video, onChange }: { slug: string; video: string | null; onChange: (v: string | null, ratio: number | null) => void }) {
   const { t } = useT();
   const [link, setLink] = useState("");
   const [busy, setBusy] = useState(false);
@@ -371,9 +457,9 @@ function VideoControl({ slug, video, onChange }: { slug: string; video: string |
     setBusy(true); setError("");
     try {
       const r = await fetch(`/api/vault/${encodeURIComponent(slug)}/video`, init);
-      const out = (await r.json().catch(() => ({}))) as { video?: string | null; error?: string };
+      const out = (await r.json().catch(() => ({}))) as { video?: string | null; ratio?: number | null; error?: string };
       if (!r.ok) { setError(out.error ?? t.vault.video.failed); return; }
-      onChange(out.video ?? null); setLink("");
+      onChange(out.video ?? null, out.ratio ?? null); setLink("");
     } catch { setError(t.vault.video.failed); } finally { setBusy(false); }
   };
   const pick = (f: File | undefined) => {

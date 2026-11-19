@@ -34,8 +34,10 @@ export interface VaultCard {
   summary: string;
   /** Its picture's address, or null while it has none */
   image: string | null;
-  /** A short loop of it running, which a card plays on hover in place of the piece itself; null plays the piece */
+  /** A short loop of it running, which a card plays, always, in place of the piece itself; null plays the piece on hover */
   video: string | null;
+  /** The loop's width over its height: the shape its card and its sheet take. null until the browser has measured it */
+  videoRatio: number | null;
   /** Where it runs, when it does */
   liveUrl: string | null;
   published: boolean;
