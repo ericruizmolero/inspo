@@ -98,6 +98,9 @@ export interface SidebarProps {
   onCreateProject: (name: string) => Promise<Project | null>;
   onRenameProject: (id: string, name: string) => void;
   onDeleteProject: (project: Project) => void;
+  /** Discover (the Vault, the examples, the resources, the skills): the top bar's key, as a row of the phone sheet */
+  onDiscover?: () => void;
+  inDiscover?: boolean;
 }
 
 /** A name typed in place (new project, rename): Enter or leaving the field saves, Esc drops it. */
@@ -208,7 +211,7 @@ export function PlanMeter({ quota, compact }: { quota: QuotaView; /** Head, bar 
 /** Everything under the workspace: add, the whole library, the projects and the plan.
  *  Shared by the docked column and the phone sheet. The team lives in Settings › Members. */
 function SidebarNav({ quota, steps, items, onPick,
-  space, onSpace, projects, links, systems = {}, onCreateProject, onRenameProject, onDeleteProject }: Omit<SidebarProps, "brand"> & {
+  space, onSpace, projects, links, systems = {}, onCreateProject, onRenameProject, onDeleteProject, onDiscover, inDiscover = false }: Omit<SidebarProps, "brand"> & {
   /** Called after any choice (the phone sheet closes) */
   onPick?: () => void;
 }) {
@@ -262,7 +265,10 @@ function SidebarNav({ quota, steps, items, onPick,
 
       <SidebarFooter className="app-sidebar__footer">
         {/* The ways in from outside (an AI client over MCP), as on the island's right pill */}
-        <SidebarMenu><Connectors row /></SidebarMenu>
+        <SidebarMenu>
+          {onDiscover && <NavItem icon={I.compass} label={t.sidebar.discover} active={inDiscover} onClick={pick(onDiscover)} />}
+          <Connectors row />
+        </SidebarMenu>
         <FeedbackEntry onPick={onPick} />
         <ThemeToggle row />
         {/* A step taken from here closes the sheet, like any other choice in it */}

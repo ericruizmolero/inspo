@@ -93,7 +93,7 @@ function NewProject({ onCreate, onDone }: { onCreate: (name: string) => Promise<
   );
 }
 
-export default function Island({ user, workspace, workspaces, isAdmin, vault = false, items, links, projects, systems = {}, members = [], space, onSpace, bellNews = "",
+export default function Island({ user, workspace, workspaces, isAdmin, items, links, projects, systems = {}, members = [], space, onSpace, bellNews = "",
   onCreateProject, onRenameProject, onDeleteProject, onDuplicateProject, onMoveProject, onShareProject, onDropRef, onDropInbox, onPerson, quota, onMenuOpen }: {
   user: SessionUser; workspace: Workspace; workspaces: Workspace[]; isAdmin: boolean;
   items: InspoItem[]; links: ProjectLinks; projects: Project[];
@@ -109,8 +109,6 @@ export default function Island({ user, workspace, workspaces, isAdmin, vault = f
   /** "all", "inbox" or a project id */
   space: string;
   onSpace: (space: string) => void;
-  /** The Vault holds something (or this is criterio's own team): its door is offered */
-  vault?: boolean;
   onCreateProject: (name: string) => Promise<Project | null>;
   onRenameProject: (id: string, name: string) => void;
   onDeleteProject: (project: Project) => void;
@@ -369,13 +367,8 @@ export default function Island({ user, workspace, workspaces, isAdmin, vault = f
             <Link className="island__team-manage" href="/settings/members" prefetch={false} aria-label={t.ws.manageTeam}>{t.ws.manage}</Link>
           </div>
           <Separator />
-          {/* Discover is no tab of the bar (meeting of 13-10: it read as one more project, and the first, "lo primero que
-              encuentras es descubrir, que no tiene que ver con el producto"): its three sections open from here ("tienes
-              recursos y tienes skills y vas directamente"), and its examples also from wherever a space is still empty */}
-          {vault && <MenuItem icon="grid" onClick={() => onSpace("vault")}>{t.ws.vault}</MenuItem>}
-          <MenuItem icon="compass" onClick={() => onSpace("templates")}>{t.ws.examples}</MenuItem>
-          <MenuItem icon="search" onClick={() => onSpace("discover")}>{t.ws.resources}</MenuItem>
-          <MenuItem icon="file" onClick={() => onSpace("skills")}>{t.ws.skills}</MenuItem>
+          {/* Discover is neither a tab of the bar (meeting of 13-10: it read as one more project, and the first) nor four
+              entries here since 19-11: it is one key on the bar's right, beside Connectors (components/InspoClient.tsx) */}
           <MenuItem icon={sectionIcon("feedback")} data-feedback-toolbar="true" data-tip={t.feedback.entryHint} onClick={() => enterFeedbackMode()}>
             {t.feedback.open}
           </MenuItem>

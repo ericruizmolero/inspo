@@ -462,7 +462,11 @@ export default function InspoClient({
 
   // Everything under the workspace, for the sidebar (the docked column and the phone sheet)
   const filtering = chips.length > 0 || words.length > 0;
+  // Discover's four sections are spaces of their own; its key opens the Vault once it holds something, the examples until then
+  const inDiscover = space === "vault" || space === "templates" || space === "discover" || space === "skills";
+  const openDiscover = () => setSpace(vaultOpen ? "vault" : "templates");
   const navProps = {
+    onDiscover: openDiscover, inDiscover,
     quota, items,
     isAll: space === "all" && !filtering,
     onReset: resetFilters, onAdd: () => setShowAdd(true),
@@ -919,7 +923,7 @@ export default function InspoClient({
           <span className="topbar__trigger">
             <SidebarTrigger aria-label={t.app.menu} />
           </span>
-          <Island user={user} workspace={workspace} workspaces={workspaces} isAdmin={isAdmin} vault={vaultOpen}
+          <Island user={user} workspace={workspace} workspaces={workspaces} isAdmin={isAdmin}
             items={items} links={links} projects={projects} systems={systems} space={space} onSpace={setSpace} bellNews={bellNews}
             onCreateProject={createProject} onRenameProject={renameProject} onDeleteProject={deleteProject}
             onDuplicateProject={duplicateProject} onMoveProject={moveProject} onShareProject={(p) => setSharing({ projectId: p.id })} onDropRef={dropOnProject} onDropInbox={dropOnInbox}
@@ -950,6 +954,11 @@ export default function InspoClient({
               {/* The board's version history, where Sheets keeps it: beside the ways in, only on a project's board */}
               {currentProject && projectView === "board" && <BoardHistoryButton rows={boardRows} viewing={boardAt?.n ?? null} onPick={pickBoardVersion} />}
               {currentProject && projectView === "system" && systemHistory && <SystemHistoryButton history={systemHistory} />}
+              {/* Discover (the Vault, the examples, the resources, the skills): one key on the right, with what criterio brings,
+                  never among the person's own spaces on the left. It opens on the Vault once it holds something */}
+              <button type="button" className={`cr-seg-item topbar__ext topbar__discover${inDiscover ? " is-active" : ""}`} aria-pressed={inDiscover} onClick={openDiscover}>
+                <Icon name="compass" size={16} /> <span className="topbar__mode-label">{t.sidebar.discover}</span>
+              </button>
               <Connectors />
               <IconButton icon="plus" label={t.app.add} variant="quiet" className="topbar__add" onClick={() => setShowAdd(true)} />
             </PillBar>
