@@ -35,7 +35,7 @@ Esta página enseña a Tino en tres bloques, cada uno con sus ficheros para desc
 
 - **Logotipo**: Tino plano a los tamaños de la app, en la página y sobre el cromo. Descarga el SVG en blanco (`#FFFFFF`, para fondos oscuros) y en negro (tinta `#1B1B18`, para claros), transparentes y con el visor hueco (`public/tino/tino-logo-blanco.svg` y `tino-logo-negro.svg`, del mismo trazado que `TinoMark`).
 - **Tino**: el peluche en 3D (`Tino`, `components/Tino.tsx`) con el tema de la página y chips para probar sus gestos. Descarga el modelo de la app (`public/tino/tino-corta.glb`), el dibujo plano sin WebGL (`public/tino/tino-plano.svg`) y el `.blend` con `tino.py` (en la landing). "Manual de Tino" abre el artefacto del equipo con qué está hecha cada parte y dónde se cambia: <https://claude.ai/artifact/DU8qWh2gkV1vWd6GMD8dBM>.
-- **Favicon: Tino plano**: `app/icon.svg` leído tal como se sirve, en claro y en oscuro, sus tamaños y su ficha, y cada fichero (SVG, ICO, PNG 256, 180 y 512).
+- **Favicon: Tino plano**: `app/icon.svg` leído tal como se sirve, en claro y en oscuro, sus tamaños y su ficha, y cada fichero (SVG, ICO, PNG 256, 180 y 512). Bajo cada baldosa, ese tema solo en SVG o en PNG de 512, sin fondo (`.ds-tino__get`); y "Descargar todo (.zip)" baja de una vez claro y oscuro en SVG y PNG (16, 32, 180, 192 y 512) junto a los ficheros que sirve la app. Todo se hace en el navegador a partir de `app/icon.svg`, sin ficheros nuevos en el repo (Eric, 19-11: "que yo pueda descargar todos los estilos de favicon claro oscuro fácil").
 
 Un fichero nuevo de la marca entra en la lista de descargas de su bloque (`LOGO_FILES`, `TINO_3D_FILES` o `TINO_FILES` en `components/design-library/Specimens.tsx`) en el mismo trabajo.
 

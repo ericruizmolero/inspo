@@ -244,6 +244,8 @@
 .ds-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .ds-tino { display: block; width: 112px; height: 112px; padding: 20px; border-radius: var(--radius-lg); }
 .ds-tino svg { display: block; width: 100%; height: 100%; }
+/* Under a theme's tile: that theme alone, as SVG or PNG */
+.ds-tino__get { display: inline-flex; gap: 2px; }
 .ds-traits { display: grid; gap: 8px; margin: 20px 0 0; }
 .ds-traits > div { display: grid; grid-template-columns: 96px 1fr; gap: 12px; }
 .ds-traits dt { color: var(--text-muted); font-size: var(--fs-small); }

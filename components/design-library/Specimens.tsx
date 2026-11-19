@@ -642,26 +642,106 @@ const TINO_TRAITS: [string, string][] = [
   ["Lienzo", "24 × 24; los PNG de 180 y 512 llevan margen y fondo de papel, el SVG va transparente"],
 ];
 
-/** The live favicon: app/icon.svg read as served, drawn in both themes, with its traits and every file to download. */
+// ─── The favicon's styles, made here from the one drawing: each theme alone as SVG and as PNG, and all of it in a zip ───
+/** The sizes a PNG of each theme is made at: a tab, a retina tab, Apple's, Android's, an installed app's */
+const TINO_PNG_SIZES = [16, 32, 180, 192, 512];
+const save = (blob: Blob, name: string) => {
+  const url = URL.createObjectURL(blob);
+  Object.assign(document.createElement("a"), { href: url, download: name }).click();
+  window.setTimeout(() => URL.revokeObjectURL(url), 10_000);
+};
+/** The drawing as a PNG of that side, on nothing: the SVG painted on a canvas */
+async function pngOf(svg: string, size: number): Promise<Uint8Array> {
+  const url = URL.createObjectURL(new Blob([svg.replace("<svg ", `<svg width="${size}" height="${size}" `)], { type: "image/svg+xml" }));
+  try {
+    const img = new Image();
+    img.src = url;
+    await img.decode();
+    const canvas = Object.assign(document.createElement("canvas"), { width: size, height: size });
+    canvas.getContext("2d")!.drawImage(img, 0, 0, size, size);
+    const blob = await new Promise<Blob | null>((done) => canvas.toBlob(done, "image/png"));
+    if (!blob) throw new Error("no png");
+    return new Uint8Array(await blob.arrayBuffer());
+  } finally { URL.revokeObjectURL(url); }
+}
+let crcTable: Uint32Array | null = null;
+function crc32(data: Uint8Array): number {
+  crcTable ??= Uint32Array.from({ length: 256 }, (_, n) => { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; return c >>> 0; });
+  let c = 0xffffffff;
+  for (const b of data) c = crcTable[(c ^ b) & 0xff] ^ (c >>> 8);
+  return (c ^ 0xffffffff) >>> 0;
+}
+/** A zip of a few small files, stored as they are (no compression: PNG and ICO are already packed) */
+function zipOf(files: { name: string; data: Uint8Array }[]): Blob {
+  const text = new TextEncoder();
+  const parts: Uint8Array[] = [], central: Uint8Array[] = [];
+  let at = 0;
+  for (const f of files) {
+    const name = text.encode(f.name), crc = crc32(f.data);
+    const head = new DataView(new ArrayBuffer(30));
+    head.setUint32(0, 0x04034b50, true); head.setUint16(4, 20, true); head.setUint16(6, 0x0800, true);
+    head.setUint32(14, crc, true); head.setUint32(18, f.data.length, true); head.setUint32(22, f.data.length, true); head.setUint16(26, name.length, true);
+    const dir = new DataView(new ArrayBuffer(46));
+    dir.setUint32(0, 0x02014b50, true); dir.setUint16(4, 20, true); dir.setUint16(6, 20, true); dir.setUint16(8, 0x0800, true);
+    dir.setUint32(16, crc, true); dir.setUint32(20, f.data.length, true); dir.setUint32(24, f.data.length, true); dir.setUint16(28, name.length, true); dir.setUint32(42, at, true);
+    parts.push(new Uint8Array(head.buffer), name, f.data);
+    central.push(new Uint8Array(dir.buffer), name);
+    at += 30 + name.length + f.data.length;
+  }
+  const size = central.reduce((n, p) => n + p.length, 0);
+  const end = new DataView(new ArrayBuffer(22));
+  end.setUint32(0, 0x06054b50, true); end.setUint16(8, files.length, true); end.setUint16(10, files.length, true); end.setUint32(12, size, true); end.setUint32(16, at, true);
+  return new Blob([...parts, ...central, new Uint8Array(end.buffer)] as BlobPart[], { type: "application/zip" });
+}
+
+/** The live favicon: app/icon.svg read as served, drawn in both themes, with its traits and every file to download:
+ *  each theme alone as SVG and PNG under its tile, and everything at once as a zip */
 function TinoFavicon() {
   const [svg, setSvg] = useState("");
+  const [busy, setBusy] = useState(false);
   useEffect(() => {
     fetch("/icon.svg").then((r) => (r.ok ? r.text() : "")).then(setSvg, () => setSvg(""));
   }, []);
   // The file switches colours with prefers-color-scheme; here each tile forces one theme, so the media rule goes
   const flat = svg.replace(/<style>[\s\S]*?<\/style>/, "");
   const dark = flat.replace(/#1B1B18/g, "#EDE6D6").replace(/#F6F1E6/g, "#141412");
-  const tile = (markup: string, bg: string, label: string) => (
+  const styles = [{ key: "claro", markup: flat }, { key: "oscuro", markup: dark }];
+  const text = new TextEncoder();
+  const all = async () => {
+    setBusy(true);
+    try {
+      const files: { name: string; data: Uint8Array }[] = [{ name: "tino-favicon.svg", data: text.encode(svg) }];
+      for (const s of styles) {
+        files.push({ name: `${s.key}/tino-${s.key}.svg`, data: text.encode(s.markup) });
+        for (const n of TINO_PNG_SIZES) files.push({ name: `${s.key}/tino-${s.key}-${n}.png`, data: await pngOf(s.markup, n) });
+      }
+      for (const f of TINO_FILES.slice(1)) {
+        const r = await fetch(f.href);
+        if (r.ok) files.push({ name: `app/${f.name}`, data: new Uint8Array(await r.arrayBuffer()) });
+      }
+      save(zipOf(files), "tino-favicon.zip");
+    } catch { /* a browser that will not paint an SVG on a canvas: the files below remain */ } finally { setBusy(false); }
+  };
+  const get = (s: { key: string; markup: string }, kind: "svg" | "png") => async () => {
+    if (kind === "svg") save(new Blob([s.markup], { type: "image/svg+xml" }), `tino-${s.key}.svg`);
+    else save(new Blob([await pngOf(s.markup, 512)] as BlobPart[], { type: "image/png" }), `tino-${s.key}-512.png`);
+  };
+  const tile = (markup: string, bg: string, label: string, style: { key: string; markup: string }) => (
     <span className="ds-logos__one">
       <span className="ds-tino" style={{ background: bg }} dangerouslySetInnerHTML={{ __html: markup }} />
       <span className="ds-val">{label}</span>
+      {/* That theme alone, on nothing: the drawing, or a PNG of 512 */}
+      <span className="ds-tino__get">
+        <Button variant="quiet" size="s" onClick={() => void get(style, "svg")()}>SVG</Button>
+        <Button variant="quiet" size="s" onClick={() => void get(style, "png")()}>PNG</Button>
+      </span>
     </span>
   );
   return (
     <>
       <div className="ds-row ds-row--top">
-        {svg && tile(flat, "#EDE6D6", "Claro")}
-        {svg && tile(dark, "#141412", "Oscuro")}
+        {svg && tile(flat, "#EDE6D6", "Claro", styles[0])}
+        {svg && tile(dark, "#141412", "Oscuro", styles[1])}
         <div className="ds-logos">
           {[16, 32, 64].map((n) => <span key={n} className="ds-logos__one"><img src="/icon.svg" alt="" width={n} height={n} /><span className="ds-val">{n}</span></span>)}
           <span className="ds-logos__one"><img src="/apple-icon.png" alt="" width={64} height={64} className="ds-apple" /><span className="ds-val">apple</span></span>
@@ -670,6 +750,11 @@ function TinoFavicon() {
       <dl className="ds-traits">
         {TINO_TRAITS.map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}
       </dl>
+      {/* Everything at once: each theme as SVG and as PNG at every size, and the files the app serves */}
+      <div className="ds-row">
+        <Button size="s" icon="import" disabled={!svg || busy} onClick={() => void all()}>{busy ? "Preparando" : "Descargar todo (.zip)"}</Button>
+        <span className="ds-note">Claro y oscuro en SVG y PNG ({TINO_PNG_SIZES.join(", ")}), y los ficheros de la app.</span>
+      </div>
       <FileList files={TINO_FILES} />
     </>
   );
