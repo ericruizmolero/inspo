@@ -187,6 +187,10 @@ export const RESOURCES: ResourceGroup[] = [
     title: { en: "Components with code", es: "Componentes con código" },
     hint: { en: "Blocks and kits to copy, or to hand to the agent", es: "Bloques y kits listos para copiar o para conectar al agente" },
     items: [
+      { name: "Astryx", url: "https://astryx.atmeta.com", added: "2026-11-19",
+        text: { en: "Meta's open source React design system: fully customizable and ready for agents.", es: "El sistema de diseño en React de Meta, de código abierto: personalizable de arriba abajo y listo para agentes." } },
+      { name: "BoardUI", url: "https://boardui.com", added: "2026-11-19",
+        text: { en: "A React design system for dashboards: 100+ components and chart cards in Tailwind, with the source to edit.", es: "Un sistema de diseño en React para dashboards: más de 100 componentes y tarjetas de gráficos en Tailwind, con el código para editar." } },
       { name: "shadcn/ui", url: "https://ui.shadcn.com", added: "2026-10-08",
         text: { en: "The component library the rest copy: accessible, composable and yours to own.", es: "La librería de componentes que copian las demás: accesible, componible y tuya." } },
       { name: "Aceternity UI", url: "https://ui.aceternity.com", added: "2026-10-08",
@@ -232,6 +236,8 @@ export const RESOURCES: ResourceGroup[] = [
     title: { en: "Motion and interaction", es: "Motion e interacción" },
     hint: { en: "Animation, micro-interactions and details that move", es: "Animación, micro-interacciones y detalles en movimiento" },
     items: [
+      { name: "Transitions.dev", url: "https://transitions.dev", added: "2026-11-19",
+        text: { en: "The essential UI transitions for web apps, to copy and paste or to hand to your agent as a skill.", es: "Las transiciones de UI esenciales para apps web, para copiar y pegar o para dárselas a tu agente como skill." } },
       { name: "dqnamo's Kitchen", url: "https://dqnamo.com/kitchen", added: "2026-10-09",
         text: { en: "Interface studies by dqnamo: a tactile button, hold to confirm, a cassette player, a ticket. Each one a small lesson in detail.", es: "Estudios de interfaz de dqnamo: un botón táctil, mantener para confirmar, un reproductor de cassette, un ticket. Cada uno una pequeña lección de detalle." } },
       { name: "Kinetics (Colorion)", url: "https://kinetics.colorion.co", added: "2026-10-08",
@@ -280,6 +286,8 @@ export const RESOURCES: ResourceGroup[] = [
     title: { en: "Resources and tools", es: "Recursos y herramientas" },
     hint: { en: "Assets, mockups and utilities that save you hours", es: "Assets, mockups y utilidades que ahorran horas" },
     items: [
+      { name: "HorizonX", url: "https://horizonx.so", added: "2026-11-19",
+        text: { en: "Shader backgrounds, textures, mockups, Figma UI kits and React components, ready for Claude Code or Cursor.", es: "Fondos con shaders, texturas, mockups, kits de UI para Figma y componentes React, listos para Claude Code o Cursor." } },
       { name: "Kitbitz", url: "https://kitbitz.art", added: "2026-10-08",
         text: { en: "2,000+ hand-drawn illustrations.", es: "Más de 2.000 ilustraciones dibujadas a mano." } },
       { name: "3dicons", url: "https://3dicons.co", added: "2026-10-08",

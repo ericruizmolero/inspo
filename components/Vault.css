@@ -3,8 +3,8 @@
 /* A category's count in the menu: after its name, in muted tabular figures */
 .vault-menu__n { margin-left: var(--space-2); font-size: var(--fs-small); font-variant-numeric: tabular-nums; color: var(--muted); }
 
-/* A masonry: as many columns as fit at 300 or more, and Vault.tsx deals the cards among them, each to the shortest
-   so far (it counts with these same numbers: the 16 of the gap and the 300) */
+/* A masonry: as many columns as fit at 560 or more (two on a desktop), and Vault.tsx deals the cards among them, each to the shortest
+   so far (it counts with these same numbers: the 16 of the gap and the 560) */
 .vault-grid { position: relative; max-width: 1360px; margin: 0 auto; padding: 0; list-style: none; }
 /* Every card is one flat node placed by transform, as on the board, at a width and a place Vault.tsx works out. Once
    placed for the first time (.is-settled), a change of columns glides: the card moves and its width eases with it,

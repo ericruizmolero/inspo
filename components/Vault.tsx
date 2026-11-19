@@ -93,8 +93,8 @@ export default function Vault({ query, head, projects }: { projects: readonly { 
     return entries.filter((e) => (!category || e.category === category) && words.every((w) => plain([e.title, labelOf(e.category), e.summary, e.tags.join(" ")].join(" ")).includes(w)));
   }, [entries, category, query, labelOf]);
 
-  // How many columns: the usual number is as many as fit at 300 or more (100%), and the zoom moves away from it, down
-  // to two and up to where a card can still be read. A phone takes its own from its width
+  // How many columns: the usual number is as many as fit at 560 or more (100%: two on a desktop, the pieces big
+  // enough to read), and the zoom only adds columns from there, up to where a card can still be read. A phone takes its own from its width
   const fit = (min: number) => Math.floor((width + GRID_GAP) / (min + GRID_GAP));
   const phone = !!width && width < 640;
   const maxCols = Math.max(COLUMNS_MIN, Math.min(COLUMNS_MAX, fit(COLUMN_SMALLEST)));
@@ -213,12 +213,12 @@ const STAGE_H = 600;
 // The grid's numbers, the same Vault.css draws with: the gap, the narrowest a column gets, what a card adds to its
 // shot at the sides (padding and hairline) and under it (the foot with the name and the category)
 const GRID_GAP = 16;
-const COLUMN_MIN = 300;
+const COLUMN_MIN = 560;
 /** Zoomed out, a column gets no narrower than this, and there are never fewer than two nor more than eight */
 const COLUMN_SMALLEST = 200;
 const COLUMNS_MIN = 2;
 const COLUMNS_MAX = 8;
-const ZOOM_KEY = "inspo:vault-zoom:1";
+const ZOOM_KEY = "inspo:vault-zoom:2";
 const CARD_EDGE = 18;
 /** The foot under the shot, a fixed height so a card's is known without measuring it: with the name and the category,
  *  or the name alone when a category is chosen (Vault.css .vault-card__foot reads it as --foot) */
