@@ -467,8 +467,9 @@ function VaultSheet({ slug, card, partner, projects, used, onPicks, onPatch, lab
                 {entry?.sourceUrl && partner && <div><dt>{t.vault.source}</dt><dd><a className="vault-facts__link" href={entry.sourceUrl} target="_blank" rel="noopener noreferrer">{hostOf(entry.sourceUrl)}</a></dd></div>}
               </dl>
               {e.tags.length > 0 && <ul className="vault-tags">{e.tags.map((tag) => <li key={tag}>{tag}</li>)}</ul>}
-              {entry?.use && (
-                // What an agent reads to choose it, set apart from the rest as a note: a moss rule on its left
+              {partner && entry?.use && (
+                // What an agent reads to choose it, written in English for the agent: the team sees it here to check it, and
+                // nobody else does. Set apart from the rest as a note: a moss rule on its left
                 <section className="vault-use">
                   <h2 className="t-title-s">{t.vault.use}</h2>
                   <p>{entry.use}</p>
