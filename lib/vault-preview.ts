@@ -37,6 +37,15 @@ export function cardDoc(doc: string, hover = false): string {
   return at < 0 ? doc + extra : doc.slice(0, at) + extra + doc.slice(at);
 }
 
+/** The preview with the app's own icon in its tab (app/icon.svg, which follows the browser's theme). A document that
+ *  names no icon gets the browser's guess, /favicon.ico: Tino in ink, lost on a dark tab bar. One that brings its own keeps it */
+export function withIcon(doc: string): string {
+  if (/<link[^>]+rel=["']?[^"'>]*icon/i.test(doc)) return doc;
+  const link = '<link rel="icon" type="image/svg+xml" href="/icon.svg">';
+  const head = /<head[^>]*>/i.exec(doc);
+  return head ? doc.slice(0, head.index + head[0].length) + "\n" + link + doc.slice(head.index + head[0].length) : doc;
+}
+
 /** The ground a put-together preview stands on and the ink that reads on it. One fixed colour, never the viewer's
  *  theme: the entry's picture is taken on it, and a card must not change ground when its piece starts */
 export const PREVIEW_GROUND = "#F4F0E6";

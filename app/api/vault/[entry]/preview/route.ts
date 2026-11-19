@@ -1,5 +1,5 @@
 import { vaultPreview } from "@/lib/vault";
-import { VAULT_PREVIEW_CSP, cardDoc } from "@/lib/vault-preview";
+import { VAULT_PREVIEW_CSP, cardDoc, withIcon } from "@/lib/vault-preview";
 
 // The live preview of a Vault entry (lib/vault-preview.ts): the piece running, as a page of its own for the
 // iframe in its sheet. It runs our team's scripts, so it is served sandboxed: `sandbox allow-scripts` gives the
@@ -14,5 +14,5 @@ export async function GET(req: Request, ctx: RouteContext<"/api/vault/[entry]/pr
   const doc = await vaultPreview((await ctx.params).entry);
   if (!doc) return new Response("not found", { status: 404 });
   const q = new URL(req.url).searchParams;
-  return new Response(q.has("card") ? cardDoc(doc, q.has("hover")) : doc, { headers: { "Content-Type": "text/html; charset=utf-8", "Content-Security-Policy": VAULT_PREVIEW_CSP, "X-Content-Type-Options": "nosniff", "Referrer-Policy": "no-referrer", "Cache-Control": "public, max-age=60", "X-Robots-Tag": "noindex, nofollow" } });
+  return new Response(q.has("card") ? cardDoc(doc, q.has("hover")) : withIcon(doc), { headers: { "Content-Type": "text/html; charset=utf-8", "Content-Security-Policy": VAULT_PREVIEW_CSP, "X-Content-Type-Options": "nosniff", "Referrer-Policy": "no-referrer", "Cache-Control": "public, max-age=60", "X-Robots-Tag": "noindex, nofollow" } });
 }
