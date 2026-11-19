@@ -23,6 +23,17 @@ export interface VaultBlock {
   note?: string;
 }
 
+/** An entry's words in Spanish, beside the English ones an agent reads: what the app shows to whoever reads it in
+ *  Spanish. A piece left out, or one that no longer matches the English (tags and blocks go one to one, in order),
+ *  falls back to the English */
+export interface VaultEs {
+  title?: string;
+  summary?: string;
+  use?: string;
+  tags?: string[];
+  blocks?: { title?: string; note?: string }[];
+}
+
 /** An entry as a card shows it: no code */
 export interface VaultCard {
   id: string;

@@ -11,7 +11,8 @@ import { deleteFiles, fileUrl, putFile } from "./storage";
 import { fetchFile } from "./remote-file";
 import { safeFetch } from "./safe-fetch";
 import { canPreview, previewDoc } from "./vault-preview";
-import { VAULT_CATEGORIES, VAULT_LIMITS as L, vaultSlug, type VaultBlock, type VaultCard, type VaultEntry } from "@/types/vault";
+import { VAULT_CATEGORIES, VAULT_LIMITS as L, vaultSlug, type VaultBlock, type VaultCard, type VaultEntry, type VaultEs } from "@/types/vault";
+import type { Locale } from "./i18n/locale";
 
 const V = schema.vaultItem;
 
@@ -56,17 +57,22 @@ export function videoRatioOf(b: Buffer): number | null {
 
 type Row = typeof V.$inferSelect;
 
-const cardOf = (r: Row): VaultCard => ({
-  id: r.id, slug: r.slug, title: r.title, category: r.category, tags: r.tags, summary: r.summary,
+/** The entry's Spanish, for whoever reads the app in Spanish; an agent, and everyone else, gets the English */
+const esOf = (r: Row, locale?: Locale): VaultEs => (locale === "es" && r.es ? r.es : {});
+
+const cardOf = (r: Row, locale?: Locale): VaultCard => ({
+  id: r.id, slug: r.slug, title: esOf(r, locale).title || r.title, category: r.category,
+  // Tags go one to one: a list that no longer matches the English one is from before a change
+  tags: esOf(r, locale).tags?.length === r.tags.length ? esOf(r, locale).tags! : r.tags, summary: esOf(r, locale).summary || r.summary,
   image: r.imageKey ? fileUrl(r.imageKey) : null, video: r.videoKey ? fileUrl(r.videoKey) : null, videoRatio: r.videoKey ? r.videoRatio : null, liveUrl: r.liveUrl, published: !!r.publishedAt, preview: canPreview(r), createdAt: (r.publishedAt ?? r.createdAt).toISOString(),
 });
 
 /** The Vault's cards, newest first. Drafts only for partners */
-export async function listVault(o: { drafts?: boolean; categories?: readonly string[] } = {}): Promise<VaultCard[]> {
+export async function listVault(o: { drafts?: boolean; categories?: readonly string[]; locale?: Locale } = {}): Promise<VaultCard[]> {
   const rows = await db.select().from(V)
     .where(and(o.drafts ? undefined : isNotNull(V.publishedAt), o.categories?.length ? inArray(V.category, [...o.categories]) : undefined))
     .orderBy(desc(V.publishedAt), desc(V.createdAt));
-  return rows.map(cardOf);
+  return rows.map((r) => cardOf(r, o.locale));
 }
 
 async function rowOf(ref: string): Promise<Row | null> {
@@ -77,12 +83,15 @@ async function rowOf(ref: string): Promise<Row | null> {
 }
 
 /** One entry by id or slug. `code` false leaves the documentation out (the app, for whoever is not a partner) */
-export async function readVault(ref: string, o: { drafts?: boolean; code?: boolean } = {}): Promise<(VaultEntry & { imageKey: string | null }) | null> {
+export async function readVault(ref: string, o: { drafts?: boolean; code?: boolean; locale?: Locale } = {}): Promise<(VaultEntry & { imageKey: string | null }) | null> {
   const r = await rowOf(ref);
   if (!r || (!r.publishedAt && !o.drafts)) return null;
   const U = schema.user;
   const [by] = r.createdBy ? await db.select({ name: U.name, image: U.image }).from(U).where(eq(U.id, r.createdBy)).limit(1) : [];
-  return { ...cardOf(r), use: r.use, sourceUrl: r.sourceUrl, blocks: o.code === false ? null : r.blocks, by: by?.name ?? null, byImage: by?.image ?? null, imageKey: r.imageKey };
+  const es = esOf(r, o.locale);
+  const steps = es.blocks?.length === r.blocks.length ? es.blocks : null;
+  const blocks = steps ? r.blocks.map((b, i) => ({ ...b, title: steps[i]?.title || b.title, ...(steps[i]?.note && b.note ? { note: steps[i].note } : {}) })) : r.blocks;
+  return { ...cardOf(r, o.locale), use: es.use || r.use, sourceUrl: r.sourceUrl, blocks: o.code === false ? null : blocks, by: by?.name ?? null, byImage: by?.image ?? null, imageKey: r.imageKey };
 }
 
 const line = (s: unknown, max: number) => String(s ?? "").replace(/\s+/g, " ").trim().slice(0, max);
@@ -91,6 +100,20 @@ const address = (s: unknown) => { const u = line(s, 2000); return /^https?:\/\//
 export interface VaultInput {
   title: string; category: string; slug?: string; summary?: string; use?: string; tags?: readonly string[];
   blocks?: readonly VaultBlock[]; demo?: string; ground?: string; live_url?: string; source_url?: string;
+  /** The same words in Spanish, piece by piece: one left out stays, unless its English changed in this write */
+  es?: VaultEs;
+}
+
+/** What an entry still lacks in Spanish, by the name add_to_vault takes it under: the app shows the English there */
+export function missingEs(r: Pick<Row, "summary" | "use" | "tags" | "blocks" | "es">): string[] {
+  const es = r.es ?? {};
+  return [
+    es.title ? "" : "es.title",
+    !r.summary || es.summary ? "" : "es.summary",
+    !r.use || es.use ? "" : "es.use",
+    !r.tags.length || es.tags?.length === r.tags.length ? "" : `es.tags (${r.tags.length}, in the order of tags)`,
+    !r.blocks.length || (es.blocks?.length === r.blocks.length && r.blocks.every((b, i) => es.blocks![i]?.title && (!b.note || es.blocks![i]?.note))) ? "" : `es.blocks (${r.blocks.length}, in the order of blocks: each one's title, and its note where the block has one)`,
+  ].filter(Boolean);
 }
 
 /** Writes an entry: a new one, or the one with that slug, whole fields at a time (what is not passed stays) */
@@ -104,7 +127,23 @@ export async function saveVault(input: VaultInput, userId: string): Promise<{ en
   const tags = input.tags ? [...new Set(input.tags.map((t) => line(t, L.tag)).filter(Boolean))].slice(0, L.tags) : undefined;
   const now = new Date();
   const existing = await rowOf(slug);
+  // The Spanish: what this write brings over what was there. A piece whose English changes here without its Spanish
+  // is dropped, so the app shows the new English and not a translation of the old
+  const was = existing?.es ?? {};
+  const given = input.es ?? {};
+  const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
+  const esTags = given.tags ? given.tags.map((t) => line(t, L.tag)).slice(0, L.tags) : undefined;
+  const esBlocks = given.blocks ? given.blocks.slice(0, L.blocks).map((b) => ({ title: line(b?.title, L.blockTitle), ...(line(b?.note, L.blockNote) ? { note: line(b?.note, L.blockNote) } : {}) })) : undefined;
+  const keep = {
+    title: given.title !== undefined ? line(given.title, L.title) : !existing || existing.title === title ? was.title : undefined,
+    summary: given.summary !== undefined ? line(given.summary, L.summary) : input.summary === undefined || line(input.summary, L.summary) === existing?.summary ? was.summary : undefined,
+    use: given.use !== undefined ? String(given.use).trim().slice(0, L.use) : input.use === undefined || String(input.use).trim().slice(0, L.use) === existing?.use ? was.use : undefined,
+    tags: esTags ?? (!tags || same(tags, existing?.tags) ? was.tags : undefined),
+    blocks: esBlocks ?? (!blocks || same(blocks.map((b) => [b.title, b.note ?? ""]), existing?.blocks.map((b) => [b.title, b.note ?? ""])) ? was.blocks : undefined),
+  };
+  const es = Object.fromEntries(Object.entries(keep).filter(([, v]) => (Array.isArray(v) ? v.length : v))) as VaultEs;
   const set = {
+    es: Object.keys(es).length ? es : null,
     title, category: input.category,
     ...(input.summary !== undefined ? { summary: line(input.summary, L.summary) } : {}),
     ...(input.use !== undefined ? { use: String(input.use).trim().slice(0, L.use) } : {}),

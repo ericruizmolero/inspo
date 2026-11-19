@@ -1090,6 +1090,8 @@ export const vaultItem = pgTable("vault_item", {
   use: text("use").notNull().default(""),
   /** The documentation, step by step: each block's code as it is pasted (types/vault.ts VaultBlock) */
   blocks: jsonb("blocks").$type<{ title: string; lang: string; code: string; note?: string }[]>().notNull().default([]),
+  /** Its words in Spanish (types/vault.ts VaultEs): title, summary, use, and the tags and each block's title and note one to one. The columns above stay in English, which is what an agent reads; null or a missing piece shows the English */
+  es: jsonb("es").$type<{ title?: string; summary?: string; use?: string; tags?: string[]; blocks?: { title?: string; note?: string }[] }>(),
   /** A whole HTML document that shows it running, for the live preview; null puts one together from the blocks (lib/vault-preview.ts) */
   demo: text("demo"),
   /** A short loop of it running (mp4 or webm, under vault/), for the pieces a card cannot play live: the card plays it, always, in place of the piece; null plays the piece on hover */

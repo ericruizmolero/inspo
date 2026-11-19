@@ -456,6 +456,13 @@
       "when": 1795088914197,
       "tag": "0065_vault_video_ratio",
       "breakpoints": true
+    },
+    {
+      "idx": 66,
+      "version": "7",
+      "when": 1795091043570,
+      "tag": "0066_vault_es",
+      "breakpoints": true
     }
   ]
 }

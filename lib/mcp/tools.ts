@@ -306,7 +306,7 @@ export const TOOLS: Tool[] = [
     name: "add_to_vault", title: "Add to the Vault", partners: true,
     description: [
       "Writes an entry of the Vault: a piece we built (a section or a detail) with its documentation, the code block by block as it is pasted. The same title or entry updates it; a field left out stays as it was, and blocks replaces every block.",
-      "An entry is published as it is written, for everyone: there are no drafts. Its picture goes with the curl line in the answer (picture_upload), never as base64 through you; a loop of it running, for a piece its card cannot play live, goes the same way (video_upload) or by address (video_url). Write title, summary and use in English.",
+      "An entry is published as it is written, for everyone: there are no drafts. Its picture goes with the curl line in the answer (picture_upload), never as base64 through you; a loop of it running, for a piece its card cannot play live, goes the same way (video_upload) or by address (video_url). Write title, summary, use, tags and the blocks' titles and notes in English, and the same in Spanish in es: the English is what an agent reads, the Spanish what a person reading the app in Spanish sees.",
     ].join("\n"),
     input: AddVaultInput,
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true },

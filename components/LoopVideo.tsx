@@ -23,6 +23,11 @@ export default function LoopVideo({ src, className = "", progressRef, onSize }: 
     io.observe(v);
     return () => io.disconnect();
   }, []);
+  // A file whose size was already read when this starts listening (the same loop, asked for its shape again) says it now
+  const sized = useRef(onSize);
+  sized.current = onSize;
+  const asks = !!onSize;
+  useEffect(() => { const v = ref.current; if (asks && v && v.videoWidth && v.videoHeight) sized.current?.(v.videoWidth, v.videoHeight); }, [asks]);
   // Gone (the pointer left), the line goes back to the start
   useEffect(() => () => { const el = progressRef?.current; if (el) el.style.transform = ""; }, [progressRef]);
   if (failed) return null;

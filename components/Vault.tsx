@@ -55,7 +55,12 @@ export default function Vault({ query, head, projects }: { projects: readonly { 
 
   useEffect(() => {
     let alive = true;
-    fetch("/api/vault").then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status))))).then((d: Listing) => { cache = d; if (alive) setData(d); }).catch(() => { if (alive) setFailed(true); });
+    fetch("/api/vault").then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status))))).then((d: Listing) => {
+      // A loop whose shape only the browser knows keeps the one measured on an earlier visit: the listing comes without it
+      const known = new Map((cache?.entries ?? []).map((e) => [e.id, e]));
+      const next = { ...d, entries: d.entries.map((e) => { const was = known.get(e.id); return !e.videoRatio && was?.videoRatio && was.video === e.video ? { ...e, videoRatio: was.videoRatio } : e; }) };
+      cache = next; if (alive) setData(next);
+    }).catch(() => { if (alive) setFailed(true); });
     return () => { alive = false; };
   }, []);
   // The open entry lives in the address, so Back closes it and a link opens it
@@ -387,7 +392,6 @@ function VaultSheet({ slug, card, partner, projects, used, onPicks, onPatch, lab
       <div ref={dim} className="ip-dim" onClick={leave} aria-hidden />
       <aside ref={sheet} className="ip cr-viewer vault-ip" role="dialog" aria-modal="true" aria-label={e?.title ?? t.vault.name}>
         <header className="ip-bar cr-viewer-head">
-          <span className="cr-avatar cr-avatar-chrome is-square ip-bar__source" aria-hidden>{(e?.title ?? t.vault.name).slice(0, 1).toUpperCase()}</span>
           <div className="cr-viewer-titles">
             <div className="cr-viewer-title">{e?.title ?? t.vault.name}</div>
             <Breadcrumb className="cr-viewer-crumb ip-bar__crumbs">
@@ -441,7 +445,8 @@ function VaultSheet({ slug, card, partner, projects, used, onPicks, onPatch, lab
               {navigable && <IconButton icon="chevron-right" variant="default" size="l" className="ip-nav is-next" label={t.panel.next} onClick={onNext} disabled={!onNext} />}
             </div>
             {/* Down the right, where a reference has its conversation: what it is, who made it and when, the ways to see and use it, where it sits and its tags */}
-            <section className="ip-card--talk cr-viewer-aside vault-sheet__side">
+            {/* From one entry to the next the column comes in whole, once the entry is read: nothing pops in line by line */}
+            <section key={slug} className={`ip-card--talk cr-viewer-aside vault-sheet__side${entry || missing ? " is-ready" : ""}`}>
               {e.summary && <p className="vault-sheet__what">{e.summary}</p>}
               {entry?.by && (
                 <div className="vault-by">

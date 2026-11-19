@@ -13,7 +13,7 @@ import { fetchFile } from "../remote-file";
 import { readOutlines } from "@/types/landing";
 import { canPreview } from "../vault-preview";
 import { VAULT_VIDEO_MAX, chosenFor, setVaultVideo, videoFromLink } from "../vault";
-import { VAULT_IMAGE_MAX, listVault, readVault, removeVault, saveVault, setVaultPicture } from "../vault";
+import { VAULT_IMAGE_MAX, listVault, missingEs, readVault, removeVault, saveVault, setVaultPicture } from "../vault";
 import { VAULT_CATEGORIES, VAULT_LIMITS as L, type VaultCard } from "@/types/vault";
 import type { McpCtx } from "./auth";
 import type { WithPictures } from "./pieces";
@@ -83,6 +83,13 @@ export const AddVaultInput = z.object({
   use: z.string().max(L.use).optional().describe("When to reach for it and what makes it good: what an agent reads to choose it over another."),
   tags: z.array(z.string().max(L.tag)).max(L.tags).optional().describe("Techniques, libraries and behaviours: GSAP, SplitText, Tabs, Hover, Responsive."),
   blocks: z.array(Block).max(L.blocks).optional().describe("The documentation, in the order it is set up. Passing it replaces every block."),
+  es: z.object({
+    title: z.string().max(L.title).optional().describe("The name in Spanish, as a Spanish designer would call the piece. A term the trade keeps in English stays (\"Slider\", \"Hero\")."),
+    summary: z.string().max(L.summary).optional().describe("summary in Spanish."),
+    use: z.string().max(L.use).optional().describe("use in Spanish."),
+    tags: z.array(z.string().max(L.tag)).max(L.tags).optional().describe("tags in Spanish, one for each tag and in the same order. A library's name or a term kept in English stays as it is (GSAP, Hover)."),
+    blocks: z.array(z.object({ title: z.string().max(L.blockTitle).optional(), note: z.string().max(L.blockNote).optional() })).max(L.blocks).optional().describe("Each block's title and note in Spanish, one for each block and in the same order; never the code."),
+  }).optional().describe("The same words in Spanish (Spain: \"en directo\", not \"en vivo\"), for whoever reads the app in Spanish: the English fields are what an agent reads, these are what a person sees. Every text you pass in this call needs its Spanish here; without it the call is refused."),
   demo: z.string().max(L.demo).optional().describe("A whole, self-contained HTML document that shows the piece running, for the live preview in the app: the blocks' code plus what a demo needs around it (a ground, real-looking content, pictures by public address). Scripts load from a CDN. Left out, the preview is put together from the html, css and js blocks, centred on a plain ground. An empty string removes it."),
   ground: z.string().max(7).optional().describe("The colour the piece stands on, as #rrggbb, for a preview put together from the blocks (light or dark: the text colour follows). Take its picture on this same ground, or the card changes colour when the piece starts on hover. A demo sets its own."),
   live_url: z.string().max(2000).optional().describe("A public page where it runs, when there is one besides the preview."),
@@ -124,7 +131,19 @@ export async function readVaultUpload(token: string): Promise<{ entryId: string;
 /** Writes an entry of the Vault (partners). The answer carries the link its picture is sent to */
 export async function addToVault(ctx: McpCtx, origin: string, input: z.infer<typeof AddVaultInput>) {
   await partner(ctx);
+  // Whatever text this call writes comes with its Spanish: the app is read in both, and nothing translates it later
+  const es = input.es ?? {};
+  const owed = [
+    es.title ? "" : "es.title",
+    !input.summary || es.summary ? "" : "es.summary",
+    !input.use || es.use ? "" : "es.use",
+    !input.tags?.length || es.tags?.length === input.tags.length ? "" : `es.tags (${input.tags.length}, in the order of tags)`,
+    !input.blocks?.length || (es.blocks?.length === input.blocks.length && input.blocks.every((b, i) => es.blocks![i]?.title && (!b.note || es.blocks![i]?.note))) ? "" : `es.blocks (${input.blocks.length}, in the order of blocks: each one's title, and its note where the block has one)`,
+  ].filter(Boolean);
+  const before = await readVault(input.entry || input.title, { drafts: true });
+  if (owed.length && !(owed.length === 1 && owed[0] === "es.title" && before)) throw new HttpError(400, `The Vault is read in Spanish too. Send the call again with the Spanish of what it writes: ${owed.join("; ")}.`);
   const { entry, created } = await saveVault({ ...input, slug: input.entry }, ctx.user.id);
+  const lacks = missingEs(entry);
   let picture = !!entry.imageKey;
   let pictureFailed = "";
   if (input.image_url?.trim()) {
@@ -152,6 +171,7 @@ export async function addToVault(ctx: McpCtx, origin: string, input: z.infer<typ
       picture ? "" : `It has no picture yet, and a card without one says nothing: capture it running on its ground or its demo, at 1600×1200 (4:3, as the card shows it) (PNG, WebP or JPEG, at most ${VAULT_IMAGE_MAX / 1024 / 1024} MB) and send it with picture_upload, within ${UPLOAD_MINUTES} minutes.`,
       video ? "Its card plays the loop, always, at the video's own shape." : "Its card plays the piece itself on hover. If it only moves on scroll, needs a click or is heavy to start, record a loop of a few seconds (MP4, at the shape the piece asks for) and send it with video_upload (up to 4 MB) or video_url.",
       "It is published: everyone sees it and every agent can read its code.",
+      lacks.length ? `In Spanish it still lacks ${lacks.join("; ")}: the app shows the English there. Pass them in es, with title and category alone, to complete it.` : "",
     ].filter(Boolean).join(" "),
   };
 }
