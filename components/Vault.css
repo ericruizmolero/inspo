@@ -5,8 +5,13 @@
 
 /* A masonry: as many columns as fit at 300 or more, and Vault.tsx deals the cards among them, each to the shortest
    so far (it counts with these same numbers: the 16 of the gap and the 300) */
-.vault-grid { display: flex; align-items: flex-start; gap: var(--space-4); max-width: 1360px; margin: 0 auto; }
-.vault-col { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: var(--space-4); margin: 0; padding: 0; list-style: none; }
+.vault-grid { position: relative; max-width: 1360px; margin: 0 auto; padding: 0; list-style: none; }
+/* Every card is one flat node placed by transform, as on the board, at a width and a place Vault.tsx works out. Once
+   placed for the first time (.is-settled), a change of columns glides: the card moves and its width eases with it,
+   and the shot's height follows its shape */
+.vault-grid > li { position: absolute; top: 0; left: 0; }
+.vault-grid.is-settled > li { transition: transform 0.42s var(--ease-out), width 0.42s var(--ease-out); }
+@media (prefers-reduced-motion: reduce) { .vault-grid.is-settled > li { transition: none; } }
 
 /* A card: a raised tile (one hairline, no bevel, no shadow), with the picture inside it and the
    name under. On hover the hairline darkens, the picture gives way to the piece running, and a chevron comes in */
@@ -39,7 +44,8 @@
 .vault-card__tools .cr-iconbtn.is-filed:hover { background: var(--ember-glow); }
 /* No picture yet: the category's name on the ground, so the card still says what it is */
 .vault-card__blank { position: absolute; inset: 0; display: grid; place-items: center; font-size: var(--fs-small); color: var(--muted); }
-.vault-card__foot { display: flex; align-items: center; gap: var(--space-3); min-width: 0; padding: var(--space-3) var(--space-2) var(--space-2); }
+/* A fixed height (--foot, from Vault.tsx), so the masonry knows a card's height without measuring it */
+.vault-card__foot { box-sizing: border-box; height: var(--foot, 64px); display: flex; align-items: center; gap: var(--space-3); min-width: 0; padding: var(--space-2) var(--space-2) 0; }
 .vault-card__text { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .vault-card__name { font-size: var(--fs-ui); font-weight: var(--fw-semibold); line-height: var(--lh-ui); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .vault-card__kind { font-size: var(--fs-small); line-height: var(--lh-small); color: var(--text-2); }

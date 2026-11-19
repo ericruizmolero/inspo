@@ -42,7 +42,7 @@ export default function Vault({ query, head, projects }: { projects: readonly { 
   const [open, setOpen] = useState<string | null>(null);
   const [menu, setMenu] = useState(false);
   // The grid's node, held as state: it comes and goes with what is shown, and its width decides the columns
-  const [grid, setGrid] = useState<HTMLDivElement | null>(null);
+  const [grid, setGrid] = useState<HTMLUListElement | null>(null);
   const [width, setWidth] = useState(0);
   useLayoutEffect(() => {
     if (!grid) return;
@@ -123,20 +123,31 @@ export default function Vault({ query, head, projects }: { projects: readonly { 
     el.addEventListener("wheel", onWheel, { passive: false });
     return () => el.removeEventListener("wheel", onWheel);
   }, []);
-  // The masonry: as many columns as fit, and each card, in the list's order, goes to the shortest one so far. Every
-  // height is known before anything loads (the shot's shape, and a foot that is always the same), so nothing moves
-  const columns = useMemo(() => {
-    if (!width) return [];
-    const shot = (width - GRID_GAP * (cols - 1)) / cols - CARD_EDGE;
-    const stacks = Array.from({ length: cols }, () => ({ height: 0, entries: [] as VaultCard[] }));
+  // The masonry, as the board lays its own: every card is one flat node, placed by transform from numbers known before
+  // anything loads (the shot's shape, and a foot of a fixed height). Each card, in the list's order, goes to the
+  // shortest column so far. A change of columns (a zoom, a narrower window) moves and resizes the same nodes, so the
+  // cards glide to their new place and a loop goes on playing
+  const foot = category ? FOOT_BARE : FOOT_FULL;
+  const layout = useMemo(() => {
+    if (!width) return null;
+    const col = (width - GRID_GAP * (cols - 1)) / cols;
+    const heights = Array.from({ length: cols }, () => 0);
+    const at = new Map<string, { x: number; y: number }>();
     for (const e of shown) {
-      let to = stacks[0];
-      for (const c of stacks) if (c.height < to.height - 1) to = c;
-      to.entries.push(e);
-      to.height += shot / shapeOf(e) + CARD_FOOT + GRID_GAP;
+      let to = 0;
+      for (let i = 1; i < cols; i++) if (heights[i] < heights[to] - 1) to = i;
+      at.set(e.id, { x: to * (col + GRID_GAP), y: heights[to] });
+      heights[to] += (col - CARD_EDGE) / shapeOf(e) + CARD_EDGE + foot + GRID_GAP;
     }
-    return stacks.map((c) => c.entries);
-  }, [shown, width, cols]);
+    return { col, at, height: Math.max(0, ...heights) - GRID_GAP };
+  }, [shown, width, cols, foot]);
+  // The first placement is not a move: the cards only glide once they have been somewhere
+  const [settled, setSettled] = useState(false);
+  useEffect(() => {
+    if (!layout || settled) return;
+    const id = requestAnimationFrame(() => setSettled(true));
+    return () => cancelAnimationFrame(id);
+  }, [layout, settled]);
 
   const opened = open ? entries.find((e) => e.slug === open) ?? null : null;
   // The entries before and after the open one, in the order the grid lists them (the category and the search count)
@@ -173,18 +184,19 @@ export default function Vault({ query, head, projects }: { projects: readonly { 
             <p>{data.partner ? t.vault.emptyPartner : t.vault.empty}</p>
           </div>
         ) : shown.length ? (
-          <div className="vault-grid" ref={setGrid}>
-            {columns.map((col, i) => (
-              <ul className="vault-col" key={i}>
-                {col.map((e) => <li key={e.id}><VaultTile entry={e} kind={category ? null : labelOf(e.category)} blank={labelOf(e.category)} projects={projects} used={data.picks?.[e.id] ?? []} onPicks={(v) => setPicks(e.id, v)} onShape={(videoRatio) => patch(e.id, { videoRatio })} onOpen={() => show(e.slug)} /></li>)}
-              </ul>
-            ))}
-          </div>
+          <ul className={`vault-grid${settled ? " is-settled" : ""}`} ref={setGrid} style={{ height: layout?.height, "--foot": `${foot}px` } as React.CSSProperties}>
+            {layout && shown.map((e) => {
+              const p = layout.at.get(e.id)!;
+              return (
+                <li key={e.id} style={{ width: layout.col, transform: `translate(${p.x}px, ${p.y}px)` }}><VaultTile entry={e} kind={category ? null : labelOf(e.category)} blank={labelOf(e.category)} projects={projects} used={data.picks?.[e.id] ?? []} onPicks={(v) => setPicks(e.id, v)} onShape={(videoRatio) => patch(e.id, { videoRatio })} onOpen={() => show(e.slug)} /></li>
+              );
+            })}
+          </ul>
         ) : <p className="disc-list__none">{t.vault.none}</p>}
       </div>
       <Clouds />
       {/* The corner pill, the board's own: the zoom (minus, %, plus) where there is a grid to zoom, and the music after a hairline */}
-      <ZoomPill className="board-zoom" zoom={width && !phone && columns.length ? {
+      <ZoomPill className="board-zoom" zoom={width && !phone && shown.length ? {
         pct: Math.round((base / cols) * 100), label: t.zoom.columns(cols),
         canOut: cols < maxCols, canIn: cols > COLUMNS_MIN,
         onOut: () => stepZoom.current(1), onIn: () => stepZoom.current(-1), onReset: () => setZoom(0),
@@ -208,7 +220,10 @@ const COLUMNS_MIN = 2;
 const COLUMNS_MAX = 8;
 const ZOOM_KEY = "inspo:vault-zoom:1";
 const CARD_EDGE = 18;
-const CARD_FOOT = 86;
+/** The foot under the shot, a fixed height so a card's is known without measuring it: with the name and the category,
+ *  or the name alone when a category is chosen (Vault.css .vault-card__foot reads it as --foot) */
+const FOOT_FULL = 64;
+const FOOT_BARE = 46;
 /** A card's shot, width over height: its loop's own shape, held between a tall phone and a wide strip; without a loop,
  *  the 4:3 its picture is taken at and its piece runs at */
 const shapeOf = (e: VaultCard) => (e.video && e.videoRatio ? Math.min(2.4, Math.max(0.6, e.videoRatio)) : STAGE_W / STAGE_H);
