@@ -7,6 +7,9 @@
 //                                        exports as `seed` ({ en, es }: key → subject and body), and publishes them
 //
 // Both converge: run again, they change nothing that is already right, and never make a second template for an alias.
+// A template with a draft in Resend (an edit not yet published, or the dashboard's editor reformatting the HTML when
+// it opens one) is left alone and named: Resend reads back only the published version, and publishing would put live
+// a draft the script never compared.
 // Reads RESEND_API_KEY from .env.local, and never prints it. The wording itself is edited in Resend, not here.
 import { existsSync } from "node:fs";
 import path from "node:path";
@@ -60,22 +63,29 @@ const sameVariables = (a: Remote["variables"], b: { key: string; type: string }[
   JSON.stringify(a.map((v) => `${v.key}:${v.type}`).sort()) === JSON.stringify(b.map((v) => `${v.key}:${v.type}`).sort());
 
 async function layout(): Promise<void> {
-  const missing: string[] = [];
+  const missing: string[] = [], drafts: string[] = [];
   let changed = 0;
   for (const key of TEMPLATE_KEYS) for (const locale of LOCALES) {
     const alias = aliasOf(key, locale);
     let t: Remote;
     try { t = await api<Remote>("GET", `/templates/${alias}`); }
     catch (e) { if (String(e).includes(" 404 ")) { missing.push(alias); continue; } throw e; }
+    if (t.status !== "published" || t.has_unpublished_versions) { drafts.push(alias); continue; }
     const body = bodyOf(t.html);
     if (body === null) throw new Error(`${alias}: its body markers are gone in Resend; put them back around the body before laying it out`);
     const want = wanted(key, locale, body);
-    const differs = t.html !== want.html || !sameVariables(t.variables, want.variables) || ("text" in want && t.text !== want.text);
-    if (differs) await api("PATCH", `/templates/${alias}`, want);
-    if (differs || t.status !== "published" || t.has_unpublished_versions) { await api("POST", `/templates/${alias}/publish`); changed++; console.log(`laid out ${alias}`); }
+    if (t.html === want.html && sameVariables(t.variables, want.variables) && !("text" in want && t.text !== want.text)) continue;
+    await api("PATCH", `/templates/${alias}`, want);
+    await api("POST", `/templates/${alias}/publish`);
+    changed++;
+    console.log(`laid out ${alias}`);
   }
-  console.log(`${changed} published again, ${TEMPLATE_KEYS.length * LOCALES.length - changed - missing.length} already right`);
-  if (missing.length) throw new Error(`Missing in Resend (seed them): ${missing.join(", ")}`);
+  console.log(`${changed} published again, ${TEMPLATE_KEYS.length * LOCALES.length - changed - missing.length - drafts.length} already right`);
+  const problems = [
+    missing.length && `Missing in Resend (seed them): ${missing.join(", ")}`,
+    drafts.length && `A draft in Resend, left alone (publish or discard it there, then run again): ${drafts.join(", ")}`,
+  ].filter(Boolean);
+  if (problems.length) throw new Error(problems.join("\n"));
 }
 
 async function seed(file: string): Promise<void> {
