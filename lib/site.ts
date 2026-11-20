@@ -6,11 +6,8 @@ export const SITE = process.env.BETTER_AUTH_URL || process.env.NEXT_PUBLIC_APP_U
 
 // The marketing site (marketing-site/): the legal pages, the resources, the skills, the pricing and the extension's
 // page live there, not in the app.
-export const MARKETING_URL = process.env.NEXT_PUBLIC_MARKETING_URL || "https://criterio.design";
+// In development it is the local one (`npm run dev` starts both), so a local app never sends you to criterio.design
+export const MARKETING_URL = process.env.NEXT_PUBLIC_MARKETING_URL || (process.env.NODE_ENV === "development" ? "http://localhost:4330" : "https://criterio.design");
 
 /** A page of the marketing site in the reader's language: English at /, Spanish under /es/ */
 export const marketingHref = (path: string, locale: Locale) => `${MARKETING_URL}${locale === "es" ? "/es" : ""}${path}`;
-
-/** Where someone with no session lands from the app's home: the marketing landing in production, and the app's own
- *  sign-in in development, so a local server never sends you off to criterio.design (Alberto, 20-11) */
-export const guestHome = (locale: Locale) => (process.env.NODE_ENV === "development" ? "/login" : marketingHref("/", locale));

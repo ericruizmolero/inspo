@@ -8,7 +8,7 @@ La app vive en `/`. Lo que se ve depende de la query, sin cambiar de página, pa
 
 | URL | Qué se ve |
 | --- | --- |
-| `/` sin sesión | Redirige a la landing de criterio.design (`/es/` en castellano, `/` en inglés); en un servidor local (`next dev`) va a `/login` del propio servidor, nunca a criterio.design (`guestHome` en `lib/site.ts`). Solo si no hay cookie de sesión: con una caducada se queda en la portada de invitado (`GuestStart`) para no entrar en bucle con el Worker, que manda a la app a quien tiene la cookie `criterio_signed_in`. → [decisión](decisiones/2026-11-06-la-app-sin-sesion-lleva-a-la-landing-nueva.md) |
+| `/` sin sesión | Redirige a la landing de criterio.design (`/es/` en castellano, `/` en inglés); en local va a la landing local: `npm run dev` arranca la app en `localhost:3000` y la web de marketing en `localhost:4330`, y en desarrollo cada una enlaza a la otra (`MARKETING_URL` en `lib/site.ts`, `APP_URL` en `marketing-site/src/i18n.ts`), nunca a criterio.design. `npm run dev:app` arranca solo la app. Solo si no hay cookie de sesión: con una caducada se queda en la portada de invitado (`GuestStart`) para no entrar en bucle con el Worker, que manda a la app a quien tiene la cookie `criterio_signed_in`. → [decisión](decisiones/2026-11-06-la-app-sin-sesion-lleva-a-la-landing-nueva.md) |
 | `/` la primera vez | Primera entrada (`Welcome`): nombre, primera referencia, extensión y cliente de IA, los dos últimos opcionales; `/?welcome=1` la fuerza en desarrollo → [decisión](decisiones/2026-11-06-la-primera-entrada-es-un-flujo-de-cuatro-pasos-con-extension-y-mcp-opcionales.md) |
 | `/?in=home` | Inicio: "¿Qué vas a hacer?" y los proyectos |
 | `/?in=inbox` | Inbox: lo que no está en ningún proyecto |
