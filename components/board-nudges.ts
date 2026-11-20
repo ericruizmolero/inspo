@@ -24,7 +24,7 @@ function said(names: string[], and: string): string {
   return names.length > 1 ? `${names.slice(0, -1).join(", ")} ${and} ${names[names.length - 1]}` : names[0] ?? "";
 }
 
-export function boardNudges({ t, count, read, stale, empty, others, talk, vote, quietRef, kinds, oldRef, seed, noReason, twins, unused = 0, shared, missing = [], pace, onAdd, onStart, onSystem, onPolish, onPerson, onOpen, onKind, onSearch, pictureOf , look}: {
+export function boardNudges({ t, count, read, stale, empty, others, talk, vote, quietRef, kinds, oldRef, seed, noReason, twins, unused = 0, shared, missing = [], pace, noSystem = false, onAdd, onStart, onSystem, onPolish, onPerson, onOpen, onKind, onSearch, pictureOf , look}: {
   t: Dict;
   /** A reference's small picture, when it has one: Tino shows it and says "this one" */
   pictureOf?: (item: InspoItem) => string | null;
@@ -63,6 +63,8 @@ export function boardNudges({ t, count, read, stale, empty, others, talk, vote, 
   missing?: string[];
   /** This week's additions against the week before, when they doubled (only with a team) */
   pace?: { week: string; now: number; before: number } | null;
+  /** Whoever has no system view (everyone but the team): nothing here sends to it or speaks of its areas */
+  noSystem?: boolean;
   onAdd: () => void;
   onStart: () => void;
   onSystem: () => void;
@@ -90,10 +92,10 @@ export function boardNudges({ t, count, read, stale, empty, others, talk, vote, 
   // Before the first reading: more references, or the reading itself once there are enough
   if (!read && count < FEW_REFS) list.push({ key: "few", title: b.fewTitle, text: b.fewText(count, FEW_REFS - count), act: b.fewAct, mood: "watching", go: onAdd });
   if (look && count < FEW_REFS) list.push({ key: `look:${look.key}`, title: b.lookTitle, text: b.lookText(look.group, look.names), act: b.lookAct, mood: "accomplice", go: look.go });
-  if (!read && count >= FEW_REFS) list.push({ key: "first", title: b.firstTitle, text: b.firstText(count), act: b.firstAct, mood: "accomplice", go: onStart });
+  if (!noSystem && !read && count >= FEW_REFS) list.push({ key: "first", title: b.firstTitle, text: b.firstText(count), act: b.firstAct, mood: "accomplice", go: onStart });
   // After it: what came in since, and what the board says nothing about
-  if (read && stale > 0) list.push({ key: "stale", title: b.staleTitle, text: b.staleText(stale), act: b.staleAct, mood: "skeptic", go: onSystem });
-  if (read && empty.length) list.push({ key: `gaps:${empty.join("+")}`, title: b.gapsTitle, text: b.gapsText(said(empty.slice(0, 3).map((a) => t.system.areas[a].toLowerCase()), b.and)), act: b.gapsAct, mood: "suspect", go: onAdd });
+  if (!noSystem && read && stale > 0) list.push({ key: "stale", title: b.staleTitle, text: b.staleText(stale), act: b.staleAct, mood: "skeptic", go: onSystem });
+  if (!noSystem && read && empty.length) list.push({ key: `gaps:${empty.join("+")}`, title: b.gapsTitle, text: b.gapsText(said(empty.slice(0, 3).map((a) => t.system.areas[a].toLowerCase()), b.and)), act: b.gapsAct, mood: "suspect", go: onAdd });
   const top = others[0];
   if (top) list.push({ key: `others:${top.who}:${top.n}`, title: b.othersTitle, text: b.othersText(top.who, top.n), act: b.othersAct, mood: "smug", go: () => onPerson(top.who) });
   if (quietRef) { const n = named(t, quietRef.item, pictureOf); list.push({ key: `quiet:${quietRef.item.id}`, title: b.quietTitle, text: b.quietText(quietRef.who, n.name), thumb: n.thumb, act: b.quietAct, keep: t.tino.keep, mood: "suspect", go: () => onOpen(quietRef.item) }); }
@@ -108,7 +110,7 @@ export function boardNudges({ t, count, read, stale, empty, others, talk, vote, 
   // What makes the file better: why each one was saved, one of each site, what the system does not use
   if (noReason) list.push({ key: "why", title: b.whyTitle, text: b.whyText(noReason.n), act: b.whyAct, mood: "skeptic", go: () => onOpen(noReason.item) });
   if (twins && onSearch) list.push({ key: `twins:${twins.host}`, title: b.twinsTitle, text: b.twinsText(twins.n, twins.host), act: b.twinsAct, mood: "judge", go: () => onSearch(twins.host) });
-  if (read && unused > 0) list.push({ key: "unused", title: b.unusedTitle, text: b.unusedText(unused), act: b.unusedAct, mood: "suspect", go: onPolish });
+  if (!noSystem && read && unused > 0) list.push({ key: "unused", title: b.unusedTitle, text: b.unusedText(unused), act: b.unusedAct, mood: "suspect", go: onPolish });
   // And what the board says about the taste itself
   if (shared) list.push({ key: `shared:${shared.label}`, title: b.sharedTitle, text: b.sharedText(shared.n, shared.total, shared.label, shared.per100), act: b.sharedAct, mood: "smug", go: shared.go });
   // The team: who is missing here, and a good week said once

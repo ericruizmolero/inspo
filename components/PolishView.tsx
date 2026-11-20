@@ -128,7 +128,8 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
   onRestore: (item: InspoItem) => void | Promise<void>;
   onOpenItem: (item: InspoItem) => void;
   onBoard: () => void;
-  onSystem: () => void | Promise<void>;
+  /** The step to the system; without it (whoever has no system view) the way out is the board, as in the Cajón */
+  onSystem?: () => void | Promise<void>;
 }) {
   const { t, locale } = useT();
   const inbox = !project;
@@ -597,7 +598,7 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
   const toSystem = async () => {
     if (busy) return;
     setBusy(true);
-    try { await onSystem(); } finally { setBusy(false); }
+    try { await onSystem?.(); } finally { setBusy(false); }
   };
 
   // The keys: ← forgets, → keeps, Enter opens the card, ⌘Z takes the last one back. Never inside a field or under a dialog
@@ -788,7 +789,7 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
             {voting && tally.doubt > 0 && <Button variant="primary" onClick={() => setMode("doubt")}>{canClose ? s.settleDoubts(tally.doubt) : s.seeDoubts(tally.doubt)}</Button>}
             {voting && canClose && <Button variant={tally.doubt > 0 ? "secondary" : "primary"} onClick={() => void close()} disabled={busy}>{busy && <Busy label={s.close} />}{s.close}</Button>}
             {/* The Cajón has no system: what is kept is looked at on its board */}
-            {inbox ? <Button variant="primary" iconEnd="arrow-right" onClick={onBoard}>{s.toBoard}</Button>
+            {inbox || !onSystem ? <Button variant={voting && !inbox && (canClose || tally.doubt > 0) ? "secondary" : "primary"} iconEnd="arrow-right" onClick={onBoard}>{s.toBoard}</Button>
               : <Button variant={voting && (canClose || tally.doubt > 0) ? "secondary" : "primary"} iconEnd={!voting && busy ? undefined : "arrow-right"} onClick={() => void toSystem()} disabled={busy}>{!voting && busy && <Busy label={s.toSystem} />}{s.toSystem}</Button>}
             <Button onClick={again}>{s.again}</Button>
             {history.length > 0 && <Button onClick={undo}>{s.undo}</Button>}

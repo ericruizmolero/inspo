@@ -18,8 +18,8 @@ La app vive en `/`. Lo que se ve depende de la query, sin cambiar de página, pa
 | `/?in=templates` | Descubrir: los ejemplos. Sin pestaña en la Isla: desde la tecla "Descubrir" de la barra ([decisión](decisiones/2026-11-19-descubrir-es-una-tecla-a-la-derecha-de-la-barra-junto-a-conectores.md)) y los espacios vacíos → [decisión](decisiones/2026-10-13-descubrir-sale-de-la-isla-y-aparece-donde-no-hay-referencias.md) |
 | `/?in=discover` | Descubrir: los recursos, la lista de la web de marketing con la miniatura que sigue al puntero |
 | `/?in=skills` | Descubrir: las skills para agentes, la lista de la web de marketing como tarjetas |
-| `/?in=<proyecto>` | Un proyecto: tablero hasta "Ya tengo mis referencias", luego Sistema |
-| `&view=board` / `&view=system` | Fuerza tablero o Sistema dentro del proyecto |
+| `/?in=<proyecto>` | Un proyecto: su tablón; Pulido es su otra vista. El Sistema es una vista interna del equipo → [decisión](decisiones/2026-11-20-el-sistema-es-una-vista-interna-del-equipo-el-cliente-tiene-tablon-pulido-y-conector.md) |
+| `&view=board` / `&view=polish` / `&view=system` | Fuerza una vista dentro del proyecto. `system` solo abre a los socios (`isAdmin`); a los demás les deja en el tablón |
 | `&view=system&brief=1` | Sistema con el panel Brief abierto; el panel se abre y la URL suelta `brief` (lo usa ⌘K → "Abrir el brief") |
 | `?add=<url>` | Abre "Añadir" con esa URL (viene del login de invitado) |
 | `/i/[id]` | La biblioteca con la ficha de una referencia abierta (enlace para compartir) |

@@ -193,9 +193,12 @@ export default function InspoClient({
   // Inside a project the board comes first; polishing it (?view=polish) and the system (?view=system) are modes.
   // The Cajón has the board and Polish: it is not a project, so it has no system (Eric, 06-11)
   const defaultView = "board" as const;
+  // The system is the team's own view (Eric, 20-11): a client's project is Board and Polish, and what it knows reaches
+  // their agent through the connector. Still written underneath for everyone; only the way in is ours
+  const teamSystem = isAdmin;
   const viewParam = sp.get("view");
   const projectView: "system" | "polish" | "board" = currentProject
-    ? viewParam === "board" || viewParam === "polish" || viewParam === "system" ? viewParam : defaultView
+    ? viewParam === "board" || viewParam === "polish" || (viewParam === "system" && teamSystem) ? viewParam : defaultView
     : space === "inbox" && viewParam === "polish" ? "polish" : "board";
   const inboxPolish = space === "inbox" && projectView === "polish";
   // Back from Polish, the board takes the tornado's cards (components/view-morph.ts); its chunk is warm before it is asked for
@@ -217,10 +220,12 @@ export default function InspoClient({
     return 0;
   }, [projectView]);
   const setProjectView = useCallback((v: "system" | "polish" | "board", left = false) => {
+    // Whatever asks for the system (the agent, a nudge) stays on the board for whoever has no system view
+    if (v === "system" && !teamSystem) v = "board";
     const wait = left ? 0 : leaveView(v);
     const go = () => setParams({ view: v === defaultView ? "" : v });
     if (wait) window.setTimeout(go, wait); else go();
-  }, [setParams, defaultView, leaveView]);
+  }, [setParams, defaultView, leaveView, teamSystem]);
   // The search lives on a project's board and in the Inbox, nowhere else: off them there is no box, and what was
   // typed or chipped there waits in the URL without narrowing anything
   const searchHere = (!!currentProject || space === "inbox") && projectView === "board";
@@ -741,8 +746,8 @@ export default function InspoClient({
       shot={pageShots[item.web]}
       projects={projects}
       projectIds={item.id ? links[item.id] : undefined}
-      backs={currentProject && item.id ? backsOf(item.id) : undefined}
-      areasIn={item.id ? areasByItem.get(item.id) : undefined}
+      backs={teamSystem && currentProject && item.id ? backsOf(item.id) : undefined}
+      areasIn={teamSystem && item.id ? areasByItem.get(item.id) : undefined}
       selected={!!item.id && selected.has(item.id)}
       selecting={selected.size > 0}
       // In a team's polish nothing leaves on a vote: what this person forgot waits faded until whoever manages closes it
@@ -755,7 +760,7 @@ export default function InspoClient({
       text={item.id ? textBodies[item.id] : undefined}
       actions={gridActions}
     />
-  ), [textBodies, workspace.name, ratioOf, tagMap, tagJobs, jevScores, reasons, commentMap, authorImages, thumbMap, signed, designMdIndex, pageShots, projects, links, currentProject, backsOf, areasByItem, selected, canManage, user, polishVotes]);
+  ), [textBodies, workspace.name, ratioOf, tagMap, tagJobs, jevScores, reasons, commentMap, authorImages, thumbMap, signed, designMdIndex, pageShots, projects, links, currentProject, backsOf, areasByItem, selected, canManage, user, polishVotes, teamSystem]);
 
   // The board stays mounted under Polish and under the system, inert and hidden: coming back is instant, and the
   // cards fly from the tornado onto a board already laid out (components/view-morph.ts). The same element first in
@@ -770,7 +775,7 @@ export default function InspoClient({
   // The small picture Tino shows by his words when he talks about one reference: its capture, else who saved it
   const tinoPicture = useCallback((i: InspoItem) => smallImageOf(i) ?? authorImages[i.addedBy] ?? null, [smallImageOf, authorImages]);
   const boardNudgeList = useMemo(() => currentProject && boardTino ? boardNudges({
-    t, count: spaceItems.length, read: !!currentSystem?.read, stale: systemStale,
+    t, count: spaceItems.length, read: !!currentSystem?.read, stale: systemStale, noSystem: !teamSystem,
     empty: currentSystem?.read ? currentSystem.areas.filter((a) => !a.evidence.length).map((a) => a.area) : [],
     others: othersThisWeek(spaceItems, user.name || user.email, parseDate, openedAt),
     onAdd: () => setShowAdd(true), onStart: () => void startSystem(), onSystem: () => goView("system"), onPolish: () => goView("polish"),
@@ -803,7 +808,7 @@ export default function InspoClient({
     onPerson: (who) => setFilters([{ kind: "person", value: who }]),
     onOpen: (item) => openItem(item),
     pictureOf: tinoPicture,
-  }) : [], [currentProject, boardTino, tinoPicture, t, spaceItems, currentSystem, systemStale, user, openedAt, commentMap, solo, polishTab, polishVotes, canManage, tagMap, members]); // eslint-disable-line react-hooks/exhaustive-deps
+  }) : [], [currentProject, boardTino, tinoPicture, t, spaceItems, currentSystem, systemStale, user, openedAt, commentMap, solo, polishTab, polishVotes, canManage, tagMap, members, teamSystem]); // eslint-disable-line react-hooks/exhaustive-deps
   const boardIdleLine = useMemo(() => !boardTino ? undefined : currentProject ? boardIdle(t, spaceItems, parseDate, (item) => openItem(item), tinoPicture)
     : space === "inbox" ? inboxIdle(t, spaceItems, parseDate, (item) => openItem(item), tinoPicture) : undefined,
     [currentProject, boardTino, space, t, spaceItems, tinoPicture]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -846,7 +851,7 @@ export default function InspoClient({
           item={panelItem}
           isSite={hasOwnPage(panelItem.web)}
           page={panelItem.id ? <RefPage panelItem={panelItem} textBodies={textBodies} saveTextBody={saveTextBody} renameTextItem={renameTextItem} setThumbMap={setThumbMap} pageShots={pageShots} thumbMap={thumbMap} /> : null}
-          criterio={panelItem.id && panelProject && fullSystems[panelProject.id] ? (
+          criterio={teamSystem && panelItem.id && panelProject && fullSystems[panelProject.id] ? (
             <RefCriterio item={panelItem} project={panelProject} system={fullSystems[panelProject.id]} library={items} boardIds={panelBoardIds}
               refInfo={refInfo} onSystem={setSystem} onGo={goToSystem} />
           ) : undefined}
@@ -944,7 +949,7 @@ export default function InspoClient({
                   {/* Board, Polish, System: the system's SegmentedControl. The view is set a frame after the click
                       (afterPaint): a view of the project is a heavy render, and the tab answers first */}
                   <ProjectModes projectView={projectView} polishTab={currentProject ? polishTab : { left: inboxPolishing.left, under: false, done: EMPTY_DONE }}
-                    solo={solo || !currentProject} members={members} systemFilled={systemFilled} systemStale={systemStale} noSystem={!currentProject}
+                    solo={solo || !currentProject} members={members} systemFilled={systemFilled} systemStale={systemStale} noSystem={!currentProject || !teamSystem}
                     onChange={(i) => { const v = PROJECT_VIEWS[i], wait = leaveView(v); if (wait) window.setTimeout(() => setProjectView(v, true), wait); else afterPaint(() => setProjectView(v, true)); }} />
                   <PillBarSep />
                 </>
@@ -1105,7 +1110,7 @@ export default function InspoClient({
               onRestore={(item) => restoreToProject(item, currentProject.id)}
               onOpenItem={(item) => openItem(item)}
               onBoard={() => setProjectView("board")}
-              onSystem={startSystem}
+              onSystem={teamSystem ? startSystem : undefined}
             />
             )}
             {inboxPolish && (
@@ -1210,7 +1215,7 @@ export default function InspoClient({
                 // On a project's board the bar is one row: Tino, the search, adding and the step to the system
                 actions={currentProject ? <>
                   <IconButton icon="plus" variant="quiet" size="s" label={t.gather.add} onClick={() => setShowAdd(true)} />
-                  <StartButton onStart={startSystem} className="sb__go" />
+                  {teamSystem && <StartButton onStart={startSystem} className="sb__go" />}
                 </> : null}
                 vocab={vocab} busy={searchBusy} gathering={gathering} swatches={swatches} faces={authorImages} onAsk={(v) => void askAgent(v)} asking={!!agent?.busy}
                 target={agentTargetItem ? { name: agentTargetItem.name, image: smallImageOf(agentTargetItem) } : null} onClearTarget={() => setAgentTarget(null)} quick={agentQuick} />

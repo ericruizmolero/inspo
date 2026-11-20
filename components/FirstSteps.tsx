@@ -1,5 +1,5 @@
 "use client";
-// The first steps, from signing up to the first criterio.md (#103): a quiet list beside the plan meter, the step to
+// The first steps, from signing up to an AI client that reads your references (#103): a quiet list beside the plan meter, the step to
 // do marked with the ember dot and its line of help under it. Each row goes where its step is done. Never a modal.
 import Link from "next/link";
 import { useT } from "./I18nProvider";
@@ -10,7 +10,7 @@ import "./FirstSteps.css";
 export default function FirstSteps({ steps, onHide, onConnect }: {
   steps: Steps;
   onHide: () => void;
-  /** The last step's other way out: connecting an AI client (ConnectDialog) */
+  /** The last step: connecting an AI client (ConnectDialog) */
   onConnect: () => void;
 }) {
   const { t } = useT();
@@ -28,7 +28,7 @@ export default function FirstSteps({ steps, onHide, onConnect }: {
   );
 }
 
-/** The six steps themselves, each row going where its step is done. Tino's balloon has them too, and moves with
+/** The four steps themselves, each row going where its step is done. Tino's balloon has them too, and moves with
  *  `onGo` instead of a link, so it can do a step in place (naming a project on the home) */
 export function FirstStepsPath({ steps, onConnect, onGo }: { steps: Steps; onConnect?: () => void; onGo?: (href: string) => void }) {
   const { t } = useT();
@@ -45,11 +45,13 @@ export function FirstStepsPath({ steps, onConnect, onGo }: { steps: Steps; onCon
         </>;
         return (
           <li key={step.key} className={`first-steps__step${isDone ? " is-done" : ""}${isNow ? " is-now" : ""}`} aria-current={isNow ? "step" : undefined}>
-            {onGo
-              ? <button type="button" className="first-steps__row" onClick={() => onGo(step.href(steps))}>{row}</button>
-              : <Link href={step.href(steps)} className="first-steps__row">{row}</Link>}
+            {/* Connecting is a dialog, not a place: its row opens it where the person is */}
+            {step.key === "out" && onConnect
+              ? <button type="button" className="first-steps__row" onClick={onConnect}>{row}</button>
+              : onGo
+                ? <button type="button" className="first-steps__row" onClick={() => onGo(step.href(steps))}>{row}</button>
+                : <Link href={step.href(steps)} className="first-steps__row">{row}</Link>}
             {isNow && <p className="first-steps__hint">{s.steps[step.key].hint}</p>}
-            {isNow && step.key === "out" && onConnect && !onGo && <button type="button" className="first-steps__more" onClick={onConnect}>{s.connect}</button>}
           </li>
         );
       })}

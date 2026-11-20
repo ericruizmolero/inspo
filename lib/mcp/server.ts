@@ -51,7 +51,7 @@ async function callTool(params: Record<string, unknown> | undefined, ctx: McpCtx
   try {
     const out = await tool.run(input.data, ctx, origin);
     if (hasPictures(out)) {
-      const answer = text(JSON.stringify(out.result, null, 2));
+      const answer = text(typeof out.result === "string" ? out.result : JSON.stringify(out.result, null, 2));
       return { content: [...answer.content, ...out.pictures.map((p) => ({ type: "image", data: p.data, mimeType: p.mimeType }))] };
     }
     return text(typeof out === "string" ? out : JSON.stringify(out, null, 2));

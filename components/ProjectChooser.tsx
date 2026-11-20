@@ -250,7 +250,7 @@ export default function ProjectChooser({ projects, systems, items, links, ratioO
       const go = (href: string) => { if (href === "/?in=home") document.getElementById("chooser-name")?.focus(); else onStep(href); };
       list.push({
         key: `step:${now.key}`, who: `${s.title}, ${s.count(done, STEPS.length)}`, mood: "accomplice",
-        title: t.tino.stepsTitle, text: <FirstStepsPath steps={steps} onGo={go} />,
+        title: t.tino.stepsTitle, text: <FirstStepsPath steps={steps} onGo={go} onConnect={onConnect} />,
         act: t.tino.stepActs[now.key], go: now.key === "out" ? onConnect : () => go(now.href(steps)),
       });
     }

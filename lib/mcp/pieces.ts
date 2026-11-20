@@ -8,7 +8,7 @@
 // Every write leaves criterio.md as a version (via "mcp-write"), once the answer is out.
 import "server-only";
 import { z } from "zod";
-import { and, asc, desc, eq, inArray, isNull, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNotNull, isNull, sql } from "drizzle-orm";
 import { db, schema } from "../db";
 import { HttpError, canManage, type Workspace } from "../workspace-core";
 import { createHash } from "node:crypto";
@@ -23,7 +23,7 @@ import { rowToItem, tagsOfRow, ITEM_COLUMNS, deleteItems, deletableIds } from ".
 import { deleteMediaFile } from "../media";
 import { deleteTextFile } from "../text-refs";
 import { addReference, cleanAreas, titleOf, type Piece } from "../add";
-import { addComment, listItemComments } from "../comments";
+import { addComment, listCommentsOf, listItemComments } from "../comments";
 import { refInfoOf } from "../ref-info";
 import { dictOf } from "../i18n";
 import { normalizeWebUrl, mediaKindOf, nameFromFile, webKeyOf } from "../url";
@@ -141,14 +141,84 @@ export type CriterioSection = CriterioPart;
  * reference's own entry and the texts, whole); an area's name gives that area, under the file's head and its
  * "how to use" rules, so a single area still says what binds and what only guides.
  */
-export async function readCriterio(ctx: McpCtx, origin: string, ref: string, section: CriterioSection = "all") {
+export async function readCriterio(ctx: McpCtx, origin: string, ref: string, section: CriterioSection = "all"): Promise<string> {
+  return (await criterioAnswer(ctx, origin, ref, section, false)).md;
+}
+
+/** read_criterio as the tool answers it: the first read ("guide") carries the pictures of what the team kept, so
+ *  the agent sees the references before it reads a decision */
+export async function readCriterioTool(ctx: McpCtx, origin: string, ref: string, section: CriterioSection = "all"): Promise<string | WithPictures> {
+  const a = await criterioAnswer(ctx, origin, ref, section, section === "guide");
+  return a.pictures.length ? { result: a.md, pictures: a.pictures } : a.md;
+}
+
+async function criterioAnswer(ctx: McpCtx, origin: string, ref: string, section: CriterioSection, withPictures: boolean): Promise<{ md: string; pictures: Picture[] }> {
   const project = await resolveProject(ctx, ref);
   const view = await loadShareView(project.workspace.id, project.id, "full", ctx.user.language, null, origin);
   if (!view) throw new HttpError(404, "That project is gone.");
   // What an agent read is a version of the file: kept when it changed since the last one left the app
   inBackground(async () => { await recordVersion({ organizationId: project.workspace.id, projectId: project.id, via: "mcp", viaName: ctx.via, byName: ctx.user.name, locale: ctx.user.language, origin, view }); });
   const md = section === "all" ? view.markdown : partMd(view.blocks, section);
-  return section === "all" || section === "guide" ? md + await broughtMd(project.workspace.id, project.id) + await vaultMd(project.workspace.id, project.id) : md;
+  // One area alone is the cheap read: it comes as it is. Every other read opens with what the team kept
+  if (section !== "all" && section !== "guide" && section !== "decisions") return { md, pictures: [] };
+  const kept = await keptReferences(project.workspace.id, project.id, withPictures);
+  const tail = section === "decisions" ? "" : await broughtMd(project.workspace.id, project.id) + await vaultMd(project.workspace.id, project.id);
+  // Under the file's own head (its title and what the project is), before its first section
+  const at = md.search(/^## /m);
+  return { md: (at < 0 ? `${md}\n\n${kept.md}` : md.slice(0, at) + kept.md + md.slice(at)) + tail, pictures: kept.pictures };
+}
+
+/** How many of the kept references travel as pictures with the first read: enough to see the board's taste, few enough to stay light */
+const KEPT_PICTURES = 8;
+/** How many references the opening lists; the rest are in list_references */
+const KEPT_LISTED = 40;
+/** How much of what was said about each one travels with it */
+const KEPT_SAID = 3;
+
+/** What the team saved and kept, before any decision: the board itself, the ones that came through Polish first, each
+ *  with what its people said about it. The system's areas come after it in the file: an agent starts from the
+ *  references and reads the decisions as what the team already drew from them (Eric, 20-11). Only in what the
+ *  connector hands an agent */
+async function keptReferences(org: string, projectId: string, withPictures: boolean): Promise<{ md: string; pictures: Picture[] }> {
+  const V = schema.polishVote;
+  const [rows, votes] = await Promise.all([
+    db.select({ id: T.id, name: T.name, web: T.web, author: T.author, via: T.via, note: T.note, thumbnailUrl: T.thumbnailUrl })
+      .from(PI).innerJoin(T, eq(T.id, PI.itemId))
+      .where(and(eq(PI.organizationId, org), eq(PI.projectId, projectId))).orderBy(asc(PI.createdAt)),
+    db.select({ itemId: V.itemId }).from(V)
+      .where(and(eq(V.organizationId, org), eq(V.projectId, projectId), eq(V.vote, "keep"), isNotNull(V.closedAt))),
+  ]);
+  if (!rows.length) return { md: "", pictures: [] };
+  const polished = new Set(votes.map((v) => v.itemId));
+  // The board's own order gives the codes (R1, R2…), as in list_references; what Polish kept is read first
+  const coded = rows.map((r, i) => ({ ...r, code: `R${i + 1}`, kept: polished.has(r.id) }));
+  const ordered = [...coded.filter((r) => r.kept), ...coded.filter((r) => !r.kept)];
+  const listed = ordered.slice(0, KEPT_LISTED);
+  const said = await listCommentsOf(org, listed.map((r) => r.id));
+  const line = (r: (typeof coded)[number]) => {
+    const kind = mediaKindOf(r.web);
+    const who = r.via ? `${r.author} (via ${r.via})` : r.author;
+    const note = oneLine(r.note, 240);
+    const head = `- **${r.code}** ${kind === "text" || kind === "image" ? r.name : `[${r.name}](${r.web})`} (${kind}, id \`${r.id}\`), saved by ${who}${note ? `: ${note}` : ""}`;
+    const words = (said[r.id] ?? []).filter((c) => !c.parentId && c.body.trim()).slice(0, KEPT_SAID).map((c) => `  - ${c.authorName}: ${oneLine(c.body, 240)}`);
+    return [head, ...words].join("\n");
+  };
+  const kept = listed.filter((r) => r.kept), rest = listed.filter((r) => !r.kept), keptAll = coded.filter((r) => r.kept).length;
+  const more = ordered.length - listed.length;
+  const seen = withPictures ? listed.slice(0, KEPT_PICTURES) : [];
+  const shots = seen.some((r) => !r.thumbnailUrl && mediaKindOf(r.web) === "web") ? await pageShotsFor(seen.filter((r) => !r.thumbnailUrl && mediaKindOf(r.web) === "web").map((r) => r.web)).catch(() => null) : null;
+  const drawn = (await Promise.all(seen.map(async (r) => ({ code: r.code, picture: await pictureAt(r.thumbnailUrl ?? (mediaKindOf(r.web) === "image" ? r.web : shots?.[r.web]?.topUrl))
+    .catch((err) => { log.warn("mcp.picture_failed", { ref: r.id, err }); return null; }) })))).filter((d): d is { code: string; picture: Picture } => !!d.picture);
+  const pictures = drawn.map((d) => d.picture);
+  const md = [
+    "## What the team kept\n",
+    `> Before any decision: the references of this project, ${rows.length} on its board${keptAll ? `, ${keptAll} of them kept in Polish (the team went through the board one by one and chose these)` : ""}. What they share is the taste to build with, and each carries what its people said about it. The areas below are what the team already drew from them: where an area is decided it rules, where it is open go by these.${drawn.length ? ` The pictures with this answer are ${drawn.map((d) => d.code).join(", ")}, in that order.` : ""} Call read_reference with an id to see any other whole. They guide; they are never copied.\n`,
+    kept.length ? `### Kept in Polish\n\n${kept.map(line).join("\n")}\n` : "",
+    rest.length ? `### ${kept.length ? "On the board, not polished yet" : "On the board"}\n\n${rest.map(line).join("\n")}\n` : "",
+    more > 0 ? `And ${more} more on the board: list_references has them all.\n` : "",
+    "",
+  ].filter((x, i, all) => x || i === all.length - 1).join("\n");
+  return { md, pictures };
 }
 
 /** What an agent brought and the team has not answered: context to read, never a rule. Only in what the connector

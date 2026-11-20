@@ -14,27 +14,26 @@ const file = (projectId: string, ids: string[]) => db.insert(schema.projectItem)
 
 test("each step is read from rows the app already writes, and walking the path hides it for good", async () => {
   const now = new Date(), ws = team.ws.id, p = `${team.tag}-p`, tpl = `${team.tag}-tpl`;
-  expect(await steps()).toEqual({ example: false, project: null, brief: false, refs: 0, system: false, out: false });
+  expect(await steps()).toEqual({ project: null, refs: 0, polished: false, out: false });
 
   // An example's board and its references are Criterio's: neither is the person's project
   await db.insert(schema.project).values({ id: tpl, organizationId: ws, name: "example", template: {}, createdAt: now, updatedAt: now });
   const samples = await addItems(team, 3, { from: 100, author: TEMPLATE_AUTHOR });
   await file(tpl, samples);
-  await db.insert(schema.activitySegment).values({ id: `${team.tag}-seg`, userId: team.user.id, organizationId: ws, visitId: "v", area: "example", path: "/", startedAt: now, lastSeenAt: now });
-  expect(await steps()).toMatchObject({ example: true, project: null });
+  expect(await steps()).toMatchObject({ project: null });
 
   await db.insert(schema.project).values({ id: p, organizationId: ws, name: "p", brief: { about: "A bakery in Córdoba" }, createdAt: now, updatedAt: now });
   const mine = await addItems(team, 10);
   await file(p, [...mine.slice(0, 9), samples[0]]);
-  expect(await steps()).toMatchObject({ project: p, brief: true, refs: 9, system: false });
+  expect(await steps()).toMatchObject({ project: p, refs: 9, polished: false });
   await file(p, mine.slice(9));
   expect((await steps())?.refs).toBe(10);
 
-  // A run copied from an example is not a pass; one of the project's own is
-  await db.insert(schema.projectSystem).values({ projectId: p, organizationId: ws, runJson: { model: "template" }, createdAt: now, updatedAt: now });
-  expect((await steps())?.system).toBe(false);
-  await db.update(schema.projectSystem).set({ runJson: { model: "some-model" } }).where(eq(schema.projectSystem.projectId, p));
-  expect(await steps()).toMatchObject({ system: true, out: false });
+  // A system pass is not a step any more: only a vote in Polish moves the path on
+  await db.insert(schema.projectSystem).values({ projectId: p, organizationId: ws, runJson: { model: "some-model" }, createdAt: now, updatedAt: now });
+  expect(await steps()).toMatchObject({ polished: false, out: false });
+  await db.insert(schema.polishVote).values({ projectId: p, itemId: mine[0], userId: team.user.id, organizationId: ws, vote: "keep", updatedAt: now });
+  expect(await steps()).toMatchObject({ polished: true, out: false });
 
   await markExported(ws, p);
   expect(await steps()).toBeNull();

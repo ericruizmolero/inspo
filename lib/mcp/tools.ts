@@ -6,7 +6,7 @@ import "server-only";
 import { z } from "zod";
 import { SYSTEM_AREAS } from "@/types/system";
 import type { McpCtx } from "./auth";
-import { CRITERIO_SECTIONS, ProjectArg as Project, QUESTION_IDS, addPiece, answerQuestion, listProjects, listReferences, newProject, proposeDecision, readCriterio, readReference, measureSite, recordLearning, runPass, removeReferences, listDrawer, deleteFromDrawer, setOutline, startSetup, checkLandingPage, listComments, resolveComment } from "./pieces";
+import { CRITERIO_SECTIONS, ProjectArg as Project, QUESTION_IDS, addPiece, answerQuestion, listProjects, listReferences, newProject, proposeDecision, readCriterioTool, readReference, measureSite, recordLearning, runPass, removeReferences, listDrawer, deleteFromDrawer, setOutline, startSetup, checkLandingPage, listComments, resolveComment } from "./pieces";
 import { OUTLINE_SECTIONS_MAX, OUTLINE_TEXT_MAX, SECTION_KINDS } from "@/types/landing";
 import { SKIPPABLE } from "../setup-core";
 import { LEARNING_NOTE_MAX } from "@/types/system";
@@ -83,14 +83,14 @@ export const TOOLS: Tool[] = [
   tool({
     name: "read_criterio", title: "Read criterio.md",
     description: [
-      "A project's criterio.md: the design criteria its team decided, as Markdown. Eight areas (typography, color, layout, motion, iconography, logo, imagery, voice), each with its decision, why, what it must never do, and the references (R1, R2…) behind it; then the project's texts and every reference. Its file links may not open where you run: to see a reference's picture, call read_reference.",
+      "A project's criterio.md, as Markdown. It opens with what the team kept: the references on the project's board, the ones that came through Polish first, each with who saved it and what was said about it; on the first read (section \"guide\") the first of them come as pictures too. Then the design criteria the team decided from them. Eight areas (typography, color, layout, motion, iconography, logo, imagery, voice), each with its decision, why, what it must never do, and the references (R1, R2…) behind it; then the project's texts and every reference. Its file links may not open where you run: to see a reference's picture, call read_reference.",
       "Read it before designing, writing or reviewing anything for the project, and follow it: a decided area is a rule. Where an area is open, ask the person instead of inventing.",
       "The file opens with \"Start here\": the session loop to follow with the person, in phases that each end in a checkpoint (connect, understand, plan, build in parts, review with evidence, learn), written from the project as it stands. Then the starting questions still open (each with its id), what was learned in earlier sessions, and \"How to use this file\": what is required (the brand's values and every Never line), what is direction (each area's decision) and what is only guidance (the references, which are never copied). Follow them.",
       'section: "guide" is Start here, the starting questions, what was learned, those rules and every Never line: the first read; "all" (default) is the whole file and can be long; "decisions" is the same without the long lists at the end (enough to design with); an area\'s name gives that area under the file\'s head and its "How to use this file" rules, the cheapest read when a task touches few areas.',
     ].join("\n"),
     input: z.object({ project: Project, section: z.enum(CRITERIO_SECTIONS).optional().describe('"guide" (read it first), "all" (default), "decisions", or one area.') }),
     annotations: { readOnlyHint: true },
-    run: (i, ctx, origin) => readCriterio(ctx, origin, i.project, i.section),
+    run: (i, ctx, origin) => readCriterioTool(ctx, origin, i.project, i.section),
   }),
   tool({
     name: "list_references", title: "List references",
@@ -333,7 +333,7 @@ export const INSTRUCTIONS = [
   "When the person says \"set up criterio\", starts a project or comes back to an unfinished one, call start_setup and follow what it says.",
   TINO_VOICE,
   "criterio holds the design criteria of each of the person's projects as one file, criterio.md: what the team decided about typography, color, layout, motion, iconography, logo, imagery and voice, with the references behind each decision.",
-  "Before designing, writing or reviewing anything for a project, call read_criterio and follow it. A decided area is a rule. Where an area is open, ask the person; do not invent.",
+  "Before designing, writing or reviewing anything for a project, call read_criterio and follow it. It opens with what the team kept, the references that came through Polish, with what was said about each: start from them, and say in a line what they share before you build. A decided area is a rule. Where an area is open, go by the kept references and ask the person; do not invent.",
   "Work with the person as criterio.md's \"Start here\" says: read it first (read_criterio, section \"guide\") and follow its phases and checkpoints.",
   "You never rewrite criterio.md. You add pieces: references (add_reference), proposals for what an area should say (propose_decision), which wait for the team's yes or no in the app, a brand's values (bring_brand), which the team edits or hands back in the app, the person's answers to the starting questions (answer_question) and what you learned with them (record_learning), which go straight in.",
   "Two ways to work. In a conversation, ask one thing at a time and save what the person says. When you arrive with context already worked out (research, a brief, references, answers, a plan from your own work or another conversation), bring it all with bring_context, without asking piece by piece: it goes straight into the project. Then say in a line or two what you left and what is missing, and talk little.",

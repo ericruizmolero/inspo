@@ -6,7 +6,7 @@ import { db, schema } from "./db";
 import { isSampleItem } from "./sample-items";
 import { nextStep, type FirstSteps } from "./first-steps-core";
 
-const P = schema.project, PI = schema.projectItem, T = schema.inspoItem, S = schema.projectSystem;
+const P = schema.project, PI = schema.projectItem, T = schema.inspoItem, S = schema.projectSystem, V = schema.polishVote;
 
 /** Where the person is along the path, or null once they hid it or walked it. Walking it hides it for good, so
  *  a project deleted afterwards does not bring the list back */
@@ -18,23 +18,19 @@ export async function firstSteps(userId: string, organizationId: string): Promis
   // Raw SQL with aliases: in a one-table select Drizzle leaves column names unqualified, and these subqueries
   // name the same columns on several tables
   const [[project], [signals]] = await Promise.all([
-    db.execute<{ id: string; refs: number; brief: boolean; system: boolean }>(sql`select p.id,
+    db.execute<{ id: string; refs: number; polished: boolean }>(sql`select p.id,
       (select count(*)::int from ${PI} pi join ${T} on ${T.id} = pi.item_id where pi.project_id = p.id and not ${isSampleItem()}) as refs,
-      (coalesce(trim(p.brief->>'about'), '') <> '' or p.brief->'answers'->'goal' is not null) as brief,
-      -- A project cloned from an example arrives with the example's run: that is not a pass of its own
-      exists (select 1 from ${S} s where s.project_id = p.id and s.run_json is not null and s.run_json->>'model' is distinct from 'template') as system
+      exists (select 1 from ${V} v where v.project_id = p.id) as polished
       from ${P} p where p.organization_id = ${organizationId} and p.template is null
       order by refs desc, p.created_at limit 1`).then((r) => r.rows),
-    db.execute<{ example: boolean; out: boolean }>(sql`select
-      exists (select 1 from ${schema.activitySegment} a where a.user_id = ${userId} and a.area = 'example') as example,
+    db.execute<{ out: boolean }>(sql`select
       (exists (select 1 from ${S} s where s.organization_id = ${organizationId} and s.exported_at is not null)
         or exists (select 1 from ${schema.systemShare} sh where sh.organization_id = ${organizationId})
         or exists (select 1 from ${schema.mcpGrant} g where g.user_id = ${userId} and g.code_used_at is not null)) as out`).then((r) => r.rows),
   ]);
 
   const steps: FirstSteps = {
-    example: !!signals?.example, out: !!signals?.out,
-    project: project?.id ?? null, brief: !!project?.brief, refs: Number(project?.refs ?? 0), system: !!project?.system,
+    project: project?.id ?? null, refs: Number(project?.refs ?? 0), polished: !!project?.polished, out: !!signals?.out,
   };
   if (nextStep(steps) === null) {
     await hideFirstSteps(userId);
