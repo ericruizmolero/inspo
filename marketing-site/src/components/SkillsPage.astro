@@ -14,7 +14,7 @@ const t = copy[locale].skills;
 const now = Date.now();
 const groups = SKILL_TOPICS.map((topic) => ({ ...topic, skills: SKILLS.filter((s) => s.topic === topic.key) })).filter((g) => g.skills.length);
 ---
-<Base lang={locale} page="skills" title={`${t.title} · criterio.design`} description={t.lead(SKILLS.length)}>
+<Base lang={locale} page="skills" title={`${t.title} | criterio.design`} description={t.lead(SKILLS.length)}>
   <Header locale={locale} page="skills" />
 
   <main class="skills">

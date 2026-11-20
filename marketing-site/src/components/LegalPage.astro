@@ -11,7 +11,7 @@ const t = legal[locale];
 const page = t.docs[doc];
 const updated = new Intl.DateTimeFormat(locale, { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(LEGAL_UPDATED));
 ---
-<Base lang={locale} page={doc} title={`${page.title} · criterio.design`} description={page.lead}>
+<Base lang={locale} page={doc} title={`${page.title} | criterio.design`} description={page.lead}>
   <Header locale={locale} page={doc} />
 
   <main class="doc">

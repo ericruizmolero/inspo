@@ -105,7 +105,7 @@ export const copy = {
     },
     // The home page while we gather the waitlist: the landing's hero alone, with the video (WaitlistPage.astro)
     waitlist: {
-      title: "Criterio · Your team decides the look. Your agent builds the landing",
+      title: "Criterio: your team decides the look, your agent builds the landing",
       description: "Gather references, vote on what stays and get a criterio.md your agent reads before it builds the landing. Join the waitlist and we’ll email you when your invite is ready.",
       ogAlt: "Your references, written down as decisions. Tino reads a row of references.",
       home: "Criterio, home",
@@ -128,7 +128,7 @@ export const copy = {
       woken: ["Huh? I was dreaming about serifs.", "Five more minutes…", "Coming, coming. What did you save?", "If it’s a purple gradient, I’m going back to sleep."],
       poked: ["Hi! I’m Tino.", "Careful, you’ll mess up my fur.", "I read references, not minds.", "Do that again. I like it.", "One slot, two ears and lots of criterio."],
       note: {
-        bad: "That email is missing something.",
+        bad: "That email looks incomplete. Check it and try again.",
         consent: "Tick the box so we can email you.",
         ok: "You’re on the list. We’ll write when it’s your turn.",
         fail: "Couldn’t sign you up. Try again.",
@@ -178,7 +178,7 @@ export const copy = {
       section: { headline: "Un precio para todo el equipo.", sub: "Empieza gratis y paga cuando necesites más.", ask: (plan: string) => `Pedir ${plan}`, all: "Compara los planes uno al lado del otro" },
       compare: "Uno al lado del otro",
       plan: "Plan",
-      rows: { ai: "Acciones de IA al mes", searches: "Búsquedas IA al mes", references: "Referencias", storage: "Almacenamiento", people: "Personas en cada espacio", workspaces: "Espacios" },
+      rows: { ai: "Acciones de IA al mes", searches: "Búsquedas de IA al mes", references: "Referencias", storage: "Almacenamiento", people: "Personas en cada espacio", workspaces: "Espacios" },
       noLimit: "Sin límite",
       fairUse: "Uso justo",
       gb: (n: number) => `${n} GB`,
@@ -186,7 +186,7 @@ export const copy = {
     extension: {
       title: "Extensión del navegador",
       headline: "Guarda la pestaña en la que estás",
-      lead: "La extensión de criterio.design para Chrome, Arc, Edge y Brave. Un clic guarda en tu librería la web que estás viendo, con una captura, su título y su dirección. También trae tus marcadores, tus guardados de X y tus tableros de Pinterest, Are.na o Cosmos.",
+      lead: "La extensión de criterio.design para Chrome, Arc, Edge y Brave. Un clic guarda en tu librería la web que estás viendo, con una captura, su título y su dirección. También importa tus marcadores, tus guardados de X y tus tableros de Pinterest, Are.na o Cosmos.",
       steps: "Instálala",
       download: {
         title: "Descárgala",
@@ -214,11 +214,11 @@ export const copy = {
       privacy: "Qué hace la extensión con tus datos",
     },
     waitlist: {
-      title: "Criterio · Tu equipo decide el estilo. Tu agente construye la landing",
+      title: "Criterio: tu equipo decide el estilo, tu agente construye la landing",
       description: "Reúne referencias, votad qué se queda y obtén un criterio.md que tu agente lee antes de construir la landing. Apúntate a la lista y te invitamos cuando llegue tu turno.",
       ogAlt: "Tus referencias, escritas como decisiones. Tino lee una fila de referencias.",
       home: "Criterio, inicio",
-      headline: ["Tu equipo decide el estilo.", "Tu agente construye la landing."],
+      headline: ["Tu equipo decide el estilo", "Tu agente construye la landing"],
       sub: "Reúne referencias, votad qué se queda y dale a tu agente un criterio.md que cambia cuando cambian vuestras decisiones.",
       email: "Tu correo",
       placeholder: "tu@correo.com",
@@ -236,7 +236,7 @@ export const copy = {
       woken: ["¿Eh? Estaba soñando con serifas.", "Cinco minutos más…", "Ya voy, ya voy. ¿Qué has guardado?", "Si es un degradado morado, me vuelvo a dormir."],
       poked: ["¡Hola! Soy Tino.", "Cuidado, que me despeinas.", "Leo referencias, no mentes.", "Hazlo otra vez. Me gusta.", "Una ranura, dos orejas y mucho criterio."],
       note: {
-        bad: "A ese correo le falta algo.",
+        bad: "Ese correo parece incompleto. Revísalo e inténtalo otra vez.",
         consent: "Marca la casilla para que podamos escribirte.",
         ok: "Ya estás en la lista. Te escribimos cuando te toque.",
         fail: "No se pudo apuntar. Prueba otra vez.",

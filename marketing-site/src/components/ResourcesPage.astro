@@ -16,7 +16,7 @@ const now = Date.now();
 // The app opens Add with the address already in it (signed out, it asks to sign in first)
 const saveHref = (url: string) => `${APP_URL}/?add=${encodeURIComponent(url)}`;
 ---
-<Base lang={locale} page="resources" title={`${t.title} · criterio.design`} description={t.lead(total)}>
+<Base lang={locale} page="resources" title={`${t.title} | criterio.design`} description={t.lead(total)}>
   <Header locale={locale} page="resources" />
 
   <main class="res">

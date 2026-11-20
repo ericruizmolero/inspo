@@ -325,7 +325,7 @@
     "message": "Import board"
   },
   "boardPermission": {
-    "message": "Chrome asks to read that site. With it, its boards also show a button to import them."
+    "message": "Chrome asks to read that site. If you allow it, its boards also show an import button."
   },
   "boardPermissionDenied": {
     "message": "Without permission to read $PLATFORM$ the extension can't see the board.",

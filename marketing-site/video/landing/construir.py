@@ -36,8 +36,8 @@ h = re.sub(r' (src|href|poster)="([^"]*\$\{)', r'\\x20\1="\2', h)
 h = re.sub(r'<(script|style)(?=[\s>])', r'<\1 is:inline', h)
 
 T = {
-    'en': dict(at='/', title='Criterio · Your team decides the look. Your agent builds the landing', desc='Gather references, vote on what stays and get a criterio.md your agent reads before it builds the landing. Join the waitlist and we’ll email you when your invite is ready.', alt='Your references, written down as decisions. Tino reads a row of references.', loc='en_US'),
-    'es': dict(at='/es/', title='Criterio · Tu equipo decide el estilo. Tu agente construye la landing', desc='Reúne referencias, votad qué se queda y obtén un criterio.md que tu agente lee antes de construir la landing. Apúntate a la lista y te invitamos cuando llegue tu turno.', alt='Tus referencias, escritas como decisiones. Tino lee una fila de referencias.', loc='es_ES'),
+    'en': dict(at='/', title='Criterio: your team decides the look, your agent builds the landing', desc='Gather references, vote on what stays and get a criterio.md your agent reads before it builds the landing. Join the waitlist and we’ll email you when your invite is ready.', alt='Your references, written down as decisions. Tino reads a row of references.', loc='en_US'),
+    'es': dict(at='/es/', title='Criterio: tu equipo decide el estilo, tu agente construye la landing', desc='Reúne referencias, votad qué se queda y obtén un criterio.md que tu agente lee antes de construir la landing. Apúntate a la lista y te invitamos cuando llegue tu turno.', alt='Tus referencias, escritas como decisiones. Tino lee una fila de referencias.', loc='es_ES'),
 }
 for l, x in T.items():
     p = re.sub(r'<html lang="[a-z]+">', f'<html lang="{l}" data-lang="{l}" data-es="/es/" data-en="/">', h, count=1)
