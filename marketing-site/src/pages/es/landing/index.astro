@@ -1686,6 +1686,7 @@ html.pie-on .nav { visibility: hidden; transition: opacity 0.2s, visibility 0s 0
 <!-- el motor de Tino de la app (inspo, components/tino/engine.js, 22-10): las caras nuevas, ojos en el visor, guiño y la cabeza que sigue al puntero -->
 <script is:inline type="module">import { create, POSES } from "/assets/mascota/tino-app/engine.js"; POSES.dormida = { ear: [50, 29], open: 0.02, move: { track: 0, osc: [["ear", 2, 2.5, 0.22]] } }; window.Peluche = { create }; dispatchEvent(new Event("tino-engine"));</script>
 <script>
+// @ts-nocheck: hand-written browser JavaScript, not TypeScript
 import "../../../scripts/signup-mode";
 import { WAITLIST_URL } from "../../../i18n";
 const $ = (s) => document.querySelector(s);
