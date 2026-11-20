@@ -2594,6 +2594,7 @@ export const ui: typeof EnUi = {
       preview: (n: number, project: string): string => `${n === 1 ? "1 referencia" : `${n} referencias`} de ${project} para comentar y marcar las que te gustan.`, subtitle: "Subtítulo (opcional)", subtitlePlaceholder: "Subtítulo (opcional): qué tiene que mirar el cliente", links: "Enlaces", openLink: "Abrir el enlace", who: "Quién entra", link: "Con el enlace", invite: "Invitados",
       linkHint: "Cualquiera con el enlace entra sin cuenta, con un avatar al azar.", inviteHint: "Cada persona recibe por correo su propio enlace y comenta con su nombre.",
       emails: "Correos", emailsPlaceholder: "ana@cliente.com, luis@cliente.com", inviteMore: "Invitar", copyTheirs: "Copiar su enlace", uninvite: "Quitar",
+      notSent: (emails: string): string => `La invitación no llegó a ${emails}. Copia su enlace y mándaselo tú.`,
       makeInvite: "Crear e invitar", refs: (n: number): string => (n === 1 ? "1 referencia" : `${n} referencias`), whole: "Todo el tablón",
       back: (comments: number, picks: number): string => [comments ? (comments === 1 ? "1 comentario" : `${comments} comentarios`) : "", picks ? `${picks} me gusta` : ""].filter(Boolean).join(", "),
       guest: {

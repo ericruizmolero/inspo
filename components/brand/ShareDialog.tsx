@@ -44,9 +44,12 @@ export default function ShareDialog({ projectId, itemIds, onClose }: {
     const r = await makeShare(projectId, { mode, access, label, subtitle, itemIds: some && itemIds?.length ? itemIds : null, emails: access === "invite" ? splitEmails(emails) : [] });
     setBusy(false);
     if (!r.ok) { setError(r.error); return; }
-    setLinks(r.data); setLabel(""); setSubtitle(""); setEmails("");
-    if (r.data[0]?.access === "link") void copy(r.data[0].id, r.data[0].token);
+    const made = r.data.links;
+    setLinks(made); setLabel(""); setSubtitle(""); setEmails(""); notReached(r.data.notSent);
+    if (made[0]?.access === "link") void copy(made[0].id, made[0].token);
   };
+  // An invitation the email did not reach: the person sends that guest's own link themselves
+  const notReached = (emails: string[]) => { if (emails.length) setError(s.notSent(emails.join(", "))); };
   const stop = async (l: ShareLink) => { const r = await stopShare(projectId, l.id); if (r.ok) setLinks(r.data); else setError(r.error); };
   const modes = ["clean", "full"] as const;
   const accesses = ["link", "invite"] as const;
@@ -121,7 +124,7 @@ export default function ShareDialog({ projectId, itemIds, onClose }: {
                       {l.access === "invite" && (
                         <Guests link={l} copied={copied} onCopy={(id, token) => void copy(id, token)}
                           onRemove={async (guestId) => { const r = await uninvite(projectId, guestId); if (r.ok) setLinks(r.data); else setError(r.error); }}
-                          onInvite={async (list) => { const r = await inviteMore(projectId, l.id, list); if (r.ok) setLinks(r.data); else setError(r.error); return r.ok; }} />
+                          onInvite={async (list) => { const r = await inviteMore(projectId, l.id, list); if (r.ok) { setLinks(r.data.links); notReached(r.data.notSent); } else setError(r.error); return r.ok; }} />
                       )}
                     </li>
                   );

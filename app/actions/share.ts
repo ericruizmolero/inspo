@@ -5,34 +5,41 @@
 import { headers } from "next/headers";
 import { and, eq } from "drizzle-orm";
 import { withCtx, HttpError, type ActionResult } from "@/lib/workspace";
-import { createShare, inviteToShare, listShares, resolveShare, revokeShare, uninviteFromShare, type ShareAccess, type ShareGuestRow } from "@/lib/share";
+import { createShare, inviteToShare, listShares, resolveShare, revokeShare, uninviteFromShare, type ShareAccess, type ShareGuestRow, type ShareLink } from "@/lib/share";
 import { deleteGuestComment, postGuestComment, renameGuest, setGuestFace, shareActivity, toggleGuestPick, type ShareActivity } from "@/lib/share-guests";
 import { APP_URL } from "@/lib/auth";
-import { inBackground } from "@/lib/notify";
 import { localeForEmail, sendMail, shareInviteMail } from "@/lib/mail";
 import { db, schema } from "@/lib/db";
 import { getErrors } from "@/lib/i18n";
-import { recordFailure } from "@/lib/log";
+import { log, recordFailure } from "@/lib/log";
 
 export async function loadShares(projectId: string) {
   return withCtx(async (ctx) => listShares(ctx.workspace.id, String(projectId)));
 }
 
-/** Writes to each person invited, with their own address, once this has answered */
-async function sendInvites(organizationId: string, projectId: string, invited: ShareGuestRow[], who: string) {
-  if (!invited.length) return;
+/** The links after an invite, and the addresses its email did not reach: the dialog asks to send those by hand */
+export interface Invited { links: ShareLink[]; notSent: string[] }
+
+/** Writes to each person invited, with their own address, one at a time: a send that fails never stops the next */
+async function sendInvites(organizationId: string, projectId: string, invited: ShareGuestRow[], who: string): Promise<string[]> {
+  if (!invited.length) return [];
   const origin = APP_URL || (await headers()).get("origin") || "";
-  inBackground(async () => {
-    const [project] = await db.select({ name: schema.project.name }).from(schema.project)
-      .where(and(eq(schema.project.organizationId, organizationId), eq(schema.project.id, projectId))).limit(1);
-    for (const g of invited) {
+  const [project] = await db.select({ name: schema.project.name }).from(schema.project)
+    .where(and(eq(schema.project.organizationId, organizationId), eq(schema.project.id, projectId))).limit(1);
+  const notSent: string[] = [];
+  for (const g of invited) {
+    try {
       await sendMail(g.email, shareInviteMail({ who, project: project?.name ?? "", url: `${origin}/s/${g.token}` }, await localeForEmail(g.email)));
+    } catch (err) {
+      log.warn("share.invite_not_sent", { ref: g.id, err });
+      notSent.push(g.email);
     }
-  });
+  }
+  return notSent;
 }
 
 export async function makeShare(projectId: string, input: { mode: "clean" | "full"; access: ShareAccess; label: string; subtitle?: string; itemIds: string[] | null; emails: string[] }) {
-  return withCtx(async (ctx) => {
+  return withCtx(async (ctx): Promise<Invited> => {
     const { links, invited } = await createShare(ctx.workspace.id, String(projectId), {
       mode: input?.mode === "full" ? "full" : "clean",
       access: input?.access === "invite" ? "invite" : "link",
@@ -41,16 +48,14 @@ export async function makeShare(projectId: string, input: { mode: "clean" | "ful
       itemIds: Array.isArray(input?.itemIds) ? input.itemIds.map(String) : null,
       emails: Array.isArray(input?.emails) ? input.emails.map(String) : [],
     }, ctx.user.id);
-    await sendInvites(ctx.workspace.id, String(projectId), invited, ctx.user.name);
-    return links;
+    return { links, notSent: await sendInvites(ctx.workspace.id, String(projectId), invited, ctx.user.name) };
   });
 }
 
 export async function inviteMore(projectId: string, shareId: string, emails: string[]) {
-  return withCtx(async (ctx) => {
+  return withCtx(async (ctx): Promise<Invited> => {
     const { links, invited } = await inviteToShare(ctx.workspace.id, String(projectId), String(shareId), Array.isArray(emails) ? emails.map(String) : []);
-    await sendInvites(ctx.workspace.id, String(projectId), invited, ctx.user.name);
-    return links;
+    return { links, notSent: await sendInvites(ctx.workspace.id, String(projectId), invited, ctx.user.name) };
   });
 }
 

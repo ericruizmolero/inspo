@@ -2617,6 +2617,7 @@ export const ui = {
       preview: (n: number, project: string): string => `${n === 1 ? "1 reference" : `${n} references`} from ${project} to comment on and like.`, subtitle: "Subtitle (optional)", subtitlePlaceholder: "Subtitle (optional): what the client should look at", links: "Links", openLink: "Open the link", who: "Who gets in", link: "With the link", invite: "Invited",
       linkHint: "Anyone with the link gets in without an account, with a random avatar.", inviteHint: "Each person gets their own link by email and comments with their name.",
       emails: "Emails", emailsPlaceholder: "ana@client.com, luis@client.com", inviteMore: "Invite", copyTheirs: "Copy their link", uninvite: "Remove",
+      notSent: (emails: string): string => `The invitation did not reach ${emails}. Copy their link and send it yourself.`,
       makeInvite: "Create and invite", refs: (n: number): string => (n === 1 ? "1 reference" : `${n} references`), whole: "The whole board",
       back: (comments: number, picks: number): string => [comments ? (comments === 1 ? "1 comment" : `${comments} comments`) : "", picks ? (picks === 1 ? "1 like" : `${picks} likes`) : ""].filter(Boolean).join(", "),
       guest: {
