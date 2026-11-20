@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useT } from "./I18nProvider";
 import { Button, Icon, TextArea } from "@/components/criterio";
 import { answerClientAsk } from "@/app/actions/client-ask";
+import MadeWithCriterio from "./MadeWithCriterio";
 import type { ClientAskView } from "@/lib/client-ask-core";
 import p from "./ClientAsk.module.css";
 
@@ -39,6 +40,7 @@ export default function ClientAsk({ token, view }: { token: string; view: Client
           </div>
         </>}
       </section>
+      <MadeWithCriterio />
     </main>
   );
 }

@@ -15,6 +15,7 @@ import VideoPlayer from "../VideoPlayer";
 import PostView from "../PostView";
 import CommentsPanel from "../CommentsPanel";
 import PersonAvatar from "../PersonAvatar";
+import MadeWithCriterio from "../MadeWithCriterio";
 import { useT } from "../I18nProvider";
 import { Heart } from "@phosphor-icons/react/ssr";
 import { useBoardRatios } from "@/hooks/use-board-ratios";
@@ -174,7 +175,8 @@ export default function ShareBoard({ token, name, subtitle, data, activity: firs
     </header>
   );
 
-  if (!items.length) return <main className="share share--board">{head}<p className="sboard__empty">{t.brand.share.boardEmpty}</p></main>;
+  const made = <MadeWithCriterio className="sboard__made" />;
+  if (!items.length) return <main className="share share--board">{head}<p className="sboard__empty">{t.brand.share.boardEmpty}</p>{made}</main>;
   return (
     <main className="share share--board">
       {head}
@@ -210,6 +212,7 @@ export default function ShareBoard({ token, name, subtitle, data, activity: firs
         />
       )}
       {error && <p className="sboard__error" role="alert">{error}</p>}
+      {made}
     </main>
   );
 }

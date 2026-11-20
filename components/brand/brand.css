@@ -548,5 +548,9 @@
 .tile__actions .sboard__like.has-likes { width: auto; padding: 0 10px; gap: 5px; border-radius: 999px; font: inherit; font-size: var(--fs-label); font-weight: 600; font-variant-numeric: tabular-nums; }
 .tile__actions .sboard__like.is-on svg { color: var(--ember); }
 @media (hover: none) { .share--board .tile__actions.is-visible { display: flex; } }
+/* "Made with Criterio": the corner across from the zoom pill, in the same chrome and height, so the cards that scroll
+   under it never cross its words */
+.share--board .sboard__made { position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 12; display: flex; align-items: center; height: 42px; padding: 0 14px; border-radius: 15px; background: var(--chrome); border: 1px solid var(--chrome-border); color: var(--chrome-text); }
+.share--board .sboard__made:hover { color: var(--chrome-ink); }
 .sboard__error { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 40; margin: 0; padding: 8px 14px; border-radius: var(--radius-md); background: var(--chrome); color: var(--chrome-ink); font-size: var(--fs-small); }
 @media (max-width: 800px) { .share-head__end { gap: 12px; } .sboard__name { max-width: 140px; } }
