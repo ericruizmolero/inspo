@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { authClient } from "@/lib/auth-client";
+import { handOverTeam } from "@/app/actions/workspace";
 import type { Workspace, SessionUser } from "@/lib/workspace-core";
 import CreateTeamDialog from "@/components/CreateTeamDialog";
 import { useT } from "@/components/I18nProvider";
@@ -75,7 +76,7 @@ export default function MembersPanel({ workspace, me, canManage, members, invita
     router.refresh();
   };
 
-  // Owner stays owner: the team's creator is not moved from here
+  // Member or admin only: the owner changes through handOver below, never from the role switch
   const setMemberRole = async (m: Member, next: "member" | "admin") => {
     setBusy(true); setError("");
     const { error: err } = await authClient.organization.updateMemberRole({ memberId: m.id, role: next, organizationId: workspace.id });
@@ -89,6 +90,15 @@ export default function MembersPanel({ workspace, me, canManage, members, invita
     const { error: err } = await authClient.organization.removeMember({ memberIdOrEmail: m.id, organizationId: workspace.id });
     setBusy(false);
     if (err) setError(err.message ?? t.team.removeFailed); else router.refresh();
+  };
+
+  // The owner makes someone else the owner and stays as an admin; who pays does not change (the confirmation says so)
+  const handOver = async (m: Member) => {
+    if (!(await confirm({ title: t.teamOwner.confirm(m.name, workspace.name), description: t.teamOwner.confirmHint(m.name), action: t.teamOwner.action }))) return;
+    setBusy(true); setError("");
+    const r = await handOverTeam(workspace.id, m.id).catch(() => null);
+    setBusy(false);
+    if (r?.ok) router.refresh(); else setError(r?.error ?? t.teamOwner.failed);
   };
 
   const roleOf = (r: string | null) => t.team.roles[(r ?? "member").split(",")[0] as keyof typeof t.team.roles] ?? r;
@@ -149,9 +159,12 @@ export default function MembersPanel({ workspace, me, canManage, members, invita
                     </span>
                   </span>
                 }
-                action={canManage && m.userId !== me.id && (
+                action={canManage && m.userId !== me.id && <>
+                  {workspace.role === "owner" && (
+                    <Button variant="quiet" size="s" onClick={() => handOver(m)} disabled={busy}>{t.teamOwner.action}</Button>
+                  )}
                   <Button variant="quiet" size="s" onClick={() => removeMember(m)} disabled={busy}>{t.team.remove}</Button>
-                )}>
+                </>}>
                 {editable ? (
                   <SegmentedControl tone="paper" size="s" choice className="theme-seg" label={t.team.roleOf(m.name)}
                     active={admin ? 1 : 0}

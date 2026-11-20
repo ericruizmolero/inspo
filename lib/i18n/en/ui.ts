@@ -1961,6 +1961,18 @@ export const ui = {
     create: "Create",
     newTeamHint: "With a library of its own. You will be the owner.",
   },
+  /** Members: the owner hands the team to another member (app/actions/workspace.ts handOverTeam) */
+  teamOwner: {
+    action: "Make owner",
+    confirm: (name: string, team: string): string => `Make ${name} the owner of ${team}?`,
+    confirmHint: (name: string): string =>
+      `${name} will be able to delete the team, and you become an admin: you can leave it like anyone else. Billing does not go with the team: the plan and its invoices stay with whoever pays them now.`,
+    failed: "The team could not be handed over",
+  },
+  /** The foot of a board or questions shared with a client (/s, /a) */
+  madeWith: {
+    link: "Made with Criterio",
+  },
   invite: {
     pageTitle: "Invitation",
     cannotAccept: "It cannot be accepted",

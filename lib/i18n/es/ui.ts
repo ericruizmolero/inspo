@@ -1943,6 +1943,16 @@ export const ui: typeof EnUi = {
     create: "Crear",
     newTeamHint: "Con su propia librería. Tú serás el propietario.",
   },
+  teamOwner: {
+    action: "Hacer propietario",
+    confirm: (name: string, team: string): string => `¿Hacer a ${name} propietario de ${team}?`,
+    confirmHint: (name: string): string =>
+      `${name} podrá eliminar el equipo, y tú pasas a admin: podrás salir como cualquiera. La facturación no se va con el equipo: el plan y sus facturas siguen a nombre de quien los paga ahora.`,
+    failed: "No se ha podido pasar el equipo",
+  },
+  madeWith: {
+    link: "Hecho con Criterio",
+  },
   invite: {
     pageTitle: "Invitación",
     cannotAccept: "No se puede aceptar",
