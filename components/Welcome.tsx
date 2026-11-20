@@ -1,8 +1,9 @@
 "use client";
 // The very first time in (Eric, 06-11, after Trove's first run): four steps, one thing per screen. The project's name,
 // its first reference, and then, both optional, the Chrome extension and an AI client over MCP: the three ways
-// criterio works (collect, keep collecting from any site, take it out to an agent). Shown only to a new account
-// with nothing saved; each optional step says "Not now" and both live on in Connectors.
+// criterio works (collect, keep collecting from any site, take it out to an agent). Shown to a new account with
+// nothing saved, and again after a reload until it ends: each step reached is kept (user.welcome_step,
+// lib/welcome-core.ts). Each optional step says "Not now" and both live on in Connectors.
 import { useEffect, useRef, useState } from "react";
 import { useT } from "./I18nProvider";
 import { Button, Icon, PromptInput } from "@/components/criterio";
@@ -12,12 +13,16 @@ import { BoardProgress, useBoardImport, type ImportBoard } from "./BoardImport";
 import ConnectDialog from "./ConnectDialog";
 import { canInstall, useExtension } from "@/hooks/use-extension";
 import { loadConnections } from "@/app/actions/mcp";
+import { saveWelcomeStep } from "@/app/actions/welcome";
+import { shownStep, stepsFor, type WelcomeAt, type WelcomeStep } from "@/lib/welcome-core";
 import type { Project } from "@/types/inspo";
 import s from "./Welcome.module.css";
 
-type Step = "name" | "first" | "extension" | "agent";
-
-export default function Welcome({ onCreateProject, onAddUrl, onImportBoard, onDone }: {
+export default function Welcome({ at, arrival, onCreateProject, onAddUrl, onImportBoard, onDone }: {
+  /** Where a reload left it (lib/welcome.ts): the step and the project it made. null starts it */
+  at: WelcomeAt | null;
+  /** A link pasted before signing up (?add=): its first reference, filled in */
+  arrival: string | null;
   /** Makes the project the steps happen in */
   onCreateProject: (name: string) => Promise<Project | null>;
   /** Saves the first reference into that project */
@@ -32,16 +37,24 @@ export default function Welcome({ onCreateProject, onAddUrl, onImportBoard, onDo
   const [installable, setInstallable] = useState(false);
   useEffect(() => { setInstallable(canInstall()); }, []);
   // The extension step only where the extension runs (Chrome on a computer)
-  const steps: Step[] = installable ? ["name", "first", "extension", "agent"] : ["name", "first", "agent"];
-  const [step, setStep] = useState<Step>("name");
-  const at = steps.indexOf(step);
-  const next = () => { const n = steps[at + 1]; if (n) setStep(n); else onDone(projectId); };
+  const steps = stepsFor(installable);
+  const [kept, setKept] = useState<WelcomeStep>(at?.step ?? "name");
+  const step = shownStep(kept, steps);
+  const index = steps.indexOf(step);
+  // Each step reached is kept, the first one included, so a reload comes back to it; the end gives it back
+  useEffect(() => { void saveWelcomeStep(kept); }, [kept]);
+  const next = () => {
+    const n = steps[index + 1];
+    if (n) { setKept(n); return; }
+    void saveWelcomeStep(null);
+    onDone(projectId);
+  };
 
   const [name, setName] = useState("");
-  const [projectId, setProjectId] = useState<string | null>(null);
+  const [projectId, setProjectId] = useState<string | null>(at?.project ?? null);
 
   // ─── First reference ─────────────────────────────────────────────────────────
-  const [raw, setRaw] = useState("");
+  const [raw, setRaw] = useState(arrival ?? "");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const { step: boardStep, run } = useBoardImport(onImportBoard);
@@ -86,7 +99,7 @@ export default function Welcome({ onCreateProject, onAddUrl, onImportBoard, onDo
       <section className={s.wrap} aria-labelledby="welcome-title">
         <ol className={s.bar}>
           {steps.map((k, i) => (
-            <li key={k} className={`${s.step}${i <= at ? ` ${s.on}` : ""}`} aria-current={i === at ? "step" : undefined}>
+            <li key={k} className={`${s.step}${i <= index ? ` ${s.on}` : ""}`} aria-current={i === index ? "step" : undefined}>
               <span className={s.num}>{String(i + 1).padStart(2, "0")}</span>
               <span>{w.steps[k].label}</span>
             </li>

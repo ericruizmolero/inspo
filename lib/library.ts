@@ -12,6 +12,7 @@ import { loadSystemSummaries } from "./system/areas";
 import { isAdmin } from "./activity";
 import { quotaStatus } from "./quota";
 import { firstSteps } from "./first-steps";
+import { welcomeAt } from "./welcome";
 import { listCommentsOf } from "./comments";
 import { listVotes } from "./polish-votes";
 import { listSuggestions } from "./suggestions";
@@ -31,7 +32,7 @@ export const PAGE = 300;
 export async function loadLibrary(user: SessionUser, ws: Workspace) {
   // Taken before reading: whatever changes while this loads is newer than `since`, and the pulse brings it
   const head = await readStamp(ws.id);
-  const [first, board, systems, members, admin, quota, bell, steps] = await Promise.all([
+  const [first, board, systems, members, admin, quota, bell, steps, welcome] = await Promise.all([
     loadPage(ws.id, null),
     boardState(ws.id),
     loadSystemSummaries(ws.id),
@@ -40,6 +41,7 @@ export async function loadLibrary(user: SessionUser, ws: Workspace) {
     quotaStatus(ws),
     bellOf(ws, user.id),
     firstSteps(user.id, ws.id),
+    welcomeAt(user.id, ws.id),
   ]);
   return {
     workspace: ws,
@@ -56,6 +58,7 @@ export async function loadLibrary(user: SessionUser, ws: Workspace) {
     isAdmin: admin,
     initialQuota: quota,
     initialFirstSteps: steps,
+    initialWelcome: welcome,
   };
 }
 

@@ -23,7 +23,7 @@ import { reportPlanLimit } from "@/components/PlanLimitNotice";
 
 /** A new reference by link, image or text: on the board at once, saved behind it, gone again with a notice if it fails.
  *  It lands where saveTargetRef says, or in `into` when the caller names the project (a card on the home) */
-export function useAddReferences({ user, workspace, t, items, setItems, setLinks, setThumbMap, saveTargetRef, refreshSystem, setSystem, watch, cardCopy, projectFailed, importBoard, router, setToast }: {
+export function useAddReferences({ user, workspace, t, items, setItems, setLinks, setThumbMap, saveTargetRef, refreshSystem, setSystem, watch, cardCopy, projectFailed, importBoard, router, setToast, arrivalTaken }: {
   user: SessionUser;
   workspace: Workspace;
   t: Dict;
@@ -40,6 +40,8 @@ export function useAddReferences({ user, workspace, t, items, setItems, setLinks
   importBoard: ImportBoard;
   router: ReturnType<typeof useRouter>;
   setToast: Dispatch<SetStateAction<ToastNote | null>>;
+  /** The first run (components/Welcome.tsx) took the ?add= link as its first reference: it is not saved here too */
+  arrivalTaken: boolean;
 }) {
   // ─── Add by URL only ─────────────────────────────────────────────────────────
   // The card appears instantly with the domain; the server gets the real name
@@ -171,7 +173,8 @@ export function useAddReferences({ user, workspace, t, items, setItems, setLinks
   }, [user, watch, refreshSystem, t, saveTargetRef, setItems, setLinks, setToast]);
 
   // A guest who pasted a URL on the start canvas comes back from login with ?add=<url>:
-  // it saves itself and its DESIGN.md opens, as if pasted from inside.
+  // it saves itself and its DESIGN.md opens, as if pasted from inside. A new account's first run takes it instead,
+  // filled in as its first reference (arrivalTaken), and here the param is only removed.
   // The param is removed with the Next router, not history.replaceState: the router
   // keeps its own URL and, on a workspace switch (router.refresh + remount), it
   // restored it with ?add= and the site got added to the second workspace too.
@@ -187,6 +190,7 @@ export function useAddReferences({ user, workspace, t, items, setItems, setLinks
     autoAdded.current = true;
     params.delete("add");
     router.replace(window.location.pathname + (params.size ? `?${params}` : ""), { scroll: false });
+    if (arrivalTaken) return;
     const DONE_KEY = "inspo:auto-added";
     let done = "";
     try { done = sessionStorage.getItem(DONE_KEY) ?? ""; } catch { /* no storage */ }

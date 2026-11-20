@@ -116,6 +116,7 @@ export const actions: Record<string, Surface> = {
     },
   },
   "action:app/actions/first-steps.ts#hideFirstStepsList": { exempt: "the signed-in user's own row, no workspace id" },
+  "action:app/actions/welcome.ts#saveWelcomeStep": { exempt: "the signed-in user's own row, no workspace id" },
   "action:app/actions/first-steps.ts#criterioExported": {
     probe: async (fx) => {
       const { criterioExported } = await import("@/app/actions/first-steps");

@@ -87,6 +87,7 @@ import FirstSteps from "./FirstSteps";
 import ConnectDialog from "./ConnectDialog";
 import { hideFirstStepsList, loadFirstSteps } from "@/app/actions/first-steps";
 import type { FirstSteps as FirstStepsValue } from "@/lib/first-steps-core";
+import { arrivalFor, opensWelcome, type WelcomeAt } from "@/lib/welcome-core";
 import { replaceUrl } from "@/lib/url-history";
 import { failureOf } from "@/lib/plan-limit";
 import { reportPlanLimit } from "./PlanLimitNotice";
@@ -137,6 +138,7 @@ export default function InspoClient({
   isAdmin = false,
   initialQuota = null,
   initialFirstSteps = null,
+  initialWelcome = null,
   initialPolishVotes = [],
 }: {
   /** The library's newest page; the rest is asked for as soon as the board is up (lib/library.ts loadPage) */
@@ -149,6 +151,8 @@ export default function InspoClient({
   initialQuota?: QuotaView | null;
   /** Where this person is on the way to the first criterio.md (lib/first-steps.ts); null once hidden or walked */
   initialFirstSteps?: FirstStepsValue | null;
+  /** The first run under way, where a reload picks it up (lib/welcome.ts); null when it is not */
+  initialWelcome?: WelcomeAt | null;
   /** Every polish vote of the workspace's projects (lib/polish-votes.ts) */
   initialPolishVotes?: PolishVote[];
   initialProjects?: Project[];
@@ -389,7 +393,14 @@ export default function InspoClient({
   const { createProject, importBoard, renameProject, deleteProject, duplicateProject, moveProject, toggleFiled, startSystem, fileMany, createAndFile, setClient, saveBrief } = useProjectActions({ t, projects, setProjects, links, setLinks, space, currentProject, confirm, setParams, setSpace, setItems, setToast, watch, refreshSystem, voteWrites, setVotes, projectFailed });
   const { handleThumbnailUpload, cardCopy, handleThumbnailRemove } = thumbnailActions(setThumbMap);
   const router = useRouter();
-  const { isDuplicate, addByUrl, addByUpload, addByText, arrivingBoard } = useAddReferences({ user, workspace, t, items, setItems, setLinks, setThumbMap, saveTargetRef, refreshSystem, setSystem, watch, cardCopy, projectFailed, importBoard, router, setToast });
+  // The very first time in (components/Welcome.tsx, lib/welcome-core.ts): a new account with nothing saved and no
+  // project, or one that left it half way, which picks it up at the step it reached. A link pasted before signing up
+  // (?add=) is its first reference. It stays until walked, even once the project and its first reference exist.
+  // In development ?welcome=1 shows it to any account, to review it
+  const [welcome, setWelcome] = useState(() => opensWelcome({ at: initialWelcome, stepsOn: initialFirstSteps !== null, items: items.length, projects: projects.length })
+    || (process.env.NODE_ENV !== "production" && sp.get("welcome") === "1"));
+  const [arrival] = useState(() => arrivalFor(welcome, initialWelcome?.step ?? "name", sp.get("add")));
+  const { isDuplicate, addByUrl, addByUpload, addByText, arrivingBoard } = useAddReferences({ user, workspace, t, items, setItems, setLinks, setThumbMap, saveTargetRef, refreshSystem, setSystem, watch, cardCopy, projectFailed, importBoard, router, setToast, arrivalTaken: arrival !== null });
 
   // ─── Remove card ─────────────────────────────────────────────────────────────
   // Removed instantly; if the server fails, it goes back in place with a notice.
@@ -413,11 +424,6 @@ export default function InspoClient({
   // The first steps sit beside the plan meter and are read again with it, and on every move between views
   const [firstSteps, setFirstSteps] = useState<FirstStepsValue | null>(initialFirstSteps);
   const stepsOn = firstSteps !== null;
-  // The very first time in (components/Welcome.tsx): a new account with nothing saved and no project, not arriving
-  // with a site pasted before signing in (?add= saves it on its own). It stays until walked, even once the project
-  // and its first reference exist. In development ?welcome=1 shows it to any account, to review it
-  const [welcome, setWelcome] = useState(() => (initialFirstSteps !== null && items.length === 0 && projects.length === 0 && !sp.get("add"))
-    || (process.env.NODE_ENV !== "production" && sp.get("welcome") === "1"));
   const loadSteps = useCallback(() => { void loadFirstSteps().then((r) => { if (r.ok) setFirstSteps(r.data); }); }, []);
   const loadQuota = useCallback(() => {
     fetch("/api/plan").then((r) => (r.ok ? r.json() : null)).then((q) => { if (q) setQuota(q); }).catch(() => {});
@@ -977,6 +983,8 @@ export default function InspoClient({
 
         {welcome ? (
           <Welcome
+            at={initialWelcome}
+            arrival={arrival}
             onCreateProject={createProject}
             onAddUrl={async (web, projectId) => { await addByUrl({ web, type: typeFromUrl(web), note: "" }, projectId); }}
             onImportBoard={importBoard}
