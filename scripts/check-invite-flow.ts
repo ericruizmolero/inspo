@@ -80,7 +80,8 @@ async function main() {
   const eva = await invite(owner, orgId, mail("eva"));
   assert.equal(eva.status, 200, "the fifth seat should fit");
   const full = await invite(owner, orgId, mail("extra"));
-  assert.equal(full.status, 403, "with 4 members and 1 invitation the plan is full");
+  // A full plan is a plan limit: 402 with the plan that lifts it, which the app turns into the upgrade notice
+  assert.equal(full.status, 402, "with 4 members and 1 invitation the plan is full");
   assert.match(String(full.body.message), /1 invitation not yet accepted/);
 
   // 3. Two extra invitations for the last seat, inserted by hand: the state that

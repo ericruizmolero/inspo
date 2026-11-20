@@ -246,9 +246,10 @@ export const auth = betterAuth({
         // Accepting an invitation does NOT go through beforeAddMember: Better Auth uses these two
         // hooks for that path. Only members count here, because the pending invitation
         // becomes the member who joins.
+        // The one accepting can't change someone else's plan, so this is a plain refusal for them, not the upgrade notice
         async beforeAcceptInvitation({ invitation, organization: org }) {
           const full = await memberLimit(invitation.organizationId, await planFromOrg(org));
-          if (full) throw planRefusal(full);
+          if (full) throw new APIError("FORBIDDEN", { message: (await getErrors()).teamFull });
         },
         // Two people can accept the last seat at once: both pass the check above
         // before either gets inserted. Better Auth does the insert, so we can't put

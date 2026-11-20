@@ -1,6 +1,7 @@
 // Errors the server returns and the UI renders as is.
 // Same keys in lib/i18n/es/errors.ts.
 export const errors = {
+  teamFull: "This team has no free seats on its plan. Your invitation is still live: tell whoever invited you to free a seat, or move up a plan.",
   seatTaken: "Someone took the last seat on the plan before you. Your invitation is still live: tell whoever invited you to free a seat, or move up a plan.",
   incompleteAnswer: "The model returned an incomplete answer",
   adminsCanRegenerate: "Only admins can regenerate",
