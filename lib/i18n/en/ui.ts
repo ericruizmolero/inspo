@@ -2786,14 +2786,27 @@ export const ui = {
     exportAction: "Download",
     exportAdmins: "Only owners and admins can export it.",
     importTitle: "Import",
-    importHint: "An export from Criterio becomes a new workspace on this plan, with you as its owner. Comments come in under your name, each one led by its author's.",
+    importHint: (name: string): string =>
+      `An export from Criterio adds its references, projects, systems and files to ${name}. Comments come in under your name, each one led by its author's, and a project whose name is taken gets a number.`,
+    importTeamHint: "Or bring it in as a new workspace on this plan, with you as its owner.",
     importAction: "Choose a zip",
+    importAsTeam: "As a new workspace",
     importing: "Importing…",
-    importPayer: "Only the person who pays for this plan can import into it.",
+    importAdmins: "Only owners and admins can import into it.",
+    imported: (items: number, projects: number, name: string): string =>
+      `Added ${items === 1 ? "1 reference" : `${items} references`} and ${projects === 1 ? "1 project" : `${projects} projects`} to ${name}.`,
     importedName: "Imported workspace",
+    importItemsFull: (need: number, room: number, plan: string): string =>
+      `This export brings ${need === 1 ? "1 reference" : `${need} references`} and the ${plan} plan has ${room ? `room for ${room} more` : "no room for more"} here. Move up a plan to bring them all.`,
+    importProjectsFull: (need: number, room: number, plan: string): string =>
+      `This export brings ${need === 1 ? "1 project" : `${need} projects`} and the ${plan} plan has ${room ? `room for ${room} more` : "no room for more"} here. Move up a plan to bring them all.`,
+    importStorageFull: (need: string, room: string, plan: string): string =>
+      `This export brings ${need} GB of files and the ${plan} plan has room for ${room} GB more here. Move up a plan to bring them all.`,
+    tooManyFiles: (files: number, max: number): string => `This export has ${files} files and one import copies up to ${max}. Nothing was imported.`,
+    tooSlow: "Copying the files took too long, so nothing was imported. Try again in a while.",
     notAnExport: "This file is not an export from Criterio, or it is damaged.",
     tooLarge: "This zip is over 5 GB, too large to import.",
-    importFailed: "Could not import it. Nothing was created.",
+    importFailed: "Could not import it. Nothing was added.",
     letGo: "Let go",
     letGoConfirm: (name: string): string => `Let ${name} go?`,
     letGoHint: (name: string, plan: string): string =>

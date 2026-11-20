@@ -14,12 +14,12 @@ import OutputLanguageSwitch from "@/components/OutputLanguageSwitch";
 import PersonAvatar from "@/components/PersonAvatar";
 import { reportPlanLimit } from "@/components/PlanLimitNotice";
 import { setActiveWorkspace } from "@/components/workspace-switch";
-import { importWorkspaceZip } from "@/lib/workspace-import-client";
+import { importWorkspaceZip, type ImportInto } from "@/lib/workspace-import-client";
 
-export default function WorkspacePanel({ workspace, workspaces, me, canManage, payer }: {
+export default function WorkspacePanel({ workspace, workspaces, me, canManage, roomForTeam }: {
   workspace: Workspace; workspaces: Workspace[]; me: SessionUser; canManage: boolean;
-  /** The person pays for the open workspace's plan: an import lands in it */
-  payer: boolean;
+  /** The person pays for the open workspace's plan and it holds another workspace: an import can be a new team */
+  roomForTeam: boolean;
 }) {
   const { t } = useT();
   const router = useRouter();
@@ -53,7 +53,7 @@ export default function WorkspacePanel({ workspace, workspaces, me, canManage, p
         </SettingsWindow>
         {defaults}
         <ExportData workspace={workspace} canExport={canManage} />
-        <ImportData payer={payer} />
+        <ImportData workspace={workspace} canImport={canManage} roomForTeam={roomForTeam} />
         <Spaces workspace={workspace} workspaces={workspaces} me={me} />
       </div>
     );
@@ -112,7 +112,7 @@ export default function WorkspacePanel({ workspace, workspaces, me, canManage, p
 
       {defaults}
       <ExportData workspace={workspace} canExport={canManage} />
-      <ImportData payer={payer} />
+      <ImportData workspace={workspace} canImport={canManage} roomForTeam={roomForTeam} />
       <Spaces workspace={workspace} workspaces={workspaces} me={me} />
     </div>
   );
@@ -131,36 +131,47 @@ function ExportData({ workspace, canExport }: { workspace: Workspace; canExport:
   );
 }
 
-/** An export's zip as a new workspace on this plan (lib/workspace-import-client.ts), which then opens. Only whoever pays
- *  for the plan; the rest see why the button does nothing for them */
-function ImportData({ payer }: { payer: boolean }) {
+/** An export's zip brought into the open space (lib/workspace-import-client.ts) by whoever manages it, and the window
+ *  says what came in. Second, as a new team on this plan, which then opens: only for whoever pays for a plan with room
+ *  for another workspace. Members see why the button does nothing for them */
+function ImportData({ workspace, canImport, roomForTeam }: { workspace: Workspace; canImport: boolean; roomForTeam: boolean }) {
   const { t } = useT();
   const d = t.workspaceData;
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
-  const [busy, setBusy] = useState(false);
+  const into = useRef<ImportInto>("open");
+  const [busy, setBusy] = useState<ImportInto | null>(null);
   const [error, setError] = useState("");
+  const [done, setDone] = useState("");
 
+  const choose = (where: ImportInto) => { into.current = where; fileRef.current?.click(); };
   const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
-    setBusy(true); setError("");
+    const where = into.current;
+    setBusy(where); setError(""); setDone("");
     try {
-      const made = await importWorkspaceZip(file);
-      await setActiveWorkspace(made.id);
-      router.push("/"); router.refresh();
+      const made = await importWorkspaceZip(file, where);
+      if (where === "new") {
+        await setActiveWorkspace(made.id);
+        router.push("/"); router.refresh();
+        return;
+      }
+      setDone(d.imported(made.items, made.projects, made.name));
+      router.refresh();
     } catch (err) {
       if (!reportPlanLimit(err)) setError(err instanceof Error && err.message ? err.message : d.importFailed);
-      setBusy(false);
     }
+    setBusy(null);
   };
 
   return (
-    <SettingsWindow title={d.importTitle} description={d.importHint}
-      note={error ? <span className="cr-field-hint is-error" role="alert">{error}</span> : !payer ? d.importPayer : undefined}
+    <SettingsWindow title={d.importTitle} description={roomForTeam ? `${d.importHint(workspace.name)} ${d.importTeamHint}` : d.importHint(workspace.name)}
+      note={error ? <span className="cr-field-hint is-error" role="alert">{error}</span> : done ? <span role="status">{done}</span> : !canImport ? d.importAdmins : undefined}
       actions={<>
-        <Button size="s" onClick={() => fileRef.current?.click()} disabled={!payer || busy}>{busy ? d.importing : d.importAction}</Button>
+        <Button size="s" onClick={() => choose("open")} disabled={!canImport || !!busy}>{busy === "open" ? d.importing : d.importAction}</Button>
+        {roomForTeam && <Button size="s" onClick={() => choose("new")} disabled={!!busy}>{busy === "new" ? d.importing : d.importAsTeam}</Button>}
         <input ref={fileRef} type="file" accept=".zip,application/zip" hidden onChange={onFile} />
       </>} />
   );

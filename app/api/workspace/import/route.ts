@@ -1,37 +1,44 @@
 import { NextRequest } from "next/server";
-import { requireCtx, isResponse, accountOf, HttpError, httpErrorResponse, type Ctx } from "@/lib/workspace";
-import { importWorkspace, importPrefix, newImportKey, storedZip, type ImportInto } from "@/lib/workspace-import";
-import { bufferSource } from "@/lib/zip";
+import { requireCtx, isResponse, accountOf, canManage, HttpError, httpErrorResponse, type Ctx } from "@/lib/workspace";
+import { importAsTeam, importIntoWorkspace, importPrefix, newImportKey, storedZip, type Imported } from "@/lib/workspace-import";
+import { bufferSource, type ZipSource } from "@/lib/zip";
 import { deleteFiles, listFiles, uploadUrl } from "@/lib/storage";
 import { getErrors, getT } from "@/lib/i18n";
 import { recordFailure } from "@/lib/log";
 
-// Copying every file of a large workspace into the new one
+// Copying every file of a large export into the workspace (lib/workspace-import.ts gives up in time to undo it)
 export const maxDuration = 300;
 
 /** The most R2 takes in one PUT */
 const MAX_ZIP_BYTES = 5 * 1024 ** 3;
 
-/** The plan the import joins: the open workspace's, which the person must pay for (as Settings, Plan's new workspace) */
-async function into(ctx: Ctx): Promise<ImportInto> {
-  const account = await accountOf(ctx.workspace.id);
-  if (!account || account.ownerUserId !== ctx.user.id) throw new HttpError(403, (await getT()).t.quota.notAccountOwner);
-  return { accountId: account.id, plan: account.plan, user: ctx.user };
+/** Where the zip goes, as the person may send it there: into the open workspace, which they manage, or as a new team
+ *  in the open workspace's account, which they pay for (as Settings, Plan's new workspace). Refused with 403 */
+async function importerTo(ctx: Ctx, into: string | null): Promise<(src: ZipSource) => Promise<Imported>> {
+  const { t } = await getT();
+  if (into === "new") {
+    const account = await accountOf(ctx.workspace.id);
+    if (!account || account.ownerUserId !== ctx.user.id) throw new HttpError(403, t.quota.notAccountOwner);
+    return (src) => importAsTeam(src, account, ctx.user);
+  }
+  if (!canManage(ctx.workspace.role)) throw new HttpError(403, t.workspaceData.importAdmins);
+  return (src) => importIntoWorkspace(src, ctx.workspace, ctx.user);
 }
 
-// An export's zip (lib/workspace-export.ts) becomes a new workspace on the open workspace's plan (lib/workspace-import.ts).
-// Three ways in, as /api/media takes an upload (lib/workspace-import-client.ts drives them):
+// An export's zip (lib/workspace-export.ts) brought into the open workspace, or as a new team on its plan with
+// ?into=new (lib/workspace-import.ts). Three ways in, as /api/media takes an upload (lib/workspace-import-client.ts
+// drives them), each refused up front when the person may not import there:
 // - JSON { size } → { key, put }: the browser PUTs the zip to `put`, straight to R2, under the person's own imports/
 //   folder; a function takes at most 4.5 MB on Vercel. `put` is null when files are on disk (development).
-// - JSON { key } → { id, name }: imports that upload, read from R2 by ranges, and deletes it.
-// - the zip as the body (application/zip) → { id, name }: on disk, or a zip small enough for a function.
+// - JSON { key } → Imported: imports that upload, read from R2 by ranges, and deletes it.
+// - the zip as the body (application/zip) → Imported: on disk, or a zip small enough for a function.
 export async function POST(req: NextRequest) {
   const ctx = await requireCtx();
   if (isResponse(ctx)) return ctx;
   const errors = await getErrors();
   let upload: string | null = null;
   try {
-    const target = await into(ctx);
+    const importTo = await importerTo(ctx, req.nextUrl.searchParams.get("into"));
     if (req.headers.get("content-type")?.startsWith("application/json")) {
       const body = (await req.json().catch(() => ({}))) as { size?: unknown; key?: unknown };
       if (typeof body.key === "string") {
@@ -40,7 +47,7 @@ export async function POST(req: NextRequest) {
         upload = body.key;
         const src = await storedZip(upload);
         if (!src) return Response.json({ error: errors.missingFile }, { status: 404 });
-        return Response.json(await importWorkspace(src, target), { status: 201 });
+        return Response.json(await importTo(src), { status: 201 });
       }
       const size = Number(body.size);
       if (!Number.isInteger(size) || size <= 0) return Response.json({ error: errors.missingFile }, { status: 400 });
@@ -52,7 +59,7 @@ export async function POST(req: NextRequest) {
     }
     const zip = Buffer.from(await req.arrayBuffer());
     if (!zip.length) return Response.json({ error: errors.missingFile }, { status: 400 });
-    return Response.json(await importWorkspace(bufferSource(zip), target), { status: 201 });
+    return Response.json(await importTo(bufferSource(zip)), { status: 201 });
   } catch (e) {
     if (e instanceof HttpError) return httpErrorResponse(e);
     void recordFailure("storage", "workspace import", e);

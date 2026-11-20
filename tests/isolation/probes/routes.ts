@@ -1,4 +1,5 @@
 import { expect } from "vitest";
+import { NextRequest } from "next/server";
 import { and, count, eq } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { files } from "../../harness";
@@ -571,6 +572,23 @@ export const routes: Record<string, Surface> = {
       const slot = await POST(request("/api/workspace/import", { method: "POST", body: { size: 10 } }));
       expect(((await slot.json()) as { key: string }).key.startsWith(`imports/${fx.b.owner.id}/`), "B's upload goes to B's own folder").toBe(true);
       files.delete(aKey);
+
+      // An import lands in the workspace that is open, and B cannot have A's open
+      const marker = `${fx.tag}-imported`;
+      const exported = zip([{ name: "workspace.json", data: Buffer.from(JSON.stringify({
+        version: 1, workspace: { id: `${fx.tag}-elsewhere`, name: marker },
+        items: [], projects: [{ id: `${fx.tag}-x`, name: marker, createdAt: new Date(), updatedAt: new Date() }], projectItems: [], systems: [], systemAreas: [],
+        comments: { items: [], areas: [] }, revisions: { design: [], areas: [] },
+      })) }]);
+      const aProjects = await projectsOf(fx.a.team);
+      for (const into of ["open", "new"]) {
+        asB(fx, fx.a.team);
+        const res = await POST(new NextRequest(`http://localhost/api/workspace/import?into=${into}`, { method: "POST", headers: { "content-type": "application/zip" }, body: new Uint8Array(exported) }));
+        if (res.status === 201) expect(((await res.json()) as { id: string }).id, `B's import (${into}) lands outside A`).not.toBe(fx.a.team);
+        else await expectDenied(fx, res, `B imports into A (${into})`);
+      }
+      expect(await projectsOf(fx.a.team), "nothing added to A").toBe(aProjects);
+      expect(await db.select({ id: schema.project.id }).from(schema.project).where(and(eq(schema.project.organizationId, fx.a.team), eq(schema.project.name, marker))), "no project of the zip in A").toEqual([]);
     },
   },
 

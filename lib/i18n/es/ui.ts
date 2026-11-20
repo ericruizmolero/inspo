@@ -2762,14 +2762,27 @@ export const ui: typeof EnUi = {
     exportAction: "Descargar",
     exportAdmins: "Solo lo exportan el propietario y los admins.",
     importTitle: "Importar",
-    importHint: "Una exportación de Criterio pasa a ser un espacio nuevo en este plan, contigo como propietario. Los comentarios entran a tu nombre, cada uno con el de su autor delante.",
+    importHint: (name: string): string =>
+      `Una exportación de Criterio añade a ${name} sus referencias, proyectos, sistemas y archivos. Los comentarios entran a tu nombre, cada uno con el de su autor delante, y un proyecto cuyo nombre ya existe lleva un número.`,
+    importTeamHint: "O tráela como un espacio nuevo en este plan, contigo como propietario.",
     importAction: "Elegir un zip",
+    importAsTeam: "Como espacio nuevo",
     importing: "Importando…",
-    importPayer: "Solo importa quien paga este plan.",
+    importAdmins: "Solo importan el propietario y los admins.",
+    imported: (items: number, projects: number, name: string): string =>
+      `Añadido a ${name}: ${items === 1 ? "1 referencia" : `${items} referencias`} y ${projects === 1 ? "1 proyecto" : `${projects} proyectos`}.`,
     importedName: "Espacio importado",
+    importItemsFull: (need: number, room: number, plan: string): string =>
+      `Esta exportación trae ${need === 1 ? "1 referencia" : `${need} referencias`} y el plan ${plan} ${room ? `tiene sitio para ${room} más` : "no tiene sitio para más"} aquí. Amplía el plan para traerlas todas.`,
+    importProjectsFull: (need: number, room: number, plan: string): string =>
+      `Esta exportación trae ${need === 1 ? "1 proyecto" : `${need} proyectos`} y el plan ${plan} ${room ? `tiene sitio para ${room} más` : "no tiene sitio para más"} aquí. Amplía el plan para traerlos todos.`,
+    importStorageFull: (need: string, room: string, plan: string): string =>
+      `Esta exportación trae ${need} GB de archivos y el plan ${plan} tiene sitio para ${room} GB más aquí. Amplía el plan para traerlos todos.`,
+    tooManyFiles: (files: number, max: number): string => `Esta exportación tiene ${files} archivos y una importación copia hasta ${max}. No se ha importado nada.`,
+    tooSlow: "Copiar los archivos ha tardado demasiado, así que no se ha importado nada. Vuelve a probar dentro de un rato.",
     notAnExport: "Este archivo no es una exportación de Criterio, o está dañado.",
     tooLarge: "Este zip pasa de 5 GB, demasiado para importarlo.",
-    importFailed: "No se ha podido importar. No se ha creado nada.",
+    importFailed: "No se ha podido importar. No se ha añadido nada.",
     letGo: "Soltar",
     letGoConfirm: (name: string): string => `¿Soltar ${name}?`,
     letGoHint: (name: string, plan: string): string =>
