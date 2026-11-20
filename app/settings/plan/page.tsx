@@ -7,11 +7,12 @@ import { usageSummary } from "@/lib/usage";
 import UsageCard from "../_components/UsageCard";
 import PlanWorkspaces from "../_components/PlanWorkspaces";
 import { countMembers, quotaStatus } from "@/lib/quota";
-import { PLANS, PLANS_CONTACT, isPaid, planOf } from "@/lib/plans";
+import { planOf } from "@/lib/plans";
 import { fmtGb } from "@/lib/room";
-import { getT, fmtDate, fmtPrice, type Dict } from "@/lib/i18n";
-import { Button, FieldRow, Progress, ReadOnlyField, SettingsWindow } from "@/components/criterio";
-import { marketingHref } from "@/lib/site";
+import { getT, fmtDate, type Dict } from "@/lib/i18n";
+import { FieldRow, Progress, SettingsWindow } from "@/components/criterio";
+import { planAsk } from "@/lib/plan-requests";
+import PlanChoice from "../_components/PlanChoice";
 
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -62,15 +63,13 @@ async function planWorkspaces(ctx: Ctx) {
 export default async function PlanPage() {
   const [ctx, { locale, t }] = await Promise.all([getCtxOrLogin("/settings/plan"), getT()]);
   const ws = ctx.workspace;
-  const [q, usage, members, account] = await Promise.all([quotaStatus(ws), usageSummary(ws.id, 30), listMembers(ws.id), planWorkspaces(ctx)]);
+  const [q, usage, members, account, ask] = await Promise.all([
+    quotaStatus(ws), usageSummary(ws.id, 30), listMembers(ws.id), planWorkspaces(ctx), planAsk(ws.billingAccountId, ctx.user.id),
+  ]);
   const agency = planOf("agency");
-  const plan = planOf(q.plan);
-  // The next plan up, to ask for in one click; the top plan has none
-  const next = PLANS.find((p) => p.price.month > plan.price.month);
   const resets = fmtDate(q.resetsAt, locale, { day: "numeric", month: "long" });
   const planName = t.plans.items[q.plan].name;
   const overSeats = q.members.limit !== null && q.members.used > q.members.limit;
-  const mailto = (name: string) => `mailto:${PLANS_CONTACT}?subject=${encodeURIComponent(t.plans.mailSubject(name, ws.name))}`;
 
   return (
     <>
@@ -78,17 +77,7 @@ export default async function PlanPage() {
       <SettingsHeading title={t.settings.sections.plan} lead={t.settings.leads.plan} />
 
       <div className="page__body">
-        <SettingsWindow title={t.plans.planTitle} note={t.plans.foot}>
-          <FieldRow label={t.plans.yourPlan} htmlFor="current-plan"
-            action={
-              <>
-                {next && <Button size="s" href={mailto(t.plans.items[next.key].name)}>{t.plans.moveUpTo(t.plans.items[next.key].name)}</Button>}
-                <Button variant="quiet" size="s" href={marketingHref("/pricing/", locale)}>{t.plans.compare}</Button>
-              </>
-            }>
-            <ReadOnlyField id="current-plan" value={isPaid(plan) ? t.plans.currentLine(planName, fmtPrice(plan.price.month, locale)) : planName} />
-          </FieldRow>
-        </SettingsWindow>
+        <PlanChoice current={q.plan} owner={ask.owner} payer={ask.payer} pending={ask.pending} />
 
         <SettingsWindow title={t.plans.usageTitle}
           description={q.workspaces.used > 1 ? <>{t.plans.resets(planName, resets)}. {t.plans.aiShared(q.workspaces.used)}</> : t.plans.resets(planName, resets)}

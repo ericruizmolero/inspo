@@ -7,7 +7,7 @@ import assert from "node:assert/strict";
 import { eq } from "drizzle-orm";
 import { db, schema } from "../lib/db";
 import { setAccountPlan } from "../lib/workspace-core";
-import { memberLimitMessage, overCapacity, memberRank, assertQuota, countPendingInvitations } from "../lib/quota";
+import { memberLimit, overCapacity, memberRank, assertQuota, countPendingInvitations } from "../lib/quota";
 
 const id = () => crypto.randomUUID().replace(/-/g, "").slice(0, 24);
 const TAG = `seatcheck-${id().slice(0, 8)}`;
@@ -50,14 +50,14 @@ async function main() {
   // 1. Unaccepted invitations take a seat
   for (let i = 1; i <= 4; i++) await addInvitation(`${TAG}-inv${i}@example.test`, new Date(Date.now() + 7 * DAY), owner);
   assert.equal(await countPendingInvitations(orgId), 4, "4 pending invitations");
-  assert.equal(await memberLimitMessage(orgId, "studio"), null, "not counting pending ones there is still room");
-  const full = await memberLimitMessage(orgId, "studio", { includePending: true });
+  assert.equal((await memberLimit(orgId, "studio"))?.message ?? null, null, "not counting pending ones there is still room");
+  const full = (await memberLimit(orgId, "studio", { includePending: true }))?.message;
   assert.ok(full, "1 member + 4 invitations fill the Studio plan");
   assert.match(full!, /4 invitations not yet accepted/, "the message says how many invitations there are");
 
   // 2. Resending an invitation doesn't take an extra seat
   assert.equal(
-    await memberLimitMessage(orgId, "studio", { includePending: true, exceptEmail: `${TAG}-INV1@example.test` }),
+    (await memberLimit(orgId, "studio", { includePending: true, exceptEmail: `${TAG}-INV1@example.test` }))?.message ?? null,
     null, "resending to an already invited address still fits",
   );
 
@@ -72,7 +72,7 @@ async function main() {
   const over = await overCapacity(orgId, "free");
   assert.deepEqual(over, { members: 5, limit: 2, plan: "free" }, "5 people don't fit in Free");
   await assertQuota({ id: orgId, plan: "free", billingAccountId: orgId }, "ai");
-  assert.match((await memberLimitMessage(orgId, "free", { includePending: true }))!, /allows 2 people/, "a new invitation is refused");
+  assert.match((await memberLimit(orgId, "free", { includePending: true }))!.message, /allows 2 people/, "a new invitation is refused");
 
   // 5. When two accept the last seat at once, the one left over is always the later one, never both
   const ordered = await db.select({ id: schema.member.id, createdAt: schema.member.createdAt })

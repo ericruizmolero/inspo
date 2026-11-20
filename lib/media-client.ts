@@ -1,6 +1,7 @@
 // Uploading an image (or GIF) that will be an inspo of its own, from the browser.
 // It is uploaded whole, not downscaled: a GIF would lose its animation.
-// Errors come out as codes (t.errors.<code>), like lib/image-client.ts.
+// Errors come out as codes (t.errors.<code>), like lib/image-client.ts, or as a plan's limit (lib/plan-limit.ts).
+import { failureOf } from "./plan-limit";
 
 export const MEDIA_ACCEPT = "image/png,image/jpeg,image/webp,image/gif,image/avif";
 const TYPES = new Set(MEDIA_ACCEPT.split(","));
@@ -33,7 +34,7 @@ export async function uploadMedia(file: File): Promise<string> {
     body: JSON.stringify({ type: file.type, size: file.size }),
   });
   const slot = await ask.json().catch(() => ({}));
-  if (!ask.ok || !slot.url) throw new Error(slot.error ?? `Error ${ask.status}`);
+  if (!ask.ok || !slot.url) throw failureOf(slot, `Error ${ask.status}`);
   if (slot.put) {
     // Straight to the storage. If the browser cannot get there (the bucket's CORS rules, a blocked request: it shows
     // as "Failed to fetch"), a file small enough for a function goes through the app instead of failing
@@ -50,6 +51,6 @@ export async function uploadMedia(file: File): Promise<string> {
   fd.append("file", file);
   const res = await fetch("/api/media", { method: "POST", body: fd });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok || !data.url) throw new Error(data.error ?? `Error ${res.status}`);
+  if (!res.ok || !data.url) throw failureOf(data, `Error ${res.status}`);
   return data.url as string;
 }

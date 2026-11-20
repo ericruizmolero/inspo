@@ -36,6 +36,8 @@ import ShareDialog from "./brand/ShareDialog";
 import { fileUrl } from "@/lib/files-path";
 import { mediaKindOf } from "@/lib/url";
 import "./SystemView.css";
+import { failureOf } from "@/lib/plan-limit";
+import { reportPlanLimit } from "./PlanLimitNotice";
 
 // Three ways to see the project, in one row of tabs: criterio.md as the Markdown it is, the same file set as a
 // document, and the brand as a presentation. The document look is not remembered: the file opens as Markdown,
@@ -114,6 +116,8 @@ export default function SystemView({ onHistory, onConnect, project, system, onSy
   const [running, setRunning] = useState(false);
   const [busy, setBusy] = useState<Set<SystemArea>>(() => new Set());
   const [error, setError] = useState("");
+  // A plan's limit goes to the upgrade notice; anything else is said here
+  const fail = (e: unknown) => { if (!reportPlanLimit(e)) setError(e instanceof Error ? e.message : String(e)); };
   const [copied, setCopied] = useState(false);
   const [open, setOpen] = useState<SystemArea | null>(null);
   useEffect(() => { if (focusArea) setOpen(focusArea.area); }, [focusArea]);
@@ -141,7 +145,7 @@ export default function SystemView({ onHistory, onConnect, project, system, onSy
   const post = async (path: string, body: object) => {
     const res = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     const json = await res.json().catch(() => ({})) as ProjectSystem & { error?: string };
-    if (!res.ok || json.error) throw new Error(json.error || t.system.failed);
+    if (!res.ok || json.error) throw failureOf(json, t.system.failed);
     setSystem(json);
   };
   // Both passes: the board read into the areas, then the brand's values from what the areas now say. Throws
@@ -155,11 +159,11 @@ export default function SystemView({ onHistory, onConnect, project, system, onSy
   };
   const run = useCallback(async (focus?: SystemFocus) => {
     setError("");
-    try { await runAll(focus); } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
+    try { await runAll(focus); } catch (e) { fail(e); }
   }, [project.id, t, setSystem]); // eslint-disable-line react-hooks/exhaustive-deps
   const fillBrand = async () => {
     setRunning(true); setPhase("brand"); setError("");
-    try { await post("/api/system/brand", { projectId: project.id }); } catch (e) { setError(e instanceof Error ? e.message : String(e)); } finally { setRunning(false); setPhase(null); }
+    try { await post("/api/system/brand", { projectId: project.id }); } catch (e) { fail(e); } finally { setRunning(false); setPhase(null); }
   };
 
   // Fresh on open. A project with references and no reading reads itself; a brand an older prompt drew is drawn again, free
@@ -167,7 +171,7 @@ export default function SystemView({ onHistory, onConnect, project, system, onSy
     let alive = true;
     void loadSystem(project.id).then((r) => {
       if (!alive) return;
-      if (!r.ok) { setError(r.error); if (!system) setSystem(emptySystem(project.id)); return; }
+      if (!r.ok) { fail(failureOf(r)); if (!system) setSystem(emptySystem(project.id)); return; }
       setSystem(r.data.system);
       if (!r.data.system.run && r.data.board.itemIds.length) void run();
       else if (r.data.brandStale) void fillBrand();
@@ -186,9 +190,9 @@ export default function SystemView({ onHistory, onConnect, project, system, onSy
     setBusy((s) => new Set([...s, area])); setError("");
     try {
       const r = await fn().catch((e) => ({ ok: false as const, error: String(e) }));
-      if (!r.ok) throw new Error(r.error);
+      if (!r.ok) throw failureOf(r);
       setSystem(r.data);
-    } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
+    } catch (e) { fail(e); }
     finally { setBusy((s) => { const n = new Set(s); n.delete(area); return n; }); }
   };
 

@@ -12,10 +12,12 @@ import { INVITES_PER_PERSON, signupModeState } from "@/lib/access";
 import { listTeamInvites, listWaitlist, waveMetrics } from "@/lib/waves";
 import AdminPanel, { type AdminSection } from "../AdminPanel";
 import WaitlistPanel from "../WaitlistPanel";
+import PlansPanel from "../PlansPanel";
+import { listOpenPlanRequests } from "@/lib/plan-requests";
 import UpdatedAt from "../UpdatedAt";
 import PeriodSwitch from "../PeriodSwitch";
 
-const SECTIONS: AdminSection[] = ["overview", "usage", "people", "feedback", "failures", "access", "waitlist"];
+const SECTIONS: AdminSection[] = ["overview", "usage", "people", "feedback", "failures", "access", "waitlist", "plans"];
 const DAYS = [7, 30, 90];
 
 // Opening a wave mails up to 50 people 600 ms apart, inside a server action that runs under this route
@@ -27,7 +29,7 @@ const daysOf = (dias: string | undefined) => (DAYS.includes(Number(dias)) ? Numb
 
 function leadOf(t: Dict, section: AdminSection, days: number): string {
   if (section === "overview") return t.admin.headSub(days);
-  if (section === "access" || section === "waitlist") return t.admin.leads[section];
+  if (section === "access" || section === "waitlist" || section === "plans") return t.admin.leads[section];
   return t.admin.leads[section](days);
 }
 
@@ -53,6 +55,17 @@ export default async function AdminSectionPage({ params, searchParams }: Props) 
         <ActivityPing area="admin" />
         <SettingsHeading title={t.admin.sections.waitlist} lead={leadOf(t, section, days)} />
         <WaitlistPanel waitlist={waitlist} invites={invites} waves={waves} />
+      </>
+    );
+  }
+
+  if (section === "plans") {
+    const requests = await listOpenPlanRequests();
+    return (
+      <>
+        <ActivityPing area="admin" />
+        <SettingsHeading title={t.admin.sections.plans} lead={leadOf(t, section, days)} />
+        <PlansPanel requests={requests} />
       </>
     );
   }

@@ -452,8 +452,8 @@ export const ui = {
     failed: (n: number): string => (n === 1 ? "1 could not be saved." : `${n} could not be saved.`),
     capped: "Only the first 500 came in.",
     full: (n: number): string => (n === 1
-      ? "1 left out: your plan has no more room. Move up a plan in /planes to bring it in."
-      : `${n} left out: your plan has no more room. Move up a plan in /planes to bring them in.`),
+      ? "1 left out: your plan has no more room. Move up a plan to bring it in."
+      : `${n} left out: your plan has no more room. Move up a plan to bring them in.`),
     none: "That board has nothing Criterio can save.",
     private: "That board is private. Make it public and try again.",
     notFound: "We could not find that board. Check the link.",
@@ -1853,11 +1853,17 @@ export const ui = {
     seeEverything: "See everything",
   },
   plans: {
-    planTitle: "Plan",
     usageTitle: "Usage",
-    compare: "Compare plans",
     moveUpTo: (plan: string): string => `Move up to ${plan}`,
-    currentLine: (plan: string, price: string): string => `${plan}, ${price} a month`,
+    seePlans: "See the plans",
+    plansTitle: "Plans",
+    pay: "Pay",
+    periods: { month: "Monthly", year: "Yearly" },
+    periodWord: { month: "monthly", year: "yearly" },
+    request: (plan: string): string => `Request ${plan}`,
+    requested: (plan: string, period: string): string => `You asked for ${plan}, paid ${period}. We write back the same day.`,
+    requestFailed: "The request could not be sent",
+    askOwner: (who: string): string => `Only ${who} can ask for another plan: they pay for this one.`,
     perMonth: "a month",
     forGood: "For good",
     orYearly: (price: string): string => `or ${price} a year, 2 months free`,
@@ -1881,7 +1887,6 @@ export const ui = {
     pendingInvites: (n: number): string => (n === 1 ? "1 invitation not yet accepted, which also takes a seat." : `${n} invitations not yet accepted, which also take a seat.`),
     yourPlan: "Your plan",
     foot: "Launch prices: during the beta, the annual plan is half price. There is no payment on the site yet: ask for a plan and we write back and switch it on the same day. Prices without VAT.",
-    mailSubject: (plan: string, workspace: string): string => `criterio.design: ${plan} plan for ${workspace}`,
     aiShared: (n: number): string => `The ${n} workspaces on this plan share these AI actions and searches. People count in each one.`,
     account: {
       title: "Workspaces on this plan",
@@ -2143,6 +2148,7 @@ export const ui = {
       failures: "Failures",
       access: "Access",
       waitlist: "Waitlist",
+      plans: "Plans",
     },
     leads: {
       usage: (days: number): string => `Where the time goes and what the AI costs, over the last ${days} days.`,
@@ -2151,6 +2157,7 @@ export const ui = {
       failures: (days: number): string => `What failed out of sight over the last ${days} days: model calls, captures, emails, jobs, actions and MCP tools. Kept for 30 days.`,
       access: "Who can open this panel.",
       waitlist: "Who is waiting, who gets in next, and how each wave did.",
+      plans: "Who asked for a plan and is waiting for it. There is no payment on the site: charge them, then set it here.",
     },
     failuresTitle: "Newest first",
     noFailures: (days: number): string => `Nothing failed in the last ${days} days.`,
@@ -2291,6 +2298,24 @@ export const ui = {
     deletedWorkspace: "Deleted workspace",
     calls: (n: number): string => `${n} ${n === 1 ? "call" : "calls"}`,
     itemsInCalls: (units: number, calls: number): string => `${units} items in ${calls} calls`,
+    plans: {
+      title: "Open requests",
+      empty: "Nobody is waiting for a plan.",
+      hint: "Set plan switches it on at once for every workspace of the account and emails who asked. Decline only closes the request: write to them yourself.",
+      thAccount: "Account",
+      thWorkspaces: "Workspaces",
+      thNow: "Now",
+      thAsks: "Asks for",
+      thAge: "Asked",
+      setPlan: "Set plan",
+      decline: "Decline",
+      setConfirm: (account: string, plan: string, period: string): string => `Put ${account} on ${plan}, paid ${period}? It switches on now and they get an email.`,
+      declineConfirm: (account: string, plan: string): string => `Decline ${account}'s request for ${plan}? Nothing changes on their plan, and no email goes out.`,
+      set: (account: string, plan: string): string => `${account} is on ${plan} now.`,
+      declined: (account: string): string => `${account}'s request is closed.`,
+      failed: "Could not do it",
+      gone: "That request is no longer open.",
+    },
     waitlist: {
       wavesTitle: "Waves",
       wavesHint: "Percentages are of the people invited. Activated: made a project of their own. Paying: on a paid plan the invite did not give them.",
@@ -2377,23 +2402,26 @@ export const ui = {
     people: (n: number): string => `${n} ${n === 1 ? "person" : "people"}`,
     actions: { ai: "AI actions", jev_search: "AI searches" },
     spent: (used: number, limit: number, what: string, plan: string): string =>
-      `You have used ${used} of ${limit} ${what} this month on the ${plan} plan. Move up a plan in /planes.`,
+      `You have used ${used} of ${limit} ${what} this month on the ${plan} plan.`,
     planAllows: (plan: string, people: string): string => `The ${plan} plan allows ${people}.`,
     pendingInvites: (n: number): string => (n === 1 ? "1 invitation not yet accepted" : `${n} invitations not yet accepted`),
     withPending: (allows: string, members: string, pending: string): string =>
-      `${allows} Right now there are ${members} on the team and ${pending}. Cancel an invitation in /equipo, or move up a plan in /planes.`,
-    movePlan: (allows: string): string => `${allows} Move up a plan in /planes to invite more.`,
+      `${allows} Right now there are ${members} on the team and ${pending}. Cancel an invitation in /equipo, or move up a plan.`,
+    movePlan: (allows: string): string => `${allows} Move up a plan to invite more.`,
     itemsFull: (limit: number, plan: string): string =>
-      `The library is full: the ${plan} plan keeps ${limit} references. Viewing, searching and exporting still work. Move up a plan in /planes to save more.`,
+      `The library is full: the ${plan} plan keeps ${limit} references. Viewing, searching and exporting still work. Move up a plan to save more.`,
     projectsFull: (limit: number, plan: string): string =>
-      `The ${plan} plan has ${limit === 1 ? "one project" : `${limit} projects`} and this workspace already has ${limit === 1 ? "it" : "them"}. Move up a plan in /planes to open more.`,
+      `The ${plan} plan has ${limit === 1 ? "one project" : `${limit} projects`} and this workspace already has ${limit === 1 ? "it" : "them"}. Move up a plan to open more.`,
     storageFull: (limit: string, plan: string): string =>
-      `Storage is full: the ${plan} plan keeps ${limit} GB of files. Viewing, searching and exporting still work. Move up a plan in /planes to save more.`,
-    secondTeam: "Your personal space is your free workspace, and a new team would start free too. To create one, move a workspace you own up to a paid plan in /planes.",
+      `Storage is full: the ${plan} plan keeps ${limit} GB of files. Viewing, searching and exporting still work. Move up a plan to save more.`,
+    secondTeam: "Your personal space is your free workspace, and a new team would start free too. To create one, move a workspace you own up to a paid plan.",
     noWorkspaceRoom: (plan: string, limit: number): string => limit === 1
-      ? `The ${plan} plan holds one workspace. Move up to Agency in /planes to hold several.`
+      ? `The ${plan} plan holds one workspace. Move up to Agency to hold several.`
       : `The ${plan} plan holds ${limit} workspaces and this one has them all.`,
     notAccountOwner: "Only the person who pays for this plan can add workspaces to it.",
+    limitTitle: "Your plan has no more room",
+    notPlanOwner: "Only the person who pays for this plan can ask for another one.",
+    notAbove: "Only a plan above yours can be asked for.",
     cannotMove: "Only a team you own can move, and not into the plan it is already on.",
   },
   areaThread: {

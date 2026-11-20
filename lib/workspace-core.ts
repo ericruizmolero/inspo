@@ -2,7 +2,8 @@
 // Used by both the server (lib/workspace.ts) and scripts (scripts/*.ts).
 import { and, asc, eq, isNull, sql } from "drizzle-orm";
 import { db, schema, type Exec } from "./db";
-import { DEFAULT_PLAN, isPlanKey, type PlanKey } from "./plans";
+import { DEFAULT_PLAN, isPlanKey, planThatLifts, type PlanKey, type PlanLimit } from "./plans";
+import type { PlanLimitFields } from "./plan-limit";
 import type { Locale } from "./i18n/locale";
 import { toOutputLanguage, type OutputLanguage } from "./output-language";
 
@@ -42,9 +43,21 @@ export class HttpError extends Error {
   constructor(public status: number, message: string) { super(message); }
 }
 
-/** The response a route sends for an HttpError. A plan's limit (402) carries `quota: true`, which the upgrade notice reads */
-export const httpErrorResponse = (e: HttpError): Response =>
-  Response.json({ error: e.message, ...(e.status === 402 ? { quota: true } : {}) }, { status: e.status });
+/** A plan's limit reached (402). `upgrade` is the cheapest plan that lifts it, null when none does */
+export class QuotaError extends HttpError {
+  readonly upgrade: PlanKey | null;
+  constructor(limit: PlanLimit, plan: PlanKey, message: string) {
+    super(402, message);
+    this.upgrade = planThatLifts(limit, plan);
+  }
+}
+
+/** What a route or a server action answers for an HttpError. A plan's limit adds the fields the upgrade notice reads
+ *  (lib/plan-limit.ts) */
+export const httpErrorBody = (e: HttpError): { error: string } & Partial<PlanLimitFields> =>
+  ({ error: e.message, ...(e instanceof QuotaError ? { quota: true, upgrade: e.upgrade } : {}) });
+
+export const httpErrorResponse = (e: HttpError): Response => Response.json(httpErrorBody(e), { status: e.status });
 
 const planKey = (p: string): PlanKey => (isPlanKey(p) ? p : DEFAULT_PLAN);
 
@@ -73,8 +86,8 @@ export async function accountOf(organizationId: string): Promise<BillingAccount 
  * Whoever downgrades must notify the owners of each workspace that ends up over its seats:
  * notifyOverCapacity() in lib/quota.ts.
  */
-export async function setAccountPlan(accountId: string, plan: PlanKey): Promise<void> {
-  const res = await db.update(schema.billingAccount).set({ plan }).where(eq(schema.billingAccount.id, accountId));
+export async function setAccountPlan(accountId: string, plan: PlanKey, exec: Exec = db): Promise<void> {
+  const res = await exec.update(schema.billingAccount).set({ plan }).where(eq(schema.billingAccount.id, accountId));
   if (!res.rowCount) throw new Error("Billing account not found");
 }
 

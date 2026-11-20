@@ -1,5 +1,5 @@
 "use server";
-// Workspaces inside a billing account (Settings, Plan). Only the account's owner adds to it: one creates a workspace
+// Workspaces inside a billing account, and asking for its plan (Settings, Plan). Only the account's owner adds to it or asks: one creates a workspace
 // in it, or moves in a team they own that another account pays for. A team made from the switcher gets an account of
 // its own in Better Auth's hook instead (lib/auth.ts).
 import { and, asc, eq, inArray } from "drizzle-orm";
@@ -8,6 +8,10 @@ import { withCtx, HttpError, newId, slugify, dropEmptyAccount, type Ctx } from "
 import { assertWorkspaceRoom } from "@/lib/quota";
 import { toOutputLanguage } from "@/lib/output-language";
 import { getErrors, getT } from "@/lib/i18n";
+import { isPlanKey } from "@/lib/plans";
+import { PLAN_PERIODS, type PlanPeriod } from "@/lib/db/schema";
+import { requestPlanFor } from "@/lib/plan-requests";
+import { appBase } from "@/lib/admin-action";
 
 /** The current workspace's account, if the person signed in owns it */
 async function ownedAccount(ctx: Ctx): Promise<string> {
@@ -40,6 +44,14 @@ export async function createWorkspaceInAccount(name: string) {
       await tx.insert(schema.member).values({ id: newId(), organizationId: id, userId: ctx.user.id, role: "owner", createdAt: now });
     });
     return { id };
+  });
+}
+
+/** The owner asks for a plan above the account's, paid monthly or yearly. It replaces a request already open. */
+export async function requestPlan(plan: string, period: string) {
+  return withCtx(async (ctx) => {
+    if (!isPlanKey(plan) || !(PLAN_PERIODS as readonly string[]).includes(period)) throw new HttpError(400, (await getErrors()).badBody);
+    return requestPlanFor({ accountId: ctx.workspace.billingAccountId, user: ctx.user, plan, period: period as PlanPeriod, appUrl: await appBase() });
   });
 }
 

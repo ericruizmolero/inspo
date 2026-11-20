@@ -441,8 +441,8 @@ export const ui: typeof EnUi = {
     failed: (n: number) => (n === 1 ? "1 no se pudo guardar." : `${n} no se pudieron guardar.`),
     capped: "Solo entran las 500 primeras.",
     full: (n: number) => (n === 1
-      ? "1 se queda fuera: tu plan no tiene más sitio. Amplía el plan en /planes para traerla."
-      : `${n} se quedan fuera: tu plan no tiene más sitio. Amplía el plan en /planes para traerlas.`),
+      ? "1 se queda fuera: tu plan no tiene más sitio. Amplía el plan para traerla."
+      : `${n} se quedan fuera: tu plan no tiene más sitio. Amplía el plan para traerlas.`),
     none: "Ese tablero no tiene nada que Criterio sepa guardar.",
     private: "Ese tablero es privado. Hazlo público y vuelve a probar.",
     notFound: "No encontramos ese tablero. Revisa el enlace.",
@@ -1835,11 +1835,17 @@ export const ui: typeof EnUi = {
     seeEverything: "Ver todo",
   },
   plans: {
-    planTitle: "Plan",
     usageTitle: "Uso",
-    compare: "Comparar planes",
     moveUpTo: (plan: string): string => `Subir a ${plan}`,
-    currentLine: (plan: string, price: string): string => `${plan}, ${price} al mes`,
+    seePlans: "Ver los planes",
+    plansTitle: "Planes",
+    pay: "Pago",
+    periods: { month: "Mensual", year: "Anual" },
+    periodWord: { month: "mensual", year: "anual" },
+    request: (plan: string): string => `Pedir ${plan}`,
+    requested: (plan: string, period: string): string => `Has pedido ${plan}, con pago ${period}. Te escribimos en el día.`,
+    requestFailed: "No se ha podido enviar la petición",
+    askOwner: (who: string): string => `Solo ${who} puede pedir otro plan: es quien paga este.`,
     perMonth: "al mes",
     forGood: "Para siempre",
     orYearly: (price: string): string => `o ${price} al año, 2 meses gratis`,
@@ -1863,7 +1869,6 @@ export const ui: typeof EnUi = {
     pendingInvites: (n: number): string => (n === 1 ? "1 invitación sin aceptar, que también ocupa plaza." : `${n} invitaciones sin aceptar, que también ocupan plaza.`),
     yourPlan: "Tu plan",
     foot: "Precios de lanzamiento: en la beta, el anual va a mitad de precio. Todavía no hay pago en la web: al pedir un plan te escribimos y lo activamos en el día. Precios sin IVA.",
-    mailSubject: (plan: string, workspace: string): string => `criterio.design: plan ${plan} para ${workspace}`,
     aiShared: (n: number): string => `Los ${n} espacios de este plan comparten estas acciones y búsquedas de IA. Las personas cuentan en cada uno.`,
     account: {
       title: "Espacios de este plan",
@@ -2123,6 +2128,7 @@ export const ui: typeof EnUi = {
       failures: "Fallos",
       access: "Acceso",
       waitlist: "Lista de espera",
+      plans: "Planes",
     },
     leads: {
       usage: (days: number): string => `Dónde se va el tiempo y lo que cuesta la IA, en los últimos ${days} días.`,
@@ -2131,6 +2137,7 @@ export const ui: typeof EnUi = {
       failures: (days: number): string => `Lo que ha fallado sin que se vea en los últimos ${days} días: llamadas al modelo, capturas, correos, trabajos, acciones y herramientas del MCP. Se guardan 30 días.`,
       access: "Quién puede abrir este panel.",
       waitlist: "Quién espera, quién entra en la siguiente oleada y cómo fue cada una.",
+      plans: "Quién ha pedido un plan y lo está esperando. En la web no hay pago: cóbralo y actívalo aquí.",
     },
     failuresTitle: "Lo más reciente primero",
     noFailures: (days: number): string => `No ha fallado nada en los últimos ${days} días.`,
@@ -2271,6 +2278,24 @@ export const ui: typeof EnUi = {
     deletedWorkspace: "Workspace borrado",
     calls: (n: number): string => `${n} ${n === 1 ? "llamada" : "llamadas"}`,
     itemsInCalls: (units: number, calls: number): string => `${units} items en ${calls} llamadas`,
+    plans: {
+      title: "Peticiones abiertas",
+      empty: "Nadie está esperando un plan.",
+      hint: "Activar plan lo enciende al momento en todos los espacios de la cuenta y avisa por correo a quien lo pidió. Rechazar solo cierra la petición: escríbele tú.",
+      thAccount: "Cuenta",
+      thWorkspaces: "Espacios",
+      thNow: "Ahora",
+      thAsks: "Pide",
+      thAge: "Pedido",
+      setPlan: "Activar plan",
+      decline: "Rechazar",
+      setConfirm: (account: string, plan: string, period: string): string => `¿Pasar ${account} a ${plan}, con pago ${period}? Se activa ya y le llega un correo.`,
+      declineConfirm: (account: string, plan: string): string => `¿Rechazar la petición de ${plan} de ${account}? Su plan no cambia y no sale ningún correo.`,
+      set: (account: string, plan: string): string => `${account} ya está en ${plan}.`,
+      declined: (account: string): string => `La petición de ${account} está cerrada.`,
+      failed: "No se ha podido hacer",
+      gone: "Esa petición ya no está abierta.",
+    },
     waitlist: {
       wavesTitle: "Oleadas",
       wavesHint: "Los porcentajes son sobre las personas invitadas. Activadas: han creado un proyecto suyo. Pagan: están en un plan de pago que no les regaló la invitación.",
@@ -2357,23 +2382,26 @@ export const ui: typeof EnUi = {
     people: (n: number): string => `${n} ${n === 1 ? "persona" : "personas"}`,
     actions: { ai: "acciones de IA", jev_search: "búsquedas IA" },
     spent: (used: number, limit: number, what: string, plan: string): string =>
-      `Has usado ${used} de ${limit} ${what} este mes en el plan ${plan}. Amplía el plan en /planes.`,
+      `Has usado ${used} de ${limit} ${what} este mes en el plan ${plan}.`,
     planAllows: (plan: string, people: string): string => `El plan ${plan} admite ${people}.`,
     pendingInvites: (n: number): string => (n === 1 ? "1 invitación sin aceptar" : `${n} invitaciones sin aceptar`),
     withPending: (allows: string, members: string, pending: string): string =>
-      `${allows} Ahora hay ${members} en el equipo y ${pending}. Cancela una invitación en /equipo o amplía el plan en /planes.`,
-    movePlan: (allows: string): string => `${allows} Amplía el plan en /planes para invitar a más.`,
+      `${allows} Ahora hay ${members} en el equipo y ${pending}. Cancela una invitación en /equipo o amplía el plan.`,
+    movePlan: (allows: string): string => `${allows} Amplía el plan para invitar a más.`,
     itemsFull: (limit: number, plan: string): string =>
-      `La biblioteca está llena: el plan ${plan} guarda ${limit} referencias. Puedes seguir viendo, buscando y exportando. Amplía el plan en /planes para guardar más.`,
+      `La biblioteca está llena: el plan ${plan} guarda ${limit} referencias. Puedes seguir viendo, buscando y exportando. Amplía el plan para guardar más.`,
     projectsFull: (limit: number, plan: string): string =>
-      `El plan ${plan} tiene ${limit === 1 ? "un proyecto" : `${limit} proyectos`} y este espacio ya ${limit === 1 ? "lo tiene" : "los tiene"}. Amplía el plan en /planes para abrir más.`,
+      `El plan ${plan} tiene ${limit === 1 ? "un proyecto" : `${limit} proyectos`} y este espacio ya ${limit === 1 ? "lo tiene" : "los tiene"}. Amplía el plan para abrir más.`,
     storageFull: (limit: string, plan: string): string =>
-      `El almacenamiento está lleno: el plan ${plan} guarda ${limit} GB de archivos. Puedes seguir viendo, buscando y exportando. Amplía el plan en /planes para guardar más.`,
-    secondTeam: "Tu espacio personal es tu workspace gratis, y un equipo nuevo también empezaría gratis. Para crearlo, pasa a un plan de pago un workspace que sea tuyo en /planes.",
+      `El almacenamiento está lleno: el plan ${plan} guarda ${limit} GB de archivos. Puedes seguir viendo, buscando y exportando. Amplía el plan para guardar más.`,
+    secondTeam: "Tu espacio personal es tu workspace gratis, y un equipo nuevo también empezaría gratis. Para crearlo, pasa a un plan de pago un workspace que sea tuyo.",
     noWorkspaceRoom: (plan: string, limit: number): string => limit === 1
-      ? `El plan ${plan} tiene un espacio. Pasa a Agency en /planes para tener varios.`
+      ? `El plan ${plan} tiene un espacio. Pasa a Agency para tener varios.`
       : `El plan ${plan} admite ${limit} espacios y este ya los tiene.`,
     notAccountOwner: "Solo quien paga este plan puede añadirle espacios.",
+    limitTitle: "Tu plan no da para más",
+    notPlanOwner: "Solo quien paga este plan puede pedir otro.",
+    notAbove: "Solo se puede pedir un plan por encima del tuyo.",
     cannotMove: "Solo se puede traer un equipo tuyo, y no al plan en el que ya está.",
   },
   areaThread: {

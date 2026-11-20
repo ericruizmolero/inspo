@@ -6,6 +6,7 @@ import type { ToastNote } from "@/components/Toast";
 import type { useConfirm } from "@/components/useConfirm";
 import type { Dict } from "@/lib/i18n/en";
 import type { InspoItem, Project, ProjectLinks } from "@/types/inspo";
+import { failureOf } from "@/lib/plan-limit";
 
 // ─── Selection: several references at once (SelectBar) ──────────────────────
 // ⌘/⇧-click or the circle on a card picks it; while anything is picked, a click picks. ⇧ picks the run from
@@ -96,7 +97,7 @@ export function useSelection({ t, items, setItems, setThumbMap, boardItems, spac
       return next;
     });
     const r = await setFiled(projectId, ids, on).catch((e) => ({ ok: false as const, error: String(e) }));
-    if (!r.ok) { setLinks(prevLinks); projectFailed(new Error(r.error)); return false; }
+    if (!r.ok) { setLinks(prevLinks); projectFailed(failureOf(r)); return false; }
     refreshSystem(projectId);
     return true;
   // eslint-disable-next-line react-hooks/exhaustive-deps -- projectFailed is a new function on every render, so listing it would rebuild this callback on every render
@@ -120,7 +121,7 @@ export function useSelection({ t, items, setItems, setThumbMap, boardItems, spac
     if (!into.ok) setLinks(prevLinks);
     // In the new one but still here: the screen says so
     else if (!out.ok) setLinks((prev) => { const next = { ...prev }; for (const id of ids) next[id] = [...(next[id] ?? []).filter((x) => x !== from), from]; return next; });
-    if (!out.ok) projectFailed(new Error(out.error));
+    if (!out.ok) projectFailed(failureOf(out));
     refreshSystem(projectId); refreshSystem(from);
   // eslint-disable-next-line react-hooks/exhaustive-deps -- projectFailed is a new function on every render, so listing it would rebuild this callback on every render
   }, [currentProject, selected, links, fileSelection, clearSelection, refreshSystem]);

@@ -7,7 +7,8 @@ import { redirect } from "next/navigation";
 import { getSession } from "./session";
 import { auth } from "./auth";
 import { toLocale } from "./i18n/locale";
-import { ensurePersonalWorkspace, listWorkspaces, canManage, HttpError, type Ctx, type SessionUser } from "./workspace-core";
+import { ensurePersonalWorkspace, listWorkspaces, canManage, HttpError, httpErrorBody, type Ctx, type SessionUser } from "./workspace-core";
+import type { PlanLimitFields } from "./plan-limit";
 import { getErrors } from "./i18n";
 import { log, logAs, recordFailure } from "./log";
 
@@ -81,8 +82,9 @@ export async function requireCtx(opts?: { manage?: boolean }): Promise<Ctx | Res
 
 export const isResponse = (x: unknown): x is Response => x instanceof Response;
 
-/** What a Server Action returns: expected errors come back as a value, not an exception. */
-export type ActionResult<T = void> = { ok: true; data: T } | { ok: false; error: string };
+/** What a Server Action returns: expected errors come back as a value, not an exception. A plan's limit also carries
+ *  the fields the upgrade notice reads (lib/plan-limit.ts). */
+export type ActionResult<T = void> = { ok: true; data: T } | ({ ok: false; error: string } & Partial<PlanLimitFields>);
 
 /**
  * For Server Actions. They're public POST endpoints: the session is checked in here,
@@ -96,7 +98,7 @@ export async function withCtx<T>(fn: (ctx: Ctx) => Promise<T>, opts?: { manage?:
   } catch (e) {
     // The person reads a generic message; the real error is kept, with this request's id
     if (!(e instanceof HttpError)) void recordFailure("action", fn.name || "server action", e);
-    return { ok: false, error: e instanceof HttpError ? e.message : (await getErrors()).unexpected };
+    return e instanceof HttpError ? { ok: false, ...httpErrorBody(e) } : { ok: false, error: (await getErrors()).unexpected };
   }
 }
 

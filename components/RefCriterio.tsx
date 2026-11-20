@@ -16,6 +16,7 @@ import { Chip, EmptyState, Separator } from "@/components/criterio";
 import "./SystemMarkdown.css";
 import "./SystemDoc.css";
 import "./RefCriterio.css";
+import { failureOf } from "@/lib/plan-limit";
 
 export type SystemSpot = { area: SystemArea } | { code: string };
 
@@ -64,7 +65,7 @@ export default function RefCriterio({ item, project, system, library, boardIds, 
   const refs = blocks.find((b): b is Extract<CriterioBlock, { kind: "section" }> => b.kind === "section" && b.id === "refs")!;
   const save = async (part: string, text: string | null) => {
     const r = await saveDocPart(project.id, part, text);
-    if (!r.ok) throw new Error(r.error);
+    if (!r.ok) throw failureOf(r);
     onSystem(project.id, r.data);
   };
   // References rewritten whole by hand in the system: the entry is written into that text, which is what the file shows

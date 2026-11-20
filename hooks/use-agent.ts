@@ -5,6 +5,8 @@ import type { AgentAction, AgentDone, AgentPatch, AgentReply, AgentTurn } from "
 import type { Dict } from "@/lib/i18n/en";
 import type { InspoItem, Project, ProjectLinks } from "@/types/inspo";
 import { SYSTEM_AREAS, type ProjectSystem, type SystemArea } from "@/types/system";
+import { failureOf } from "@/lib/plan-limit";
+import { reportPlanLimit } from "@/components/PlanLimitNotice";
 
 type ProjectView = "system" | "polish" | "board";
 
@@ -111,7 +113,7 @@ export function useAgent({ t, items, projects, links, currentProject, space, pro
     try {
       const res = await fetch("/api/agent", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text, scope }) });
       const json = await res.json().catch(() => ({})) as AgentReply & { error?: string };
-      if (!res.ok || json.error) throw new Error(json.error || res.statusText);
+      if (!res.ok || json.error) throw failureOf(json, res.statusText);
       applyAgentPatch(json.patch);
       followAgent(json.done);
       // A command leaves the box empty; a search keeps its words in it
@@ -123,7 +125,7 @@ export function useAgent({ t, items, projects, links, currentProject, space, pro
       if (touched.length) recentIds.current = [...new Set(touched)].slice(0, 40);
       agentLog.current = [...agentLog.current, { text, say: json.say, did: json.done.filter((d) => d.ok).map((d) => [d.kind, d.project, d.area, d.name, d.n].filter((x) => x !== undefined).join(" ")) }].slice(-6);
     } catch (e) {
-      setAgent({ text, busy: false, done: [], pending: [], error: e instanceof Error ? e.message : String(e) });
+      setAgent({ text, busy: false, done: [], pending: [], error: reportPlanLimit(e) ? undefined : e instanceof Error ? e.message : String(e) });
     }
   }, [currentProject, space, projectView, openArea, panelItem, filtered, applyAgentPatch, followAgent, setQuery, agentTarget]);
   // One line back: its undo actions run as a confirmed batch, and the line says so
@@ -134,11 +136,11 @@ export function useAgent({ t, items, projects, links, currentProject, space, pro
     try {
       const res = await fetch("/api/agent", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ run: line.undo }) });
       const json = await res.json().catch(() => ({})) as { done: AgentDone[]; patch: AgentPatch; error?: string };
-      if (!res.ok || json.error) throw new Error(json.error || res.statusText);
+      if (!res.ok || json.error) throw failureOf(json, res.statusText);
       applyAgentPatch(json.patch);
       setAgent({ ...agent, busy: false, done: agent.done.map((d, j) => (j === i ? { ...d, undo: undefined, undone: true } : d)) });
     } catch (e) {
-      setAgent({ ...agent, busy: false, error: e instanceof Error ? e.message : String(e) });
+      setAgent({ ...agent, busy: false, error: reportPlanLimit(e) ? undefined : e instanceof Error ? e.message : String(e) });
     }
   }, [agent, applyAgentPatch]);
   const confirmAgent = useCallback(async () => {
@@ -147,11 +149,11 @@ export function useAgent({ t, items, projects, links, currentProject, space, pro
     try {
       const res = await fetch("/api/agent", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ run: agent.pending }) });
       const json = await res.json().catch(() => ({})) as { done: AgentDone[]; patch: AgentPatch; error?: string };
-      if (!res.ok || json.error) throw new Error(json.error || res.statusText);
+      if (!res.ok || json.error) throw failureOf(json, res.statusText);
       applyAgentPatch(json.patch);
       setAgent({ ...agent, busy: false, done: [...agent.done, ...json.done], pending: [] });
     } catch (e) {
-      setAgent({ ...agent, busy: false, error: e instanceof Error ? e.message : String(e) });
+      setAgent({ ...agent, busy: false, error: reportPlanLimit(e) ? undefined : e instanceof Error ? e.message : String(e) });
     }
   }, [agent, applyAgentPatch]);
   return { agent, setAgent, agentSpeaks, agentTargetItem, setAgentTarget, agentQuick, askAgent, undoAgent, confirmAgent };

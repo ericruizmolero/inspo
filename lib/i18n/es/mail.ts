@@ -33,6 +33,19 @@ export const mail: typeof EnMail = {
       `Este mes ${account} lleva ${used} búsquedas. En el plan ${plan} las búsquedas son de uso justo, y ${ceiling} al mes es mucho más de lo que hace un equipo normal.\n\nNo hemos cortado nada y puedes seguir buscando. Si no sabes de dónde salen tantas, contesta a este correo y lo miramos juntos.`,
   },
 
+  plans: {
+    period: { month: "mensual", year: "anual" },
+    newSubject: (account: string, plan: string, period: string): string => `Nueva petición de plan: ${account} pide ${plan}, ${period}`,
+    newText: (account: string, owner: string, now: string, plan: string, period: string, price: string, workspaces: string, url: string): string =>
+      `${account} (${owner}) pide pasar de ${now} a ${plan}, con pago ${period}: ${price}, sin IVA.\nEspacios: ${workspaces}\n\nCóbralo y activa el plan aquí:\n${url}`,
+    gotSubject: "Hemos recibido tu petición",
+    gotText: (plan: string, period: string, account: string): string =>
+      `Hemos recibido tu petición del plan ${plan}, con pago ${period}, para ${account}.\n\nTe escribimos hoy para el pago y lo activamos en el día. Si tienes alguna duda, contesta a este correo.`,
+    onSubject: (plan: string): string => `Tu plan ya está activo: ${plan}`,
+    onText: (plan: string, account: string, url: string): string =>
+      `${account} está en el plan ${plan} desde ahora, y todo lo que incluye ya funciona:\n${url}\n\nGracias por la confianza.`,
+  },
+
   adminAccess: {
     subject: (granter: string): string => `${granter} te ha dado acceso al panel de actividad de criterio.design`,
     text: (granter: string, url: string): string => `${granter} te ha dado acceso al panel de actividad de criterio.design:\n${url}\n\nEntra con este mismo correo.`,

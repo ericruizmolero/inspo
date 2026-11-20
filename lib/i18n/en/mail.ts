@@ -36,6 +36,20 @@ export const mail = {
       `${account} has made ${used} searches this month. On the ${plan} plan searches are fair use, and ${ceiling} a month is far more than a team usually makes.\n\nWe haven't cut anything off, and you can keep searching. If you don't know where so many come from, reply to this email and we'll look at it together.`,
   },
 
+  /** A plan asked for from Settings, Plan, and switched on from /admin/plans (lib/plan-requests.ts) */
+  plans: {
+    period: { month: "monthly", year: "yearly" },
+    newSubject: (account: string, plan: string, period: string): string => `New plan request: ${account} asks for ${plan}, ${period}`,
+    newText: (account: string, owner: string, now: string, plan: string, period: string, price: string, workspaces: string, url: string): string =>
+      `${account} (${owner}) asks to move from ${now} to ${plan}, paid ${period}: ${price}, without VAT.\nWorkspaces: ${workspaces}\n\nCharge them, then set the plan here:\n${url}`,
+    gotSubject: "We got your request",
+    gotText: (plan: string, period: string, account: string): string =>
+      `We got your request for the ${plan} plan, paid ${period}, for ${account}.\n\nWe will write to you today to sort out the payment, and switch it on the same day. If you have a question, reply to this email.`,
+    onSubject: (plan: string): string => `Your plan is on: ${plan}`,
+    onText: (plan: string, account: string, url: string): string =>
+      `${account} is on the ${plan} plan from now on, and everything it includes works already:\n${url}\n\nThank you for trusting us with it.`,
+  },
+
   adminAccess: {
     subject: (granter: string): string => `${granter} has given you access to the criterio.design activity panel`,
     text: (granter: string, url: string): string => `${granter} gave you access to the criterio.design activity panel:\n${url}\n\nSign in with this same address.`,

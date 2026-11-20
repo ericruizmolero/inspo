@@ -1572,6 +1572,9 @@ video.vp__media { object-fit: contain; }
 .toast__sub { font-size: var(--fs-label); color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* Good news is read whole: what an import brought and what it left out */
 .toast:not(.toast--error) :is(.toast__title, .toast__sub) { white-space: normal; }
+/* So is a plan's limit (components/PlanLimitNotice.tsx): its message, then the link to the plan that lifts it */
+.toast:has(.toast__action) .toast__sub { white-space: normal; }
+.toast__action { align-self: flex-start; margin-top: 4px; font-size: var(--fs-small); font-weight: var(--fw-semibold); color: var(--text); text-underline-offset: 3px; }
 .toast .cr-iconbtn { flex: none; }
 @media (max-width: 640px) {
   .toasts { right: 16px; left: 16px; bottom: 16px; width: auto; }
@@ -1939,6 +1942,21 @@ video.vp__media { object-fit: contain; }
 .pl-quota.is-full .pl-quota__nums { color: var(--danger); }
 .pl-quota__note { margin: 0; color: var(--danger); }
 .pl-over a { color: inherit; text-underline-offset: 3px; }
+/* The four plans side by side, flat, a --border line each; the account's in --border-strong with "Your plan" by its
+   name. The ask sits at the foot of each plan above it, so the buttons line up across the row */
+.pl-plans { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.pl-plan { display: flex; flex-direction: column; gap: 4px; padding: 16px; border: 1px solid var(--border); border-radius: var(--radius-md); scroll-margin-top: 80px; }
+.pl-plan.is-current, .pl-plan:target { border-color: var(--border-strong); }
+.pl-plan__head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.pl-plan__name { margin: 0; }
+.pl-plan__mark { color: var(--text-muted); white-space: nowrap; }
+.pl-plan__tagline, .pl-plan__year { margin: 0; color: var(--text-muted); }
+.pl-plan__price { margin: 8px 0 0; font-variant-numeric: tabular-nums; }
+.pl-plan__price .t-small { color: var(--text-muted); }
+.pl-plan__features { margin: 8px 0 0; padding: 0 0 0 16px; display: flex; flex-direction: column; gap: 4px; flex: 1; }
+.pl-plan__ask { margin-top: 12px; align-self: flex-start; }
+@media (max-width: 1087px) { .pl-plans { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 859px) { .pl-plans { grid-template-columns: 1fr; } }
 
 /* ─── Back (secondary pages) ──────────────────────────────────────────────── */
 /* The arrow sits in the raised IconButton look: paper, ink border, bevel; it sinks when pressed */

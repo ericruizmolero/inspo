@@ -14,6 +14,7 @@ import { toLocale, INTL_LOCALE, DEFAULT_LOCALE, type Locale } from "./i18n/local
 import en from "./i18n/en";
 import es from "./i18n/es";
 import { DEFAULT_PLAN, type PlanKey } from "./plans";
+import type { PlanPeriod } from "./db/schema";
 
 const DICTS = { en, es } as const;
 export const mailDict = (locale: Locale) => DICTS[locale].mail;
@@ -101,6 +102,27 @@ export function fairUseMail(account: string, plan: PlanKey, used: number, ceilin
   const t = mailDict(locale).fairUse;
   const n = (x: number) => x.toLocaleString(INTL_LOCALE[locale]);
   return { subject: t.subject(account, n(ceiling)), text: signed(locale, t.text(account, DICTS[locale].plans.items[plan].name, n(used), n(ceiling))) };
+}
+
+/** To the partners: an account asks for a plan. `price` is already written out, in the period asked for */
+export function planRequestMail(r: { account: string; owner: string; now: PlanKey; plan: PlanKey; period: PlanPeriod; price: string; workspaces: string[]; url: string }, locale: Locale): Mail {
+  const t = mailDict(locale).plans, name = (k: PlanKey) => DICTS[locale].plans.items[k].name;
+  return {
+    subject: t.newSubject(r.account, name(r.plan), t.period[r.period]),
+    text: t.newText(r.account, r.owner, name(r.now), name(r.plan), t.period[r.period], r.price, r.workspaces.join(", "), r.url),
+  };
+}
+
+/** To whoever asked for a plan: it arrived, and we write back */
+export function planRequestedMail(plan: PlanKey, period: PlanPeriod, account: string, locale: Locale): Mail {
+  const t = mailDict(locale).plans;
+  return { subject: t.gotSubject, text: signed(locale, t.gotText(DICTS[locale].plans.items[plan].name, t.period[period], account)) };
+}
+
+/** To whoever asked for a plan: a partner switched it on */
+export function planOnMail(plan: PlanKey, account: string, url: string, locale: Locale): Mail {
+  const t = mailDict(locale).plans, name = DICTS[locale].plans.items[plan].name;
+  return { subject: t.onSubject(name), text: signed(locale, t.onText(name, account, url)) };
 }
 
 export function adminAccessMail(url: string, granterName: string, locale: Locale): Mail {

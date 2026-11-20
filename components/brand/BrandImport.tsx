@@ -13,6 +13,8 @@ import { seedBrandFromClient } from "@/app/actions/brand";
 import { familyBase, familyKey, weightInName } from "@/lib/font-names";
 import { uploadBrandFile } from "./upload";
 import type { UploadPurpose } from "./context";
+import { failureOf } from "@/lib/plan-limit";
+import { reportPlanLimit } from "@/components/PlanLimitNotice";
 
 type Tab = "site" | "files" | "text";
 type Step = { label: string; state: "wait" | "run" | "done" | "fail" };
@@ -56,7 +58,7 @@ export default function BrandImport({ projectId, brand, onClose, onAddSite, onCl
   };
   const go = async (labels: string[], job: () => Promise<void>) => {
     setBusy(true); setError(""); setSteps(labels.map((label) => ({ label, state: "wait" })));
-    try { await job(); onClose(); } catch (e) { setError(e instanceof Error ? e.message : String(e)); } finally { setBusy(false); }
+    try { await job(); onClose(); } catch (e) { if (!reportPlanLimit(e)) setError(e instanceof Error ? e.message : String(e)); } finally { setBusy(false); }
   };
 
   const fromSite = () => go([s.steps.save, s.steps.measure, s.steps.seed, s.steps.read], async () => {
@@ -65,9 +67,9 @@ export default function BrandImport({ projectId, brand, onClose, onAddSite, onCl
     const item = await track(0, async () => { const it = await onAddSite?.(web); if (!it?.id) throw new Error(t.errors.badUrl); await onClient?.(it.id); return it; });
     await track(1, async () => {
       const res = await fetch(`/api/design-md?url=${encodeURIComponent(item.web)}`);
-      if (!res.ok) { const j = await res.json().catch(() => ({})) as { error?: string }; throw new Error(j.error || s.measureFailed); }
+      if (!res.ok) throw failureOf(await res.json().catch(() => ({})), s.measureFailed);
     });
-    await track(2, async () => { const r = await seedBrandFromClient(projectId); if (!r.ok) throw new Error(r.error); onSystem(r.data); });
+    await track(2, async () => { const r = await seedBrandFromClient(projectId); if (!r.ok) throw failureOf(r); onSystem(r.data); });
     await track(3, onRun);
   });
 
@@ -75,7 +77,7 @@ export default function BrandImport({ projectId, brand, onClose, onAddSite, onCl
     await track(0, async () => {
       const res = await fetch("/api/system/brand/import-text", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ projectId, text }) });
       const json = await res.json().catch(() => ({})) as ProjectSystem & { error?: string };
-      if (!res.ok || json.error) throw new Error(json.error || s.failed);
+      if (!res.ok || json.error) throw failureOf(json, s.failed);
       onSystem(json);
     });
     await track(1, onRun);

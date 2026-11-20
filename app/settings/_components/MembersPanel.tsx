@@ -10,6 +10,7 @@ import { useT } from "@/components/I18nProvider";
 import { fmtDate } from "@/lib/i18n/format";
 import { Button, Chip, FieldRow, SegmentedControl, SettingsWindow } from "@/components/criterio";
 import { useConfirm } from "@/components/useConfirm";
+import { reportPlanLimit } from "@/components/PlanLimitNotice";
 import PersonAvatar from "@/components/PersonAvatar";
 import type { PlanKey } from "@/lib/plans";
 
@@ -48,7 +49,7 @@ export default function MembersPanel({ workspace, me, canManage, members, invita
     setBusy(true); setError(""); setMsg(""); setLastLink("");
     const { data, error: err } = await authClient.organization.inviteMember({ email: value, role: as, organizationId: workspace.id });
     setBusy(false);
-    if (err) { setError(err.message ?? t.team.inviteFailed); return; }
+    if (err) { if (!reportPlanLimit(err)) setError(err.message ?? t.team.inviteFailed); return; }
     setMsg(t.team.inviteSent(value));
     if (data?.id) setLastLink(linkOf(data.id));
     router.refresh();

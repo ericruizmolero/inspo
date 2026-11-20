@@ -18,6 +18,8 @@ import TinoNote from "./TinoNote";
 import { useT } from "./I18nProvider";
 import { Button, Chip, IconButton } from "@/components/criterio";
 import { createPortal } from "react-dom";
+import { failureOf } from "@/lib/plan-limit";
+import { reportPlanLimit } from "./PlanLimitNotice";
 import "./SystemDoc.css";
 
 /** The proposals Tino writes carry his name as where they come from (AreaProposal.via) */
@@ -99,6 +101,8 @@ export default function SystemDoc({ onConnect, blocks, system, boardIds, itemOf,
   const md = t.system.md;
   const [working, setWorking] = useState(false);
   const [error, setError] = useState("");
+  // A plan's limit goes to the upgrade notice; anything else is said here
+  const fail = (body: unknown, fallback: string) => { if (!reportPlanLimit(body)) setError(failureOf(body, fallback).message); };
   const areaBlocks = blocks.filter((b): b is AreaBlock => b.kind === "area");
   const project = blocks.find((b) => b.kind === "section" && b.id === "project");
   const summary = blocks.find((b) => b.kind === "summary");
@@ -132,7 +136,7 @@ export default function SystemDoc({ onConnect, blocks, system, boardIds, itemOf,
     try {
       const res = await fetch("/api/system/rules", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ projectId, area: b.area }) });
       const data = (await res.json().catch(() => ({}))) as { never?: string; error?: string };
-      if (!res.ok || !data.never) { setError(data.error ?? s.sharpenFailed); return; }
+      if (!res.ok || !data.never) { fail(data, s.sharpenFailed); return; }
       const r = await postAreaComment(projectId, b.area, s.sharpenNote, { proposal: { decision: b.decision, why: b.why, never: data.never, state: "open" } });
       if (!r.ok) { setError(r.error); return; }
       onTalk();

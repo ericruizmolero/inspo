@@ -88,6 +88,8 @@ import ConnectDialog from "./ConnectDialog";
 import { hideFirstStepsList, loadFirstSteps } from "@/app/actions/first-steps";
 import type { FirstSteps as FirstStepsValue } from "@/lib/first-steps-core";
 import { replaceUrl } from "@/lib/url-history";
+import { failureOf } from "@/lib/plan-limit";
+import { reportPlanLimit } from "./PlanLimitNotice";
 
 // Opened by a click or a shortcut, never on the first paint: each loads on its own, and the panel (the
 // most used) is fetched once the page is idle, so the first click doesn't wait for it
@@ -181,7 +183,8 @@ export default function InspoClient({
   // A notice up top: what failed, or (ok) what an import brought
   const [toast, setToast] = useState<ToastNote | null>(null);
   // Projects change on screen first; if the server says no, they go back with a notice
-  const projectFailed = (e: unknown) => setToast({ title: t.projects.saveFailed, detail: e instanceof Error ? e.message : String(e) });
+  // A plan's limit goes to the upgrade notice (PlanLimitNotice); anything else is this toast
+  const projectFailed = (e: unknown) => { if (!reportPlanLimit(e)) setToast({ title: t.projects.saveFailed, detail: e instanceof Error ? e.message : String(e) }); };
   const { systems, fullSystems, setSystem, refreshSystem } = useSystems(initialSummaries);
   const { votes, setVotes, voteWrites, withVoteWrites, solo, castVote, closePolishOf, restoreToProject } = usePolishVotes({ initialPolishVotes, user, members, setLinks, refreshSystem, projectFailed });
   const inParam = sp.get("in");
@@ -320,7 +323,7 @@ export default function InspoClient({
     if (n === null || !currentProject) { setBoardAt(null); return; }
     const row = boardRows?.find((r) => r.n === n);
     void boardVersionAt(currentProject.id, n).then((r) => {
-      if (!r.ok) { setToast({ title: t.boardVersions.failed, detail: r.error }); return; }
+      if (!r.ok) { if (!reportPlanLimit(r)) setToast({ title: t.boardVersions.failed, detail: r.error }); return; }
       setBoardAt({ n, ids: r.data, added: new Set(row?.added ?? []) });
     });
   }, [currentProject, boardRows, t]);
@@ -330,7 +333,7 @@ export default function InspoClient({
     setRestoring(true);
     const r = await restoreBoard(pid, n);
     setRestoring(false);
-    if (!r.ok) { setToast({ title: t.boardVersions.failed, detail: r.error }); return; }
+    if (!r.ok) { if (!reportPlanLimit(r)) setToast({ title: t.boardVersions.failed, detail: r.error }); return; }
     const keep = new Set(r.data.itemIds);
     setLinks((l) => {
       const next = { ...l };
@@ -395,7 +398,7 @@ export default function InspoClient({
     setItems((prev) => prev.filter((i) => i.id !== item.id));
     try {
       const r = await removeInspo(item.id);
-      if (!r.ok) throw new Error(r.error);
+      if (!r.ok) throw failureOf(r);
       setThumbMap((prev) => { if (!(item.web in prev)) return prev; const next = { ...prev }; delete next[item.web]; return next; });
     } catch (e) {
       setItems((prev) => (prev.some((i) => i.id === item.id) ? prev : [item, ...prev]));
@@ -516,14 +519,14 @@ export default function InspoClient({
   const saveTextBody = useCallback(async (item: InspoItem, text: string) => {
     if (!item.id) return;
     const r = await saveText(item.id, text);
-    if (!r.ok) throw new Error(r.error);
+    if (!r.ok) throw failureOf(r);
     setTextBody(item.id, r.data.text);
     setTagMap((prev) => ({ ...prev, [item.web]: r.data.tags }));
   }, [setTextBody, setTagMap]);
   const renameTextItem = useCallback(async (item: InspoItem, title: string) => {
     if (!item.id) return;
     const r = await renameText(item.id, title);
-    if (!r.ok) throw new Error(r.error);
+    if (!r.ok) throw failureOf(r);
     setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, name: r.data.name } : i)));
     setPanelItem((cur) => (cur && cur.id === item.id ? { ...cur, name: r.data.name } : cur));
   }, [setItems]);
@@ -605,7 +608,7 @@ export default function InspoClient({
     const projectId = projectRef.current;
     if (!projectId || !item.id) return;
     const r = await assignSystemArea(projectId, area, item.id, on).catch((e) => ({ ok: false as const, error: String(e) }));
-    if (!r.ok) { projectFailed(new Error(r.error)); return; }
+    if (!r.ok) { projectFailed(failureOf(r)); return; }
     setSystem(projectId, r.data);
   // eslint-disable-next-line react-hooks/exhaustive-deps -- projectFailed is a new function on every render, so listing it would rebuild this callback on every render
   }, [setSystem]);

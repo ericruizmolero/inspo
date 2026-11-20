@@ -5,6 +5,7 @@ import { votesByItem, finishedOf, forgottenBy, openVotes } from "@/lib/polish-ta
 import { votePolish, closeProjectPolish, restoreToBoard } from "@/app/actions/library";
 import type { InspoItem, PolishChoice, PolishVote, Project, ProjectLinks } from "@/types/inspo";
 import type { SessionUser } from "@/lib/workspace-core";
+import { failureOf } from "@/lib/plan-limit";
 
 export type VoteWrite = { projectId: string; itemId: string; vote: PolishChoice | null; closedAt: string | null; saved: number | null };
 
@@ -53,7 +54,7 @@ export function usePolishVotes({ initialPolishVotes, user, members, setLinks, re
       for (const itemId of ids) voteWrites.current.delete(`${projectId}:${itemId}`);
       setVotes((prev) => [...prev.filter((v) => !mine(v)), ...before]);
       if (leaves) file(true);
-      projectFailed(new Error(r.error));
+      projectFailed(failureOf(r));
       return;
     }
     const now = Date.now();
@@ -64,7 +65,7 @@ export function usePolishVotes({ initialPolishVotes, user, members, setLinks, re
   /** Whoever manages the workspace settles what was voted. Returns how many references left the board, or null if it failed */
   const closePolishOf = useCallback(async (projectId: string, resolve: Record<string, PolishChoice>): Promise<number | null> => {
     const r = await closeProjectPolish(projectId, resolve).catch((e) => ({ ok: false as const, error: String(e) }));
-    if (!r.ok) { projectFailed(new Error(r.error)); return null; }
+    if (!r.ok) { projectFailed(failureOf(r)); return null; }
     const { removed, settled, closedAt } = r.data;
     const done = new Set(settled), gone = new Set(removed);
     setVotes((prev) => prev.map((v) => (v.projectId === projectId && !v.closedAt && done.has(v.itemId) ? { ...v, closedAt, closedBy: user.id } : v)));
@@ -87,7 +88,7 @@ export function usePolishVotes({ initialPolishVotes, user, members, setLinks, re
     voteWrites.current.delete(`${projectId}:${id}`);
     setVotes((prev) => prev.filter((v) => !(v.projectId === projectId && v.itemId === id)));
     const r = await restoreToBoard(projectId, id).catch((e) => ({ ok: false as const, error: String(e) }));
-    if (!r.ok) { flip(false); projectFailed(new Error(r.error)); return; }
+    if (!r.ok) { flip(false); projectFailed(failureOf(r)); return; }
     refreshSystem(projectId);
   // eslint-disable-next-line react-hooks/exhaustive-deps -- projectFailed is a new function on every render, so listing it would rebuild this callback on every render
   }, [refreshSystem]);

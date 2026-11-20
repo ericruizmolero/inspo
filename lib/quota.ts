@@ -6,7 +6,7 @@ import { and, eq, gt, gte, inArray, isNull, lt, max, ne, not, notLike, or, sql }
 import { db, schema, type Exec } from "./db";
 import { planOf, type Plan, type PlanKey } from "./plans";
 import { AUTO_REF, FIRST_REF, type UsageAction } from "./usage-core";
-import { accountOf, HttpError, httpErrorResponse, listMembers, type Workspace } from "./workspace-core";
+import { accountOf, HttpError, httpErrorResponse, listMembers, QuotaError, type Workspace } from "./workspace-core";
 import type { Locale } from "./i18n/locale";
 import { getT } from "./i18n";
 import { fairUseMail, overCapacityMail, sendMail, localeForEmail } from "./mail";
@@ -177,14 +177,14 @@ export async function countProjects(organizationId: string): Promise<number> {
 }
 
 /**
- * Throws HttpError(402) when the workspace already has as many projects as its plan allows. A workspace left over
+ * Throws a QuotaError when the workspace already has as many projects as its plan allows. A workspace left over
  * the limit by a downgrade keeps every project: only opening another one is refused.
  */
 export async function assertProjectRoom(organizationId: string): Promise<void> {
   const plan = planOf(await planIn(organizationId));
   if (plan.projectsMax === null || (await countProjects(organizationId)) < plan.projectsMax) return;
   const { t } = await getT();
-  throw new HttpError(402, t.quota.projectsFull(plan.projectsMax, t.plans.items[plan.key].name));
+  throw new QuotaError("projects", plan.key, t.quota.projectsFull(plan.projectsMax, t.plans.items[plan.key].name));
 }
 
 /** Bytes the workspace's files take. `except` leaves one key out: the file about to be written over */
@@ -206,7 +206,7 @@ export async function roomOf(ws: Pick<Workspace, "id" | "plan">, replacing?: str
 }
 
 /**
- * Throws HttpError(402) when `need` does not fit in the plan: references or bytes. Viewing, searching and exporting
+ * Throws a QuotaError when `need` does not fit in the plan: references or bytes. Viewing, searching and exporting
  * never come here, so a full workspace keeps them. `replacing` is the key of a file being written over: its old
  * bytes don't count twice.
  */
@@ -215,7 +215,7 @@ export async function assertRoom(ws: Pick<Workspace, "id" | "plan">, need: { ite
   const counts = (need.items && plan.itemsMax !== null) || (need.bytes && plan.storageMaxBytes !== null);
   if (!counts) return;
   const full = whatIsFull(await roomOf(ws, replacing), need);
-  if (full) throw new HttpError(402, await fullMessage(plan, full));
+  if (full) throw new QuotaError(full, plan.key, await fullMessage(plan, full));
 }
 
 /** What a person reads when the plan has no room left, in their language */
@@ -251,7 +251,7 @@ export interface OverCapacity { members: number; limit: number; plan: PlanKey }
 
 /**
  * A team can end up with more people than its plan allows after a downgrade.
- * Nobody is removed and the AI keeps working: only new invitations wait (memberLimitMessage)
+ * Nobody is removed and the AI keeps working: only new invitations wait (memberLimit)
  * until someone leaves or the plan goes up.
  */
 export async function overCapacity(organizationId: string, planKey: string | null | undefined): Promise<OverCapacity | null> {
@@ -273,7 +273,7 @@ export async function quotaBlock(check: Promise<void>): Promise<Response | null>
 }
 
 /**
- * Throws HttpError(402) if the workspace has used up that action's monthly quota. Searches on a fair-use plan
+ * Throws a QuotaError if the workspace has used up that action's monthly quota. Searches on a fair-use plan
  * never throw: past the ceiling the team and the account's owner are told, once a month.
  */
 /** The first search past the ceiling each month emails the team and the account's owner. Nobody is cut off */
@@ -304,12 +304,12 @@ export async function assertQuota(ws: QuotaWorkspace, action: "ai" | "jev_search
   const used = await countAction(ws.billingAccountId, action);
   if (used >= limit) {
     const { t } = await getT();
-    throw new HttpError(402, t.quota.spent(used, limit, t.quota.actions[action], t.plans.items[plan.key].name));
+    throw new QuotaError(action === "ai" ? "ai" : "searches", plan.key, t.quota.spent(used, limit, t.quota.actions[action], t.plans.items[plan.key].name));
   }
 }
 
 /**
- * Throws HttpError(402) if the account already has as many workspaces as its plan allows. Run it in the
+ * Throws a QuotaError if the account already has as many workspaces as its plan allows. Run it in the
  * transaction that adds the workspace, after locking the account's row, so two at once cannot both fit.
  * An account left over the limit by a downgrade keeps every workspace: only adding one is refused.
  */
@@ -319,7 +319,7 @@ export async function assertWorkspaceRoom(accountId: string, exec: Exec = db): P
   const plan = planOf(a?.plan);
   if (plan.workspaces === null || (await countWorkspaces(accountId, exec)) < plan.workspaces) return;
   const { t } = await getT();
-  throw new HttpError(402, t.quota.noWorkspaceRoom(t.plans.items[plan.key].name, plan.workspaces));
+  throw new QuotaError("workspaces", plan.key, t.quota.noWorkspaceRoom(t.plans.items[plan.key].name, plan.workspaces));
 }
 
 export interface SeatOpts {
@@ -329,8 +329,8 @@ export interface SeatOpts {
   exceptEmail?: string;
 }
 
-/** Message for the invitations hook: null if one more person fits. */
-export async function memberLimitMessage(organizationId: string, planKey: string | null | undefined, opts: SeatOpts = {}): Promise<string | null> {
+/** The refusal for the invitations hooks (lib/auth.ts): null if one more person fits. */
+export async function memberLimit(organizationId: string, planKey: string | null | undefined, opts: SeatOpts = {}): Promise<QuotaError | null> {
   const plan = planOf(planKey);
   if (plan.members === null) return null;
   const [members, pending] = await Promise.all([
@@ -340,10 +340,8 @@ export async function memberLimitMessage(organizationId: string, planKey: string
   if (members + pending < plan.members) return null;
   const { t } = await getT();
   const allows = t.quota.planAllows(t.plans.items[plan.key].name, t.quota.people(plan.members));
-  if (pending > 0) {
-    return t.quota.withPending(allows, t.quota.people(members), t.quota.pendingInvites(pending));
-  }
-  return t.quota.movePlan(allows);
+  const message = pending > 0 ? t.quota.withPending(allows, t.quota.people(members), t.quota.pendingInvites(pending)) : t.quota.movePlan(allows);
+  return new QuotaError("members", plan.key, message);
 }
 
 /**

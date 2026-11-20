@@ -18,6 +18,8 @@ import type { Dict } from "@/lib/i18n/en";
 import type { SessionUser, Workspace } from "@/lib/workspace-core";
 import type { InspoItem, ProjectLinks } from "@/types/inspo";
 import type { ProjectSystem, SystemArea } from "@/types/system";
+import { failureOf } from "@/lib/plan-limit";
+import { reportPlanLimit } from "@/components/PlanLimitNotice";
 
 /** A new reference by link, image or text: on the board at once, saved behind it, gone again with a notice if it fails.
  *  It lands where saveTargetRef says, or in `into` when the caller names the project (a card on the home) */
@@ -59,7 +61,7 @@ export function useAddReferences({ user, workspace, t, items, setItems, setLinks
     if (!item.id || !areas?.length) return;
     for (const area of areas) {
       const r = await assignSystemArea(projectId, area, item.id, true).catch((e) => ({ ok: false as const, error: String(e) }));
-      if (!r.ok) { projectFailed(new Error(r.error)); return; }
+      if (!r.ok) { projectFailed(failureOf(r)); return; }
       setSystem(projectId, r.data);
     }
   };
@@ -75,7 +77,7 @@ export function useAddReferences({ user, workspace, t, items, setItems, setLinks
     try {
       const projectId = temp.pendingIn ?? undefined;
       const r = await addInspo({ web: input.web, type: input.type, note: input.note, projectId });
-      if (!r.ok) throw new Error(r.error);
+      if (!r.ok) throw failureOf(r);
       const item = r.data;
       if (projectId && item.id) setLinks((prev) => ({ ...prev, [item.id!]: [projectId] }));
       if (projectId) refreshSystem(projectId);
@@ -91,7 +93,7 @@ export function useAddReferences({ user, workspace, t, items, setItems, setLinks
       return item;
     } catch (e) {
       setItems((prev) => prev.filter((i) => i !== temp));
-      setToast({ title: t.app.saveFailed, detail: e instanceof Error ? e.message : String(e) });
+      if (!reportPlanLimit(e)) setToast({ title: t.app.saveFailed, detail: e instanceof Error ? e.message : String(e) });
       return null;
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps -- fileUnderAreas is a new function on every render, so listing it would rebuild this callback on every render; the strings are read from the dictionary it was built with, and listing t would rebuild it when the language changes; the setters, refreshSystem and saveTargetRef never change identity
@@ -114,7 +116,7 @@ export function useAddReferences({ user, workspace, t, items, setItems, setLinks
       const url = await uploadMedia(input.file);
       const projectId = temp.pendingIn ?? undefined;
       const r = await addImage({ url, fileName: input.file.name, type: input.type, note: input.note, projectId });
-      if (!r.ok) throw new Error(r.error);
+      if (!r.ok) throw failureOf(r);
       const item = r.data;
       if (projectId && item.id) setLinks((prev) => ({ ...prev, [item.id!]: [projectId] }));
       if (projectId) refreshSystem(projectId);
@@ -128,7 +130,7 @@ export function useAddReferences({ user, workspace, t, items, setItems, setLinks
       return item;
     } catch (e) {
       setItems((prev) => prev.filter((i) => i !== temp));
-      setToast({ title: t.app.saveFailed, detail: messageOf(e, t, String(e)) });
+      if (!reportPlanLimit(e)) setToast({ title: t.app.saveFailed, detail: messageOf(e, t, String(e)) });
       return null;
     } finally {
       // The card already swapped to the uploaded file; give it a moment before dropping the local copy
@@ -151,7 +153,7 @@ export function useAddReferences({ user, workspace, t, items, setItems, setLinks
     try {
       const projectId = temp.pendingIn ?? undefined;
       const r = await addText({ title: input.text.title, text: input.text.body, note: input.note, projectId });
-      if (!r.ok) throw new Error(r.error);
+      if (!r.ok) throw failureOf(r);
       const item = r.data;
       if (projectId && item.id) setLinks((prev) => ({ ...prev, [item.id!]: [projectId] }));
       if (projectId) refreshSystem(projectId);
@@ -163,7 +165,7 @@ export function useAddReferences({ user, workspace, t, items, setItems, setLinks
       return item;
     } catch (e) {
       setItems((prev) => prev.filter((i) => i !== temp));
-      setToast({ title: t.app.saveFailed, detail: messageOf(e, t, String(e)) });
+      if (!reportPlanLimit(e)) setToast({ title: t.app.saveFailed, detail: messageOf(e, t, String(e)) });
       return null;
     }
   }, [user, watch, refreshSystem, t, saveTargetRef, setItems, setLinks, setToast]);

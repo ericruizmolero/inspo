@@ -1,5 +1,6 @@
 // SaaS plans. No payment gateway yet: the plan lives in billing_account.plan, one account for one or
-// more workspaces, and is changed by hand with `npx tsx scripts/set-plan.ts <slug> <plan>`.
+// more workspaces. Its owner asks for one in Settings, Plan and a partner sets it in /admin/plans
+// (lib/plan-requests.ts), or by hand with `npx tsx scripts/set-plan.ts <slug> <plan>`.
 // Quotas are monthly (calendar month), counted on the ai_usage table across the account's workspaces.
 // The marketing site's /pricing/ shows a copy (marketing-site/src/plans.ts): change both, or
 // tests/marketing-site-copy.test.ts fails. The same goes for the plans' text in lib/i18n/<locale>/plans.ts.
@@ -62,5 +63,27 @@ export const isPaid = (p: Pick<Plan, "price">) => p.price.month > 0;
 
 export const isPlanKey = (k: string): k is PlanKey => PLANS.some((p) => p.key === k);
 
-/** Contact email to change plan while there's no gateway */
-export const PLANS_CONTACT = "hola@criterio.design";
+/** The plans an account can ask to move up to from `from`: the dearer ones */
+export const plansAbove = (from: PlanKey): Plan[] => PLANS.filter((p) => p.price.month > planOf(from).price.month);
+
+/** What a plan can run out of. Each one is a QuotaError (lib/workspace-core.ts) when it does */
+export type PlanLimit = "ai" | "searches" | "members" | "items" | "projects" | "storage" | "workspaces" | "checks";
+
+/** How much of each limit a plan gives: null is no cap */
+const ROOM: Record<PlanLimit, (p: Plan) => number | null> = {
+  ai: (p) => p.aiActionsPerMonth,
+  searches: (p) => (p.searches.kind === "capped" ? p.searches.perMonth : null),
+  members: (p) => p.members,
+  items: (p) => p.itemsMax,
+  projects: (p) => p.projectsMax,
+  storage: (p) => p.storageMaxBytes,
+  workspaces: (p) => p.workspaces,
+  checks: (p) => (isPaid(p) ? null : FREE_CHECKS_PER_MONTH),
+};
+
+/** The cheapest plan above `from` that gives more of `limit`: the one the upgrade notice names. null at the top */
+export function planThatLifts(limit: PlanLimit, from: PlanKey): PlanKey | null {
+  const had = ROOM[limit](planOf(from));
+  if (had === null) return null;
+  return plansAbove(from).find((p) => { const room = ROOM[limit](p); return room === null || room > had; })?.key ?? null;
+}

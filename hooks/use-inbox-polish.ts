@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from "react";
 import { removeInspos } from "@/app/actions/library";
 import type { InspoItem, PolishChoice, PolishVote } from "@/types/inspo";
+import { failureOf } from "@/lib/plan-limit";
 
 // ─── Polish in the Cajón ─────────────────────────────────────────────────────
 // The Cajón has no place further back to send a card to, and no project to hang votes on: Keep leaves it in the
@@ -45,7 +46,7 @@ export function useInboxPolish({ workspaceId, userId, active, inbox, deletable, 
     const r = await removeInspos(gone.map((i) => i.id!)).catch((e) => ({ ok: false as const, error: String(e) }));
     if (!r.ok) {
       setItems((prev) => [...gone.filter((g) => !prev.some((i) => i.id === g.id)), ...prev]);
-      failRef.current(new Error(r.error));
+      failRef.current(failureOf(r));
     }
   }, [setItems]);
   // Leaving Polish deletes what was forgotten in it. A tick later: Polish hands over a card still in the air as it unmounts

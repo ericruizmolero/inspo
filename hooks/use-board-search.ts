@@ -5,6 +5,7 @@ import { viewOf, FACETS } from "@/lib/taxonomy";
 import { filterTest, localScores, queryWords, rankText, isDescriptive, textIndex, vocabulary, norm, newestFirst, type Filter } from "@/lib/search-query";
 import type { Dict } from "@/lib/i18n/en";
 import type { CommentMap, InspoItem, TagMap } from "@/types/inspo";
+import { reportPlanLimit } from "@/components/PlanLimitNotice";
 
 const NO_FILTERS: Filter[] = [];
 
@@ -13,6 +14,9 @@ const SEMANTIC_WAIT_MS = 180;
 const JEV_WAIT_MS = 700;
 /** Jev reads only the nearest few */
 const JEV_TOP = 20;
+/** The free plan's AI searches spent shows the upgrade notice once a page load, not at every keystroke after */
+let toldSearchesSpent = false;
+
 // ─── Search ─────────────────────────────────────────────────────────────────
 // Three layers, each shown as soon as it is there (lib/search-query.ts):
 // 1. here, every keystroke: chips filter, words match each item's text (tags in both languages, notes, thread);
@@ -86,8 +90,10 @@ export function useBoardSearch({ searchHere, query, filters, items, tagMap, comm
       setJevBusy(true);
       try {
         const res = await fetch("/api/search", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ q: text, webs: jevFor }), signal: ctrl.signal });
-        const data = res.ok ? await res.json() : null;
-        if (data?.scores) { setJev({ q: text, scores: data.scores }); if (!data.cached) loadQuota(); }
+        const data = await res.json().catch(() => null);
+        if (res.ok && data?.scores) { setJev({ q: text, scores: data.scores }); if (!data.cached) loadQuota(); }
+        // The plan's searches spent: the words and meaning layers still answer, and the notice says so once
+        else if (!toldSearchesSpent) toldSearchesSpent = reportPlanLimit(data);
       } catch { /* the first two layers stand */ }
       finally { if (!ctrl.signal.aborted) setJevBusy(false); }
     }, JEV_WAIT_MS);

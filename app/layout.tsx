@@ -7,6 +7,7 @@ import { getSession } from "@/lib/workspace";
 import { getLocale, type Locale } from "@/lib/i18n";
 import { I18nProvider } from "@/components/I18nProvider";
 import FeedbackTool from "@/components/FeedbackTool";
+import PlanLimitNotice from "@/components/PlanLimitNotice";
 import { TipLayer } from "@/components/criterio";
 import { SITE } from "@/lib/site";
 
@@ -82,6 +83,8 @@ export default async function RootLayout({
           {/* Feedback is for the team, from the Island's menu and the sidebars' foot: a guest (start page, login) has
               nowhere to send it, so no floating bubble there (Eric, 07-10: it was sitting on the theme button) */}
           {session && <FeedbackTool />}
+          {/* A plan's limit, wherever it was hit: the one upgrade notice */}
+          {session && <PlanLimitNotice />}
           {/* Tooltips: the system's butter balloon for every [data-tip] on the page */}
           <TipLayer />
         </I18nProvider>

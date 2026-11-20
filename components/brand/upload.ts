@@ -4,13 +4,14 @@
 import type { BrandFile } from "@/types/brand";
 import type { UploadPurpose } from "./context";
 import { attachBrandFile } from "@/app/actions/brand";
+import { failureOf } from "@/lib/plan-limit";
 
 const VIA_APP_MAX = 4 * 1024 * 1024;
 
 export async function uploadBrandFile(projectId: string, file: File, purpose: UploadPurpose): Promise<BrandFile> {
   const ask = await fetch("/api/system/brand/upload", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ projectId, purpose, name: file.name, size: file.size }) });
   const slot = (await ask.json().catch(() => ({}))) as { key?: string; type?: string; put?: string | null; error?: string };
-  if (!ask.ok || !slot.key || !slot.type) throw new Error(slot.error ?? `Error ${ask.status}`);
+  if (!ask.ok || !slot.key || !slot.type) throw failureOf(slot, `Error ${ask.status}`);
   let key = slot.key, type = slot.type;
   let sent = false;
   if (slot.put) {
@@ -25,10 +26,10 @@ export async function uploadBrandFile(projectId: string, file: File, purpose: Up
     fd.append("projectId", projectId); fd.append("purpose", purpose); fd.append("file", file);
     const res = await fetch("/api/system/brand/upload", { method: "POST", body: fd });
     const got = (await res.json().catch(() => ({}))) as { key?: string; type?: string; error?: string };
-    if (!res.ok || !got.key || !got.type) throw new Error(got.error ?? `Error ${res.status}`);
+    if (!res.ok || !got.key || !got.type) throw failureOf(got, `Error ${res.status}`);
     key = got.key; type = got.type;
   }
   const r = await attachBrandFile(projectId, key, type, file.name);
-  if (!r.ok) throw new Error(r.error);
+  if (!r.ok) throw failureOf(r);
   return r.data;
 }

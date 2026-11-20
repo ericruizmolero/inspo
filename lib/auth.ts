@@ -4,7 +4,7 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { magicLink, organization, lastLoginMethod } from "better-auth/plugins";
 import { APIError, createAuthMiddleware, getIP, isAPIError } from "better-auth/api";
-import { memberLimitMessage, memberRank, newTeamRefusal } from "./quota";
+import { memberLimit, memberRank, newTeamRefusal } from "./quota";
 import { nextCookies } from "better-auth/next-js";
 import { db, schema } from "./db";
 import { sendMail, magicLinkMail, invitationMail, localeForEmail } from "./mail";
@@ -17,7 +17,7 @@ import { allow } from "./rate-limit";
 import { log } from "./log";
 import { admit, INVITES_PER_PERSON, markJoined, maySignIn } from "./access";
 import { inviteFromCookieHeader } from "./invite-cookie";
-import { accountOf, createBillingAccount, ensurePersonalWorkspace } from "./workspace-core";
+import { accountOf, createBillingAccount, ensurePersonalWorkspace, httpErrorBody, type QuotaError } from "./workspace-core";
 
 const IS_PROD = process.env.NODE_ENV === "production";
 
@@ -234,21 +234,21 @@ export const auth = betterAuth({
         // On invite, unaccepted invitations count too, except the one for this
         // same address: re-inviting replaces the pending one instead of adding to it.
         async beforeCreateInvitation({ invitation, organization: org }) {
-          const msg = await memberLimitMessage(invitation.organizationId, await planFromOrg(org), { includePending: true, exceptEmail: invitation.email });
-          if (msg) throw new APIError("FORBIDDEN", { message: msg });
+          const full = await memberLimit(invitation.organizationId, await planFromOrg(org), { includePending: true, exceptEmail: invitation.email });
+          if (full) throw planRefusal(full);
         },
         // Direct member add (not by invitation): counts members only
         async beforeAddMember({ member, organization: org }) {
           if (member.role === "owner") return; // workspace creator
-          const msg = await memberLimitMessage(member.organizationId, await planFromOrg(org));
-          if (msg) throw new APIError("FORBIDDEN", { message: msg });
+          const full = await memberLimit(member.organizationId, await planFromOrg(org));
+          if (full) throw planRefusal(full);
         },
         // Accepting an invitation does NOT go through beforeAddMember: Better Auth uses these two
         // hooks for that path. Only members count here, because the pending invitation
         // becomes the member who joins.
         async beforeAcceptInvitation({ invitation, organization: org }) {
-          const msg = await memberLimitMessage(invitation.organizationId, await planFromOrg(org));
-          if (msg) throw new APIError("FORBIDDEN", { message: msg });
+          const full = await memberLimit(invitation.organizationId, await planFromOrg(org));
+          if (full) throw planRefusal(full);
         },
         // Two people can accept the last seat at once: both pass the check above
         // before either gets inserted. Better Auth does the insert, so we can't put
@@ -308,3 +308,9 @@ export type Session = typeof auth.$Infer.Session;
 async function planFromOrg(org: { id: string }): Promise<string | null> {
   return (await accountOf(org.id))?.plan ?? null;
 }
+
+/** A seat limit as Better Auth answers it: a 402 whose body carries what the upgrade notice reads, under `message` */
+const planRefusal = (e: QuotaError) => {
+  const { error, ...limit } = httpErrorBody(e);
+  return new APIError("PAYMENT_REQUIRED", { message: error, ...limit });
+};

@@ -179,8 +179,8 @@ async function main() {
     "Importado: 12 webs y 3 imágenes. 20 ya estaban en tu librería. 1 se queda fuera (un tablero dentro del tablero).");
   assert.equal(line(es, { existed: 1 }), "Ya estaba en tu librería.");
   assert.equal(line(en, { imported: { web: 3 }, full: 7 }),
-    "3 websites imported. 7 left out: your plan has no more room. Move up a plan in /planes to bring them in.", "an import past the cap says how many stayed out");
-  assert.equal(line(es, { full: 1 }), "No ha entrado nada. 1 se queda fuera: tu plan no tiene más sitio. Amplía el plan en /planes para traerla.");
+    "3 websites imported. 7 left out: your plan has no more room. Move up a plan to bring them in.", "an import past the cap says how many stayed out");
+  assert.equal(line(es, { full: 1 }), "No ha entrado nada. 1 se queda fuera: tu plan no tiene más sitio. Amplía el plan para traerla.");
 
   console.log("boards: pure checks pass");
 
