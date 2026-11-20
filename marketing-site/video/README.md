@@ -185,9 +185,12 @@ node marketing-site/video/landing/revisar.cjs https://criterio.design/ publicada
 - WebKit sin pantalla no pinta la perspectiva CSS: el giro de las tarjetas del Pulido solo se ve bien en Chrome y en un Safari real.
 - `scripts/check-dist.mjs` lee cualquier `src="…"` del HTML, también dentro del JavaScript. `construir.py` ya lo resuelve; por eso no se edita `src/pages/index.astro` a mano.
 - Tino, fijo en la esquina de abajo a la derecha, tapaba la tarjeta de la derecha de los planes por debajo de unos 1420 px de ancho. Mientras los planes (`#pricing`) pasan por su esquina, se agacha bajo el borde de la pantalla con el mismo deslizamiento con que se va junto a la ventana, y vuelve al salir (en `tick`, después de `actorSide` y `actorAt`). Cuenta solo su cuerpo, no el aire de su caja (`R * .8`): a 1440 px cabe al lado de la tarjeta y no se mueve.
+- WebKit pone el volumen y la pantalla completa del vídeo **arriba**, sobre la propia etiqueta `<video>`, y el volumen quedaba debajo de «Cerrar». Por eso `#film-b` deja una franja arriba y otra abajo de la altura de «Cerrar» y el vídeo va entre las dos. Chrome solo pone controles abajo y no lo enseña.
+- iOS no reproduce con sonido un `autoplay` que empieza después del toque. `playFilm` llama a `play()` en el mismo clic que mete el `<video>`; si el navegador lo niega, queda el póster con su botón.
+- `backdrop-filter` va siempre con su `-webkit-backdrop-filter` al lado: Safari anterior a la 18 solo entiende el prefijado.
 - En la plantilla, lo que lleva `%%…%%` lo rellena `construir.py` con código de la web (ver «Lo que la portada toma de la web»). No se escribe a mano ninguna dirección de la app (`app.criterio.design`): con `npm run dev:marketing` la web apunta a la app local y en la publicada a la de producción.
 
 ## Pendiente
 
-- Probar en un iPhone y en un Safari reales. En WebKit móvil los controles del vídeo rozan el botón «Cerrar».
+- Probar en un iPhone y en un Safari reales. En WebKit de Playwright (escritorio, iPhone 15 y iPhone SE) ya no hay nada propio de WebKit que arreglar; falta confirmar en un aparato que el vídeo arranca con sonido al tocar.
 - El tablón de la demo enseña capturas de webs de terceros.
