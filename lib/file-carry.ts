@@ -59,17 +59,24 @@ export class FileCarrier {
     return this.foreign === "drop" && namesPrivateFile(value) ? null : value;
   }
 
-  /** Copies these keys into the new folder, `at` at a time. A file that can no longer be read is left out: answers those */
-  async copy(keys: Iterable<string>, at = 4): Promise<string[]> {
+  /** Keys whose copy the new folder already holds: rows point at it, and copy() neither reads nor writes over it */
+  adopt(keys: Iterable<string>): void {
+    for (const key of keys) { const c = carriedKey(key, this.from, this.to); if (c) this.done.set(key, c.next); }
+  }
+
+  /** Copies these keys into the new folder, `at` at a time. A file that can no longer be read is left out: answers
+   *  those. Once `signal` aborts no other file starts, and it throws after the ones under way are written */
+  async copy(keys: Iterable<string>, at = 4, signal?: AbortSignal): Promise<string[]> {
     const missed: string[] = [];
     await eachLimit([...keys].filter((k) => !this.done.has(k)), at, async (key) => {
       const c = carriedKey(key, this.from, this.to);
-      if (!c) return;
+      if (!c || signal?.aborted) return;
       const f = await this.read(key).catch((err) => { log.warn("file_carry.file_unread", { ref: key, err }); return null; });
       if (!f) { log.warn("file_carry.file_missing", { ref: key }); missed.push(key); return; }
       await putFile(c.next, f.body, f.contentType, this.to);
       this.done.set(key, c.next);
     });
+    signal?.throwIfAborted();
     return missed;
   }
 

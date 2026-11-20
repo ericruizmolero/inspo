@@ -25,8 +25,17 @@ const cleanName = async (name: unknown) => { const n = String(name ?? "").trim()
 
 /** A clone never takes the name of a project the workspace already has: it gets the first free "Name (1)", "Name (2)"… */
 export async function freeName(organizationId: string, name: string): Promise<string> {
+  return firstFreeName(await projectNames(organizationId), name);
+}
+
+/** The workspace's project names, lowercased, templates left out: what a new project's name may not be */
+export async function projectNames(organizationId: string): Promise<Set<string>> {
   const rows = await db.select({ name: P.name }).from(P).where(and(eq(P.organizationId, organizationId), isNull(P.template)));
-  const taken = new Set(rows.map((r) => r.name.toLowerCase()));
+  return new Set(rows.map((r) => r.name.toLowerCase()));
+}
+
+/** `name`, or its first "Name (1)", "Name (2)"… that `taken` (lowercased) does not hold */
+export function firstFreeName(taken: Set<string>, name: string): string {
   if (!taken.has(name.toLowerCase())) return name;
   const base = name.replace(/ \(\d+\)$/, "");
   for (let i = 1; ; i++) {
