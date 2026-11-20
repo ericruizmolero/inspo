@@ -32,12 +32,11 @@ const FONT = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial
 const MONO = "ui-monospace,SFMono-Regular,Menlo,Consolas,monospace";
 
 /**
- * Makes a value safe in an email's HTML. Only what HTML would read as markup: an ampersand that starts an entity,
- * and the angle brackets. A plain "&" or a quote stays as written, because Resend puts the same value, unescaped,
- * in the plain-text part it keeps for each template. The subject reads the raw twin instead (lib/mail-templates.ts).
+ * Makes a value safe in an email's HTML, in text or inside a double-quoted attribute. The subject and the plain-text
+ * part read the raw twin instead (lib/mail-templates.ts), so nothing there shows the entities.
  */
-export const escapeHtml = (s: string): string => s.replace(/&(?=#?\w+;)/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-const attr = (s: string) => escapeHtml(s).replace(/"/g, "&quot;");
+export const escapeHtml = (s: string): string => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+const attr = escapeHtml;
 const html = (s: string) => s as Html;
 
 // ─── Blocks ──────────────────────────────────────────────────────────────────

@@ -50,20 +50,21 @@ test("the compiler refuses a template's variables when one is missing or extra",
   mail("reply", "en", { WHO: "a", MINE: "b", THEIRS: "c", URL: "u" });
 });
 
-test("someone's words are escaped for the HTML; a link's & and a quote stay as written for the text part", () => {
+test("someone's words are escaped for the HTML, in text and in an attribute, and go as typed in their twins", () => {
   const m = replyMail({ who: "<b>Eve</b> & co", mine: "5 &lt; 6", theirs: "It's \"fine\"", url: "https://app.test/p/1?a=1&lang=es" }, { team: "Ana & Bea", stopUrl: "https://app.test/unsubscribe?u=1&k=replies" }, "en");
   const v = resendVariables(m, greeting("en", "Ana"));
-  expect(v.WHO).toBe("&lt;b&gt;Eve&lt;/b&gt; & co");
+  expect(v.WHO).toBe("&lt;b&gt;Eve&lt;/b&gt; &amp; co");
   expect(v.MINE).toBe("5 &amp;lt; 6");
-  expect(v.THEIRS).toBe("It's \"fine\"");
-  expect(v.URL).toBe("https://app.test/p/1?a=1&lang=es");
-  expect(v.TEAM).toBe("Ana & Bea");
+  expect(v.THEIRS).toBe("It's &quot;fine&quot;");
+  expect(v.URL).toBe("https://app.test/p/1?a=1&amp;lang=es");
+  expect(v.TEAM).toBe("Ana &amp; Bea");
+  expect([v.WHO_PLAIN, v.THEIRS_PLAIN, v.URL_PLAIN]).toEqual(["<b>Eve</b> & co", "It's \"fine\"", "https://app.test/p/1?a=1&lang=es"]);
 });
 
 test("a text variable goes escaped for the HTML and as typed in its raw twin, which the subject reads", () => {
   const m = overCapacityMail("https://app.test/t?a=1&b=2", "Ana & Bea <\"studio\">", "duo", 7, 5, "en");
   const v = resendVariables(m, "Hi,");
-  expect(v.TEAM).toBe("Ana & Bea &lt;\"studio\"&gt;");
+  expect(v.TEAM).toBe("Ana &amp; Bea &lt;&quot;studio&quot;&gt;");
   expect(v.TEAM_PLAIN).toBe("Ana & Bea <\"studio\">");
   expect(v.MEMBERS, "a number has no twin").toBe(7);
   expect(v).not.toHaveProperty("MEMBERS_PLAIN");
