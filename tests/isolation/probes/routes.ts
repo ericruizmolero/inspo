@@ -556,6 +556,23 @@ export const routes: Record<string, Surface> = {
       expectNoSecret(fx, await own.text(), "B's export carries nothing of A's");
     },
   },
+  "route:app/api/workspace/import/route.ts#POST": {
+    probe: async (fx) => {
+      const { POST } = await import("@/app/api/workspace/import/route");
+      const { zip } = await import("@/lib/zip");
+      // A's upload, waiting to be imported: B names it
+      const aKey = `imports/${fx.a.owner.id}/upload.zip`;
+      files.set(aKey, { body: zip([{ name: "workspace.json", data: Buffer.from(JSON.stringify({ version: 1, workspace: { id: fx.a.team, name: fx.a.secret } })) }]), contentType: "application/zip" });
+      const named = () => db.select({ id: schema.organization.id }).from(schema.organization).where(eq(schema.organization.name, fx.a.secret));
+      asB(fx);
+      await expectDenied(fx, await POST(request("/api/workspace/import", { method: "POST", body: { key: aKey } })), "B imports A's upload");
+      expect(files.has(aKey), "A's upload is left alone").toBe(true);
+      expect(await named(), "nothing made from it").toEqual([]);
+      const slot = await POST(request("/api/workspace/import", { method: "POST", body: { size: 10 } }));
+      expect(((await slot.json()) as { key: string }).key.startsWith(`imports/${fx.b.owner.id}/`), "B's upload goes to B's own folder").toBe(true);
+      files.delete(aKey);
+    },
+  },
 
   // ─── Outside any workspace ──────────────────────────────────────────────────
   "route:app/api/auth/[...all]/route.ts#GET": { exempt: "Better Auth's own endpoints: its organization plugin checks membership itself" },

@@ -687,4 +687,14 @@ export const actions: Record<string, Surface> = {
       expect(await team(), "A's team stays on its account").toEqual(before);
     },
   },
+  "action:app/actions/billing.ts#letWorkspaceGo": {
+    probe: async (fx) => {
+      const { letWorkspaceGo } = await import("@/app/actions/billing");
+      const team = () => db.select().from(schema.organization).where(eq(schema.organization.id, fx.a.team));
+      const before = await team();
+      asB(fx);
+      expectRefused(fx, await letWorkspaceGo(fx.a.team), "B cannot let A's team go from A's account");
+      expect(await team(), "A's team stays on its account").toEqual(before);
+    },
+  },
 };
