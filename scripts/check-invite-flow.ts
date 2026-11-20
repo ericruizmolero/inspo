@@ -14,6 +14,7 @@ import { eq, inArray } from "drizzle-orm";
 import { db, schema } from "../lib/db";
 import { accountOf, createBillingAccount, dropEmptyAccount } from "../lib/workspace-core";
 import { changePlan } from "../lib/plan-change";
+import { createInvite } from "../lib/access";
 
 const BASE = process.env.BASE || "http://localhost:3000";
 const TAG = `flowcheck-${crypto.randomUUID().slice(0, 8)}`;
@@ -22,11 +23,12 @@ const PEOPLE = ["owner", "one", "two", "three", "eva", "fran", "gus"];
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const newId = () => crypto.randomUUID().replace(/-/g, "").slice(0, 24);
 
-/** Signs in by magic link, reading the link from .data/last-mail.txt. Returns the session cookie. */
-async function login(email: string): Promise<string> {
+/** Signs in by magic link, reading the link from .data/last-mail.txt. Returns the session cookie. `invite` goes with
+ *  the request as /login sends it; the link is then opened with no cookie, as in another browser. */
+async function login(email: string, invite?: string): Promise<string> {
   const r = await fetch(`${BASE}/api/auth/sign-in/magic-link`, {
     method: "POST", headers: { "Content-Type": "application/json", origin: BASE },
-    body: JSON.stringify({ email, callbackURL: `${BASE}/` }),
+    body: JSON.stringify({ email, callbackURL: `${BASE}/`, ...(invite ? { metadata: { invite } } : {}) }),
   });
   if (!r.ok) throw new Error(`magic-link ${r.status} for ${email}: ${await r.text()}`);
   await sleep(500);
@@ -52,7 +54,12 @@ let orgId = "", paidId = "";
 const accounts: string[] = [];
 
 async function main() {
-  const owner = await login(mail("owner"));
+  // Signup may be invite-only: the owner comes in on a code, carried by the magic link alone. The others come in on
+  // their team invitation
+  const code = await createInvite({ wave: TAG });
+  const owner = await login(mail("owner"), code.code);
+  const [joined] = await db.select({ inviteId: schema.user.accessInviteId }).from(schema.user).where(eq(schema.user.email, mail("owner")));
+  assert.equal(joined.inviteId, code.id, "the account was made with the code the magic link carried");
   // One free workspace each: with only free ones, a new team is refused, with a paid one it is allowed
   const refused = await post("/api/auth/organization/create", owner, { name: TAG, slug: TAG });
   // A plan's limit like the others: 402 naming the cheapest paid plan, which the app turns into the upgrade notice
@@ -125,4 +132,5 @@ main()
     for (const id of [orgId, paidId]) if (id) await db.delete(schema.organization).where(eq(schema.organization.id, id));
     for (const id of accounts) await dropEmptyAccount(id);
     await db.delete(schema.user).where(inArray(schema.user.email, PEOPLE.map(mail)));
+    await db.delete(schema.accessInvite).where(eq(schema.accessInvite.wave, TAG));
   });
