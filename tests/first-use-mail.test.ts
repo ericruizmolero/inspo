@@ -4,7 +4,7 @@ import { randomBytes } from "node:crypto";
 import { eq, inArray, like } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, expect, test, vi } from "vitest";
 import { db, pool, schema } from "@/lib/db";
-import { ensurePersonalWorkspace, newId } from "@/lib/workspace-core";
+import { ensurePersonalWorkspace } from "@/lib/workspace-core";
 import { REFS_GOAL } from "@/lib/first-steps-core";
 import { nudgeKey, nudgeWindow, sendNudges, welcomeKey, sendWelcome } from "@/lib/first-use-mail";
 import { reached } from "./harness";
