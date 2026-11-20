@@ -4,8 +4,8 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { afterEach, expect, test, vi } from "vitest";
-import { TEMPLATE_KEYS, aliasOf, letter, mail, plainSubject, resendVariables, variablesOf, type Mail } from "@/lib/mail-templates";
-import { BODY_END, BODY_START, bodyOf, button, greeting, join, layoutHtml, layoutText, para, quote } from "@/lib/mail-layout";
+import { TEMPLATES, TEMPLATE_KEYS, aliasOf, letter, mail, resendVariables, textPart, throughTwins, variablesOf, type Mail } from "@/lib/mail-templates";
+import { BODY_END, BODY_START, bodyOf, button, code, greeting, heading, htmlText, join, layoutHtml, layoutText, para, quote } from "@/lib/mail-layout";
 import { overCapacityMail, welcomeMail, replyMail } from "@/lib/mail";
 
 // tests/setup.ts blocks sendMail everywhere; here it is the thing under test, with fetch stubbed
@@ -70,10 +70,52 @@ test("a text variable goes escaped for the HTML and as typed in its raw twin, wh
   expect(Object.keys(v).sort(), "sendMail fills exactly what the template declares").toEqual(Object.keys(variablesOf("over-capacity")).sort());
 
   const subject = "{{{TEAM}}} has {{{MEMBERS}}} people and the {{{PLAN}}} plan allows {{{LIMIT}}}";
-  const plain = plainSubject("over-capacity", subject);
+  const plain = throughTwins("over-capacity", subject);
   expect(plain).toBe("{{{TEAM_PLAIN}}} has {{{MEMBERS}}} people and the {{{PLAN_PLAIN}}} plan allows {{{LIMIT}}}");
-  expect(plainSubject("over-capacity", plain), "running it again changes nothing").toBe(plain);
-  expect(plainSubject("letter", "{{{SUBJECT}}}"), "the letter's subject is raw already").toBe("{{{SUBJECT}}}");
+  expect(throughTwins("over-capacity", plain), "running it again changes nothing").toBe(plain);
+  expect(throughTwins("letter", "{{{SUBJECT}}}"), "the letter's subject is raw already").toBe("{{{SUBJECT}}}");
+});
+
+test("a template's body reads as plain text the way the blocks write it", () => {
+  const blocks = join(para("5 < 6 & ", { href: "https://x.test/?a=1&b=2", text: "R&D" }), heading("1. Create a project"), button("Open \"it\"", "https://x.test/a?b=1&c=2"), code("a@b.test"));
+  expect(htmlText(blocks.html)).toBe(blocks.text);
+
+  const edited = `<p style="margin:0">Read <strong>this</strong>&nbsp;now,\n   <em>then</em><br>that &amp; &#8220;more&#x201D;</p>
+<ul><li>one</li><li><a href="{{{URL}}}">{{{URL}}}</a></li></ul><div>Ask <a href='mailto:a@b.test'>us</a>.</div><!-- note -->`;
+  expect(htmlText(edited)).toBe("Read this now, then\nthat & \u201Cmore\u201D\n\n- one\n- {{{URL}}}\n\nAsk us (mailto:a@b.test).");
+});
+
+test("a template's plain-text part reads every text variable through its raw twin, and never an html variable", () => {
+  const body = `<p style="margin:0 0 16px;">Escribiste: {{{MINE}}}</p>
+<p style="margin:0 0 16px;">{{{WHO}}} responde: {{{THEIRS}}}</p>
+${button("Ver la respuesta", "{{{URL}}}").html}`;
+  const text = textPart("reply", "es", body);
+  expect(text).toBe(`{{{GREETING_PLAIN}}}
+
+Escribiste: {{{MINE_PLAIN}}}
+
+{{{WHO_PLAIN}}} responde: {{{THEIRS_PLAIN}}}
+
+Ver la respuesta: {{{URL_PLAIN}}}
+
+Eric, Andoni y Alberto
+
+Te llega porque estás en {{{TEAM_PLAIN}}} en criterio.design.
+Dejar de recibir estos correos (un clic, sin entrar):
+{{{STOP_URL_PLAIN}}}
+
+criterio.design`);
+  expect(throughTwins("reply", text), "running it again changes nothing").toBe(text);
+  expect(textPart("welcome", "en", "<p>Save {{{GOAL}}} references</p>"), "a number reads as itself").toContain("Save {{{GOAL}}} references");
+
+  for (const key of TEMPLATE_KEYS) {
+    const vars = variablesOf(key);
+    const part = textPart(key, "en", `<p>${Object.keys(TEMPLATES[key].vars).map((v) => `{{{${v}}}}`).join(" ")}</p>`);
+    const read = [...part.matchAll(/\{\{\{(\w+)\}\}\}/g)].map(([, v]) => v);
+    expect(read.filter((v) => vars[v] === "text" || vars[v] === "html"), key).toEqual([]);
+    expect(read.filter((v) => !(v in vars)), `${key} reads only what it declares`).toEqual([]);
+  }
+  expect(textPart("letter-team", "en", "ignored"), "the letter's text is the code's own").toContain("{{{BODY_TEXT}}}");
 });
 
 test("an email built in code goes through the letter for its foot: none, a team's or the Vault's", () => {

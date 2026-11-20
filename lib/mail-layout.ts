@@ -135,11 +135,41 @@ ${BODY_END}
 </html>`;
 }
 
-/** The plain-text part of the letter, around {{{BODY_TEXT}}}. A template's own is derived by Resend from its HTML */
+/** The plain-text part of an email, around its body as text: {{{BODY_TEXT}}} for the letter, a template's from htmlText */
 export function layoutText(f: Frame, body: string): string {
   const c = COPY[f.locale];
   const reason = why(f);
-  return [`{{{GREETING}}}`, body, c.signature, reason && `${reason}\n${c.stop} (${c.stopNote}):\n{{{STOP_URL}}}`, "criterio.design"].filter(Boolean).join("\n\n");
+  return [`{{{GREETING}}}`, body, c.signature, reason && `${reason}\n${c.stop} ${c.stopNote}:\n{{{STOP_URL}}}`, "criterio.design"].filter(Boolean).join("\n\n");
+}
+
+const ENTITIES: Record<string, string> = { amp: "&", lt: "<", gt: ">", quot: "\"", apos: "'", nbsp: " ", copy: "©" };
+const decode = (s: string) => s.replace(/&(#x[\da-f]+|#\d+|[a-z]+);/gi, (m, e: string) =>
+  e[0] !== "#" ? ENTITIES[e.toLowerCase()] ?? m : String.fromCodePoint(e[1] === "x" || e[1] === "X" ? parseInt(e.slice(2), 16) : Number(e.slice(1))));
+const hrefOf = (attrs: string) => /href\s*=\s*(?:"([^"]*)"|'([^']*)')/i.exec(attrs)?.slice(1).find((h) => h !== undefined) ?? "";
+const untag = (s: string) => s.replace(/<[^>]*>/g, "").trim();
+/** A link as text: the button's "Label: URL", a link in a sentence "words (URL)", a bare address once */
+const linkText = (sep: (label: string, href: string) => string) => (_: string, attrs: string, inner: string) => {
+  const label = untag(inner), href = hrefOf(attrs);
+  return !href || label === href ? label || href : !label ? href : sep(label, href);
+};
+const BLOCK = /<\/?(?:p|div|h[1-6]|ul|ol|table|tr|blockquote)\b[^>]*>/gi;
+
+/**
+ * A template's body as plain text, the way the blocks above write it: a blank line between paragraphs, the button as
+ * "Label: URL", a link in a sentence as "words (URL)", a list item as "- item". Variables stay {{{VAR}}}.
+ */
+export function htmlText(body: string): string {
+  return decode(
+    body
+      .replace(/<!--[\s\S]*?-->/g, "")
+      .replace(/\s+/g, " ")
+      .replace(/<table\b[\s\S]*?<\/table>/gi, (t) => t.replace(/<a\b([^>]*)>([\s\S]*?)<\/a>/gi, linkText((l, h) => `${l}: ${h}`)))
+      .replace(/<a\b([^>]*)>([\s\S]*?)<\/a>/gi, linkText((l, h) => `${l} (${h})`))
+      .replace(/<br\s*\/?>/gi, "\n")
+      .replace(/<li\b[^>]*>/gi, "\n- ")
+      .replace(BLOCK, "\n\n")
+      .replace(/<[^>]*>/g, ""),
+  ).split("\n").map((line) => line.replace(/ {2,}/g, " ").trim()).join("\n").replace(/\n{3,}/g, "\n\n").trim();
 }
 
 /** A template's body: what sits between the markers. Null when they are gone, so nothing outside them is wrapped twice */

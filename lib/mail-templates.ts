@@ -9,7 +9,7 @@
 //
 // Pure: the app and scripts/mail-templates.ts both read it.
 import type { Locale } from "./i18n/locale";
-import { escapeHtml, type Body, type Html, type Stop } from "./mail-layout";
+import { escapeHtml, htmlText, layoutText, type Body, type Html, type Stop } from "./mail-layout";
 
 /**
  * How a variable goes in. `text` is someone's words or a link, escaped for the HTML; `number` a count; `html` a body
@@ -17,8 +17,8 @@ import { escapeHtml, type Body, type Html, type Stop } from "./mail-layout";
  *
  * Resend puts a value as given wherever its {{{VAR}}} appears, the subject included, so an escaped value would show
  * its entities there. Hence every `text` variable has a raw twin, <VAR>_PLAIN (plainOf), which sendMail fills from the
- * same value: the HTML uses {{{VAR}}} and the subject {{{VAR_PLAIN}}}. The template declares both, and
- * `npm run mail:templates layout` points its subject at the twins.
+ * same value: the HTML uses {{{VAR}}}, the subject and the plain-text part {{{VAR_PLAIN}}}. The template declares
+ * both, and `npm run mail:templates layout` points its subject and writes its text part at the twins.
  */
 type Kind = "text" | "number" | "html" | "raw";
 interface Spec { vars: Record<string, Kind>; stop?: Stop }
@@ -126,9 +126,19 @@ export function variablesOf(key: TemplateKey): Record<string, Kind> {
   return { ...given, ...Object.fromEntries(textVars(given).map((v) => [plainOf(v), "raw" as const])) };
 }
 
-/** A template's subject with each text variable swapped for its raw twin. Running it again changes nothing */
-export const plainSubject = (key: TemplateKey, subject: string): string =>
-  textVars(givenOf(key)).reduce((s, v) => s.replaceAll(`{{{${v}}}}`, `{{{${plainOf(v)}}}}`), subject);
+/** A template's subject or text part with each text variable swapped for its raw twin. Running it again changes nothing */
+export const throughTwins = (key: TemplateKey, s: string): string =>
+  textVars(givenOf(key)).reduce((out, v) => out.replaceAll(`{{{${v}}}}`, `{{{${plainOf(v)}}}}`), s);
+
+/**
+ * A template's plain-text part, from the body of its HTML (the editors' wording) or, for the letter, BODY_TEXT, and
+ * reading every text variable through its raw twin, so "R&D" arrives as typed. Resend would derive one from the
+ * HTML, but with the escaped {{{VAR}}}, so `npm run mail:templates layout` writes this one instead.
+ */
+export function textPart(key: TemplateKey, locale: Locale, body: string): string {
+  const letter = (LETTERS as readonly string[]).includes(key);
+  return throughTwins(key, layoutText({ locale, stop: stopOf(key) }, letter ? "{{{BODY_TEXT}}}" : htmlText(body)));
+}
 
 /**
  * The variables as Resend takes them, checked against the registry: a missing, extra or mistyped one throws here

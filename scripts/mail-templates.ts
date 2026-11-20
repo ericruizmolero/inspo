@@ -2,8 +2,9 @@
 // layout of lib/mail-layout.ts.
 //
 //   npm run mail:templates layout        every criterio-* template in the registry gets the current layout around the
-//                                        body it has in Resend, the registry's variables and a subject that reads
-//                                        each text variable through its raw twin, and is published again
+//                                        body it has in Resend, the registry's variables, a subject that reads
+//                                        each text variable through its raw twin and a plain-text part made from
+//                                        its HTML the same way, and is published again
 //   npm run mail:templates seed <file>   creates the registry's templates that Resend lacks, from the copy that file
 //                                        exports as `seed` ({ en, es }: key → subject and body), and publishes them
 //
@@ -15,8 +16,8 @@
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { LOCALES, type Locale } from "../lib/i18n/locale";
-import { bodyOf, layoutHtml, layoutText, type Body } from "../lib/mail-layout";
-import { LETTERS, TEMPLATE_KEYS, aliasOf, plainSubject, stopOf, variablesOf, type TemplateKey } from "../lib/mail-templates";
+import { bodyOf, layoutHtml, type Body } from "../lib/mail-layout";
+import { TEMPLATE_KEYS, aliasOf, stopOf, textPart, throughTwins, variablesOf, type TemplateKey } from "../lib/mail-templates";
 
 if (!process.env.RESEND_API_KEY && existsSync(".env.local")) process.loadEnvFile(".env.local");
 const KEY = process.env.RESEND_API_KEY;
@@ -50,13 +51,10 @@ async function remoteAliases(): Promise<Set<string>> {
 
 /** What Resend should hold for a template, around `body` and with the editors' `subject` */
 function wanted(key: TemplateKey, locale: Locale, subject: string, body: string) {
-  const frame = { locale, stop: stopOf(key) };
-  const letter = (LETTERS as readonly string[]).includes(key);
   return {
-    subject: plainSubject(key, subject),
-    html: layoutHtml(frame, body),
-    // The letter's text part is the code's own; a template's is derived by Resend from its HTML
-    ...(letter ? { text: layoutText(frame, "{{{BODY_TEXT}}}") } : {}),
+    subject: throughTwins(key, subject),
+    html: layoutHtml({ locale, stop: stopOf(key) }, body),
+    text: textPart(key, locale, body),
     variables: Object.entries(variablesOf(key)).map(([k, kind]) => ({ key: k, type: kind === "number" ? "number" : "string" })),
   };
 }
@@ -76,7 +74,7 @@ async function layout(): Promise<void> {
     const body = bodyOf(t.html);
     if (body === null) throw new Error(`${alias}: its body markers are gone in Resend; put them back around the body before laying it out`);
     const want = wanted(key, locale, t.subject, body);
-    if (t.subject === want.subject && t.html === want.html && sameVariables(t.variables, want.variables) && !("text" in want && t.text !== want.text)) continue;
+    if (t.subject === want.subject && t.html === want.html && t.text === want.text && sameVariables(t.variables, want.variables)) continue;
     await api("PATCH", `/templates/${alias}`, want);
     await api("POST", `/templates/${alias}/publish`);
     changed++;
