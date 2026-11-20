@@ -1862,6 +1862,7 @@ export const ui: typeof EnUi = {
     aiThisMonth: "Acciones de IA este mes",
     designMdThisMonth: "DESIGN.md este mes",
     searchesThisMonth: "Búsquedas IA este mes",
+    checksThisMonth: "Revisiones de landing este mes",
     people: "Personas",
     references: "Referencias",
     projects: "Proyectos",
@@ -2454,7 +2455,7 @@ export const ui: typeof EnUi = {
   },
   quota: {
     people: (n: number): string => `${n} ${n === 1 ? "persona" : "personas"}`,
-    actions: { ai: "acciones de IA", jev_search: "búsquedas IA" },
+    actions: { ai: "acciones de IA", jev_search: "búsquedas IA", landing_check: "revisiones de landing" },
     spent: (used: number, limit: number, what: string, plan: string): string =>
       `Has usado ${used} de ${limit} ${what} este mes en el plan ${plan}.`,
     planAllows: (plan: string, people: string): string => `El plan ${plan} admite ${people}.`,

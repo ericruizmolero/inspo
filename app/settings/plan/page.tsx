@@ -97,6 +97,7 @@ export default async function PlanPage() {
           ) : undefined}>
             <Line label={t.plans.aiThisMonth} used={q.ai.used} limit={q.ai.limit} t={t} />
             <Line label={t.plans.searchesThisMonth} used={q.searches.used} limit={q.searches.limit} t={t} fairUse={q.searches.fairUse} />
+            <Line label={t.plans.checksThisMonth} used={q.checks.used} limit={q.checks.limit} t={t} fairUse={q.checks.limit === null} />
             <Line label={t.plans.people} used={q.members.used} limit={q.members.limit} t={t} seats />
             <Line label={t.plans.references} used={q.items.used} limit={q.items.limit} t={t} />
             <Line label={t.plans.projects} used={q.projects.used} limit={q.projects.limit} t={t} seats />

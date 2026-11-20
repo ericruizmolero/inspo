@@ -1880,6 +1880,7 @@ export const ui = {
     aiThisMonth: "AI actions this month",
     designMdThisMonth: "DESIGN.md this month",
     searchesThisMonth: "AI searches this month",
+    checksThisMonth: "Landing checks this month",
     people: "People",
     references: "References",
     projects: "Projects",
@@ -2476,7 +2477,7 @@ export const ui = {
   },
   quota: {
     people: (n: number): string => `${n} ${n === 1 ? "person" : "people"}`,
-    actions: { ai: "AI actions", jev_search: "AI searches" },
+    actions: { ai: "AI actions", jev_search: "AI searches", landing_check: "landing checks" },
     spent: (used: number, limit: number, what: string, plan: string): string =>
       `You have used ${used} of ${limit} ${what} this month on the ${plan} plan.`,
     planAllows: (plan: string, people: string): string => `The ${plan} plan allows ${people}.`,

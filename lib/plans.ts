@@ -53,6 +53,9 @@ export const PLANS: Plan[] = [
 /** Landing checks open a browser on our side, so the free plan has a monthly cap; paid plans are fair use (the hourly limit) */
 export const FREE_CHECKS_PER_MONTH = 10;
 
+/** Landing checks a plan gives a month: null is fair use */
+export const checksPerMonth = (p: Pick<Plan, "price">): number | null => (isPaid(p) ? null : FREE_CHECKS_PER_MONTH);
+
 export const DEFAULT_PLAN: PlanKey = "free";
 
 export function planOf(key: string | null | undefined): Plan {
@@ -81,7 +84,7 @@ const ROOM: Record<PlanLimit, (p: Plan) => number | null> = {
   workspaces: (p) => p.workspaces,
   // Teams a person may start beyond their personal space: none without a paid plan (lib/room.ts mayCreateTeam)
   teams: (p) => (isPaid(p) ? null : 0),
-  checks: (p) => (isPaid(p) ? null : FREE_CHECKS_PER_MONTH),
+  checks: checksPerMonth,
 };
 
 /** The cheapest plan above `from` that gives more of `limit`: the one the upgrade notice names. null at the top */

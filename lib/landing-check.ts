@@ -1,8 +1,15 @@
 // Opens a landing at desktop and phone width and returns what it does for its goal (lib/landing-check-core.ts). Public
-// addresses only: withPage goes through the egress proxy. Nothing is stored.
+// addresses only: withPage goes through the egress proxy. Nothing of the page is stored; each check adds one to the
+// account's month, which is what the plan counts (checkLandingFor).
 import "server-only";
 import { withPage } from "./browser";
 import { landingFindings, type Finding, type PageFacts } from "./landing-check-core";
+import { allow } from "./rate-limit";
+import { assertQuota, countCheck } from "./quota";
+import { HttpError, type Workspace } from "./workspace-core";
+
+/** Checks one person may run in an hour, on any plan: each one holds a browser on our side */
+const CHECKS_PER_HOUR = 20;
 
 const READ = `(() => {
   const visible = (e) => { const r = e.getBoundingClientRect(), s = getComputedStyle(e); return r.width > 1 && r.height > 1 && s.visibility !== "hidden" && s.display !== "none" && s.opacity !== "0"; };
@@ -31,4 +38,17 @@ export async function checkLanding(url: string, signal?: AbortSignal): Promise<L
     const strip = ({ text: _text, ...rest }: PageFacts) => rest;
     return { desktop: strip(d.facts), phone: strip(p.facts), findings: landingFindings(d.facts, p.facts), shots: { desktop: d.shot, phone: p.shot } };
   }, signal);
+}
+
+/**
+ * A check someone asked for: inside the hourly limit and the plan's month (assertQuota), and counted once it ran, so a
+ * page that fails to open spends nothing. Every caller goes through here, so the counter /settings/plan shows is the one
+ * that refuses.
+ */
+export async function checkLandingFor(ws: Pick<Workspace, "id" | "plan" | "billingAccountId">, userId: string, url: string): Promise<LandingCheck> {
+  if (!(await allow(`check:${userId}`, CHECKS_PER_HOUR, 3_600_000))) throw new HttpError(429, "Too many checks in an hour. Wait and go on.");
+  await assertQuota(ws, "landing_check");
+  const check = await checkLanding(url);
+  await countCheck(ws.billingAccountId);
+  return check;
 }

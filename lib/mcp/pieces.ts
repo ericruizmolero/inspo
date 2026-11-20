@@ -10,7 +10,7 @@ import "server-only";
 import { z } from "zod";
 import { and, asc, desc, eq, inArray, isNotNull, isNull, sql } from "drizzle-orm";
 import { db, schema } from "../db";
-import { HttpError, QuotaError, canManage, type Workspace } from "../workspace-core";
+import { HttpError, canManage, type Workspace } from "../workspace-core";
 import { createHash } from "node:crypto";
 import { loadProjects, createProject, unfileItems } from "../projects";
 import { imageTypeOf } from "../brand-files";
@@ -40,11 +40,10 @@ import { addAreaComment, pageComments, resolvePageComment, systemActivity } from
 import { saveAnswer, saveBrief, skipSetupStep } from "../brief";
 import { nextAction, setupState } from "../setup-core";
 import { allow } from "../rate-limit";
-import { FREE_CHECKS_PER_MONTH } from "../plans";
 import { assertQuota } from "../quota";
 import { extractDesign } from "../design-extract";
 import { keptCopy } from "../ref-measured";
-import { checkLanding } from "../landing-check";
+import { checkLandingFor } from "../landing-check";
 import { runSystem } from "../system/run";
 import { runBrand } from "../brand";
 import { log } from "../log";
@@ -579,7 +578,6 @@ export function versionAfterWrite(ctx: McpCtx, origin: string, project: { id: st
 
 /** Each measure opens a browser on the server */
 const MEASURES_PER_HOUR = 10;
-const CHECKS_PER_HOUR = 20;
 
 export const QUESTION_IDS = PLAYBOOK_QUESTIONS.map((q) => q.id) as [string, ...string[]];
 
@@ -662,10 +660,8 @@ export async function checkLandingPage(ctx: McpCtx, origin: string, input: { pro
   const project = await resolveProject(ctx, input.project);
   const url = normalizeWebUrl(input.url);
   if (!url) throw new HttpError(400, "That is not a public address.");
-  if (!(await allow(`check:${ctx.user.id}`, CHECKS_PER_HOUR, 3_600_000))) throw new HttpError(429, "Too many checks in an hour. Wait and go on.");
-  if (project.workspace.plan === "free" && !(await allow(`check:month:${project.workspace.id}`, FREE_CHECKS_PER_MONTH, 30 * 24 * 3_600_000))) throw new QuotaError("checks", "free", `The free plan has ${FREE_CHECKS_PER_MONTH} landing checks a month.`);
   const [check, view, system] = await Promise.all([
-    checkLanding(url),
+    checkLandingFor(project.workspace, ctx.user.id, url),
     loadShareView(project.workspace.id, project.id, "full", ctx.user.language, null, origin),
     getSystem(project.workspace.id, project.id),
   ]);
