@@ -1,6 +1,8 @@
 // English by default at /, Spanish at /es/. Same two languages as the app; the body text is the app's own guest copy.
 // The app: the local one under `astro dev` (`npm run dev` at the root starts both), so a local landing never sends you to production
 export const APP_URL = import.meta.env.DEV ? "http://localhost:3000" : "https://app.criterio.design";
+// Where the waitlist forms post their email (app/api/waitlist)
+export const WAITLIST_URL = `${APP_URL}/api/waitlist`;
 
 export type Locale = "en" | "es";
 

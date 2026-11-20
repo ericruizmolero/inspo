@@ -1,6 +1,7 @@
 // The waitlist home (WaitlistPage.astro): the menu key, the video's sound, the email form and Tino, who watches the
 // video with his back to us and turns to face whoever is writing their email.
-import { WAITLIST_URL, signupOpen } from "./signup-mode";
+import { WAITLIST_URL } from "../i18n";
+import { signupOpen } from "./signup-mode";
 
 const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const byId = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;

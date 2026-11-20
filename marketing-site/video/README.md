@@ -27,6 +27,13 @@ Lo que se genera y **no** se sube (`.gitignore`): `rec-*/` (grabaciones), `hf-*/
 
 Las páginas que sirve la web, **generadas** por `construir.py` y que no se editan a mano: `marketing-site/src/pages/index.astro` y `src/pages/es/index.astro`. Son la plantilla tal cual, con cada `<script>` y `<style>` en `is:inline` para que Astro no los empaquete ni los reescriba.
 
+### Lo que la portada toma de la web
+
+Lo que no puede escribirse en la plantilla sin desincronizarse de la app va como marca `%%…%%`, y `construir.py` la cambia por código de la web:
+- `%%WAITLIST%%`, el `action` de los dos formularios: `POST /api/waitlist` de la app (`WAITLIST_URL` en `src/i18n.ts`). El formulario manda el correo con el consentimiento y el campo trampa, y dice «Ya estás en la lista» sin salir de la página.
+- `%%LOGIN%%`, la tecla «Empieza gratis» de cada formulario: el login de la app (`copy.<idioma>.login.href`).
+- `%%SIGNUP_MODE%%`, antes de `</body>`: `src/scripts/signup-mode.ts`, empaquetado por Astro. Si `GET /api/access/mode` de la app dice `open`, pone `.signup-open` en `<html>` y cada formulario es solo su «Empieza gratis».
+
 Lo que la portada usa y ya está en `marketing-site/public/`:
 - `assets/vault/`: imágenes, piezas del Vault (`vault/`), la web de ejemplo que construye la IA en la demo (`altura/`) y el vídeo (`video/criterio-es.mp4`, `criterio-en.mp4` y sus pósteres).
 - La música es una de las de la app: `public/polish/keeping-cool.mp3` (HoliznaCC0, CC0).
@@ -174,7 +181,7 @@ node marketing-site/video/landing/revisar.cjs https://criterio.design/ publicada
 - `hyperframes check` y `render` dejan procesos de Chrome vivos: `pkill -f chrome-headless-shell; pkill -f warmCheck`.
 - WebKit sin pantalla no pinta la perspectiva CSS: el giro de las tarjetas del Pulido solo se ve bien en Chrome y en un Safari real.
 - `scripts/check-dist.mjs` lee cualquier `src="…"` del HTML, también dentro del JavaScript. `construir.py` ya lo resuelve; por eso no se edita `src/pages/index.astro` a mano.
-- El formulario no guarda correos: sin `POST /api/waitlist` (#119) lleva al acceso de la app.
+- En la plantilla, lo que lleva `%%…%%` lo rellena `construir.py` con código de la web (ver «Lo que la portada toma de la web»). No se escribe a mano ninguna dirección de la app (`app.criterio.design`): con `npm run dev:marketing` la web apunta a la app local y en la publicada a la de producción.
 
 ## Pendiente
 

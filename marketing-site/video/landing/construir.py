@@ -66,8 +66,19 @@ for l, x in T.items():
             sys.exit(f'{l}: falta {must}')
     if 'noindex' in p:
         sys.exit(f'{l}: sigue noindex')
+    # lo que la plantilla toma del código de la web: la dirección de la app (i18n.ts) y el registro abierto o con lista (signup-mode.ts)
+    up = '../' if l == 'en' else '../../'
+    p = '\n'.join(['---', '// Generada por marketing-site/video/landing/construir.py desde plantilla.html: no se edita a mano',
+                   f'import {{ WAITLIST_URL, copy }} from "{up}i18n";', '---', p])
+    for mark, astro in {
+        '"%%WAITLIST%%"': '{WAITLIST_URL}',
+        '"%%LOGIN%%"': f'{{copy.{l}.login.href}}',
+        '%%SIGNUP_MODE%%': f'<script>import "{up}scripts/signup-mode";</script>',
+    }.items():
+        if mark not in p:
+            sys.exit(f'{l}: falta {mark} en la plantilla')
+        p = p.replace(mark, astro)
     out = os.path.join(PAGES, 'index.astro') if l == 'en' else os.path.join(PAGES, 'es', 'index.astro')
-    p = '---\n// Generada por marketing-site/video/landing/construir.py desde plantilla.html: no se edita a mano\n---\n' + p
     os.makedirs(os.path.dirname(out), exist_ok=True)
     open(out, 'w', encoding='utf-8').write(p)
     print(os.path.relpath(out, MS), len(p))
