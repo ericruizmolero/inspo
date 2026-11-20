@@ -84,10 +84,17 @@ export async function accountOf(organizationId: string): Promise<BillingAccount 
   return r ? { ...r, plan: planKey(r.plan) } : null;
 }
 
-/** The workspaces an account pays for, oldest first, with how many people each has */
+/** A member row whose role makes them an owner (a role can be a list, "owner,admin") */
+export const isOwnerRow = () => sql`${schema.member.role} ~ '(^|,)owner(,|$)'`;
+
+/** The workspaces an account pays for, oldest first, with how many people each has and who owns it */
 export async function accountWorkspaces(accountId: string) {
   const O = schema.organization, M = schema.member;
-  return db.select({ id: O.id, name: O.name, logo: O.logo, kind: O.kind, people: sql<number>`count(${M.id})::int` })
+  return db.select({
+    id: O.id, name: O.name, logo: O.logo, kind: O.kind, people: sql<number>`count(${M.id})::int`,
+    /** Its owner, the first if there are two */
+    ownerUserId: sql<string | null>`(array_agg(${M.userId} order by ${M.createdAt}) filter (where ${isOwnerRow()}))[1]`,
+  })
     .from(O).leftJoin(M, eq(M.organizationId, O.id))
     .where(eq(O.billingAccountId, accountId)).groupBy(O.id).orderBy(asc(O.createdAt));
 }

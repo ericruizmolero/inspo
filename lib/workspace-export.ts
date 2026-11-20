@@ -1,9 +1,15 @@
-// Everything a workspace made, in one JSON file its owner downloads (Settings › Space, /api/workspace/export).
-// The team's own words and decisions, not what the app derives from them: no embeddings, no tagging state,
-// no model caches, no share tokens or key hashes. Files stay as their /api/files/… paths.
+// Everything a workspace made, in one zip its owners and admins download (Settings › Workspace, /api/workspace/export):
+// workspace.json with the rows, and under files/ every stored file the rows point at. The team's own words and
+// decisions, not what the app derives from them: no embeddings, no tagging state, no model caches, no share tokens or
+// key hashes. Rows keep their files as /api/files/inspo/<id>/… paths; the zip holds each one at files/<the rest>, and
+// workspace.json lists them with their types. lib/workspace-import.ts reads it back as a new workspace.
 import "server-only";
 import { asc, eq, getTableColumns, type Table } from "drizzle-orm";
 import { db, schema } from "./db";
+import { fileUrl, getFile, type StoredFile } from "./storage";
+import { keysIn } from "./file-carry";
+import { ZipWriter } from "./zip";
+import { log } from "./log";
 
 /** Bumps when a field changes meaning or goes away; a new field keeps the version */
 export const WORKSPACE_EXPORT_VERSION = 1;
@@ -75,5 +81,44 @@ export async function buildWorkspaceExport(organizationId: string): Promise<Work
   };
 }
 
-/** "criterio-acme-2026-10-10.json" */
-export const exportFileName = (slug: string, at: Date) => `criterio-${slug}-${at.toISOString().slice(0, 10)}.json`;
+/** One stored file in the zip: its path as the rows name it, its type and size */
+export interface ExportedFile { path: string; contentType: string; bytes: number }
+
+/** workspace.json: the rows, and the files the zip carries */
+export type WorkspaceExportFile = WorkspaceExport & { files: ExportedFile[] };
+
+export const ZIP_JSON = "workspace.json";
+/** Where a file of the workspace's folder (inspo/<id>/<rest>) is in the zip: files/<rest> */
+export const zipPathOf = (key: string, organizationId: string) => `files/${key.slice(`inspo/${organizationId}/`.length)}`;
+
+/** Files read ahead of the one being written: the next reads overlap the writing, and memory holds at most these */
+const READ_AHEAD = 4;
+const compressible = (type: string) => /^(text\/|application\/(json|xml)|image\/svg)/.test(type);
+
+/**
+ * The export as a zip, piece by piece, for a response to stream: each file the rows point at (a few read ahead), then
+ * workspace.json. Nothing waits for the whole: a large workspace starts downloading at once and is never in memory.
+ * A file that can no longer be read is left out of the zip and of the list.
+ */
+export async function* exportZip(data: WorkspaceExport): AsyncGenerator<Buffer> {
+  const org = data.workspace.id;
+  const keys = [...keysIn(data, org)];
+  const w = new ZipWriter(data.exportedAt);
+  const files: ExportedFile[] = [];
+  const read = (key: string) => getFile(key).catch((err) => { log.warn("workspace_export.file_unread", { ref: key, err }); return null; });
+  const ahead: (Promise<StoredFile | null> | null)[] = keys.slice(0, READ_AHEAD).map(read);
+  for (let i = 0; i < keys.length; i++) {
+    const f = await ahead[i];
+    ahead[i] = null;
+    if (i + READ_AHEAD < keys.length) ahead.push(read(keys[i + READ_AHEAD]));
+    if (!f) continue;
+    yield* w.add(zipPathOf(keys[i], org), f.body, compressible(f.contentType));
+    files.push({ path: fileUrl(keys[i]), contentType: f.contentType, bytes: f.body.length });
+  }
+  const json: WorkspaceExportFile = { ...data, files };
+  yield* w.add(ZIP_JSON, Buffer.from(JSON.stringify(json, null, 2)));
+  yield w.end();
+}
+
+/** "criterio-acme-2026-10-10.zip" */
+export const exportFileName = (slug: string, at: Date) => `criterio-${slug}-${at.toISOString().slice(0, 10)}.zip`;

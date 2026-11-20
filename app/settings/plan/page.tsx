@@ -55,8 +55,10 @@ async function planWorkspaces(ctx: Ctx) {
   return {
     owner, accountName: account.name,
     // A personal space wears its person until it has a logo, as in the switcher
-    rows: (owner ? all : all.filter((w) => mine.has(w.id))).map(({ id, name, logo, kind, people }) =>
-      ({ id, name, people, logo: logo ?? (kind === "personal" && mine.has(id) ? ctx.user.image ?? null : null) })),
+    // A client's workspace (a team whose owner is not the payer) can be let go; only the payer sees it
+    rows: (owner ? all : all.filter((w) => mine.has(w.id))).map(({ id, name, logo, kind, people, ownerUserId }) =>
+      ({ id, name, people, logo: logo ?? (kind === "personal" && mine.has(id) ? ctx.user.image ?? null : null),
+        client: owner && kind === "team" && !!ownerUserId && ownerUserId !== ctx.user.id })),
     movable: movable.map((w, i) => ({ id: w.id, name: w.name, logo: w.logo, people: people[i] })),
   };
 }

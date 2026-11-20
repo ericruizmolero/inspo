@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import ActivityPing from "@/components/ActivityPing";
 import SettingsHeading from "@/components/SettingsHeading";
-import { getCtxOrLogin, canManage, type Ctx } from "@/lib/workspace";
+import { getCtxOrLogin, canManage, accountOf, type Ctx } from "@/lib/workspace";
 import { getT, type Dict } from "@/lib/i18n";
 import WorkspacePanel from "../_components/WorkspacePanel";
 
@@ -15,11 +15,12 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function WorkspacePage() {
   const [ctx, { t }] = await Promise.all([getCtxOrLogin("/settings/workspace"), getT()]);
   const ws = ctx.workspace;
+  const account = await accountOf(ws.id);
   return (
     <>
       <ActivityPing area="settings" organizationId={ws.id} />
       <SettingsHeading title={t.settings.sections.workspace} lead={leadOf(t, ws)} />
-      <WorkspacePanel workspace={ws} workspaces={ctx.workspaces} me={ctx.user} canManage={canManage(ws.role)} />
+      <WorkspacePanel workspace={ws} workspaces={ctx.workspaces} me={ctx.user} canManage={canManage(ws.role)} payer={account?.ownerUserId === ctx.user.id} />
     </>
   );
 }

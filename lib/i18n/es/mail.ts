@@ -246,4 +246,10 @@ export const mail: typeof EnMail = {
     text: (email: string): string =>
       `Hemos borrado tu cuenta de criterio.design (${email}): tu espacio personal, los equipos en los que solo estabas tú y tu sitio en los demás.\n\nSi no has sido tú quien lo ha pedido, responde a este correo cuanto antes.`,
   },
+
+  letGo: {
+    subject: (workspace: string): string => `${workspace} tiene un plan propio`,
+    text: (workspace: string, account: string, what: string, url: string): string =>
+      `${account} ya no paga ${workspace}. Ahora está en Gratis, en una cuenta propia, y eres tú quien puede subirlo de plan.\n\n${what}\n\nLos planes y lo que incluye cada uno:\n${url}`,
+  },
 };

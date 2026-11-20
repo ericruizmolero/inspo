@@ -12,8 +12,15 @@ import { Avatar, Button, FieldRow, ReadOnlyField, SettingsWindow, toneFor } from
 import { useConfirm } from "@/components/useConfirm";
 import OutputLanguageSwitch from "@/components/OutputLanguageSwitch";
 import PersonAvatar from "@/components/PersonAvatar";
+import { reportPlanLimit } from "@/components/PlanLimitNotice";
+import { setActiveWorkspace } from "@/components/workspace-switch";
+import { importWorkspaceZip } from "@/lib/workspace-import-client";
 
-export default function WorkspacePanel({ workspace, workspaces, me, canManage }: { workspace: Workspace; workspaces: Workspace[]; me: SessionUser; canManage: boolean }) {
+export default function WorkspacePanel({ workspace, workspaces, me, canManage, payer }: {
+  workspace: Workspace; workspaces: Workspace[]; me: SessionUser; canManage: boolean;
+  /** The person pays for the open workspace's plan: an import lands in it */
+  payer: boolean;
+}) {
   const { t } = useT();
   const router = useRouter();
   const logoRef = useRef<HTMLInputElement>(null);
@@ -45,7 +52,8 @@ export default function WorkspacePanel({ workspace, workspaces, me, canManage }:
           </FieldRow>
         </SettingsWindow>
         {defaults}
-        <ExportData workspace={workspace} />
+        <ExportData workspace={workspace} canExport={canManage} />
+        <ImportData payer={payer} />
         <Spaces workspace={workspace} workspaces={workspaces} me={me} />
       </div>
     );
@@ -103,22 +111,58 @@ export default function WorkspacePanel({ workspace, workspaces, me, canManage }:
       </SettingsWindow>
 
       {defaults}
-      <ExportData workspace={workspace} />
+      <ExportData workspace={workspace} canExport={canManage} />
+      <ImportData payer={payer} />
       <Spaces workspace={workspace} workspaces={workspaces} me={me} />
     </div>
   );
 }
 
-/** The open space as one JSON file (app/api/workspace/export). Members see why the button does nothing for them */
-function ExportData({ workspace }: { workspace: Workspace }) {
+/** The open space as one zip, its files with it (app/api/workspace/export). Members see why the button does nothing for them */
+function ExportData({ workspace, canExport }: { workspace: Workspace; canExport: boolean }) {
   const { t } = useT();
-  const owner = workspace.role === "owner";
+  const d = t.workspaceData;
   return (
-    <SettingsWindow title={t.settings.exportData} description={t.settings.exportDataHint(workspace.name)}
-      note={!owner ? t.settings.exportDataOwner : undefined}
-      actions={owner
-        ? <a className="cr-btn cr-btn-secondary cr-btn-s" href={`/api/workspace/export?id=${encodeURIComponent(workspace.id)}`} download>{t.settings.exportDataAction}</a>
-        : <Button size="s" disabled>{t.settings.exportDataAction}</Button>} />
+    <SettingsWindow title={d.exportTitle} description={d.exportHint(workspace.name)}
+      note={!canExport ? d.exportAdmins : undefined}
+      actions={canExport
+        ? <a className="cr-btn cr-btn-secondary cr-btn-s" href={`/api/workspace/export?id=${encodeURIComponent(workspace.id)}`} download>{d.exportAction}</a>
+        : <Button size="s" disabled>{d.exportAction}</Button>} />
+  );
+}
+
+/** An export's zip as a new workspace on this plan (lib/workspace-import-client.ts), which then opens. Only whoever pays
+ *  for the plan; the rest see why the button does nothing for them */
+function ImportData({ payer }: { payer: boolean }) {
+  const { t } = useT();
+  const d = t.workspaceData;
+  const router = useRouter();
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setBusy(true); setError("");
+    try {
+      const made = await importWorkspaceZip(file);
+      await setActiveWorkspace(made.id);
+      router.push("/"); router.refresh();
+    } catch (err) {
+      if (!reportPlanLimit(err)) setError(err instanceof Error && err.message ? err.message : d.importFailed);
+      setBusy(false);
+    }
+  };
+
+  return (
+    <SettingsWindow title={d.importTitle} description={d.importHint}
+      note={error ? <span className="cr-field-hint is-error" role="alert">{error}</span> : !payer ? d.importPayer : undefined}
+      actions={<>
+        <Button size="s" onClick={() => fileRef.current?.click()} disabled={!payer || busy}>{busy ? d.importing : d.importAction}</Button>
+        <input ref={fileRef} type="file" accept=".zip,application/zip" hidden onChange={onFile} />
+      </>} />
   );
 }
 

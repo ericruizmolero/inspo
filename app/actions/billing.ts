@@ -1,17 +1,18 @@
 "use server";
-// Workspaces inside a billing account, and asking for its plan (Settings, Plan). Only the account's owner adds to it or asks: one creates a workspace
-// in it, or moves in a team they own that another account pays for. A team made from the switcher gets an account of
-// its own in Better Auth's hook instead (lib/auth.ts).
-import { and, asc, eq, inArray } from "drizzle-orm";
-import { db, schema, type Exec } from "@/lib/db";
-import { withCtx, HttpError, newId, slugify, dropEmptyAccount, type Ctx } from "@/lib/workspace";
+// Workspaces inside a billing account, and asking for its plan (Settings, Plan). Only the account's owner adds to it, asks
+// or lets a client go: one creates a workspace in it, moves in a team they own that another account pays for, or hands
+// a client's workspace a free account of its own (lib/account-workspaces.ts). A team made from the switcher gets an
+// account of its own in Better Auth's hook instead (lib/auth.ts).
+import { and, eq } from "drizzle-orm";
+import { db, schema } from "@/lib/db";
+import { withCtx, HttpError, dropEmptyAccount, type Ctx } from "@/lib/workspace";
 import { assertWorkspaceRoom } from "@/lib/quota";
-import { toOutputLanguage } from "@/lib/output-language";
 import { getErrors, getT } from "@/lib/i18n";
 import { isPlanKey } from "@/lib/plans";
 import { PLAN_PERIODS, type PlanPeriod } from "@/lib/db/schema";
 import { requestPlanFor } from "@/lib/plan-requests";
 import { appBase } from "@/lib/admin-action";
+import { letWorkspaceGo as letGo, lockAccounts, openTeamInAccount, tellLetGo } from "@/lib/account-workspaces";
 
 /** The current workspace's account, if the person signed in owns it */
 async function ownedAccount(ctx: Ctx): Promise<string> {
@@ -21,29 +22,12 @@ async function ownedAccount(ctx: Ctx): Promise<string> {
   return ctx.workspace.billingAccountId;
 }
 
-/** Locks the accounts' rows until the transaction ends, always in the same order, so two moves cannot deadlock */
-const lock = (exec: Exec, ids: string[]) =>
-  exec.select({ id: schema.billingAccount.id }).from(schema.billingAccount)
-    .where(inArray(schema.billingAccount.id, ids)).orderBy(asc(schema.billingAccount.id)).for("update");
-
 /** A new team workspace in the current workspace's account, with the person as its owner. Returns its id. */
 export async function createWorkspaceInAccount(name: string) {
   return withCtx(async (ctx) => {
     const value = name.trim().slice(0, 60);
     if (!value) throw new HttpError(400, (await getErrors()).badBody);
-    const accountId = await ownedAccount(ctx);
-    const id = newId();
-    const now = new Date();
-    await db.transaction(async (tx) => {
-      await lock(tx, [accountId]);
-      await assertWorkspaceRoom(accountId, tx);
-      await tx.insert(schema.organization).values({
-        id, name: value, slug: `${slugify(value)}-${newId().slice(0, 4)}`, createdAt: now, kind: "team",
-        billingAccountId: accountId, outputLanguage: toOutputLanguage(ctx.user.language),
-      });
-      await tx.insert(schema.member).values({ id: newId(), organizationId: id, userId: ctx.user.id, role: "owner", createdAt: now });
-    });
-    return { id };
+    return { id: await openTeamInAccount(await ownedAccount(ctx), value, ctx.user) };
   });
 }
 
@@ -67,11 +51,23 @@ export async function moveWorkspaceToAccount(workspaceId: string) {
       throw new HttpError(403, (await getT()).t.quota.cannotMove);
     }
     await db.transaction(async (tx) => {
-      await lock(tx, [accountId, ws.billingAccountId]);
+      await lockAccounts(tx, [accountId, ws.billingAccountId]);
       await assertWorkspaceRoom(accountId, tx);
       await tx.update(schema.organization).set({ billingAccountId: accountId })
         .where(and(eq(schema.organization.id, ws.id), eq(schema.organization.billingAccountId, ws.billingAccountId)));
       await dropEmptyAccount(ws.billingAccountId, tx);
     });
+  });
+}
+
+/**
+ * Lets a client's workspace go from the current workspace's account, which the person pays: it moves onto a free
+ * account its owner owns, keeping everything in it, and its owner gets an email. By id, as Settings, Plan lists the
+ * account's workspaces whether or not the payer is in them. Answers nothing of the workspace.
+ */
+export async function letWorkspaceGo(workspaceId: string) {
+  return withCtx(async (ctx) => {
+    const gone = await letGo(await ownedAccount(ctx), ctx.user.id, workspaceId);
+    await tellLetGo(gone, `${await appBase()}/settings/plan`);
   });
 }

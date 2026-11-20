@@ -257,4 +257,11 @@ export const mail = {
     text: (email: string): string =>
       `We have deleted your criterio.design account (${email}): your personal space, the teams only you were in, and your place in the others.\n\nIf it was not you who asked for this, reply to this email at once.`,
   },
+
+  // ─── A client's workspace let go from an agency's plan (lib/account-workspaces.ts) ────────────────────────
+  letGo: {
+    subject: (workspace: string): string => `${workspace} is on a plan of its own`,
+    text: (workspace: string, account: string, what: string, url: string): string =>
+      `${account} no longer pays for ${workspace}. It is on Free now, on an account of its own, and you are the one who can move it up a plan.\n\n${what}\n\nThe plans, and what each one includes:\n${url}`,
+  },
 };

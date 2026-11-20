@@ -7,9 +7,13 @@ import { Button, FieldRow, SettingsWindow } from "@/components/criterio";
 import { useConfirm } from "@/components/useConfirm";
 import PersonAvatar from "@/components/PersonAvatar";
 import { setActiveWorkspace } from "@/components/workspace-switch";
-import { createWorkspaceInAccount, moveWorkspaceToAccount } from "@/app/actions/billing";
+import { createWorkspaceInAccount, letWorkspaceGo, moveWorkspaceToAccount } from "@/app/actions/billing";
 
-interface Row { id: string; name: string; logo: string | null; people: number }
+interface Row {
+  id: string; name: string; logo: string | null; people: number;
+  /** A client's workspace, which the payer can let go onto a plan of its own */
+  client?: boolean;
+}
 
 /**
  * The workspaces one plan pays for, and, for the person who pays, a field to open a new one in it and the teams of
@@ -58,6 +62,17 @@ export default function PlanWorkspaces({ currentId, accountName, planName, limit
     router.refresh();
   };
 
+  // The client keeps everything and its owner pays from now on: the confirm step says so, in red as anything that ends
+  const letGo = async (w: Row) => {
+    const d = t.workspaceData;
+    if (!(await confirm({ title: d.letGoConfirm(w.name), description: d.letGoHint(w.name, planName), action: d.letGo, danger: true }))) return;
+    setBusy(true); setError("");
+    const r = await letWorkspaceGo(w.id).catch(() => null);
+    setBusy(false);
+    if (!r?.ok) { setError(r?.error ?? t.workspaceData.letGoFailed); return; }
+    router.refresh();
+  };
+
   const note = error
     ? <span className="cr-field-hint is-error" role="alert">{error}</span>
     : owner && single ? a.oneOnly(planName, agency.name, agency.workspaces ?? 0)
@@ -77,6 +92,7 @@ export default function PlanWorkspaces({ currentId, accountName, planName, limit
                 <span className="list__name t-ui"><span className="list__text">{w.name}{w.id === currentId && t.settings.spaceOpen}</span></span>
                 <span className="list__sub t-small">{t.quota.people(w.people)}</span>
               </span>
+              {owner && w.client && <Button variant="outline" size="s" onClick={() => letGo(w)} disabled={busy}>{t.workspaceData.letGo}</Button>}
             </li>
           ))}
         </ul>

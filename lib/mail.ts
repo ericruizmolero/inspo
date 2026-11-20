@@ -339,3 +339,11 @@ export function accountDeletedMail(email: string, locale: Locale): Mail {
   const t = mailDict(locale).accountDeleted;
   return { subject: t.subject, text: signed(locale, t.text(email)) };
 }
+
+// ─── A client's workspace let go from an agency's plan (lib/account-workspaces.ts) ───────────────────────────
+
+/** To the workspace's owner: the plan that paid for it let it go, and it is on Free on an account of their own */
+export function letGoMail(g: { workspace: string; account: string; vaultLocks: boolean; url: string }, locale: Locale): Mail {
+  const t = mailDict(locale).letGo;
+  return { subject: t.subject(g.workspace), text: signed(locale, t.text(g.workspace, g.account, downWhat(DEFAULT_PLAN, g.vaultLocks, locale), g.url)) };
+}
