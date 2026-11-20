@@ -184,6 +184,7 @@ node marketing-site/video/landing/revisar.cjs https://criterio.design/ publicada
 - `hyperframes check` y `render` dejan procesos de Chrome vivos: `pkill -f chrome-headless-shell; pkill -f warmCheck`.
 - WebKit sin pantalla no pinta la perspectiva CSS: el giro de las tarjetas del Pulido solo se ve bien en Chrome y en un Safari real.
 - `scripts/check-dist.mjs` lee cualquier `src="…"` del HTML, también dentro del JavaScript. `construir.py` ya lo resuelve; por eso no se edita `src/pages/index.astro` a mano.
+- Tino, fijo en la esquina de abajo a la derecha, tapaba la tarjeta de la derecha de los planes por debajo de unos 1420 px de ancho. Mientras los planes (`#pricing`) pasan por su esquina, se agacha bajo el borde de la pantalla con el mismo deslizamiento con que se va junto a la ventana, y vuelve al salir (en `tick`, después de `actorSide` y `actorAt`). Cuenta solo su cuerpo, no el aire de su caja (`R * .8`): a 1440 px cabe al lado de la tarjeta y no se mueve.
 - En la plantilla, lo que lleva `%%…%%` lo rellena `construir.py` con código de la web (ver «Lo que la portada toma de la web»). No se escribe a mano ninguna dirección de la app (`app.criterio.design`): con `npm run dev:marketing` la web apunta a la app local y en la publicada a la de producción.
 
 ## Pendiente
