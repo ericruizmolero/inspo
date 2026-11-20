@@ -14,13 +14,16 @@ import AdminPanel, { type AdminSection } from "../AdminPanel";
 import WaitlistPanel from "../WaitlistPanel";
 import PlansPanel from "../PlansPanel";
 import { listOpenPlanRequests } from "@/lib/plan-requests";
+import VaultPanel from "../VaultPanel";
+import { vaultReleaseState } from "@/lib/vault-release";
 import UpdatedAt from "../UpdatedAt";
 import PeriodSwitch from "../PeriodSwitch";
 
-const SECTIONS: AdminSection[] = ["overview", "usage", "people", "feedback", "failures", "access", "waitlist", "plans"];
+const SECTIONS: AdminSection[] = ["overview", "usage", "people", "feedback", "failures", "access", "waitlist", "plans", "vault"];
 const DAYS = [7, 30, 90];
 
-// Opening a wave mails up to 50 people 600 ms apart, inside a server action that runs under this route
+// Opening a wave mails up to 50 people 600 ms apart, and a Vault release mails its readers the same way, inside a
+// server action that runs under this route
 export const maxDuration = 120;
 
 type Props = { params: Promise<{ section: string }>; searchParams: Promise<{ dias?: string }> };
@@ -29,7 +32,7 @@ const daysOf = (dias: string | undefined) => (DAYS.includes(Number(dias)) ? Numb
 
 function leadOf(t: Dict, section: AdminSection, days: number): string {
   if (section === "overview") return t.admin.headSub(days);
-  if (section === "access" || section === "waitlist" || section === "plans") return t.admin.leads[section];
+  if (section === "access" || section === "waitlist" || section === "plans" || section === "vault") return t.admin.leads[section];
   return t.admin.leads[section](days);
 }
 
@@ -44,7 +47,7 @@ export default async function AdminSectionPage({ params, searchParams }: Props) 
   const section = raw as AdminSection;
   if (!SECTIONS.includes(section)) notFound();
   const days = daysOf(dias);
-  const [s, { t }] = await Promise.all([getSession(), getT()]);
+  const [s, { t, locale }] = await Promise.all([getSession(), getT()]);
   // Checked here too, not only in the layout: a client navigation can render this page without the layout
   if (!s || !(await isAdmin(s.user.email))) notFound();
 
@@ -66,6 +69,17 @@ export default async function AdminSectionPage({ params, searchParams }: Props) 
         <ActivityPing area="admin" />
         <SettingsHeading title={t.admin.sections.plans} lead={leadOf(t, section, days)} />
         <PlansPanel requests={requests} />
+      </>
+    );
+  }
+
+  if (section === "vault") {
+    const state = await vaultReleaseState(locale);
+    return (
+      <>
+        <ActivityPing area="admin" />
+        <SettingsHeading title={t.admin.sections.vault} lead={leadOf(t, section, days)} />
+        <VaultPanel {...state} />
       </>
     );
   }

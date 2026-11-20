@@ -38,6 +38,12 @@ const notPlansAdmin = (call: (m: typeof import("@/app/actions/plans-admin")) => 
     expectRefused(fx, await call(await import("@/app/actions/plans-admin")), "B is not an app admin");
   },
 });
+const notVaultAdmin = (call: (m: typeof import("@/app/actions/vault-admin")) => Promise<unknown>): Surface => ({
+  probe: async (fx) => {
+    asB(fx);
+    expectRefused(fx, await call(await import("@/app/actions/vault-admin")), "B is not an app admin");
+  },
+});
 const notWaitlistAdmin = (call: (m: typeof import("@/app/actions/waitlist-admin")) => Promise<unknown>): Surface => ({
   probe: async (fx) => {
     asB(fx);
@@ -645,6 +651,7 @@ export const actions: Record<string, Surface> = {
   "action:app/actions/billing.ts#requestPlan": { exempt: "asks for a plan for the caller's own billing account, only if they pay it (tests/plan-requests.test.ts): takes no workspace or account id" },
   "action:app/actions/plans-admin.ts#setRequestedPlan": notPlansAdmin((m) => m.setRequestedPlan("x")),
   "action:app/actions/plans-admin.ts#declinePlanRequest": notPlansAdmin((m) => m.declinePlanRequest("x")),
+  "action:app/actions/vault-admin.ts#sendVaultRelease": notVaultAdmin((m) => m.sendVaultRelease()),
   "action:app/actions/billing.ts#moveWorkspaceToAccount": {
     probe: async (fx) => {
       const { moveWorkspaceToAccount } = await import("@/app/actions/billing");
