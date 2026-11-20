@@ -12,12 +12,12 @@ import { HttpError, newId } from "./workspace-core";
 import { assertProjectRoom, assertRoomIn } from "./quota";
 import { freeName } from "./templates";
 import { webKeyOf } from "./url";
-import { fileUrl, getFile, keyOf, putFile } from "./storage";
+import { getFile } from "./storage";
+import { FileCarrier, remapIds } from "./file-carry";
 import { deletableIds, deleteItems } from "./items";
 import { deleteMediaFile } from "./media";
 import { deleteTextFile } from "./text-refs";
 import { deleteProjectBrandFiles, projectBrandPrefix } from "./brand-files";
-import { log } from "./log";
 import type { Project } from "@/types/inspo";
 
 const P = schema.project, PI = schema.projectItem, T = schema.inspoItem, C = schema.inspoComment, S = schema.projectSystem, A = schema.systemArea;
@@ -32,15 +32,6 @@ const asProject = (p: typeof P.$inferSelect): Project => {
   const brief = (p.brief ?? null) as { about?: string; clientItemId?: string } | null;
   return { id: p.id, name: p.name, intent: brief?.about ?? null, clientItemId: brief?.clientItemId ?? null, brief, hasRecipe: p.recipe.length > 0, started: !!p.startedAt };
 };
-
-/** Every item id in a JSON value (exact strings) swapped for its new one */
-function remapIds<V>(value: V, ids: Map<string, string>): V {
-  if (!ids.size || value == null) return value;
-  if (typeof value === "string") return (ids.get(value) ?? value) as V;
-  if (Array.isArray(value)) return value.map((v) => remapIds(v, ids)) as V;
-  if (typeof value === "object") return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, remapIds(v, ids)])) as V;
-  return value;
-}
 
 // ─── Duplicate ───────────────────────────────────────────────────────────────
 
@@ -70,61 +61,6 @@ export async function duplicateProject(organizationId: string, id: string, name:
 
 // ─── Move ────────────────────────────────────────────────────────────────────
 
-/** A path of the old workspace's own (`inspo/<from>/…`) as it is in the new one, or null for any other string */
-function carriedKey(value: string, from: string, to: string): { key: string; next: string } | null {
-  const key = keyOf(value) ?? (value.startsWith(`inspo/${from}/`) ? value : null);
-  if (!key?.startsWith(`inspo/${from}/`)) return null;
-  const next = `inspo/${to}/${key.slice(`inspo/${from}/`.length)}`;
-  return { key, next };
-}
-
-/** Files of the old workspace that the moved rows point at, copied into the new one's folder (its storage counts them).
- *  Every string in the value that names one is rewritten to the copy. A file that can no longer be read keeps its
- *  old path: it was already gone. */
-class Carrier {
-  private done = new Map<string, string>();
-  constructor(private from: string, private to: string) {}
-
-  /** The path a string will have once carried, without copying anything yet */
-  target(value: string): string {
-    const c = carriedKey(value, this.from, this.to);
-    if (!c) return value;
-    return value.startsWith("inspo/") ? c.next : fileUrl(c.next);
-  }
-
-  keysIn(value: unknown, out = new Set<string>()): Set<string> {
-    if (typeof value === "string") { const c = carriedKey(value, this.from, this.to); if (c) out.add(c.key); }
-    else if (Array.isArray(value)) for (const v of value) this.keysIn(v, out);
-    else if (value && typeof value === "object") for (const v of Object.values(value)) this.keysIn(v, out);
-    return out;
-  }
-
-  async copy(key: string): Promise<boolean> {
-    if (this.done.has(key)) return true;
-    const c = carriedKey(key, this.from, this.to)!;
-    const f = await getFile(key).catch(() => null);
-    if (!f) { log.warn("project_move.file_missing", { ref: key }); return false; }
-    await putFile(c.next, f.body, f.contentType, this.to);
-    this.done.set(key, c.next);
-    return true;
-  }
-
-  async carry<V>(value: V): Promise<V> {
-    if (typeof value === "string") {
-      const c = carriedKey(value, this.from, this.to);
-      if (!c || !(await this.copy(c.key))) return value;
-      return this.target(value) as V;
-    }
-    if (Array.isArray(value)) { const out = []; for (const v of value) out.push(await this.carry(v)); return out as V; }
-    if (value && typeof value === "object") {
-      const out: Record<string, unknown> = {};
-      for (const [k, v] of Object.entries(value)) out[k] = await this.carry(v);
-      return out as V;
-    }
-    return value;
-  }
-}
-
 /**
  * Moves a project to another workspace of the person's. Room is checked first (a project, the references the other
  * workspace lacks, the bytes of their files): nothing moves if it does not fit. `canDeleteAll` is whether this person
@@ -134,12 +70,12 @@ class Carrier {
 export async function moveProject(from: string, id: string, to: string, user: { id: string; name: string; email: string }, canDeleteAll: boolean): Promise<{ project: Project; gone: string[] }> {
   if (from === to) throw new HttpError(400, (await getErrors()).badBody);
   const src = await sourceProject(from, id);
-  const carrier = new Carrier(from, to);
+  const carrier = new FileCarrier(from, to, getFile, "keep");
 
   // The references on the project (archived ones too) and, for each, the one the new workspace already has
   const links = await db.select({ itemId: PI.itemId }).from(PI).where(and(eq(PI.organizationId, from), eq(PI.projectId, id)));
   const items = links.length ? await db.select().from(T).where(and(eq(T.organizationId, from), inArray(T.id, links.map((l) => l.itemId)))) : [];
-  const targetKey = (i: typeof T.$inferSelect) => webKeyOf(carrier.target(i.web));
+  const targetKey = (i: typeof T.$inferSelect) => webKeyOf(carrier.next(i.web));
   const there = items.length
     ? await db.select({ id: T.id, webKey: T.webKey }).from(T).where(and(eq(T.organizationId, to), inArray(T.webKey, [...new Set(items.map(targetKey))])))
     : [];
@@ -163,18 +99,16 @@ export async function moveProject(from: string, id: string, to: string, user: { 
   await assertRoomIn(to, { items: fresh.length, bytes: Number(bytes.n) });
 
   // The files first: a copy no row points at is harmless, a row pointing at no file is not
-  const newItems: (typeof T.$inferInsert)[] = [];
-  for (const i of fresh) {
-    const web = await carrier.carry(i.web);
-    newItems.push({ ...i, id: ids.get(i.id)!, organizationId: to, web, webKey: webKeyOf(web), thumbnailUrl: await carrier.carry(i.thumbnailUrl),
-      tagStatus: i.tagStatus === "running" ? "pending" : i.tagStatus, tagStartedAt: null });
-  }
+  await carrier.copy(keys);
+  const newItems: (typeof T.$inferInsert)[] = fresh.map((i) => {
+    const web = carrier.map(i.web);
+    return { ...i, id: ids.get(i.id)!, organizationId: to, web, webKey: webKeyOf(web), thumbnailUrl: carrier.map(i.thumbnailUrl),
+      tagStatus: i.tagStatus === "running" ? "pending" : i.tagStatus, tagStartedAt: null };
+  });
   const commentIds = new Map(comments.map((c) => [c.id, newId()]));
-  const newComments: (typeof C.$inferInsert)[] = [];
-  for (const c of comments) {
-    newComments.push({ ...c, id: commentIds.get(c.id)!, organizationId: to, itemId: ids.get(c.itemId)!, parentId: c.parentId ? commentIds.get(c.parentId) ?? null : null, attachments: await carrier.carry(c.attachments) });
-  }
-  const brand = system?.brand ? await carrier.carry(system.brand) : null;
+  const newComments: (typeof C.$inferInsert)[] = comments.map((c) => (
+    { ...c, id: commentIds.get(c.id)!, organizationId: to, itemId: ids.get(c.itemId)!, parentId: c.parentId ? commentIds.get(c.parentId) ?? null : null, attachments: carrier.map(c.attachments) }));
+  const brand = system?.brand ? carrier.map(system.brand) : null;
 
   const name = await freeName(to, src.name);
   await db.transaction(async (tx) => {
