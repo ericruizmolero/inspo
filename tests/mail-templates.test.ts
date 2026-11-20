@@ -84,6 +84,21 @@ test("a template's body reads as plain text the way the blocks write it", () => 
   const edited = `<p style="margin:0">Read <strong>this</strong>&nbsp;now,\n   <em>then</em><br>that &amp; &#8220;more&#x201D;</p>
 <ul><li>one</li><li><a href="{{{URL}}}">{{{URL}}}</a></li></ul><div>Ask <a href='mailto:a@b.test'>us</a>.</div><!-- note -->`;
   expect(htmlText(edited)).toBe("Read this now, then\nthat & \u201Cmore\u201D\n\n- one\n- {{{URL}}}\n\nAsk us (mailto:a@b.test).");
+
+  const reformatted = `<p style="margin:0 0 16px;">
+                  Open it on a computer:
+                </p>
+                <table role="presentation">
+                  <tr>
+                    <td><a
+                        href="{{{URL}}}"
+                        style="color:#EDE6D6;"
+                        >Install the extension</a
+                      >
+                    </td>
+                  </tr>
+                </table>`;
+  expect(htmlText(reformatted), "Resend's editor breaks the tags across lines").toBe("Open it on a computer:\n\nInstall the extension: {{{URL}}}");
 });
 
 test("a template's plain-text part reads every text variable through its raw twin, and never an html variable", () => {

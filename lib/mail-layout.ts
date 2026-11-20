@@ -162,8 +162,8 @@ export function htmlText(body: string): string {
     body
       .replace(/<!--[\s\S]*?-->/g, "")
       .replace(/\s+/g, " ")
-      .replace(/<table\b[\s\S]*?<\/table>/gi, (t) => t.replace(/<a\b([^>]*)>([\s\S]*?)<\/a>/gi, linkText((l, h) => `${l}: ${h}`)))
-      .replace(/<a\b([^>]*)>([\s\S]*?)<\/a>/gi, linkText((l, h) => `${l} (${h})`))
+      .replace(/<table\b[\s\S]*?<\/table\s*>/gi, (t) => t.replace(/<a\b([^>]*)>([\s\S]*?)<\/a\s*>/gi, linkText((l, h) => `${l}: ${h}`)))
+      .replace(/<a\b([^>]*)>([\s\S]*?)<\/a\s*>/gi, linkText((l, h) => `${l} (${h})`))
       .replace(/<br\s*\/?>/gi, "\n")
       .replace(/<li\b[^>]*>/gi, "\n- ")
       .replace(BLOCK, "\n\n")
