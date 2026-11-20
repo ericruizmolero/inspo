@@ -185,10 +185,10 @@ const MODE_KEY = "signup_mode";
 const MODE_TTL_MS = 30_000;
 const isMode = (v: unknown): v is SignupMode => SIGNUP_MODES.includes(v as SignupMode);
 
-/** Without a row: SIGNUP_MODE, else open. Production stays open until someone turns the gate on in /admin */
+/** Without a row: SIGNUP_MODE, else invite. A fresh or reset database never opens signup by itself: only /admin opens it */
 function defaultMode(): SignupMode {
   const env = process.env.SIGNUP_MODE?.trim();
-  return isMode(env) ? env : "open";
+  return isMode(env) ? env : "invite";
 }
 
 let cachedMode: { mode: SignupMode; at: number } | null = null;
