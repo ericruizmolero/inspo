@@ -38,6 +38,11 @@ export const mail: typeof EnMail = {
     text: (granter: string, url: string): string => `${granter} te ha dado acceso al panel de actividad de criterio.design:\n${url}\n\nEntra con este mismo correo.`,
   },
 
+  onTheList: {
+    subject: "Ya estás en la lista",
+    text: (email: string): string => `Ya estás en la lista de espera de criterio.design con este correo (${email}). Abrimos por tandas; cuando te toque, te escribimos con un enlace para entrar.\n\nSi no has sido tú, responde a este correo y te quitamos de la lista.`,
+  },
+
   accessInvite: {
     subject: "Ya puedes entrar",
     text: (url: string, email: string): string => `Ya puedes entrar en criterio.design:\n${url}\n\nEntra con este mismo correo (${email}).`,

@@ -41,6 +41,11 @@ export const mail = {
     text: (granter: string, url: string): string => `${granter} gave you access to the criterio.design activity panel:\n${url}\n\nSign in with this same address.`,
   },
 
+  onTheList: {
+    subject: "You're on the list",
+    text: (email: string): string => `You're on the criterio.design waitlist with this address (${email}). We let people in by waves; when your turn comes, we'll email you a link to come in.\n\nIf it wasn't you, reply to this email and we'll take you off the list.`,
+  },
+
   accessInvite: {
     subject: "You can come in now",
     text: (url: string, email: string): string => `You can come in to criterio.design now:\n${url}\n\nSign in with this same address (${email}).`,

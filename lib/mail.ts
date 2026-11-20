@@ -108,6 +108,12 @@ export function adminAccessMail(url: string, granterName: string, locale: Locale
   return { subject: t.adminAccess.subject(granterName), text: signed(locale, t.adminAccess.text(granterName, url)) };
 }
 
+/** Once, when someone joins the waitlist (lib/access.ts enlist): no link, only that they are on it and what comes next */
+export function onTheListMail(email: string, locale: Locale): Mail {
+  const t = mailDict(locale);
+  return { subject: t.onTheList.subject, text: signed(locale, t.onTheList.text(email)) };
+}
+
 /** A place opened from the waitlist, or a loose invite made out to someone: the link carries the code. */
 export function accessInviteMail(url: string, email: string, locale: Locale): Mail {
   const t = mailDict(locale);

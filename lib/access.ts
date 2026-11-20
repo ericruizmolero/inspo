@@ -10,11 +10,21 @@ import type { Locale } from "./i18n/locale";
 import type { PlanKey } from "./plans";
 import { SIGNUP_MODES, type SignupMode, type WaitlistSource } from "./db/schema";
 import { isAdmin } from "./activity";
+import { onTheListMail } from "./mail";
+import { mailOnce } from "./mail-once";
+import { allow, ipOf } from "./rate-limit";
 
 const W = schema.waitlistEntry;
 const I = schema.accessInvite;
 
 export const normalEmail = (email: string) => email.trim().toLowerCase();
+
+/** The address someone typed, normalised, or null when it cannot be one */
+export function parseEmail(raw: unknown): string | null {
+  if (typeof raw !== "string") return null;
+  const email = normalEmail(raw);
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && email.length <= 254 ? email : null;
+}
 
 export interface WaitlistAnswers {
   email: string;
@@ -38,6 +48,22 @@ export async function joinWaitlist(a: WaitlistAnswers) {
   if (created) return { ...created, created: true };
   const [existing] = await db.select({ id: W.id, status: W.status }).from(W).where(eq(W.email, email));
   return { ...existing, created: false };
+}
+
+/** Ten tries an hour from one IP, counted across every way onto the waitlist */
+export const mayEnlist = (h: Headers) => allow(`waitlist:${ipOf(h)}`, 10, 60 * 60 * 1000);
+
+/**
+ * Every way onto the waitlist (/login's button, the marketing site's form) goes through here: the entry, then the
+ * "you're on the list" mail, once per entry. Someone who already has an account is left as they are. The caller
+ * answers the same in every case, so the answer never says whether an address is signed up.
+ */
+export async function enlist(a: WaitlistAnswers): Promise<void> {
+  if (await hasAccess(a.email)) return;
+  const entry = await joinWaitlist(a);
+  if (entry.status !== "pending") return;
+  const email = normalEmail(a.email);
+  await mailOnce(`waitlist-mail:${entry.id}`, [email], onTheListMail(email, a.locale));
 }
 
 export interface InviteOptions {
