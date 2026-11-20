@@ -4,7 +4,8 @@ export const APP_URL = import.meta.env.DEV ? "http://localhost:3000" : "https://
 // Where the waitlist forms post their email (app/api/waitlist)
 export const WAITLIST_URL = `${APP_URL}/api/waitlist`;
 
-export type Locale = "en" | "es";
+export const LOCALES = ["en", "es"] as const;
+export type Locale = (typeof LOCALES)[number];
 
 // Every page: its path in each language and, for the ones the footer lists, its name there. The header's language
 // switch, canonical, hreflang, the footer and the sitemap all read this table, in this order.

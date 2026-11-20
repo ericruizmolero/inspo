@@ -1,7 +1,7 @@
 ---
 // Generada por marketing-site/video/landing/construir.py desde plantilla.html: no se edita a mano
 import HomePlans from "../components/HomePlans.astro";
-import { PAGES, WAITLIST_URL, copy } from "../i18n";
+import { LOCALES, PAGES, WAITLIST_URL, copy } from "../i18n";
 ---
 <!doctype html>
 <html lang="en" data-lang="en" data-es="/es/" data-en="/">
@@ -446,7 +446,7 @@ dialog { width: 100vw; max-width: none; height: 100dvh; max-height: none; margin
 </defs></svg>
 
 <div class="page">
-  <header class="top"><a class="mark" href="./" id="mark"><span class="tile"><svg viewBox="-8 -10 62 62" aria-hidden="true"><path id="ear-l" d="M8 2h4v1h-4zM8 3h4v1h-4zM8 4h6v1h-6zM8 5h6v1h-6zM6 6h10v1h-10zM6 7h10v1h-10zM6 8h12v1h-12zM6 9h12v1h-12zM6 10h12v1h-12zM6 11h12v1h-12zM6 12h12v1h-12zM6 13h12v1h-12zM6 14h12v1h-12z"/><path id="ear-r" d="M22 0h4v1h-4zM22 1h4v1h-4zM22 2h6v1h-6zM22 3h6v1h-6zM20 4h8v1h-8zM20 5h8v1h-8zM20 6h10v1h-10zM20 7h10v1h-10zM20 8h10v1h-10zM20 9h10v1h-10zM18 10h12v1h-12zM18 11h12v1h-12zM18 12h12v1h-12zM18 13h12v1h-12zM18 14h16v1h-16z"/><path id="body" d="M6 15h28v1h-28zM8 16h30v1h-30zM8 17h30v1h-30zM4 18h38v1h-38zM4 19h38v1h-38zM2 20h42v1h-42zM2 21h42v1h-42zM2 22h22v1h-22zM42 22h2v1h-2zM2 23h22v1h-22zM42 23h2v1h-2zM0 24h24v1h-24zM42 24h4v1h-4zM0 25h24v1h-24zM42 25h4v1h-4zM0 26h24v1h-24zM42 26h4v1h-4zM0 27h24v1h-24zM42 27h4v1h-4zM0 28h46v1h-46zM0 29h46v1h-46zM0 30h46v1h-46zM0 31h46v1h-46zM0 32h46v1h-46zM0 33h46v1h-46zM0 34h46v1h-46zM0 35h46v1h-46zM2 36h42v1h-42zM2 37h42v1h-42zM4 38h38v1h-38zM4 39h38v1h-38zM8 40h32v1h-32zM8 41h32v1h-32z"/><rect id="vis" x="26" y="24" width="14" height="2"/></svg></span></a><nav class="top-nav"><a href="#pricing">{PAGES.pricing.nav.en}</a></nav></header>
+  <header class="top"><a class="mark" href="./" id="mark"><span class="tile"><svg viewBox="-8 -10 62 62" aria-hidden="true"><path id="ear-l" d="M8 2h4v1h-4zM8 3h4v1h-4zM8 4h6v1h-6zM8 5h6v1h-6zM6 6h10v1h-10zM6 7h10v1h-10zM6 8h12v1h-12zM6 9h12v1h-12zM6 10h12v1h-12zM6 11h12v1h-12zM6 12h12v1h-12zM6 13h12v1h-12zM6 14h12v1h-12z"/><path id="ear-r" d="M22 0h4v1h-4zM22 1h4v1h-4zM22 2h6v1h-6zM22 3h6v1h-6zM20 4h8v1h-8zM20 5h8v1h-8zM20 6h10v1h-10zM20 7h10v1h-10zM20 8h10v1h-10zM20 9h10v1h-10zM18 10h12v1h-12zM18 11h12v1h-12zM18 12h12v1h-12zM18 13h12v1h-12zM18 14h16v1h-16z"/><path id="body" d="M6 15h28v1h-28zM8 16h30v1h-30zM8 17h30v1h-30zM4 18h38v1h-38zM4 19h38v1h-38zM2 20h42v1h-42zM2 21h42v1h-42zM2 22h22v1h-22zM42 22h2v1h-2zM2 23h22v1h-22zM42 23h2v1h-2zM0 24h24v1h-24zM42 24h4v1h-4zM0 25h24v1h-24zM42 25h4v1h-4zM0 26h24v1h-24zM42 26h4v1h-4zM0 27h24v1h-24zM42 27h4v1h-4zM0 28h46v1h-46zM0 29h46v1h-46zM0 30h46v1h-46zM0 31h46v1h-46zM0 32h46v1h-46zM0 33h46v1h-46zM0 34h46v1h-46zM0 35h46v1h-46zM2 36h42v1h-42zM2 37h42v1h-42zM4 38h38v1h-38zM4 39h38v1h-38zM8 40h32v1h-32zM8 41h32v1h-32z"/><rect id="vis" x="26" y="24" width="14" height="2"/></svg></span></a><nav class="top-nav"><a href="#pricing">{LOCALES.map((x) => <span lang={x} data-locale={x} hidden={x !== "en"}>{PAGES.pricing.nav[x]}</span>)}</a></nav></header>
   <main>
     <div class="hero">
       <h1><span data-t="h1a"></span><span data-t="h1b"></span></h1>
@@ -485,7 +485,7 @@ dialog { width: 100vw; max-width: none; height: 100dvh; max-height: none; margin
   };
   const QL = new URLSearchParams(location.search).get("lang"), lang = QL === "en" || QL === "es" ? QL : document.documentElement.dataset.lang === "en" ? "en" : "es", L = COPY[lang];
   const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)], still = matchMedia("(prefers-reduced-motion: reduce)"), G = window.gsap, html = document.documentElement;
-  html.lang = lang; document.title = L.title; $$("[data-t]").forEach((e) => { e.textContent = L[e.dataset.t]; }); $("#mark").setAttribute("aria-label", L.home); $("#open").setAttribute("aria-label", L.video); $$(".invite input[type=email]").forEach((e) => { e.placeholder = L.ph; }); $$("#priv,.fp").forEach((e) => { e.href = L.privacyUrl; }); $("#l-es").href = html.dataset.es || "?lang=es"; $("#l-en").href = html.dataset.en || "?lang=en"; $("#l-" + lang).setAttribute("aria-current", "true"); L.end0 = L.end[0]; L.end1 = L.end[1]; $$("[data-t=end0],[data-t=end1],[data-t=endK]").forEach((e) => { e.textContent = L[e.dataset.t]; });
+  html.lang = lang; document.title = L.title; $$("[data-t]").forEach((e) => { e.textContent = L[e.dataset.t]; }); $("#mark").setAttribute("aria-label", L.home); $("#open").setAttribute("aria-label", L.video); $$(".invite input[type=email]").forEach((e) => { e.placeholder = L.ph; }); $$("#priv,.fp").forEach((e) => { e.href = L.privacyUrl; }); $("#l-es").href = html.dataset.es || "?lang=es"; $("#l-en").href = html.dataset.en || "?lang=en"; $("#l-" + lang).setAttribute("aria-current", "true"); $$("[data-locale]").forEach((e) => { e.hidden = e.dataset.locale !== lang; }); L.end0 = L.end[0]; L.end1 = L.end[1]; $$("[data-t=end0],[data-t=end1],[data-t=endK]").forEach((e) => { e.textContent = L[e.dataset.t]; });
   const R = ["maisa", "handhold", "casamomo", "wabi", "lifestories", "billguo", "vonder", "fal", "tiny", "cypher", "making", "refactory"].map((n) => "/assets/vault/refs/i-" + n + ".jpg");
   const ico = (n) => `<svg class="ico"><use\x20href="#i-${n}"/></svg>`, img = (i) => `<img\x20src="${R[i % R.length]}" alt="" decoding="async">`;
 

@@ -67,16 +67,17 @@ for l, x in T.items():
     if 'noindex' in p:
         sys.exit(f'{l}: sigue noindex')
     # lo que la plantilla toma del código de la web: la dirección de la app (i18n.ts), el registro abierto o con lista
-    # (signup-mode.ts) y los planes (plans.ts, los mismos de /pricing/ y de la app)
+    # (signup-mode.ts) y los planes (plans.ts, los mismos de /pricing/ y de la app). Los planes y su enlace de la cabecera
+    # van en todos los idiomas, cada uno con su data-locale: el script de la plantilla enseña el de ?lang= y oculta el resto
     up = '../' if l == 'en' else '../../'
     p = '\n'.join(['---', '// Generada por marketing-site/video/landing/construir.py desde plantilla.html: no se edita a mano',
                    f'import HomePlans from "{up}components/HomePlans.astro";',
-                   f'import {{ PAGES, WAITLIST_URL, copy }} from "{up}i18n";', '---', p])
+                   f'import {{ LOCALES, PAGES, WAITLIST_URL, copy }} from "{up}i18n";', '---', p])
     for mark, astro in {
         '"%%WAITLIST%%"': '{WAITLIST_URL}',
         '"%%LOGIN%%"': f'{{copy.{l}.login.href}}',
         '%%SIGNUP_MODE%%': f'<script>import "{up}scripts/signup-mode";</script>',
-        '%%PRICING_NAV%%': f'{{PAGES.pricing.nav.{l}}}',
+        '%%PRICING_NAV%%': f'{{LOCALES.map((x) => <span lang={{x}} data-locale={{x}} hidden={{x !== "{l}"}}>{{PAGES.pricing.nav[x]}}</span>)}}',
         '%%PRICING%%': f'<HomePlans locale="{l}" />',
     }.items():
         if mark not in p:
