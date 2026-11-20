@@ -14,6 +14,26 @@ export const mail: typeof EnMail = {
       `${who} te invita a ${team} en criterio.design:\n${url}\n\nEntra con este mismo correo (${invitee}). El enlace caduca en 7 días.`,
   },
 
+  membership: {
+    joinedSubject: (who: string, team: string): string => `${who} ha entrado en ${team}`,
+    joinedText: (who: string, team: string, url: string): string => `${who} ha aceptado la invitación y ya está en ${team}:\n${url}`,
+    endingSubject: (team: string): string => `Tu invitación a ${team} caduca mañana`,
+    endingText: (inviter: string, team: string, invitee: string, url: string): string =>
+      `${inviter} te invitó a ${team} en criterio.design, y el enlace deja de funcionar mañana:\n${url}\n\nEntra con este mismo correo (${invitee}). Si caduca, pídele otro a ${inviter}.`,
+    roleSubject: (team: string, role: string): string => `Tu rol en ${team} ahora es ${role}`,
+    roleText: (who: string, team: string, role: string, admin: boolean, url: string): string =>
+      `${who} te ha cambiado el rol en ${team}: ahora eres ${role}. ${admin ? "Puedes invitar a gente, cambiar sus roles y quitarla." : "Sigues trabajando en el equipo como antes; invitar y gestionar a la gente queda para el propietario y los admins."}\n${url}`,
+    removedSubject: (team: string): string => `Ya no estás en ${team}`,
+    removedText: (who: string, team: string): string =>
+      `${who} te ha quitado de ${team}. Sus proyectos y referencias se quedan en el equipo; tu espacio y tus otros equipos siguen como estaban.\n\nSi ha sido un error, pídele a ${who} que te invite otra vez.`,
+    ownerSubject: (team: string): string => `Ahora ${team} es tuyo`,
+    ownerText: (who: string, team: string, url: string): string =>
+      `${who} te ha pasado ${team}. Ahora eres su propietario: puedes eliminar el equipo y nadie puede quitarte. ${who} se queda como admin.\n\nEl plan y sus facturas siguen a nombre de quien los pagaba.\n${url}`,
+    deletedSubject: (team: string): string => `${team} se ha eliminado`,
+    deletedText: (who: string, team: string): string =>
+      `${who} ha eliminado ${team}, con sus proyectos, referencias y comentarios. Tu espacio y tus otros equipos siguen como estaban.`,
+  },
+
   personalInvite: {
     subject: (inviter: string): string => `${inviter} te invita a criterio.design`,
     text: (who: string, plan: string, invitee: string, url: string): string =>

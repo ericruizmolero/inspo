@@ -75,6 +75,31 @@ export function invitationMail(url: string, teamName: string, inviterName: strin
   return { subject: t.invitation.subject(inviterName, teamName), text: signed(locale, t.invitation.text(who, teamName, inviteeEmail, url)) };
 }
 
+/** What changed in a team for the one person told about it (lib/team-mail.ts). `who` is whoever did it */
+export type MembershipNews =
+  | { kind: "joined"; team: string; who: string; url: string }
+  | { kind: "ending"; team: string; who: string; invitee: string; url: string }
+  | { kind: "role"; team: string; who: string; role: "admin" | "member"; url: string }
+  | { kind: "removed"; team: string; who: string }
+  | { kind: "owner"; team: string; who: string; url: string }
+  | { kind: "deleted"; team: string; who: string };
+
+export function membershipMail(n: MembershipNews, locale: Locale): Mail {
+  const t = mailDict(locale).membership;
+  const mail = (subject: string, text: string): Mail => ({ subject, text: signed(locale, text) });
+  switch (n.kind) {
+    case "joined": return mail(t.joinedSubject(n.who, n.team), t.joinedText(n.who, n.team, n.url));
+    case "ending": return mail(t.endingSubject(n.team), t.endingText(n.who, n.team, n.invitee, n.url));
+    case "role": {
+      const role = DICTS[locale].team.roles[n.role].toLowerCase();
+      return mail(t.roleSubject(n.team, role), t.roleText(n.who, n.team, role, n.role === "admin", n.url));
+    }
+    case "removed": return mail(t.removedSubject(n.team), t.removedText(n.who, n.team));
+    case "owner": return mail(t.ownerSubject(n.team), t.ownerText(n.who, n.team, n.url));
+    case "deleted": return mail(t.deletedSubject(n.team), t.deletedText(n.who, n.team));
+  }
+}
+
 /** A personal invite (lib/access.ts): the person gets their own space on the free plan, not a seat in the inviter's */
 export function personalInviteMail(url: string, inviterName: string, inviterEmail: string, inviteeEmail: string, locale: Locale): Mail {
   const t = mailDict(locale);

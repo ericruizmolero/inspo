@@ -3,7 +3,7 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { magicLink, organization, lastLoginMethod } from "better-auth/plugins";
-import { APIError, createAuthMiddleware, getIP, isAPIError } from "better-auth/api";
+import { APIError, createAuthMiddleware, getIP, getSessionFromCtx, isAPIError } from "better-auth/api";
 import { memberLimit, memberRank, newTeamRefusal } from "./quota";
 import { nextCookies } from "better-auth/next-js";
 import { db, schema } from "./db";
@@ -128,6 +128,7 @@ export const auth = betterAuth({
   // came back with an error. Both end in a redirect with ?error= on it.
   hooks: {
     after: createAuthMiddleware(async (ctx) => {
+      if (MEMBER_CHANGES.has(ctx.path)) return tellMemberChange(ctx);
       if (!/^\/(magic-link\/verify|callback\/)/.test(ctx.path)) return;
       const r = ctx.context.returned;
       const err = isAPIError(r) ? r : null;
@@ -259,15 +260,17 @@ export const auth = betterAuth({
         // to our own code, replace this with a db.transaction() and delete it.
         async afterAcceptInvitation({ invitation, member, organization: org }) {
           const plan = planOf(await planFromOrg(org));
-          if (plan.members === null) return;
-          const rank = await memberRank(member.organizationId, member.id);
-          if (rank < plan.members) return; // the first ones within the plan always stay
-          await db.delete(schema.member).where(eq(schema.member.id, member.id));
-          // The invitation goes back to pending: the link still works once there's room
-          await db.update(schema.invitation).set({ status: "pending" }).where(eq(schema.invitation.id, invitation.id));
-          throw new APIError("FORBIDDEN", {
-            message: (await getErrors()).seatTaken,
-          });
+          // The first ones within the plan always stay
+          if (plan.members !== null && await memberRank(member.organizationId, member.id) >= plan.members) {
+            await db.delete(schema.member).where(eq(schema.member.id, member.id));
+            // The invitation goes back to pending: the link still works once there's room
+            await db.update(schema.invitation).set({ status: "pending" }).where(eq(schema.invitation.id, invitation.id));
+            throw new APIError("FORBIDDEN", {
+              message: (await getErrors()).seatTaken,
+            });
+          }
+          const { tellJoined } = await import("./team-mail");
+          await tellJoined({ organizationId: org.id, team: org.name, inviterId: invitation.inviterId, joinerId: member.userId });
         },
       },
     }),
@@ -308,6 +311,26 @@ export type Session = typeof auth.$Infer.Session;
 /** The plan of the account that pays for the workspace; seats still count per workspace */
 async function planFromOrg(org: { id: string }): Promise<string | null> {
   return (await accountOf(org.id))?.plan ?? null;
+}
+
+// A role changed or a member removed by someone in the team. Here and not in organizationHooks: those don't say who
+// did it, and the person who changed their own role or removed themselves gets no email. Leaving
+// (/organization/leave) never comes through either.
+const MEMBER_CHANGES = new Set(["/organization/update-member-role", "/organization/remove-member"]);
+
+type AfterCtx = Parameters<Parameters<typeof createAuthMiddleware>[0]>[0];
+
+async function tellMemberChange(ctx: AfterCtx) {
+  const r = ctx.context.returned;
+  if (!r || typeof r !== "object" || isAPIError(r)) return;
+  const member = ("member" in r ? r.member : r) as { userId?: string; organizationId?: string; role?: string };
+  const actorId = (await getSessionFromCtx(ctx).catch(() => null))?.user.id;
+  if (!actorId || !member.userId || !member.organizationId) return;
+  const { tellMemberChanged } = await import("./team-mail");
+  await tellMemberChanged({
+    organizationId: member.organizationId, actorId, userId: member.userId,
+    change: ctx.path === "/organization/remove-member" ? { kind: "removed" } : { kind: "role", role: member.role ?? "" },
+  });
 }
 
 /** A seat limit as Better Auth answers it: a 402 whose body carries what the upgrade notice reads, under `message` */

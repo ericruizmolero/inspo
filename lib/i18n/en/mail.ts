@@ -16,6 +16,27 @@ export const mail = {
       `${who} invites you to ${team} on criterio.design:\n${url}\n\nSign in with this same address (${invitee}). The link expires in 7 days.`,
   },
 
+  /** Who is in a team and with what role, told to the person it changes (lib/team-mail.ts) */
+  membership: {
+    joinedSubject: (who: string, team: string): string => `${who} joined ${team}`,
+    joinedText: (who: string, team: string, url: string): string => `${who} accepted the invitation and is in ${team} now:\n${url}`,
+    endingSubject: (team: string): string => `Your invitation to ${team} ends tomorrow`,
+    endingText: (inviter: string, team: string, invitee: string, url: string): string =>
+      `${inviter} invited you to ${team} on criterio.design, and the link stops working tomorrow:\n${url}\n\nSign in with this same address (${invitee}). If it ends, ask ${inviter} for a new one.`,
+    roleSubject: (team: string, role: string): string => `Your role in ${team} is now ${role}`,
+    roleText: (who: string, team: string, role: string, admin: boolean, url: string): string =>
+      `${who} made you ${role} in ${team}. ${admin ? "You can invite people, change their roles and remove them." : "You keep working in the team as before; inviting and managing people is for the owner and the admins."}\n${url}`,
+    removedSubject: (team: string): string => `You're no longer in ${team}`,
+    removedText: (who: string, team: string): string =>
+      `${who} removed you from ${team}. Its projects and references stay with the team; your own space and your other teams are as they were.\n\nIf it was a mistake, ask ${who} to invite you again.`,
+    ownerSubject: (team: string): string => `You now own ${team}`,
+    ownerText: (who: string, team: string, url: string): string =>
+      `${who} handed ${team} over to you. You are its owner now: you can delete the team, and nobody can remove you. ${who} stays on as an admin.\n\nThe plan and its invoices stay with whoever paid them until now.\n${url}`,
+    deletedSubject: (team: string): string => `${team} was deleted`,
+    deletedText: (who: string, team: string): string =>
+      `${who} deleted ${team}, with its projects, references and comments. Your own space and your other teams are as they were.`,
+  },
+
   /** A personal invite from Settings → Invite: access to the product, not a seat in a team */
   personalInvite: {
     subject: (inviter: string): string => `${inviter} invites you to criterio.design`,

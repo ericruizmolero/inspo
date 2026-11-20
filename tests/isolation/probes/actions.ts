@@ -625,6 +625,17 @@ export const actions: Record<string, Surface> = {
       expect(await team(), "A's team unchanged").toEqual(before);
     },
   },
+  "action:app/actions/workspace.ts#handOverTeam": {
+    probe: async (fx) => {
+      const { handOverTeam } = await import("@/app/actions/workspace");
+      const roles = () => db.select({ id: schema.member.id, role: schema.member.role }).from(schema.member).where(eq(schema.member.organizationId, fx.a.team));
+      const before = await roles();
+      asB(fx);
+      expectRefused(fx, await handOverTeam(fx.a.team, `${fx.a.prefix}-m1`), "B cannot hand A's team over");
+      expectRefused(fx, await handOverTeam(fx.b.team, `${fx.a.prefix}-m1`), "B cannot make A's member the owner of B's team");
+      expect(await roles(), "A's roles unchanged").toEqual(before);
+    },
+  },
   "action:app/actions/workspace.ts#deleteTeam": {
     probe: async (fx) => {
       const { deleteTeam } = await import("@/app/actions/workspace");
