@@ -1,3 +1,6 @@
+---
+import LandingPlans from "../../components/LandingPlans.astro";
+---
 <!doctype html>
 <html lang="en">
 <head>
@@ -517,7 +520,7 @@ html { background: var(--paper); scroll-behavior: smooth; } section[id] { scroll
 .wrap { width: min(1080px, calc(100% - clamp(40px, 8vw, 96px))); }
 .hd-l { margin: 0 0 14px; font-size: clamp(2rem, 3.4vw, 3rem); max-width: 22ch; } .hd-c { margin: 0 auto 14px; text-align: center; font-size: clamp(2rem, 3.6vw, 3.2rem); text-wrap: balance; }
 .lead { margin: 0 0 56px; max-width: 54ch; font-size: clamp(1rem, 1.3vw, 1.125rem); line-height: 1.5; color: #6B675E; text-wrap: pretty; } .lead-c { margin-inline: auto; text-align: center; margin-bottom: 32px; }
-.rows, .busca, .usos, .precios, .faq { padding: clamp(72px, 10vw, 128px) 0 0; }
+.rows, .busca, .usos, .faq { padding: clamp(72px, 10vw, 128px) 0 0; }
 .nlist { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--lineS); }
 .nlist li { display: grid; grid-template-columns: 70px minmax(0, 1fr) minmax(0, 340px); gap: 24px; align-items: center; padding: 30px 0; border-bottom: 1px solid var(--lineS); }
 .nlist .n { font: 13px/1 var(--mono2); color: #6B675E; font-variant-numeric: tabular-nums; }
@@ -549,15 +552,6 @@ html { background: var(--paper); scroll-behavior: smooth; } section[id] { scroll
 .wide { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; margin-top: 16px; padding: clamp(24px, 3vw, 36px); border-radius: 20px; background: var(--glass); box-shadow: var(--sombra); }
 .wide h3 { margin: 0 0 8px; font: 400 clamp(1.5rem, 2.2vw, 2rem)/1.1 var(--sans); letter-spacing: -0.02em; } .wide p { margin: 0; max-width: 58ch; color: #6B675E; line-height: 1.5; text-wrap: pretty; }
 .wide-names { display: flex; gap: 6px; margin-top: 16px; } .wide-names span { padding: 6px 12px; border-radius: 999px; box-shadow: inset 0 0 0 1px var(--lineS); font-size: 14px; color: #5A5850; } .wide .btn { flex: none; }
-.plans { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; align-items: stretch; }
-.plan { display: flex; flex-direction: column; padding: 22px 20px; border-radius: 20px; background: var(--glass); box-shadow: var(--sombra); }
-.plan.hot { background: #fff; box-shadow: inset 0 0 0 1.5px var(--ink), var(--sombra); }
-.plan h3 { margin: 0; font: 500 18px/1.2 var(--sans); } .pt { margin: 4px 0 18px; min-height: 3em; font-size: 14px; line-height: 1.45; color: #6B675E; text-wrap: pretty; }
-.pr { margin: 0; display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; } .pr b { font: 400 clamp(2rem, 3vw, 2.6rem)/1 var(--sans); letter-spacing: -0.03em; } .pr span { font-size: 14px; color: #6B675E; }
-.pn { margin: 6px 0 16px; min-height: 2.8em; font-size: 13px; line-height: 1.4; color: #6B675E; }
-.plan .btn { align-self: stretch; } .plan ul { list-style: none; margin: 18px 0 0; padding: 16px 0 0; border-top: 1px solid var(--lineS); display: grid; gap: 9px; font-size: 14px; line-height: 1.4; }
-.plan li { padding-left: 20px; position: relative; text-wrap: pretty; } .plan li::before { content: ""; position: absolute; left: 2px; top: 0.42em; width: 9px; height: 5px; border-left: 1.5px solid var(--ink); border-bottom: 1.5px solid var(--ink); rotate: -45deg; }
-.pfoot { margin: 22px auto 0; max-width: 72ch; text-align: center; font-size: 13px; line-height: 1.5; color: #6B675E; text-wrap: pretty; }
 .faq-grid { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 7fr); gap: 48px; align-items: start; } .faq-head { position: sticky; top: 100px; } .faq-head .lead { margin: 0; }
 .faq-list details { border-bottom: 1px solid var(--lineS); } .faq-list summary { list-style: none; cursor: pointer; display: flex; justify-content: space-between; gap: 16px; padding: 20px 0; font-size: 18px; font-weight: 500; }
 .faq-list summary::-webkit-details-marker { display: none; } .faq-list summary::after { content: "+"; color: #6B675E; font-weight: 400; transition: rotate 0.2s; } .faq-list details[open] summary::after { rotate: 45deg; } .faq-list summary:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
@@ -569,12 +563,12 @@ html { background: var(--paper); scroll-behavior: smooth; } section[id] { scroll
 .foot-legal { display: flex; justify-content: space-between; margin: 0 auto; font-size: 13px; color: #6B675E; }
 @media (max-width: 900px) {
   .nlist li { grid-template-columns: 36px minmax(0, 1fr); gap: 6px 10px; padding: 20px 0; } .nlist p { grid-column: 2; }
-  .twolinks, .ugrid.bgrid { grid-template-columns: minmax(0, 1fr); } .plans { grid-template-columns: repeat(2, minmax(0, 1fr)); } .faq-grid { grid-template-columns: minmax(0, 1fr); gap: 24px; } .faq-head { position: static; }
+  .twolinks, .ugrid.bgrid { grid-template-columns: minmax(0, 1fr); } .faq-grid { grid-template-columns: minmax(0, 1fr); gap: 24px; } .faq-head { position: static; }
   .wide { flex-direction: column; align-items: flex-start; }
 }
 @media (max-width: 600px) {
   .nav { grid-template-columns: auto auto 1fr; } .nav .mark span { display: none; } .nav .mark { padding: 0 12px; } .menu-btn { padding: 0 14px; } .nav .nav-cta { padding: 0 10px; font-size: 13px; } .nav .menu nav { left: 0; translate: 0 0; }
-  .plans { grid-template-columns: minmax(0, 1fr); } .pt, .pn { min-height: 0; } .bx-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; } .bx { padding: 8px; height: 520px; } .bx-tabs button { padding: 0 11px; font-size: 13px; }
+  .bx-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; } .bx { padding: 8px; height: 520px; } .bx-tabs button { padding: 0 11px; font-size: 13px; }
 }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .tino.slide, .bx-ref, .twolinks i { transition: none; } .bx-q::after { animation: none; } }
 </style>
@@ -582,7 +576,7 @@ html { background: var(--paper); scroll-behavior: smooth; } section[id] { scroll
 /* ── ronda 2: Geist Serif en titulares, Satoshi (la del producto) en el resto, menú con tecla retro ── */
 @font-face { font-family: "Geist Serif"; src: url("/assets/fonts/geist-serif/GeistSerifVF.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
 :root { --display: "Geist Serif", Georgia, serif; --sans: "Satoshi", "Archivo", system-ui, sans-serif; --mono2: ui-monospace, "SF Mono", Menlo, monospace; }
-.copy h1, .stephead h2, .hd2, .nlist h3, .utxt h3, .wide h3, .pr b, .foot-word, .twolinks b { font-family: var(--display); font-weight: 400; }
+.copy h1, .stephead h2, .hd2, .nlist h3, .utxt h3, .wide h3, .foot-word, .twolinks b { font-family: var(--display); font-weight: 400; }
 .copy h1 { letter-spacing: -0.028em; line-height: 1.04; } .stephead h2, .hd2 { letter-spacing: -0.022em; line-height: 1.08; } .nlist h3, .utxt h3, .wide h3 { letter-spacing: -0.012em; } .foot-word { letter-spacing: -0.04em; }
 .copy h1 .slot { width: 1.08em; }
 .navblur { height: 84px; }
@@ -796,7 +790,7 @@ html.booting .rio { visibility: hidden; }
 @media (min-width: 761px) and (max-height: 680px) { .hero-foot { display: none; } }
 @media (prefers-reduced-motion: reduce) { .menu-vid, .open .menu-vid { transition: none; } }
 
-h1, h2, h3, h4, .hd2, .pr b, .twolinks b, .nav .menu nav a.big, .foot-word, .rc-img p { letter-spacing: -0.02em !important; }
+h1, h2, h3, h4, .hd2, .twolinks b, .nav .menu nav a.big, .foot-word, .rc-img p { letter-spacing: -0.02em !important; }
 .pie { position: relative; overflow: hidden; height: max(700px, 100lvh); background: #0D0D0B; color: #F3F2EE; }
 .pie-in { position: relative; z-index: 2; display: grid; grid-template-columns: minmax(280px, 1.8fr) repeat(3, minmax(120px, 1fr)); gap: 40px; width: min(1120px, 100% - 48px); margin: 0 auto; padding: clamp(64px, 10svh, 96px) 0 0; pointer-events: none; }
 .pie-in a, .pie-in .btn { pointer-events: auto; }
@@ -1334,7 +1328,7 @@ html:is([data-t="panel"], [data-t="corte"]) .mt-tx p, html:is([data-t="panel"], 
 .mark span, .nav .mark span, .pie .mark span { display: block; font: 400 var(--ws)/1 "Geist Serif", Georgia, serif; letter-spacing: -0.065em !important; -webkit-text-stroke: 0.024em currentColor; margin: 0 0 calc(var(--ws) * -0.133); }
 @media (max-width: 760px) { .mark, .nav .mark { --ws: 24px; padding: 0; } .pie .mark, .pie-a > .mark { --ws: 30px; } }
 /* titulares: más apretados */
-h1, h2, h3, h4, .hd2, .pr b, .twolinks b, .foot-word, .rc-img p { letter-spacing: -0.045em !important; }
+h1, h2, h3, h4, .hd2, .twolinks b, .foot-word, .rc-img p { letter-spacing: -0.045em !important; }
 .copy h1, .hd2, .stephead h2, .b9 .hd2, .faq .hd2 { letter-spacing: -0.05em !important; }
 .t9 h3, .nav .menu nav a.big, .pie-t, .ask-q { letter-spacing: -0.04em !important; }
 .mt-tx p { letter-spacing: -0.04em; }
@@ -1647,6 +1641,7 @@ html.pie-on .nav { visibility: hidden; transition: opacity 0.2s, visibility 0s 0
     <article class="t9 t-d"><h3>Go back to any version.</h3><div class="vh9" data-ui aria-hidden="true"><p>Board versions</p><ol><li class="on"><img src="/assets/equipo/andoni.jpg" alt="" width="24" height="24" loading="lazy"><span><b>Andoni</b><em>2 in</em></span><span class="m"><b>v3</b><em>now</em></span></li><li><img src="/assets/equipo/alberto.jpg" alt="" width="24" height="24" loading="lazy"><span><b>Alberto</b><em>1 out</em></span><span class="m"><b>v2</b><em>12 Nov</em></span></li><li><i class="vh9-ic"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 10a6.5 6.5 0 1 0 1.9-4.6"/><path d="M3.5 3.5v3h3"/><path d="M10 6.5V10l2.5 1.5"/></svg></i><span><b>As it was</b><em>6 references</em></span><span class="m"><b>v1</b><em>10 Nov</em></span></li></ol></div></article>
   </div>
 </div></section>
+<LandingPlans locale="en" />
 <section class="faq" id="preguntas"><div class="wrap ask">
   <div class="ask-side">
     <h2 class="hd2 hd-l"><span>Ask Tino.</span><span>Knows almost everything.</span></h2>
@@ -1674,7 +1669,7 @@ html.pie-on .nav { visibility: hidden; transition: opacity 0.2s, visibility 0s 0
       <small>© 2026 criterio.design · <a href="https://criterio.design/privacy/">Privacy</a> · <a href="https://criterio.design/terms/">Terms</a></small>
       <small class="pie-by">Made by Eric, Alberto and Andoni</small>
     </div>
-    <nav aria-label="Product"><h2>Product</h2><a href="#pasos">How it works</a><a href="#manifiesto">Why it exists</a><a href="#porque">What it does</a><a href="#preguntas">Questions</a><a href="https://app.criterio.design/login">Log in</a></nav>
+    <nav aria-label="Product"><h2>Product</h2><a href="#pasos">How it works</a><a href="#manifiesto">Why it exists</a><a href="#porque">What it does</a><a href="#precios">Pricing</a><a href="#preguntas">Questions</a><a href="https://app.criterio.design/login">Log in</a></nav>
     <nav aria-label="Project"><h2>Project</h2><a href="https://criterio-landing.vercel.app/manifiesto/">Manifesto</a><a href="https://criterio-landing.vercel.app/mascota/">The mascot</a><a href="https://criterio-landing.vercel.app/brandbook/">Brandbook</a><a href="https://criterio-landing.vercel.app/versiones/">Versions</a></nav>
     <nav aria-label="For your work"><h2>For your work</h2><a href="https://criterio.design/extension/">Extension</a><a href="https://criterio.design/skills/">Skills</a><a href="https://criterio.design/resources/">Resources</a></nav>
   </div>
@@ -2660,11 +2655,11 @@ Promise.all([engineReady, Promise.race([document.fonts ? document.fonts.ready : 
     t.addEventListener("pointerleave", () => { t.style.setProperty("--ry", "0deg"); t.style.setProperty("--rx", "0deg"); });
   });
 }
-// ── del manifiesto a las preguntas, Tino se aparta: mientras el centro de la pantalla cae en «quiénes somos» o en el bento ──
+// ── del manifiesto a las preguntas, Tino se aparta: mientras el centro de la pantalla cae en «quiénes somos», en el bento o en los precios ──
 {
   const quiet = new Set();
   const io = new IntersectionObserver((es) => { es.forEach((e) => (e.isIntersecting ? quiet.add(e.target.id) : quiet.delete(e.target.id))); away("quiet", quiet.size > 0); }, { rootMargin: "-50% 0px -50% 0px" });
-  io.observe($("#manifiesto")); io.observe($("#porque"));
+  io.observe($("#manifiesto")); io.observe($("#porque")); io.observe($("#precios"));
 }
 
 { const r = document.documentElement, on = new Set(), io = new IntersectionObserver((es) => { es.forEach((e) => (e.isIntersecting ? on.add(e.target.id) : on.delete(e.target.id))); r.classList.toggle("pie-on", on.has("pie")); }, { rootMargin: "-5% 0px -92% 0px" }); io.observe($("#pie")); io.observe($("#pie")); }

@@ -60,6 +60,8 @@ export const copy = {
       headline: "Plans",
       lead: (actions: string) => `Free to try, with ${actions} AI actions a month. Paid plans add people, workspaces and AI actions.`,
       start: "Start free",
+      // The plans on the full landing, between the bento and the questions
+      section: { headline: "One price for the whole team.", sub: "Start free, and pay when you need more.", ask: (plan: string) => `Ask for ${plan}`, all: "Compare the plans side by side" },
       compare: "Side by side",
       plan: "Plan",
       rows: { ai: "AI actions a month", searches: "AI searches a month", references: "References", storage: "Storage", people: "People in each workspace", workspaces: "Workspaces" },
@@ -170,6 +172,7 @@ export const copy = {
       headline: "Planes",
       lead: (actions: string) => `Gratis para probarlo, con ${actions} acciones de IA al mes. Los planes de pago suman personas, espacios y acciones de IA.`,
       start: "Empieza gratis",
+      section: { headline: "Un precio para todo el equipo.", sub: "Empieza gratis y paga cuando necesites más.", ask: (plan: string) => `Pedir ${plan}`, all: "Compara los planes uno al lado del otro" },
       compare: "Uno al lado del otro",
       plan: "Plan",
       rows: { ai: "Acciones de IA al mes", searches: "Búsquedas IA al mes", references: "Referencias", storage: "Almacenamiento", people: "Personas en cada espacio", workspaces: "Espacios" },

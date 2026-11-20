@@ -1,0 +1,61 @@
+---
+// The plans on the full landing (/landing/, /es/landing/), between the bento and the questions. Same source as /pricing/
+// (plans.ts, a checked copy of the app's plans), so the landing cannot drift from either. Buttons and type come from the
+// landing's own styles (.btn, .hd2, --display); cards are told apart by fill, like the bento's
+import { PAGES, copy, type Locale } from "../i18n";
+import { PLANS, PLAN_LINES, PLAN_TEXT, fmtPrice, isPaid } from "../plans";
+
+interface Props { locale: Locale }
+const { locale } = Astro.props;
+const t = copy[locale].pricing;
+const lines = PLAN_LINES[locale];
+const text = PLAN_TEXT[locale];
+---
+<section class="precios" id="precios" aria-labelledby="precios-h"><div class="wrap">
+  <h2 class="hd2" id="precios-h"><span>{t.section.headline}</span><span>{t.section.sub}</span></h2>
+  <ul class="plans">
+    {PLANS.map((p) => (
+      <li class="plan">
+        <h3>{text[p.key].name}</h3>
+        <p class="plan-tag">{text[p.key].tagline}</p>
+        <p class="plan-pr"><b>{fmtPrice(p.price.month, locale)}</b> <span>{lines.perMonth}</span></p>
+        <p class="plan-yr">{isPaid(p) ? lines.orYearly(fmtPrice(p.price.year, locale)) : lines.forGood}</p>
+        <a class="btn btn-paper" href={copy[locale].login.href}>{isPaid(p) ? t.section.ask(text[p.key].name) : t.start}</a>
+        <ul class="plan-ft">{text[p.key].features.map((f) => <li>{f}</li>)}</ul>
+      </li>
+    ))}
+  </ul>
+  <div class="precios-pie"><p>{lines.foot}</p><a href={PAGES.pricing.path[locale]}>{t.section.all} <i aria-hidden="true">→</i></a></div>
+</div></section>
+
+<style>
+  .precios { position: relative; z-index: 9; padding: clamp(72px, 10.6svh, 100px) 0 clamp(56px, 9svh, 96px); background: #E7E5DF; }
+  .precios .wrap { width: min(1240px, 100% - 48px); }
+  .precios .hd2 { margin: 0 0 clamp(28px, 4.4svh, 44px); font-size: clamp(2rem, 3.4vw, 3rem); }
+
+  /* Each card shares its rows with the others (subgrid), so prices, buttons and lists line up whatever the tagline's length */
+  .plans { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; }
+  .plan { display: grid; grid-row: span 6; grid-template-rows: subgrid; row-gap: 0; min-width: 0; padding: 26px 24px 28px; border-radius: 14px; background: var(--paper-l); }
+  .plan h3 { margin: 0; font: 400 clamp(1.6rem, 2.2vw, 2rem)/1.1 var(--display); }
+  .plan-tag { margin: 6px 0 0; color: #6B675E; font-size: 15px; line-height: 1.4; text-wrap: pretty; }
+  .plan-pr { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px; margin: 24px 0 0; }
+  .plan-pr b { font: 400 clamp(2.4rem, 3.4vw, 3rem)/1 var(--display); letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
+  .plan-pr span { color: #6B675E; font-size: 15px; }
+  .plan-yr { margin: 8px 0 0; color: #6B675E; font-size: 14px; line-height: 1.4; text-wrap: pretty; }
+  .plan .btn { margin-top: 22px; }
+  .plan-ft { display: grid; align-content: start; gap: 10px; margin: 22px 0 0; padding: 20px 0 0; border-top: 1px solid rgb(27 27 24 / 0.1); list-style: none; font-size: 15px; line-height: 1.4; }
+  .plan-ft li { position: relative; padding-left: 22px; text-wrap: pretty; }
+  .plan-ft li::before { content: ""; position: absolute; left: 2px; top: 0.42em; width: 9px; height: 5px; border-left: 1.5px solid var(--ink); border-bottom: 1.5px solid var(--ink); rotate: -45deg; }
+
+  .precios-pie { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 12px 40px; margin-top: 28px; }
+  .precios-pie p { flex: 1 1 320px; max-width: 70ch; margin: 0; color: #6B675E; font-size: 14px; line-height: 1.5; text-wrap: pretty; }
+  .precios-pie a { color: var(--ink); font-size: 15px; font-weight: 500; text-underline-offset: 3px; }
+  .precios-pie a:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+
+  @media (max-width: 1080px) { .plans { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 640px) {
+    .precios .wrap { width: calc(100% - 40px); }
+    .plans { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+    .plan { padding: 22px 20px 24px; }
+  }
+</style>
