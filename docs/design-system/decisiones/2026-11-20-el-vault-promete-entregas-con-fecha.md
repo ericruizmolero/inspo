@@ -10,4 +10,4 @@ kind: producto
 
 **Por qué.** Alberto, 20-11, a si el Vault debía tener entregas con fecha: "i think yes we should". Interpretación nuestra: una cadencia que se cumple siempre vale más que una ambiciosa que se salta, porque es lo que se promete al cobrar.
 
-**Cómo aplicarlo.** No se publica una cadencia en las tarjetas hasta que los socios la fijen. Una vez publicada, cada entrega cumple la fecha; si no se puede sostener, se cambia la promesa antes de fallarla.
+**Cómo aplicarlo.** No se publica una cadencia en las tarjetas hasta que los socios la fijen. Una vez publicada, cada entrega cumple la fecha; si no se puede sostener, se cambia la promesa antes de fallarla. Hasta que se fije, un socio manda cada entrega a mano desde `/admin/vault`: el correo "New in the Vault" con las piezas publicadas desde la anterior, a quien lee el Vault entero y no lo ha apagado (`lib/vault-release.ts`, ver `desarrollo.md`).
