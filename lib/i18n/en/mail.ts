@@ -72,6 +72,14 @@ export const mail = {
       `${who} (${email}) left ${notes} on ${path} on ${when}.\nPage: ${url}\n\n${markdown}`,
   },
 
+  // ─── New in the Vault (lib/vault-release.ts) ───────────────────────────────
+  // Only to whoever reads the whole Vault; it ends, like the team emails, with why it came and how to stop it.
+  vaultRelease: {
+    subject: (n: number): string => (n === 1 ? "New in the Vault: 1 piece" : `New in the Vault: ${n} pieces`),
+    intro: (n: number): string => `${n === 1 ? "There is a new piece" : `There are ${n} new pieces`} in the Vault. Their code is yours: your agent reads it through the connector when it builds.`,
+    why: "You get this because you read the whole Vault on criterio.design.",
+  },
+
   // ─── Team emails (lib/notify.ts) ───────────────────────────────────────────
   // Every one of these ends with a line that says why it came and how to stop it: one click, no sign-in.
   team: {

@@ -4,8 +4,9 @@ import { useState, useTransition } from "react";
 import { resubscribe } from "@/app/actions/notifications";
 import { Button } from "@/components/criterio";
 import { useT } from "@/components/I18nProvider";
+import type { EmailKind } from "@/lib/notify";
 
-export default function ResubscribeButton({ userId, kind, sig }: { userId: string; kind: "digest" | "replies"; sig: string }) {
+export default function ResubscribeButton({ userId, kind, sig }: { userId: string; kind: EmailKind; sig: string }) {
   const { t } = useT();
   const [on, setOn] = useState(false);
   const [pending, start] = useTransition();

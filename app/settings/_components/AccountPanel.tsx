@@ -9,10 +9,11 @@ import ThemeSwitch from "@/components/ThemeSwitch";
 import LangSwitch from "@/components/LangSwitch";
 import { setUiSounds, useUiSounds } from "@/lib/ui-sounds";
 import { setEmailPreference } from "@/app/actions/notifications";
+import type { EmailKind } from "@/lib/notify";
 import { useT, messageOf } from "@/components/I18nProvider";
 import { Avatar, Button, FieldRow, ReadOnlyField, SettingsWindow, Switch, toneFor } from "@/components/criterio";
 
-export default function AccountPanel({ user, personal, emails }: { user: SessionUser; personal: Workspace | null; emails: { digest: boolean; replies: boolean } }) {
+export default function AccountPanel({ user, personal, emails }: { user: SessionUser; personal: Workspace | null; emails: { digest: boolean; replies: boolean; vault?: boolean } }) {
   const personalId = personal?.id ?? null;
   const { t } = useT();
   const sounds = useUiSounds();
@@ -27,7 +28,7 @@ export default function AccountPanel({ user, personal, emails }: { user: Session
   // The team emails: switched at once on screen, put back if the save fails
   const [mail, setMail] = useState(emails);
   const [mailError, setMailError] = useState("");
-  const setKind = async (kind: "digest" | "replies", on: boolean) => {
+  const setKind = async (kind: EmailKind, on: boolean) => {
     const before = mail;
     setMail({ ...mail, [kind]: on }); setMailError("");
     const res = await setEmailPreference(kind, on);
@@ -114,6 +115,11 @@ export default function AccountPanel({ user, personal, emails }: { user: Session
         <FieldRow label={t.settings.replyEmails} hint={t.settings.replyEmailsHint}>
           <Switch checked={mail.replies} onChange={(on) => void setKind("replies", on)} label={t.settings.replyEmails} />
         </FieldRow>
+        {mail.vault !== undefined && (
+          <FieldRow label={t.settings.vaultEmails} hint={t.settings.vaultEmailsHint}>
+            <Switch checked={mail.vault} onChange={(on) => void setKind("vault", on)} label={t.settings.vaultEmails} />
+          </FieldRow>
+        )}
       </SettingsWindow>
 
       <SettingsWindow title={t.settings.session}>

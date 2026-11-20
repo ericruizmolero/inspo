@@ -61,7 +61,7 @@ type Row = typeof V.$inferSelect;
 /** The entry's Spanish, for whoever reads the app in Spanish; an agent, and everyone else, gets the English */
 const esOf = (r: Row, locale?: Locale): VaultEs => (locale === "es" && r.es ? r.es : {});
 
-const cardOf = (r: Row, locale?: Locale): VaultCard => ({
+export const cardOf = (r: Row, locale?: Locale): VaultCard => ({
   id: r.id, slug: r.slug, title: esOf(r, locale).title || r.title, category: r.category,
   // Tags go one to one: a list that no longer matches the English one is from before a change
   tags: esOf(r, locale).tags?.length === r.tags.length ? esOf(r, locale).tags! : r.tags, summary: esOf(r, locale).summary || r.summary,

@@ -210,6 +210,21 @@ export function shareInviteMail(s: { who: string; project: string; url: string }
   return { subject: t.shareInvite.subject(s.who, s.project), text: signed(locale, t.shareInvite.text(s.who, s.project, s.url)) };
 }
 
+// ─── New in the Vault (lib/vault-release.ts) ─────────────────────────────────
+
+/** A piece as the release lists it, already in the reader's language */
+export interface ReleasePiece { title: string; category: string; summary: string; url: string }
+
+/** The new pieces, each with its category, its line and its link, and at the foot the one-click stop */
+export function vaultReleaseMail(pieces: ReleasePiece[], stopUrl: string, locale: Locale): Mail {
+  const t = mailDict(locale);
+  const list = pieces.map((p) => `${p.title} (${p.category})${p.summary ? `\n${p.summary}` : ""}\n${p.url}`).join("\n\n");
+  return {
+    subject: t.vaultRelease.subject(pieces.length),
+    text: signed(locale, `${t.vaultRelease.intro(pieces.length)}\n\n${list}\n\n${t.vaultRelease.why}\n${t.team.stopText(stopUrl)}`),
+  };
+}
+
 // ─── First use (lib/first-use-mail.ts) ───────────────────────────────────────
 
 /** Once, when the account is made: the five steps to a first criterio.md, in order */

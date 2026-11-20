@@ -9,8 +9,8 @@
 //   - The instant emails (notifyReply, notifyProposalResolved): someone answered your comment or settled your
 //     proposal. The only thing people expect right away. The email replies to whoever wrote it.
 //
-// Each kind of email is a switch on the account (user.digest_emails, user.reply_emails) and a one-click link
-// at the foot of every email. The language is the recipient's (user.language), never the writer's; the
+// Each kind of email is a switch on the account (user.digest_emails, user.reply_emails, and user.vault_emails for
+// "New in the Vault", lib/vault-release.ts) and a one-click link at the foot of every email. The language is the recipient's (user.language), never the writer's; the
 // writer's words go as written.
 import "server-only";
 import { createHmac, timingSafeEqual } from "node:crypto";
@@ -28,8 +28,10 @@ const U = schema.user;
 const M = schema.member;
 const O = schema.organization;
 
-export type EmailKind = "digest" | "replies";
-export const EMAIL_KINDS: readonly EmailKind[] = ["digest", "replies"];
+/** Each kind of email a person can stop, and the switch on their account that holds it */
+const EMAIL_SWITCH = { digest: "digestEmails", replies: "replyEmails", vault: "vaultEmails" } as const;
+export type EmailKind = keyof typeof EMAIL_SWITCH;
+export const EMAIL_KINDS = Object.keys(EMAIL_SWITCH) as EmailKind[];
 
 /** How far back the bell and a digest reach: a person away longer than this gets the last week, not the backlog */
 const WINDOW_DAYS = 7;
@@ -91,12 +93,12 @@ export function unsubscribeValid(userId: unknown, kind: unknown, sig: unknown): 
 
 /** Turns one kind of email on or off for a person */
 export async function setEmailPref(userId: string, kind: EmailKind, on: boolean): Promise<void> {
-  await db.update(U).set({ [kind === "digest" ? "digestEmails" : "replyEmails"]: on, updatedAt: new Date() }).where(eq(U.id, userId));
+  await db.update(U).set({ [EMAIL_SWITCH[kind]]: on, updatedAt: new Date() }).where(eq(U.id, userId));
 }
 
 export async function emailPrefs(userId: string): Promise<Record<EmailKind, boolean>> {
-  const [row] = await db.select({ digest: U.digestEmails, replies: U.replyEmails }).from(U).where(eq(U.id, userId)).limit(1);
-  return { digest: row?.digest ?? true, replies: row?.replies ?? true };
+  const [row] = await db.select({ digest: U.digestEmails, replies: U.replyEmails, vault: U.vaultEmails }).from(U).where(eq(U.id, userId)).limit(1);
+  return { digest: row?.digest ?? true, replies: row?.replies ?? true, vault: row?.vault ?? true };
 }
 
 const footOf = (userId: string, kind: EmailKind, team: string): TeamMailFoot =>
