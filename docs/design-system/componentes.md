@@ -211,7 +211,7 @@ Diálogo cmdk con ⌘K / Ctrl+K: guardar la URL tecleada, abrir el brief del pro
 
 ### Confirmación
 `useConfirm` · `components/useConfirm.tsx` · `AlertDialog`
-`confirm()` con promesa: `const [confirm, dialog] = useConfirm()`. Una `DialogWindow` con `Button` danger cuando destruye. Solo para lo que destruye o saca algo. Con `typed`, la acción espera a que se escriba ese nombre: para lo que se lleva el trabajo de otras personas (eliminar un equipo). → [decisión](decisiones/2026-10-06-los-espacios-se-eligen-en-una-lista-para-salir-o-eliminar.md)
+`confirm()` con promesa: `const [confirm, dialog] = useConfirm()`. Una `DialogWindow` con `Button` danger cuando destruye. Solo para lo que destruye o saca algo. Con `typed`, la acción espera a que se escriba ese nombre: para lo que se lleva el trabajo de otras personas (eliminar un equipo, con su nombre) o no tiene vuelta (borrar la cuenta, con el correo). → [decisión](decisiones/2026-10-06-los-espacios-se-eligen-en-una-lista-para-salir-o-eliminar.md)
 
 ### Aviso de subir de plan
 `PlanLimitNotice` · `reportPlanLimit` · `components/PlanLimitNotice.tsx` · `lib/plan-limit.ts` · `.toast__action`
