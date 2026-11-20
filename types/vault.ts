@@ -21,9 +21,14 @@ export type VaultAccess = (typeof VAULT_ACCESS)[number];
  *  with every search and in criterio.md as an agent reads it (lib/mcp/vault.ts), and reach it whatever its plan */
 export const VAULT_RULES = "utilities";
 
-/** Whether a workspace reads an entry's code: its plan holds the whole Vault, the piece is free, or the piece is a
- *  rule. A partner reads everything. The plan is the workspace's (its billing account's), never the person's. Every
- *  path that hands out code asks this, the connector's and the app's alike */
+/** How much of the Vault a person reads: the whole of it when any of their workspaces is on a plan that holds it. A
+ *  connector call names no workspace, so the app follows the same rule and a lock never says one thing while the agent
+ *  reads another */
+export const vaultOf = (plans: Pick<Plan, "vault">[]): Pick<Plan, "vault"> =>
+  ({ vault: plans.some((p) => p.vault === "full") ? "full" : "sample" });
+
+/** Whether a person reads an entry's code: their Vault (vaultOf) is whole, the piece is free, or the piece is a rule.
+ *  A partner reads everything. Every path that hands out code asks this, the connector's and the app's alike */
 export const canReadVault = (plan: Pick<Plan, "vault">, entry: Pick<VaultCard, "access" | "category">, partner: boolean): boolean =>
   partner || plan.vault === "full" || entry.access === "free" || entry.category === VAULT_RULES;
 

@@ -16,7 +16,7 @@ import { VAULT_VIDEO_MAX, chosenFor, setVaultVideo, videoFromLink } from "../vau
 import { VAULT_IMAGE_MAX, listVault, missingEs, readVault, removeVault, saveVault, setVaultPicture, vaultWords } from "../vault";
 import { PLANS, planOf, type Plan } from "../plans";
 import { plans as PLAN_TEXT } from "../i18n/en/plans";
-import { VAULT_ACCESS, VAULT_CATEGORIES, VAULT_LIMITS as L, VAULT_RULES, canReadVault, type VaultCard, type VaultEntry } from "@/types/vault";
+import { VAULT_ACCESS, VAULT_CATEGORIES, VAULT_LIMITS as L, VAULT_RULES, canReadVault, vaultOf, type VaultCard, type VaultEntry } from "@/types/vault";
 import type { McpCtx } from "./auth";
 import type { WithPictures } from "./pieces";
 
@@ -24,12 +24,10 @@ export const vaultUrl = (origin: string, slug: string) => `${origin}/?in=vault&e
 const previewUrl = (origin: string, slug: string) => `${origin}/api/vault/${encodeURIComponent(slug)}/preview`;
 const planPage = (origin: string) => `${origin}/settings/plan`;
 
-/** Who reads the Vault through the connector. A call names no workspace, so the plan is the best of the person's
- *  workspaces: a member of a team whose plan holds the whole Vault reads it whole, wherever they build */
+/** Who reads the Vault through the connector: the person's Vault across their workspaces (vaultOf), and whether they are a partner */
 export interface VaultReader { plan: Pick<Plan, "vault">; partner: boolean }
 export async function vaultReader(ctx: McpCtx): Promise<VaultReader> {
-  const full = ctx.workspaces.some((w) => planOf(w.plan).vault === "full");
-  return { plan: { vault: full ? "full" : "sample" }, partner: await isAdmin(ctx.user.email) };
+  return { plan: vaultOf(ctx.workspaces.map((w) => planOf(w.plan))), partner: await isAdmin(ctx.user.email) };
 }
 const readable = (r: VaultReader, c: Pick<VaultCard, "access" | "category">) => canReadVault(r.plan, c, r.partner);
 
