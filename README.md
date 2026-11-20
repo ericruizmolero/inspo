@@ -211,7 +211,7 @@ new file.
 | `RESEND_API_KEY`, `MAIL_FROM`, `MAIL_REPLY_TO` | By hand. `MAIL_FROM` needs a domain verified in Resend |
 | `OPENROUTER_API_KEY`, `TYPESAFE_API_KEY`, `TYPESAFE_BASE_URL` | By hand |
 | `CRON_SECRET` | By hand. Vercel sends it to the cron route; without it the route refuses everything |
-| `SIGNUP_MODE` | Optional. `invite` or `open`, only until someone flips the switch in `/admin`. Unset means `open` |
+| `SIGNUP_MODE` | Optional. `invite` or `open`, only until someone flips the switch in `/admin`. Unset means `invite` |
 
 ## Sign-up: open or invite-only
 
@@ -237,7 +237,8 @@ With invite-only on:
 
 The value lives in the database (`app_setting`), so each environment keeps its own and
 `npm run db:pull` never copies it. `SIGNUP_MODE` in Vercel only sets the starting value for an
-environment where nobody has used the switch yet. Details in `docs/design-system/desarrollo.md`.
+environment where nobody has used the switch yet. With neither a row nor `SIGNUP_MODE`, sign-up is
+invite-only, so a fresh or reset database never opens it by accident. Details in `docs/design-system/desarrollo.md`.
 
 ## Tests
 
