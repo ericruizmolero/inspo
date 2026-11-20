@@ -1,9 +1,10 @@
 // Locución con ElevenLabs en UNA toma con marcas de tiempo, cortada por bloques (receta de savvia-web-main/tools/casos-video/voz-toma.cjs).
 // Uso: node voz-eleven.cjs voces            → lista las voces de la cuenta
 //      node voz-eleven.cjs <es|en> <voiceId> [modelo=eleven_v4] [stability=0.4] [style=0.3]
-// La clave se lee de ELEVENLABS_API_KEY del entorno; nunca se escribe en disco.
+// La clave se lee de la variable ELEVENLABS_API_KEY o, si no está, del archivo clave-elevenlabs.local de esta carpeta
+// (una sola línea con la clave; .gitignore lo deja fuera de git). Nunca va en el repositorio, que es público.
 const fs = require('fs'), path = require('path'), { execSync } = require('child_process');
-const KEY = process.env.ELEVENLABS_API_KEY; if (!KEY) { console.error('falta ELEVENLABS_API_KEY'); process.exit(2); }
+const LOCAL = path.join(__dirname, 'clave-elevenlabs.local'), KEY = process.env.ELEVENLABS_API_KEY || (fs.existsSync(LOCAL) ? fs.readFileSync(LOCAL, 'utf8').trim() : ''); if (!KEY) { console.error('Falta la clave de ElevenLabs: pídesela a Andoni y ponla en ELEVENLABS_API_KEY o en marketing-site/video/clave-elevenlabs.local. Ver README.md.'); process.exit(2); }
 const [l, voz, modelo = 'eleven_v4', stab = '0.4', style = '0.3'] = process.argv.slice(2);
 (async () => {
   if (l === 'voces') { const r = await fetch('https://api.elevenlabs.io/v1/voices', { headers: { 'xi-api-key': KEY } }); if (!r.ok) { console.error(r.status, (await r.text()).slice(0, 300)); process.exit(1); } const j = await r.json(); for (const v of j.voices) console.log(v.voice_id, '|', v.name, '|', v.category, '|', [v.labels?.gender, v.labels?.accent, v.labels?.age, v.labels?.descriptive, v.labels?.use_case].filter(Boolean).join(', ')); return; }

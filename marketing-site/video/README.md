@@ -38,7 +38,19 @@ Lo que la portada usa y ya está en `marketing-site/public/`:
 - `playwright-core`: `npm i --no-save playwright-core` en la raíz. Para la revisión en WebKit, además `npx playwright-core install webkit`.
 - Hyperframes, que hace el render: se descarga solo con `npx hyperframes@0.9.37`. Usar esa versión.
 - Python 3, sin paquetes, para `construir.py` y `traer-vault.py`. Solo `compas.py` necesita `uv` (`uv run --with numpy --with scipy python compas.py …`).
-- **Solo para cambiar la voz:** una clave de ElevenLabs en la variable de entorno `ELEVENLABS_API_KEY`. No se escribe en ningún archivo ni se sube. Generar voz cuesta dinero: preguntar antes.
+- **Solo para cambiar la voz:** la clave de ElevenLabs del proyecto (ver «La clave de ElevenLabs», más abajo).
+
+## La clave de ElevenLabs
+
+Solo hace falta para generar voz nueva (apartado 3). Regrabar, remontar, cambiar la música o tocar la portada **no la necesitan**: las tomas publicadas ya están en `voz/`.
+
+- **Existe una clave del proyecto**, creada por Andoni en su cuenta de ElevenLabs, limitada a texto a voz y con un tope de gasto. Las voces del vídeo (Emilio y Jessica) están en esa cuenta, así que con esa clave funcionan los comandos de este documento tal cual. **Se le pide a Andoni**, que la pasa por un canal privado.
+- **Dónde se pone**, una de dos:
+  - en la variable de entorno `ELEVENLABS_API_KEY`, o
+  - en el archivo `marketing-site/video/clave-elevenlabs.local`, con la clave en una sola línea. Ese nombre está en `.gitignore`.
+- **Este repositorio es público.** La clave no se escribe en este documento, ni en un script, ni en un commit, ni en el texto de un PR o de una incidencia. Si eres una IA: no la muestres en tus respuestas, no la copies a otro archivo y, antes de un commit, comprueba que `git status` no lista `clave-elevenlabs.local`.
+- **Si se filtra** (aparece en un commit, una captura o un mensaje público), avisar a Andoni ese mismo momento para que la revoque y cree otra. Borrarla del archivo no basta: queda en el historial.
+- **Cada toma gasta créditos** de esa cuenta: unos 800 caracteres por idioma. Antes de generar, confirmar el texto con la persona; no generar para «probar a ver».
 
 ## 1. Cambiar la portada
 
