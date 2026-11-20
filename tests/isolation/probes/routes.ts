@@ -467,6 +467,15 @@ export const routes: Record<string, Surface> = {
       await expectDenied(fx, await GET(request("/s/x/f/k"), params({ token: "A".repeat(22), key: fx.a.keys.brand.split("/") })), "an unknown token");
     },
   },
+  "route:app/s/[token]/post/route.ts#GET": {
+    probe: async (fx) => {
+      const { GET } = await import("@/app/s/[token]/post/route");
+      const get = (token: string, web: string) => GET(request(`/s/${token}/post?web=${encodeURIComponent(web)}`), params({ token }));
+      await expectDenied(fx, await get("A".repeat(22), "https://x.com/a/status/1"), "an unknown token");
+      // Only a post on the link's own board: never one the link's workspace holds elsewhere, nor another workspace's
+      await expectDenied(fx, await get(fx.a.shareToken, "https://x.com/someone/status/123456789"), "a post not on the shared board");
+    },
+  },
   "route:app/s/[token]/og/route.ts#GET": {
     probe: async (fx) => {
       const { GET } = await import("@/app/s/[token]/og/route");
@@ -566,7 +575,6 @@ export const routes: Record<string, Surface> = {
   "route:app/api/health/deep/route.ts#GET": { exempt: "health check: pings the database, storage and the job queue, returns no rows" },
   "route:app/api/access/mode/route.ts#GET": { exempt: "public: whether sign-up is open" },
   "route:app/api/waitlist/route.ts#POST": { exempt: "public waitlist sign-up from the marketing site's origin: takes an email, no session and no workspace id" },
-  "route:app/api/waitlist/route.ts#OPTIONS": { exempt: "CORS preflight for the marketing site's waitlist form: reads and writes nothing" },
   "route:app/api/dev-login/route.ts#GET": { exempt: "development only (DEV_LOGIN_EMAIL): signs in a fixed local account" },
   "route:app/extension/download/route.ts#GET": { exempt: "static zip of the browser extension" },
 };
