@@ -7,16 +7,24 @@ import { getFile } from "@/lib/storage";
 import { dictOf } from "@/lib/i18n";
 
 // The card a link to a Vault piece shows where it is shared (WhatsApp, Slack, X, iMessage): the piece's own picture on
-// the ground it was taken on, its name and its category, and Tino. 1200×630, one per entry, made when asked for.
+// the ground it was taken on, which fills the card to its edges (no frame round it: inside a dark chat bubble a black
+// frame read as a heavy outline), its name and its category, and Tino, in the ink that reads on that ground.
+// 1200×630, one per entry, made when asked for.
 // Served by app/api/vault/[entry]/og. In English, the default language: nobody who asks for it says which one they read.
 const W = 1200, H = 630;
 const PAD = 48;
-const STAGE_W = W - PAD * 2, STAGE_H = 400;
+// The picture's room: the card's whole width, above the line with the name
+const STAGE_W = W, STAGE_H = 452;
 // The system's colors (tokens.json): Satori has no CSS variables
-const BOARD = "#0F0F0F";
+const INK = "#1B1B18";
 const PAPER = "#EDE6D6";
-const MUTED = "#B8B1A3";
 const GROUND = "#F4F0E6";
+
+/** The ink that reads on a ground, as a put-together preview picks it (groundOf in lib/vault-preview.ts) */
+function inkOn(ground: string): string {
+  const [r, g, b] = [1, 3, 5].map((i) => parseInt(ground.slice(i, i + 2), 16));
+  return 0.299 * r + 0.587 * g + 0.114 * b < 140 ? PAPER : INK;
+}
 
 const hex = (n: number) => n.toString(16).padStart(2, "0");
 
@@ -50,24 +58,26 @@ export async function vaultCard(e: { title: string; category: string; ground: st
   const [display, body, mark, picture] = await Promise.all([
     readFile(join(process.cwd(), "app/fonts/geist/Geist-Bold.ttf")),
     readFile(join(process.cwd(), "app/fonts/geist/Geist-Regular.ttf")),
-    // Tino from the app's own icon, in paper: the file draws him in ink, for a light tab
+    // Tino from the app's own icon, recoloured to the card's ink
     readFile(join(process.cwd(), "app/icon.svg"), "utf8"),
     e.picture !== undefined ? e.picture : pictureOf(e.imageKey),
   ]);
   const t = dictOf("en");
+  const ground = picture?.ground ?? (e.ground && /^#[0-9a-f]{6}$/i.test(e.ground) ? e.ground : GROUND);
+  const ink = inkOn(ground);
   const kind = (t.taxonomy.section as Record<string, string>)[e.category] ?? (t.vault.details as Record<string, string>)[e.category] ?? e.category;
   return new ImageResponse(
     (
-      <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between", padding: PAD, background: BOARD, color: PAPER, fontFamily: "Geist" }}>
-        <div style={{ width: STAGE_W, height: STAGE_H, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 20, overflow: "hidden", background: picture?.ground ?? e.ground ?? GROUND }}>
+      <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between", background: ground, color: ink, fontFamily: "Geist" }}>
+        <div style={{ width: STAGE_W, height: STAGE_H, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
           {picture && <img src={picture.src} width={picture.width} height={picture.height} alt="" />}
         </div>
-        <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
+        <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", padding: `0 ${PAD}px ${PAD}px` }}>
           <div style={{ display: "flex", flexDirection: "column", maxWidth: 940 }}>
-            <div style={{ display: "flex", fontSize: 22, color: MUTED }}>{`${t.vault.name} / ${kind}`}</div>
+            <div style={{ display: "flex", fontSize: 22, opacity: 0.62 }}>{`${t.vault.name} / ${kind}`}</div>
             <div style={{ display: "flex", marginTop: 6, fontWeight: 700, fontSize: e.title.length > 34 ? 40 : 48, lineHeight: 1.1, letterSpacing: "-1.2px" }}>{e.title}</div>
           </div>
-          <img src={`data:image/svg+xml;base64,${Buffer.from(mark.replace(/<style>[\s\S]*?<\/style>/, "").replace(/fill="#[0-9a-f]{6}"/i, `fill="${PAPER}"`)).toString("base64")}`} width={72} height={72} alt="" />
+          <img src={`data:image/svg+xml;base64,${Buffer.from(mark.replace(/<style>[\s\S]*?<\/style>/, "").replace(/fill="#[0-9a-f]{6}"/i, `fill="${ink}"`)).toString("base64")}`} width={72} height={72} alt="" />
         </div>
       </div>
     ),
