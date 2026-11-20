@@ -8,6 +8,8 @@ import { accountOf, ensurePersonalWorkspace, newId } from "@/lib/workspace-core"
 import { requestPlan } from "@/app/actions/billing";
 import { declinePlanRequest, setRequestedPlan } from "@/app/actions/plans-admin";
 import { listOpenPlanRequests } from "@/lib/plan-requests";
+import { listAdmins } from "@/lib/activity";
+import { localeForEmail, mailDict } from "@/lib/mail";
 import { actAs, reached, type Actor } from "./harness";
 
 vi.mock("@/lib/mail", async (importOriginal) => {
@@ -67,7 +69,10 @@ test("the owner's request emails the partners and the owner, and asking again re
   const first = await requestPlan("duo", "month");
   expect(first).toMatchObject({ ok: true, data: { plan: "duo", period: "month" } });
   const sent = mails();
-  expect(sent.find((m) => m.to.includes(partner.email))?.subject, "the partners hear of it").toMatch(/^New plan request: .* asks for Duo, monthly$/);
+  // The partners read it in the language of the first partner on the list, which depends on who that is here
+  const partnerLocale = await localeForEmail((await listAdmins())[0].email);
+  const t = mailDict(partnerLocale).plans;
+  expect(sent.find((m) => m.to.includes(partner.email))?.subject, "the partners hear of it").toBe(t.newSubject(owner.name, "Duo", t.period.month));
   expect(sent.find((m) => m.to.includes(owner.email))?.subject, "the owner is told it arrived").toBe("We got your request");
 
   const again = await requestPlan("studio", "year");
