@@ -4,7 +4,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getSessionCookie } from "better-auth/cookies";
 import { LANG_COOKIE, LANG_COOKIE_MAX_AGE, DEFAULT_LOCALE, isLocale, localeFromHeader } from "@/lib/i18n/locale";
-import { INVITE_COOKIE, INVITE_COOKIE_MAX_AGE } from "@/lib/invite-cookie";
+import { cleanInvite, INVITE_COOKIE, INVITE_COOKIE_MAX_AGE, INVITE_PARAM } from "@/lib/invite-code";
 import { PREVIEW_BOT } from "@/lib/preview-bots";
 import { SIGNED_IN_COOKIE, SIGNED_IN_COOKIE_MAX_AGE, signedInCookieDomain } from "@/lib/signed-in-cookie";
 
@@ -82,9 +82,9 @@ export function proxy(request: NextRequest) {
   // Nor does an AI client talking to the MCP connector, which keeps no cookies
   const lang = pathname.startsWith("/api/") || pathname === "/mcp" || pathname.startsWith("/.well-known/") ? null : langToSet(request);
 
-  // /login?invite=<code>: the code waits in a cookie for the account's creation (lib/invite-cookie.ts).
+  // /login?invite=<code>: the code waits in a cookie for an account created with Google, Apple or X (lib/invite-code.ts).
   // SameSite none in production: Apple returns by a cross-site POST, which a lax cookie would miss
-  const invite = pathname === "/login" ? request.nextUrl.searchParams.get("invite")?.trim().slice(0, 100) : null;
+  const invite = pathname === "/login" ? cleanInvite(request.nextUrl.searchParams.get(INVITE_PARAM)) : null;
 
   // The marketing site's "already signed in" hint (lib/signed-in-cookie.ts) follows the session cookie, on pages only.
   // Signing out lands on a page with no session, which clears it

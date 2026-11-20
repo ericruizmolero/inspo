@@ -13,7 +13,7 @@ import { marketingHref } from "@/lib/site";
 import ThemeToggle from "@/components/ThemeToggle";
 import { cookies } from "next/headers";
 import { codeIsUsable, getSignupMode } from "@/lib/access";
-import { INVITE_COOKIE } from "@/lib/invite-cookie";
+import { cleanInvite, INVITE_COOKIE } from "@/lib/invite-code";
 
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -44,10 +44,13 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   if (await getSession()) redirect(isLocalPath(next) ? next : "/");
   // The signup gate (lib/access.ts). The code comes on the URL the first time and from the cookie after (proxy.ts)
   const inviteOnly = (await getSignupMode()) === "invite";
-  const code = invite?.trim() || (await cookies()).get(INVITE_COOKIE)?.value;
+  const onUrl = cleanInvite(invite);
+  const code = onUrl ?? (await cookies()).get(INVITE_COOKIE)?.value;
   const invited = inviteOnly && !!code && (await codeIsUsable(code));
   // Someone arriving from an invitation needs to know what they are joining and with which email
   const fromInvitation = (next ?? "").startsWith("/invite/");
+  // After sending, an invite-only form never says the link went out: it may not have (LoginForm)
+  const gate = !inviteOnly ? "open" : invited || fromInvitation ? "invited" : "waitlist";
   // If they come from the start canvas with a URL (?next=/?add=…), the headline says so
   const pendingDomain = (() => {
     try {
@@ -74,7 +77,8 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
             next={next}
             lead={lines(fromInvitation ? t.login.leadInvitation : invited ? t.login.leadInvited : pendingDomain ? t.login.leadPending(pendingDomain) : t.login.leadDefault)}
             hint={fromInvitation ? t.login.hintInvitation : invited ? t.login.hintInvited : inviteOnly ? t.login.hintInviteOnly : pendingDomain ? t.login.hintPending : t.login.hintDefault}
-            offerWaitlist={inviteOnly && !invited && !fromInvitation}
+            gate={gate}
+            invite={onUrl ?? undefined}
             initialError={loginError(error, t)}
             devEmail={DEV_LOGIN_EMAIL || undefined}
             providers={SOCIAL_PROVIDERS}

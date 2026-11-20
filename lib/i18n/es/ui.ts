@@ -1552,8 +1552,11 @@ export const ui: typeof EnUi = {
     leadInvited: "Tienes invitación.\nCrea tu cuenta.",
     hintInvited: "Sin contraseñas: te mandamos un enlace de un solo uso. Si la invitación te llegó por correo, usa esa dirección.",
     firstTimeInviteOnly: "¿Primera vez? Por ahora, las cuentas se abren por invitación.",
-    noLinkBefore: "¿No llega el enlace en unos minutos? ",
-    noLinkAfter: " aún no tiene cuenta ni invitación.",
+    // Tras enviar con el registro solo por invitación: vale para cualquier dirección, así que nunca dice cuál tiene cuenta
+    checkInboxGated: "Si tienes acceso, va de camino",
+    sentIfBefore: "Mandamos el enlace a ",
+    sentIfAfter: " si tiene cuenta o invitación. Ábrelo desde este dispositivo; caduca en 10 minutos.",
+    noInviteYet: "¿Aún sin invitación? Apúntate a la lista y te escribimos cuando te toque.",
     joinWaitlist: "Apuntarme a la lista",
     joining: "Apuntando",
     joined: "Ya estás en la lista. Te escribimos cuando te toque.",

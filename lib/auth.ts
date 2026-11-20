@@ -16,7 +16,7 @@ import { eq } from "drizzle-orm";
 import { allow } from "./rate-limit";
 import { log } from "./log";
 import { admit, INVITES_PER_PERSON, markJoined, maySignIn } from "./access";
-import { inviteFromCookieHeader } from "./invite-cookie";
+import { cleanInvite, inviteFromCookieHeader, inviteOf, withInvite } from "./invite-code";
 import { accountOf, createBillingAccount, ensurePersonalWorkspace, httpErrorBody, type QuotaError } from "./workspace-core";
 
 const IS_PROD = process.env.NODE_ENV === "production";
@@ -168,17 +168,20 @@ export const auth = betterAuth({
     lastLoginMethod(),
     magicLink({
       expiresIn: 60 * 10,
-      async sendMagicLink({ email, url }, ctx) {
+      async sendMagicLink({ email, url, metadata }, ctx) {
         if (DEV_LOGIN_EMAIL && email.toLowerCase() === DEV_LOGIN_EMAIL) { g.__inspoDevLink = url; return; }
         // The plugin limits each IP; this limits each address, so nobody fills someone's inbox from many IPs
         if (!(await allow(`magic:${email.toLowerCase()}`, 5, 60 * 60 * 1000))) throw new APIError("TOO_MANY_REQUESTS", { message: (await getErrors()).tooMany });
-        // No link for someone the gate would turn away. The answer is the same either way, so nobody learns who has an account
+        // The code /login was opened with (LoginForm sends it), else the cookie. It rides on the link, so the account
+        // is created with it in whatever browser the link is opened (lib/invite-code.ts)
         const headers = ctx?.headers ?? ctx?.request?.headers;
-        if (!(await maySignIn(email, inviteFromCookieHeader(headers?.get("cookie"))))) return;
+        const invite = cleanInvite(metadata?.invite) ?? inviteFromCookieHeader(headers?.get("cookie"));
+        // No link for someone the gate would turn away. The answer is the same either way, so nobody learns who has an account
+        if (!(await maySignIn(email, invite))) return;
         const callbackURL = (ctx?.body as { callbackURL?: string } | undefined)?.callbackURL;
         // If the address already has an account, its language; otherwise that of the requesting tab
         const locale = await localeForEmail(email, localeFromCookie(ctx?.headers ?? ctx?.request?.headers));
-        const m = magicLinkMail(publicLink(url, callbackURL, ctx?.headers, ctx?.request), locale);
+        const m = magicLinkMail(withInvite(publicLink(url, callbackURL, ctx?.headers, ctx?.request), invite), locale);
         await sendMail(email, m);
       },
     }),
@@ -287,7 +290,8 @@ export const auth = betterAuth({
           const language = localeForNewUser(headers);
           // The signup gate (lib/access.ts). It acts only here, on creation: existing accounts never meet it
           const isDev = !!DEV_LOGIN_EMAIL && u.email.toLowerCase() === DEV_LOGIN_EMAIL;
-          const entry = isDev ? null : await admit(u.email, inviteFromCookieHeader(headers?.get("cookie")));
+          // The code on the magic link (lib/invite-code.ts), or the cookie for Google, Apple and X
+          const entry = isDev ? null : await admit(u.email, inviteOf(ctx?.request?.url, headers?.get("cookie")));
           if (entry && !entry.ok) throw new APIError("FORBIDDEN", { code: "invite_only", message: (await getErrors()).inviteOnly });
           return { data: { ...u, name, language, accessInviteId: entry?.inviteId ?? null, invitesLeft: INVITES_PER_PERSON } };
         },

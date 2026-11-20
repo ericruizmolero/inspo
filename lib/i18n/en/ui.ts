@@ -1569,8 +1569,11 @@ export const ui = {
     leadInvited: "You are invited.\nCreate your account.",
     hintInvited: "No passwords: we send you a one-time link. If the invitation came by email, use that address.",
     firstTimeInviteOnly: "First time? For now, accounts open by invitation.",
-    noLinkBefore: "No link in a few minutes? ",
-    noLinkAfter: " has no account or invitation yet.",
+    // After sending with signup invite-only: true for every address, so it never says which one has an account
+    checkInboxGated: "If you have access, it is on its way",
+    sentIfBefore: "We send the link to ",
+    sentIfAfter: " if it has an account or an invitation. Open it on this device; it expires in 10 minutes.",
+    noInviteYet: "No invitation yet? Join the waitlist and we will write when your turn comes.",
     joinWaitlist: "Join the waitlist",
     joining: "Joining",
     joined: "You are on the list. We will write when your turn comes.",

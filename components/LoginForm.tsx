@@ -35,6 +35,13 @@ const SOCIAL: Record<SocialProvider, { label: string; icon: React.ReactNode }> =
   twitter: { label: "X", icon: IcX },
 };
 
+/**
+ * What the screen after sending may promise. open: everyone gets a link. invited (a usable code, a team invitation) and
+ * waitlist: the gate may have sent nothing, so the screen says when a link comes, the same for every address, and
+ * never that it went out; waitlist also offers the list.
+ */
+export type SignupGate = "open" | "invited" | "waitlist";
+
 const devLoginHref = (next: string) => `/api/dev-login?next=${encodeURIComponent(next.startsWith("/login") ? "/" : next)}`;
 
 /**
@@ -43,10 +50,11 @@ const devLoginHref = (next: string) => `/api/dev-login?next=${encodeURIComponent
  * - `lead`/`hint`: headline and help; if not given, the generic ones are used.
  * - `providers`: Google / Apple / X buttons to render (those with keys on the server).
  */
-export default function LoginForm({ next, initialError, lead, hint, autoFocus = true, devEmail, providers = [], offerWaitlist = false }: {
+export default function LoginForm({ next, initialError, lead, hint, autoFocus = true, devEmail, providers = [], gate = "open", invite }: {
   next?: string; initialError?: string; lead?: React.ReactNode; hint?: React.ReactNode; autoFocus?: boolean;
-  /** Signup gate on: after sending, the waitlist for an address that gets no link. Shown to everyone, so it tells nobody who has an account */
-  offerWaitlist?: boolean;
+  gate?: SignupGate;
+  /** The code /login was opened with. It goes with the request, and the server puts it on the link (lib/invite-code.ts) */
+  invite?: string;
   /** Development only: email that signs in without going through the inbox (DEV_LOGIN_EMAIL) */
   devEmail?: string;
   providers?: SocialProvider[];
@@ -94,7 +102,10 @@ export default function LoginForm({ next, initialError, lead, hint, autoFocus = 
     // In development this email's link is never sent: sign-in goes through the auto-login route
     if (devEmail && value === devEmail) { window.location.assign(devLoginHref(back)); return; }
     // errorCallbackURL keeps the destination: otherwise an expired link loses the invitation
-    const { error: err } = await authClient.signIn.magicLink({ email: value, callbackURL, errorCallbackURL: `${origin}/login?next=${encodeURIComponent(back)}` });
+    const { error: err } = await authClient.signIn.magicLink({
+      email: value, callbackURL, errorCallbackURL: `${origin}/login?next=${encodeURIComponent(back)}`,
+      ...(invite ? { metadata: { invite } } : {}),
+    });
     setLoading(false);
     if (err) { setError(err.message ?? t.login.linkFailed); return; }
     setSent(true);
@@ -104,12 +115,17 @@ export default function LoginForm({ next, initialError, lead, hint, autoFocus = 
     return (
       <div className="auth__sent" role="status">
         <span className="auth__sent-icon">{IcMail}</span>
-        <h1 className="auth__lead">{t.login.checkInbox}</h1>
-        <p className="auth__hint">{t.login.sentToBefore}<strong>{email.trim()}</strong>{t.login.sentToAfter}</p>
-        {offerWaitlist && (waitlist === "joined"
+        {gate === "open" ? <>
+          <h1 className="auth__lead">{t.login.checkInbox}</h1>
+          <p className="auth__hint">{t.login.sentToBefore}<strong>{email.trim()}</strong>{t.login.sentToAfter}</p>
+        </> : <>
+          <h1 className="auth__lead">{t.login.checkInboxGated}</h1>
+          <p className="auth__hint">{t.login.sentIfBefore}<strong>{email.trim()}</strong>{t.login.sentIfAfter}</p>
+        </>}
+        {gate === "waitlist" && (waitlist === "joined"
           ? <p className="auth__hint" role="status">{t.login.joined}</p>
           : <>
-              <p className="auth__hint">{t.login.noLinkBefore}<strong>{email.trim()}</strong>{t.login.noLinkAfter}</p>
+              <p className="auth__hint">{t.login.noInviteYet}</p>
               {waitlistError && <p className="modal__error">{waitlistError}</p>}
               <Button size="s" disabled={waitlist === "joining"} onClick={async () => {
                 setWaitlist("joining"); setWaitlistError("");
