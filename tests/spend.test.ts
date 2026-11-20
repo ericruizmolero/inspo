@@ -63,8 +63,8 @@ test("the team hears once past the alert, and every model call stops at the cap"
 });
 
 test("past the fair-use ceiling the search goes through, and the team and the owner hear once a month", async () => {
-  await db.update(schema.billingAccount).set({ plan: "personal" }).where(eq(schema.billingAccount.id, team.ws.billingAccountId));
-  const ws = { ...team.ws, plan: "personal" as const };
+  await db.update(schema.billingAccount).set({ plan: "duo" }).where(eq(schema.billingAccount.id, team.ws.billingAccountId));
+  const ws = { ...team.ws, plan: "duo" as const };
   const ceiling = 3000;
   const rows = Array.from({ length: ceiling }, (_, i) => ({ id: newId(), organizationId: ws.id, action: "jev_search", model: "jev", ref: `query ${i}`, createdAt: new Date() }));
   await db.insert(schema.aiUsage).values(rows.slice(0, ceiling - 1));

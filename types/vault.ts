@@ -10,6 +10,11 @@ export const VAULT_DETAILS = ["buttons", "text", "scroll", "transitions", "curso
 export const VAULT_CATEGORIES = [...SECTIONS.map((s) => s.key), ...VAULT_DETAILS] as string[] as [string, ...string[]];
 export const isVaultSection = (category: string) => SECTIONS.some((s) => s.key === category);
 
+/** Who reads an entry's code: "paid" only the plans with the whole Vault (lib/plans.ts vault), "free" every signed-in
+ *  account. A partner sets it when the entry goes in; a new one is "paid" */
+export const VAULT_ACCESS = ["paid", "free"] as const;
+export type VaultAccess = (typeof VAULT_ACCESS)[number];
+
 export const VAULT_LIMITS = { title: 80, summary: 300, use: 600, tags: 16, tag: 30, blocks: 12, blockTitle: 80, blockNote: 600, code: 40_000, lang: 20, demo: 120_000 } as const;
 
 /** One step of an entry's documentation: what it is, and the code as it is pasted */

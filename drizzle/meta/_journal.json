@@ -463,6 +463,13 @@
       "when": 1795091043570,
       "tag": "0066_vault_es",
       "breakpoints": true
+    },
+    {
+      "idx": 67,
+      "version": "7",
+      "when": 1795176000117,
+      "tag": "0067_plan_duo_vault_access_plan_request",
+      "breakpoints": true
     }
   ]
 }

@@ -3,7 +3,7 @@
 // app; tests/marketing-site-copy.test.ts fails when this copy and the app drift apart.
 import type { Locale } from "./i18n";
 
-export type PlanKey = "free" | "personal" | "studio" | "agency";
+export type PlanKey = "free" | "duo" | "studio" | "agency";
 export type SearchAllowance = { kind: "capped"; perMonth: number } | { kind: "fairUse"; ceiling: number };
 
 export interface Plan {
@@ -19,21 +19,23 @@ export interface Plan {
   itemsMax: number | null;
   projectsMax: number | null;
   storageMaxBytes: number | null;
+  /** The Vault's code: "sample" reads only the pieces marked free (vault_item.access), "full" reads every piece */
+  vault: "sample" | "full";
 }
 
 const paid = (key: PlanKey, month: number, members: number, workspaces: number, aiActionsPerMonth: number): Plan => ({
   key, price: { month, year: month * 10 }, members, workspaces, aiActionsPerMonth,
-  searches: { kind: "fairUse", ceiling: 10 * aiActionsPerMonth }, itemsMax: null, projectsMax: null, storageMaxBytes: null,
+  searches: { kind: "fairUse", ceiling: 10 * aiActionsPerMonth }, itemsMax: null, projectsMax: null, storageMaxBytes: null, vault: "full",
 });
 
 export const PLANS: Plan[] = [
   {
     key: "free", price: { month: 0, year: 0 }, members: 2, workspaces: 1, aiActionsPerMonth: 30,
-    searches: { kind: "capped", perMonth: 30 }, itemsMax: 12, projectsMax: 1, storageMaxBytes: 1024 ** 3,
+    searches: { kind: "capped", perMonth: 30 }, itemsMax: 12, projectsMax: 1, storageMaxBytes: 1024 ** 3, vault: "sample",
   },
-  paid("personal", 15, 2, 1, 300),
-  paid("studio", 49, 5, 1, 500),
-  paid("agency", 149, 15, 10, 2000),
+  paid("duo", 19, 2, 1, 300),
+  paid("studio", 69, 5, 1, 500),
+  paid("agency", 199, 15, 10, 2000),
 ];
 
 export const isPaid = (p: Plan) => p.price.month > 0;
@@ -44,28 +46,28 @@ export const PLAN_TEXT: Record<Locale, Record<PlanKey, { name: string; tagline: 
     free: {
       name: "Free",
       tagline: "To try it out.",
-      features: ["You and one more person", "1 project with up to 12 references", "The agent remembers what you corrected", "10 landing checks a month", "Your first criterio.md spends no AI actions", "30 AI actions a month"],
+      features: ["You and one more person", "1 project with up to 12 references", "Browse the Vault, with the code of the free pieces", "10 landing checks a month", "Your first criterio.md spends no AI actions", "30 AI actions a month"],
     },
-    personal: { name: "Personal", tagline: "For a designer on their own.", features: ["You and one more person", "Shared memory across your projects", "Unlimited projects and references", "Landing checks, fair use", "300 AI actions a month", "AI searches, fair use"] },
-    studio: { name: "Studio", tagline: "For a design or product team.", features: ["Up to 5 people", "Shared memory across your projects", "Unlimited projects and references", "Landing checks, fair use", "500 AI actions a month", "AI searches, fair use"] },
+    duo: { name: "Duo", tagline: "For two people designing together.", features: ["You and one more person", "The whole Vault, code included, for your agent", "Shared memory across your projects", "Unlimited projects and references", "Landing checks, fair use", "300 AI actions a month"] },
+    studio: { name: "Studio", tagline: "For a design or product team.", features: ["Up to 5 people", "The whole Vault for the whole team", "Shared memory across your projects", "Unlimited projects and references", "Landing checks, fair use", "500 AI actions a month"] },
     agency: {
       name: "Agency",
       tagline: "For an agency, one criterio per client.",
-      features: ["Up to 15 people in each workspace", "10 workspaces on one plan", "Shared memory for each client", "Landing checks, fair use", "2,000 AI actions a month", "AI searches, fair use"],
+      features: ["Up to 15 people in each workspace", "10 workspaces on one plan", "The whole Vault in every client workspace", "Shared memory for each client", "Landing checks, fair use", "2,000 AI actions a month"],
     },
   },
   es: {
     free: {
       name: "Gratis",
       tagline: "Para probarlo.",
-      features: ["Tú y una persona más", "1 proyecto con hasta 12 referencias", "El agente recuerda lo que corregiste", "10 revisiones de landing al mes", "Tu primer criterio.md no gasta acciones de IA", "30 acciones de IA al mes"],
+      features: ["Tú y una persona más", "1 proyecto con hasta 12 referencias", "El Vault para mirar, con el código de las piezas gratis", "10 revisiones de landing al mes", "Tu primer criterio.md no gasta acciones de IA", "30 acciones de IA al mes"],
     },
-    personal: { name: "Personal", tagline: "Para quien diseña por su cuenta.", features: ["Tú y una persona más", "Memoria compartida en tus proyectos", "Proyectos y referencias sin límite", "Revisiones de landing, uso razonable", "300 acciones de IA al mes", "Búsquedas IA, uso razonable"] },
-    studio: { name: "Studio", tagline: "Para un equipo de diseño o de producto.", features: ["Hasta 5 personas", "Memoria compartida en tus proyectos", "Proyectos y referencias sin límite", "Revisiones de landing, uso razonable", "500 acciones de IA al mes", "Búsquedas IA, uso razonable"] },
+    duo: { name: "Duo", tagline: "Para dos personas que diseñan juntas.", features: ["Tú y una persona más", "El Vault entero, con su código, para tu agente", "Memoria compartida en tus proyectos", "Proyectos y referencias sin límite", "Revisiones de landing, uso razonable", "300 acciones de IA al mes"] },
+    studio: { name: "Studio", tagline: "Para un equipo de diseño o de producto.", features: ["Hasta 5 personas", "El Vault entero para todo el equipo", "Memoria compartida en tus proyectos", "Proyectos y referencias sin límite", "Revisiones de landing, uso razonable", "500 acciones de IA al mes"] },
     agency: {
       name: "Agency",
       tagline: "Para una agencia, con un criterio por cliente.",
-      features: ["Hasta 15 personas en cada espacio", "10 espacios en un plan", "Memoria compartida por cliente", "Revisiones de landing, uso razonable", "2.000 acciones de IA al mes", "Búsquedas IA, uso razonable"],
+      features: ["Hasta 15 personas en cada espacio", "10 espacios en un plan", "El Vault entero en cada espacio de cliente", "Memoria compartida por cliente", "Revisiones de landing, uso razonable", "2.000 acciones de IA al mes"],
     },
   },
 };

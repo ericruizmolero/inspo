@@ -7,22 +7,22 @@ export const plans: typeof EnPlans = {
     features: [
       "Tú y una persona más",
       "1 proyecto con hasta 12 referencias",
-      "El agente recuerda lo que corregiste",
+      "El Vault para mirar, con el código de las piezas gratis",
       "10 revisiones de landing al mes",
       "Tu primer criterio.md no gasta acciones de IA",
       "30 acciones de IA al mes",
     ],
   },
-  personal: {
-    name: "Personal",
-    tagline: "Para quien diseña por su cuenta.",
+  duo: {
+    name: "Duo",
+    tagline: "Para dos personas que diseñan juntas.",
     features: [
       "Tú y una persona más",
+      "El Vault entero, con su código, para tu agente",
       "Memoria compartida en tus proyectos",
       "Proyectos y referencias sin límite",
       "Revisiones de landing, uso razonable",
       "300 acciones de IA al mes",
-      "Búsquedas IA, uso razonable",
     ],
   },
   studio: {
@@ -30,11 +30,11 @@ export const plans: typeof EnPlans = {
     tagline: "Para un equipo de diseño o de producto.",
     features: [
       "Hasta 5 personas",
+      "El Vault entero para todo el equipo",
       "Memoria compartida en tus proyectos",
       "Proyectos y referencias sin límite",
       "Revisiones de landing, uso razonable",
       "500 acciones de IA al mes",
-      "Búsquedas IA, uso razonable",
     ],
   },
   agency: {
@@ -43,10 +43,10 @@ export const plans: typeof EnPlans = {
     features: [
       "Hasta 15 personas en cada espacio",
       "10 espacios en un plan",
+      "El Vault entero en cada espacio de cliente",
       "Memoria compartida por cliente",
       "Revisiones de landing, uso razonable",
       "2.000 acciones de IA al mes",
-      "Búsquedas IA, uso razonable",
     ],
   },
 };

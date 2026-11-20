@@ -11,7 +11,7 @@ import { plans as esPlans } from "@/lib/i18n/es/plans";
 import { fmtPrice } from "@/lib/i18n/format";
 import * as site from "@/marketing-site/src/plans";
 
-test("the site's plans have the app's figures: prices, people, workspaces, AI actions, searches, references, storage", () => {
+test("the site's plans have the app's figures: prices, people, workspaces, AI actions, searches, references, storage, the Vault", () => {
   expect(site.PLANS).toEqual(PLANS);
 });
 

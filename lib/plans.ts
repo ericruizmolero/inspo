@@ -4,7 +4,7 @@
 // The marketing site's /pricing/ shows a copy (marketing-site/src/plans.ts): change both, or
 // tests/marketing-site-copy.test.ts fails. The same goes for the plans' text in lib/i18n/<locale>/plans.ts.
 
-export type PlanKey = "free" | "personal" | "studio" | "agency";
+export type PlanKey = "free" | "duo" | "studio" | "agency";
 
 /** Searches: the free plan has a hard monthly cap; paid plans are fair use, with an internal ceiling nobody is cut off at */
 export type SearchAllowance = { kind: "capped"; perMonth: number } | { kind: "fairUse"; ceiling: number };
@@ -28,22 +28,24 @@ export interface Plan {
   projectsMax: number | null;
   /** Bytes of the workspace's own files (stored_file) */
   storageMaxBytes: number | null;
+  /** The Vault's code: "sample" reads only the pieces marked free (vault_item.access), "full" reads every piece */
+  vault: "sample" | "full";
 }
 
-/** A paid plan: no cap on references, projects or storage, and searches are fair use up to 10 times its AI actions */
+/** A paid plan: no cap on references, projects or storage, the whole Vault, and searches are fair use up to 10 times its AI actions */
 const paid = (key: PlanKey, month: number, members: number, workspaces: number, aiActionsPerMonth: number): Plan => ({
   key, price: { month, year: month * 10 }, members, workspaces, aiActionsPerMonth,
-  searches: { kind: "fairUse", ceiling: 10 * aiActionsPerMonth }, itemsMax: null, projectsMax: null, storageMaxBytes: null,
+  searches: { kind: "fairUse", ceiling: 10 * aiActionsPerMonth }, itemsMax: null, projectsMax: null, storageMaxBytes: null, vault: "full",
 });
 
 export const PLANS: Plan[] = [
   {
     key: "free", price: { month: 0, year: 0 }, members: 2, workspaces: 1, aiActionsPerMonth: 30,
-    searches: { kind: "capped", perMonth: 30 }, itemsMax: 12, projectsMax: 1, storageMaxBytes: 1024 ** 3,
+    searches: { kind: "capped", perMonth: 30 }, itemsMax: 12, projectsMax: 1, storageMaxBytes: 1024 ** 3, vault: "sample",
   },
-  paid("personal", 15, 2, 1, 300),
-  paid("studio", 49, 5, 1, 500),
-  paid("agency", 149, 15, 10, 2000),
+  paid("duo", 19, 2, 1, 300),
+  paid("studio", 69, 5, 1, 500),
+  paid("agency", 199, 15, 10, 2000),
 ];
 
 /** Landing checks open a browser on our side, so the free plan has a monthly cap; paid plans are fair use (the hourly limit) */

@@ -11,6 +11,7 @@ import type { SiteCopy } from "../ref-measured";
 import { OUTPUT_LANGUAGES } from "../output-language";
 import { LOCALES, type Locale } from "../i18n/locale";
 import { DEFAULT_PLAN, PLANS, type PlanKey } from "../plans";
+import { VAULT_ACCESS, type VaultAccess } from "../../types/vault";
 
 /** CHECK that a text column holds one of these values */
 const oneOf = (name: string, col: Parameters<typeof sql>[1], values: readonly string[]) =>
@@ -217,6 +218,31 @@ export const accessInvite = pgTable("access_invite", {
   index("access_invite_created_by_idx").on(t.createdBy),
   check("access_invite_uses_check", sql`${t.uses} >= 0 and ${t.uses} <= ${t.maxUses}`),
   oneOf("access_invite_grants_plan_check", t.grantsPlan, PLANS.map((p) => p.key)),
+]);
+
+export const PLAN_PERIODS = ["month", "year"] as const;
+export type PlanPeriod = (typeof PLAN_PERIODS)[number];
+export const PLAN_REQUEST_STATUSES = ["open", "done", "declined"] as const;
+export type PlanRequestStatus = (typeof PLAN_REQUEST_STATUSES)[number];
+
+// Someone asks for a plan while there's no payment gateway: the team switches it on by hand and marks the request
+// done, or declines it. The open ones are the team's queue, oldest first.
+export const planRequest = pgTable("plan_request", {
+  id: text("id").primaryKey(),
+  billingAccountId: text("billing_account_id").notNull().references(() => billingAccount.id, { onDelete: "cascade" }),
+  requestedBy: text("requested_by").references(() => user.id, { onDelete: "set null" }),
+  plan: text("plan").$type<PlanKey>().notNull(),
+  period: text("period").$type<PlanPeriod>().notNull(),
+  status: text("status").$type<PlanRequestStatus>().notNull().default("open"),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
+  decidedAt: timestamp("decided_at", { withTimezone: true, mode: "date" }),
+  decidedBy: text("decided_by").references(() => user.id, { onDelete: "set null" }),
+}, (t) => [
+  index("plan_request_queue_idx").on(t.status, t.createdAt),
+  index("plan_request_billing_account_idx").on(t.billingAccountId),
+  oneOf("plan_request_plan_check", t.plan, PLANS.map((p) => p.key)),
+  oneOf("plan_request_period_check", t.period, PLAN_PERIODS),
+  oneOf("plan_request_status_check", t.status, PLAN_REQUEST_STATUSES),
 ]);
 
 export const SIGNUP_MODES = ["invite", "open"] as const;
@@ -1106,12 +1132,15 @@ export const vaultItem = pgTable("vault_item", {
   sourceUrl: text("source_url"),
   /** null = a draft only partners see */
   publishedAt: timestamp("published_at", { withTimezone: true, mode: "date" }),
+  /** Who reads its code (types/vault.ts VAULT_ACCESS): the paid plans only, or every signed-in account */
+  access: text("access").$type<VaultAccess>().notNull().default("paid"),
   createdBy: text("created_by").references(() => user.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
 }, (t) => [
   uniqueIndex("vault_item_slug_idx").on(t.slug),
   index("vault_item_category_idx").on(t.category),
+  oneOf("vault_item_access_check", t.access, VAULT_ACCESS),
 ]);
 
 /** A Vault entry a team chose for one of its projects ("Use in a project", components/Vault.tsx): criterio.md read by

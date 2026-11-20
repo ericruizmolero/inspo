@@ -57,12 +57,14 @@ assert.equal(whatIsFull(roomLeft(free, { items: 12, bytes: 0 }), { items: 1, byt
 const paid = PLANS.find(isPaid)!;
 
 // The paid plans (#89): a year is 10 months, searches are fair use up to 10 times the AI actions, every plan invites
-assert.deepEqual(PLANS.map((p) => p.key), ["free", "personal", "studio", "agency"]);
+assert.deepEqual(PLANS.map((p) => p.key), ["free", "duo", "studio", "agency"]);
 assert.deepEqual(free.searches, { kind: "capped", perMonth: 30 });
 for (const p of PLANS.filter(isPaid)) {
   assert.equal(p.price.year, p.price.month * 10, `${p.key}: 2 months free`);
   assert.deepEqual(p.searches, { kind: "fairUse", ceiling: 10 * p.aiActionsPerMonth! }, `${p.key}: fair use`);
+  assert.equal(p.vault, "full", `${p.key}: no paid plan has less Vault than another`);
 }
+assert.equal(free.vault, "sample", "the free plan reads the code of the free Vault pieces only");
 assert.ok(PLANS.every((p) => p.members === null || p.members >= 2), "every plan is collaborative: two people at least");
 assert.equal(whatIsFull(roomLeft(paid, { items: 1e6, bytes: 1e13 }), { items: 1, bytes: GB }), null, "a paid plan never fills");
 
