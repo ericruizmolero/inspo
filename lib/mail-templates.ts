@@ -14,6 +14,11 @@ import { escapeHtml, type Body, type Html, type Stop } from "./mail-layout";
 /**
  * How a variable goes in. `text` is someone's words or a link, escaped for the HTML; `number` a count; `html` a body
  * built from the blocks; `raw` plain text that never lands in the HTML (the letter's subject and text part).
+ *
+ * Resend puts a value as given wherever its {{{VAR}}} appears, the subject included, so an escaped value would show
+ * its entities there. Hence every `text` variable has a raw twin, <VAR>_PLAIN (plainOf), which sendMail fills from the
+ * same value: the HTML uses {{{VAR}}} and the subject {{{VAR_PLAIN}}}. The template declares both, and
+ * `npm run mail:templates layout` points its subject at the twins.
  */
 type Kind = "text" | "number" | "html" | "raw";
 interface Spec { vars: Record<string, Kind>; stop?: Stop }
@@ -104,20 +109,36 @@ export const preview = (m: Mail, extra: Record<string, string> = {}): string =>
 
 export const stopOf = (key: TemplateKey): Stop | undefined => (TEMPLATES[key] as Spec).stop;
 
-/** Every variable a template takes, its own and the layout's (GREETING always; the foot's when it has a stop link) */
-export function variablesOf(key: TemplateKey): Record<string, Kind> {
+/** A text variable's raw twin, for the subject */
+export const plainOf = (v: string) => `${v}_PLAIN`;
+
+/** What the code gives a template: its own variables and the layout's (GREETING always; the foot's when it has a stop link) */
+function givenOf(key: TemplateKey): Record<string, Kind> {
   const stop = stopOf(key);
   return { ...TEMPLATES[key].vars, GREETING: "text", ...(stop ? { STOP_URL: "text" } : {}), ...(stop === "team" ? { TEAM: "text" } : {}) };
 }
 
+const textVars = (vars: Record<string, Kind>) => Object.keys(vars).filter((v) => vars[v] === "text");
+
+/** Every variable a template declares in Resend: what the code gives, and each text variable's raw twin */
+export function variablesOf(key: TemplateKey): Record<string, Kind> {
+  const given = givenOf(key);
+  return { ...given, ...Object.fromEntries(textVars(given).map((v) => [plainOf(v), "raw" as const])) };
+}
+
+/** A template's subject with each text variable swapped for its raw twin. Running it again changes nothing */
+export const plainSubject = (key: TemplateKey, subject: string): string =>
+  textVars(givenOf(key)).reduce((s, v) => s.replaceAll(`{{{${v}}}}`, `{{{${plainOf(v)}}}}`), subject);
+
 /**
  * The variables as Resend takes them, checked against the registry: a missing, extra or mistyped one throws here
- * rather than going out as a blank in someone's inbox.
+ * rather than going out as a blank in someone's inbox. A text variable goes escaped, and its twin as given.
  */
 export function resendVariables(m: Mail, greeting: string): Record<string, string | number> {
-  const want = variablesOf(m.template);
+  const want = givenOf(m.template);
   const given: Record<string, unknown> = { ...m.vars, GREETING: greeting };
   const wrong = [...Object.keys(want).filter((k) => typeof given[k] !== (want[k] === "number" ? "number" : "string")), ...Object.keys(given).filter((k) => !(k in want))];
   if (wrong.length) throw new Error(`Mail ${m.template}: variables missing, extra or of the wrong type: ${wrong.join(", ")}`);
-  return Object.fromEntries(Object.entries(want).map(([k, kind]) => [k, kind === "text" ? escapeHtml(given[k] as string) : given[k] as string | number]));
+  const value = (k: string) => given[k] as string | number;
+  return Object.fromEntries(Object.entries(want).flatMap(([k, kind]) => kind === "text" ? [[k, escapeHtml(value(k) as string)], [plainOf(k), value(k)]] : [[k, value(k)]]));
 }

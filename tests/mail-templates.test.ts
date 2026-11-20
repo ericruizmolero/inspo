@@ -4,9 +4,9 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { afterEach, expect, test, vi } from "vitest";
-import { TEMPLATE_KEYS, aliasOf, letter, mail, resendVariables, variablesOf, type Mail } from "@/lib/mail-templates";
+import { TEMPLATE_KEYS, aliasOf, letter, mail, plainSubject, resendVariables, variablesOf, type Mail } from "@/lib/mail-templates";
 import { BODY_END, BODY_START, bodyOf, button, greeting, join, layoutHtml, layoutText, para, quote } from "@/lib/mail-layout";
-import { welcomeMail, replyMail } from "@/lib/mail";
+import { overCapacityMail, welcomeMail, replyMail } from "@/lib/mail";
 
 // tests/setup.ts blocks sendMail everywhere; here it is the thing under test, with fetch stubbed
 const { sendMail } = await vi.importActual<typeof import("@/lib/mail")>("@/lib/mail");
@@ -29,7 +29,7 @@ test("a template's alias names its key and language", () => {
 
 test("a missing, extra or mistyped variable never reaches Resend", () => {
   const ok = welcomeMail("https://app.test", "en");
-  expect(resendVariables(ok, "Hi Ana,")).toEqual({ URL: "https://app.test", GOAL: 3, GREETING: "Hi Ana," });
+  expect(resendVariables(ok, "Hi Ana,")).toEqual({ URL: "https://app.test", URL_PLAIN: "https://app.test", GOAL: 3, GREETING: "Hi Ana,", GREETING_PLAIN: "Hi Ana," });
 
   const missing = { ...ok, vars: { URL: "https://app.test" } } as unknown as Mail;
   expect(() => resendVariables(missing, "Hi,")).toThrow(/GOAL/);
@@ -58,6 +58,22 @@ test("someone's words are escaped for the HTML; a link's & and a quote stay as w
   expect(v.THEIRS).toBe("It's \"fine\"");
   expect(v.URL).toBe("https://app.test/p/1?a=1&lang=es");
   expect(v.TEAM).toBe("Ana & Bea");
+});
+
+test("a text variable goes escaped for the HTML and as typed in its raw twin, which the subject reads", () => {
+  const m = overCapacityMail("https://app.test/t?a=1&b=2", "Ana & Bea <\"studio\">", "duo", 7, 5, "en");
+  const v = resendVariables(m, "Hi,");
+  expect(v.TEAM).toBe("Ana & Bea &lt;\"studio\"&gt;");
+  expect(v.TEAM_PLAIN).toBe("Ana & Bea <\"studio\">");
+  expect(v.MEMBERS, "a number has no twin").toBe(7);
+  expect(v).not.toHaveProperty("MEMBERS_PLAIN");
+  expect(Object.keys(v).sort(), "sendMail fills exactly what the template declares").toEqual(Object.keys(variablesOf("over-capacity")).sort());
+
+  const subject = "{{{TEAM}}} has {{{MEMBERS}}} people and the {{{PLAN}}} plan allows {{{LIMIT}}}";
+  const plain = plainSubject("over-capacity", subject);
+  expect(plain).toBe("{{{TEAM_PLAIN}}} has {{{MEMBERS}}} people and the {{{PLAN_PLAIN}}} plan allows {{{LIMIT}}}");
+  expect(plainSubject("over-capacity", plain), "running it again changes nothing").toBe(plain);
+  expect(plainSubject("letter", "{{{SUBJECT}}}"), "the letter's subject is raw already").toBe("{{{SUBJECT}}}");
 });
 
 test("an email built in code goes through the letter for its foot: none, a team's or the Vault's", () => {

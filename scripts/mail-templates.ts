@@ -2,7 +2,8 @@
 // layout of lib/mail-layout.ts.
 //
 //   npm run mail:templates layout        every criterio-* template in the registry gets the current layout around the
-//                                        body it has in Resend, the registry's variables, and is published again
+//                                        body it has in Resend, the registry's variables and a subject that reads
+//                                        each text variable through its raw twin, and is published again
 //   npm run mail:templates seed <file>   creates the registry's templates that Resend lacks, from the copy that file
 //                                        exports as `seed` ({ en, es }: key → subject and body), and publishes them
 //
@@ -15,7 +16,7 @@ import { existsSync } from "node:fs";
 import path from "node:path";
 import { LOCALES, type Locale } from "../lib/i18n/locale";
 import { bodyOf, layoutHtml, layoutText, type Body } from "../lib/mail-layout";
-import { LETTERS, TEMPLATE_KEYS, aliasOf, stopOf, variablesOf, type TemplateKey } from "../lib/mail-templates";
+import { LETTERS, TEMPLATE_KEYS, aliasOf, plainSubject, stopOf, variablesOf, type TemplateKey } from "../lib/mail-templates";
 
 if (!process.env.RESEND_API_KEY && existsSync(".env.local")) process.loadEnvFile(".env.local");
 const KEY = process.env.RESEND_API_KEY;
@@ -47,11 +48,12 @@ async function remoteAliases(): Promise<Set<string>> {
   }
 }
 
-/** What Resend should hold for a template, around `body` */
-function wanted(key: TemplateKey, locale: Locale, body: string) {
+/** What Resend should hold for a template, around `body` and with the editors' `subject` */
+function wanted(key: TemplateKey, locale: Locale, subject: string, body: string) {
   const frame = { locale, stop: stopOf(key) };
   const letter = (LETTERS as readonly string[]).includes(key);
   return {
+    subject: plainSubject(key, subject),
     html: layoutHtml(frame, body),
     // The letter's text part is the code's own; a template's is derived by Resend from its HTML
     ...(letter ? { text: layoutText(frame, "{{{BODY_TEXT}}}") } : {}),
@@ -73,8 +75,8 @@ async function layout(): Promise<void> {
     if (t.status !== "published" || t.has_unpublished_versions) { drafts.push(alias); continue; }
     const body = bodyOf(t.html);
     if (body === null) throw new Error(`${alias}: its body markers are gone in Resend; put them back around the body before laying it out`);
-    const want = wanted(key, locale, body);
-    if (t.html === want.html && sameVariables(t.variables, want.variables) && !("text" in want && t.text !== want.text)) continue;
+    const want = wanted(key, locale, t.subject, body);
+    if (t.subject === want.subject && t.html === want.html && sameVariables(t.variables, want.variables) && !("text" in want && t.text !== want.text)) continue;
     await api("PATCH", `/templates/${alias}`, want);
     await api("POST", `/templates/${alias}/publish`);
     changed++;
@@ -96,7 +98,7 @@ async function seed(file: string): Promise<void> {
     const alias = aliasOf(key, locale);
     if (have.has(alias)) continue;
     const c = copy[locale][key];
-    await api("POST", "/templates", { alias, name: alias, subject: c.subject, ...wanted(key, locale, c.body.html) });
+    await api("POST", "/templates", { alias, name: alias, ...wanted(key, locale, c.subject, c.body.html) });
     await api("POST", `/templates/${alias}/publish`);
     made++;
     console.log(`seeded ${alias}`);
