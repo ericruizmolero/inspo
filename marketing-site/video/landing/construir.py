@@ -66,14 +66,18 @@ for l, x in T.items():
             sys.exit(f'{l}: falta {must}')
     if 'noindex' in p:
         sys.exit(f'{l}: sigue noindex')
-    # lo que la plantilla toma del código de la web: la dirección de la app (i18n.ts) y el registro abierto o con lista (signup-mode.ts)
+    # lo que la plantilla toma del código de la web: la dirección de la app (i18n.ts), el registro abierto o con lista
+    # (signup-mode.ts) y los planes (plans.ts, los mismos de /pricing/ y de la app)
     up = '../' if l == 'en' else '../../'
     p = '\n'.join(['---', '// Generada por marketing-site/video/landing/construir.py desde plantilla.html: no se edita a mano',
-                   f'import {{ WAITLIST_URL, copy }} from "{up}i18n";', '---', p])
+                   f'import HomePlans from "{up}components/HomePlans.astro";',
+                   f'import {{ PAGES, WAITLIST_URL, copy }} from "{up}i18n";', '---', p])
     for mark, astro in {
         '"%%WAITLIST%%"': '{WAITLIST_URL}',
         '"%%LOGIN%%"': f'{{copy.{l}.login.href}}',
         '%%SIGNUP_MODE%%': f'<script>import "{up}scripts/signup-mode";</script>',
+        '%%PRICING_NAV%%': f'{{PAGES.pricing.nav.{l}}}',
+        '%%PRICING%%': f'<HomePlans locale="{l}" />',
     }.items():
         if mark not in p:
             sys.exit(f'{l}: falta {mark} en la plantilla')

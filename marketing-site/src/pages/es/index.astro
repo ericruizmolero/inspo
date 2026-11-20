@@ -1,6 +1,7 @@
 ---
 // Generada por marketing-site/video/landing/construir.py desde plantilla.html: no se edita a mano
-import { WAITLIST_URL, copy } from "../../i18n";
+import HomePlans from "../../components/HomePlans.astro";
+import { PAGES, WAITLIST_URL, copy } from "../../i18n";
 ---
 <!doctype html>
 <html lang="es" data-lang="es" data-es="/es/" data-en="/">
@@ -52,7 +53,8 @@ a { color: inherit; } button { font: inherit; color: inherit; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .page { padding: 0 max(var(--gut), env(safe-area-inset-right)) 0 max(var(--gut), env(safe-area-inset-left)); }
 
-.top { padding-top: clamp(26px, 5svh, 44px); }
+.top { position: relative; padding-top: clamp(26px, 5svh, 44px); }
+.top-nav { position: absolute; top: 0; right: 0; bottom: 0; display: flex; align-items: center; padding-top: inherit; } .top-nav a { padding: 10px 2px; font-size: 16px; font-weight: 600; text-decoration: none; } .top-nav a:hover { text-decoration: underline; text-underline-offset: 4px; }
 .mark { display: inline-block; text-decoration: none; }
 .tile { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 12px; background: var(--ink); box-shadow: inset 1.5px 1.5px 0 rgb(255 255 255 / .2), inset -1.5px -2px 0 rgb(0 0 0 / .55), 0 2px 0 rgb(27 27 24 / .35); }
 .tile svg { display: block; width: 46.5px; height: 46.5px; overflow: visible; shape-rendering: crispEdges; } .tile path { fill: #F6F1E6; } .tile rect { fill: #F6A848; }
@@ -72,7 +74,7 @@ h1 span { display: block; }
 .btn:hover { transform: translateY(3px); box-shadow: var(--bevel-in), 0 1px 0 var(--ink); background: var(--glow); } .btn:active { transform: translateY(4px); box-shadow: var(--bevel-in), 0 0 0 var(--ink); }
 .consent { display: flex; align-items: center; gap: 7px; margin-top: 10px; font-size: 14px; line-height: 1.3; color: var(--text-2); cursor: pointer; }
 .consent input { flex: none; width: 17px; height: 17px; margin: 0; accent-color: var(--ember); }
-.form-note { margin: 6px 0 0; font-size: 12.5px; line-height: 18px; color: var(--text-2); } .form-note:empty { display: none; } .start-free { display: none; } .signup-open .invite > :not(.start-free) { display: none; } .signup-open .invite > .start-free { display: inline-flex; } .hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+.form-note { margin: 6px 0 0; font-size: 12.5px; line-height: 18px; color: var(--text-2); } .form-note:empty { display: none; } .start-free { display: none; text-decoration: none; } .signup-open .invite > :not(.start-free) { display: none; } .signup-open .invite > .start-free { display: inline-flex; } .hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
 
 .demo { position: relative; z-index: 1; max-width: 1180px; margin: clamp(64px, 12svh, 116px) 0 0; }
 .frame { position: relative; aspect-ratio: 16 / 10; overflow: hidden; border: 1.5px solid #1B1B18; border-radius: var(--r); background: var(--bg); box-shadow: 0 6px 0 var(--ink); transition: transform .1s steps(2), box-shadow .1s steps(2); }
@@ -444,7 +446,7 @@ dialog { width: 100vw; max-width: none; height: 100dvh; max-height: none; margin
 </defs></svg>
 
 <div class="page">
-  <header class="top"><a class="mark" href="./" id="mark"><span class="tile"><svg viewBox="-8 -10 62 62" aria-hidden="true"><path id="ear-l" d="M8 2h4v1h-4zM8 3h4v1h-4zM8 4h6v1h-6zM8 5h6v1h-6zM6 6h10v1h-10zM6 7h10v1h-10zM6 8h12v1h-12zM6 9h12v1h-12zM6 10h12v1h-12zM6 11h12v1h-12zM6 12h12v1h-12zM6 13h12v1h-12zM6 14h12v1h-12z"/><path id="ear-r" d="M22 0h4v1h-4zM22 1h4v1h-4zM22 2h6v1h-6zM22 3h6v1h-6zM20 4h8v1h-8zM20 5h8v1h-8zM20 6h10v1h-10zM20 7h10v1h-10zM20 8h10v1h-10zM20 9h10v1h-10zM18 10h12v1h-12zM18 11h12v1h-12zM18 12h12v1h-12zM18 13h12v1h-12zM18 14h16v1h-16z"/><path id="body" d="M6 15h28v1h-28zM8 16h30v1h-30zM8 17h30v1h-30zM4 18h38v1h-38zM4 19h38v1h-38zM2 20h42v1h-42zM2 21h42v1h-42zM2 22h22v1h-22zM42 22h2v1h-2zM2 23h22v1h-22zM42 23h2v1h-2zM0 24h24v1h-24zM42 24h4v1h-4zM0 25h24v1h-24zM42 25h4v1h-4zM0 26h24v1h-24zM42 26h4v1h-4zM0 27h24v1h-24zM42 27h4v1h-4zM0 28h46v1h-46zM0 29h46v1h-46zM0 30h46v1h-46zM0 31h46v1h-46zM0 32h46v1h-46zM0 33h46v1h-46zM0 34h46v1h-46zM0 35h46v1h-46zM2 36h42v1h-42zM2 37h42v1h-42zM4 38h38v1h-38zM4 39h38v1h-38zM8 40h32v1h-32zM8 41h32v1h-32z"/><rect id="vis" x="26" y="24" width="14" height="2"/></svg></span></a></header>
+  <header class="top"><a class="mark" href="./" id="mark"><span class="tile"><svg viewBox="-8 -10 62 62" aria-hidden="true"><path id="ear-l" d="M8 2h4v1h-4zM8 3h4v1h-4zM8 4h6v1h-6zM8 5h6v1h-6zM6 6h10v1h-10zM6 7h10v1h-10zM6 8h12v1h-12zM6 9h12v1h-12zM6 10h12v1h-12zM6 11h12v1h-12zM6 12h12v1h-12zM6 13h12v1h-12zM6 14h12v1h-12z"/><path id="ear-r" d="M22 0h4v1h-4zM22 1h4v1h-4zM22 2h6v1h-6zM22 3h6v1h-6zM20 4h8v1h-8zM20 5h8v1h-8zM20 6h10v1h-10zM20 7h10v1h-10zM20 8h10v1h-10zM20 9h10v1h-10zM18 10h12v1h-12zM18 11h12v1h-12zM18 12h12v1h-12zM18 13h12v1h-12zM18 14h16v1h-16z"/><path id="body" d="M6 15h28v1h-28zM8 16h30v1h-30zM8 17h30v1h-30zM4 18h38v1h-38zM4 19h38v1h-38zM2 20h42v1h-42zM2 21h42v1h-42zM2 22h22v1h-22zM42 22h2v1h-2zM2 23h22v1h-22zM42 23h2v1h-2zM0 24h24v1h-24zM42 24h4v1h-4zM0 25h24v1h-24zM42 25h4v1h-4zM0 26h24v1h-24zM42 26h4v1h-4zM0 27h24v1h-24zM42 27h4v1h-4zM0 28h46v1h-46zM0 29h46v1h-46zM0 30h46v1h-46zM0 31h46v1h-46zM0 32h46v1h-46zM0 33h46v1h-46zM0 34h46v1h-46zM0 35h46v1h-46zM2 36h42v1h-42zM2 37h42v1h-42zM4 38h38v1h-38zM4 39h38v1h-38zM8 40h32v1h-32zM8 41h32v1h-32z"/><rect id="vis" x="26" y="24" width="14" height="2"/></svg></span></a><nav class="top-nav"><a href="#pricing">{PAGES.pricing.nav.es}</a></nav></header>
   <main>
     <div class="hero">
       <h1><span data-t="h1a"></span><span data-t="h1b"></span></h1>
@@ -452,6 +454,7 @@ dialog { width: 100vw; max-width: none; height: 100dvh; max-height: none; margin
       <form class="invite" id="invite" action={WAITLIST_URL} method="post" novalidate><label class="sr" for="mail" data-t="email"></label><div class="invite-row"><input id="mail" class="fm" type="email" name="email" autocomplete="email" required aria-describedby="note"><button class="btn" type="submit" data-t="join"></button></div><label class="consent"><input id="ok" class="fc" type="checkbox" required><span><span data-t="consent"></span> <a id="priv" data-t="privacy"></a></span></label><p class="form-note fn" id="note" role="status"></p><input class="hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true"><a class="btn start-free" href={copy.es.login.href} data-t="start"></a></form>
     </div>
     <div class="demo" id="demo"><button class="open" id="open" type="button" aria-haspopup="dialog"></button><div class="frame" id="frame" aria-hidden="true"><div class="stage" id="stage"></div></div><div class="ovl" aria-hidden="true"><div class="ovi" id="ovi"></div></div><div class="cues" aria-hidden="true"><span class="cue"><b><svg viewBox="0 0 10 12"><path d="M0 0v12l10-6z"/></svg></b><span data-t="watch"></span></span></div></div>
+    <HomePlans locale="es" />
     <section class="mf" id="mf" aria-labelledby="mf-t"><i class="mfz z3"></i><i class="mfz z2"></i><i class="mfz z1"></i><div class="mf-w"><span class="mf-bar"><i></i><i></i><i></i><b>criterio.md</b></span></div><div class="mf-in" id="mf-in"></div></section>
     <section class="end" id="end"><div class="end-t"><h2 data-t="end0"></h2><p data-t="end1"></p><form class="invite" action={WAITLIST_URL} method="post" novalidate><label class="sr" for="mail2" data-t="email"></label><div class="invite-row"><input id="mail2" class="fm" type="email" name="email" autocomplete="email" required><button class="btn" type="submit" data-t="join"></button></div><label class="consent"><input class="fc" type="checkbox" required><span><span data-t="consent"></span> <a class="fp" data-t="privacy"></a></span></label><p class="form-note fn" role="status"></p><input class="hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true"><a class="btn start-free" href={copy.es.login.href} data-t="start"></a></form></div><i class="end-sh" id="endSh" aria-hidden="true"></i><div class="end-z" id="endz" aria-hidden="true"><i>z</i><i>z</i><i>z</i></div><footer class="foot"><span>© 2026 Criterio</span><nav aria-label="Idioma"><a href="?lang=es" id="l-es" hreflang="es">ES</a><a href="?lang=en" id="l-en" hreflang="en">EN</a></nav></footer></section>
   </main>

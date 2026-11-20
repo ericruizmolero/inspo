@@ -33,6 +33,8 @@ Lo que no puede escribirse en la plantilla sin desincronizarse de la app va como
 - `%%WAITLIST%%`, el `action` de los dos formularios: `POST /api/waitlist` de la app (`WAITLIST_URL` en `src/i18n.ts`). El formulario manda el correo con el consentimiento y el campo trampa, y dice «Ya estás en la lista» sin salir de la página.
 - `%%LOGIN%%`, la tecla «Empieza gratis» de cada formulario: el login de la app (`copy.<idioma>.login.href`).
 - `%%SIGNUP_MODE%%`, antes de `</body>`: `src/scripts/signup-mode.ts`, empaquetado por Astro. Si `GET /api/access/mode` de la app dice `open`, pone `.signup-open` en `<html>` y cada formulario es solo su «Empieza gratis».
+- `%%PRICING%%`, entre la ventana del producto y criterio.md: los planes, `src/components/HomePlans.astro`, que lee `src/plans.ts` (los mismos de `/pricing/` y de la app; un test avisa si se separan). Los precios y lo que incluye cada plan no se escriben en la plantilla. Sus estilos están en el componente y usan los tokens de la plantilla (`--paper-l`, `--ink`, `--display`, `--r`…): si cambian ahí, cambian también en los planes. Sus clases son `pricing*` y `plan-*`; la plantilla no debe usar esos nombres (ya tiene un `.plans` en la demo).
+- `%%PRICING_NAV%%`, el enlace «Precios» de la cabecera (`#pricing`): el nombre de la página en `PAGES` de `src/i18n.ts`.
 
 Lo que la portada usa y ya está en `marketing-site/public/`:
 - `assets/vault/`: imágenes, piezas del Vault (`vault/`), la web de ejemplo que construye la IA en la demo (`altura/`) y el vídeo (`video/criterio-es.mp4`, `criterio-en.mp4` y sus pósteres).
