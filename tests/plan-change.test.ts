@@ -55,6 +55,17 @@ test("a move up sets the plan, ends any gift and tells the owner it is on", asyn
   expect(mailsTo(p.email).map((m) => m.subject)).toEqual(["Your plan is on: Studio"]);
 });
 
+test("a move up with an end date says the last day in the email", async () => {
+  const p = await person("up-until");
+  const until = new Date(Date.UTC(2027, 2, 31, 23, 59, 59));
+  await changePlan({ accountId: p.accountId, plan: "duo", cause: "partner", appUrl: APP, until });
+  expect((await account(p)).planUntil?.toISOString()).toBe(until.toISOString());
+  const [m] = mailsTo(p.email);
+  expect(m.subject).toBe("Your plan is on: Duo");
+  expect(m.text).toContain("until 31 March");
+  expect(m.text).toContain("goes back to Free and nothing is deleted");
+});
+
 test("a move down tells the owner what it means, and the teams left over their seats", async () => {
   const p = await person("down", "studio");
   // Three people in a space whose new plan allows two

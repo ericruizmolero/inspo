@@ -67,8 +67,8 @@ export const mail = {
     gotText: (plan: string, period: string, account: string): string =>
       `We got your request for the ${plan} plan, paid ${period}, for ${account}.\n\nWe will write to you today to sort out the payment, and switch it on the same day. If you have a question, reply to this email.`,
     onSubject: (plan: string): string => `Your plan is on: ${plan}`,
-    onText: (plan: string, account: string, url: string): string =>
-      `${account} is on the ${plan} plan from now on, and everything it includes works already:\n${url}\n\nThank you for trusting us with it.`,
+    onText: (plan: string, account: string, url: string, until?: string): string =>
+      `${account} is on the ${plan} plan from now on${until ? `, until ${until}` : ""}, and everything it includes works already:\n${url}\n\n${until ? "A week before it ends we will remind you; after that it goes back to Free and nothing is deleted.\n\n" : ""}Thank you for trusting us with it.`,
   },
 
   adminAccess: {

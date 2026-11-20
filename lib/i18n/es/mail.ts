@@ -62,8 +62,8 @@ export const mail: typeof EnMail = {
     gotText: (plan: string, period: string, account: string): string =>
       `Hemos recibido tu petición del plan ${plan}, con pago ${period}, para ${account}.\n\nTe escribimos hoy para el pago y lo activamos en el día. Si tienes alguna duda, contesta a este correo.`,
     onSubject: (plan: string): string => `Tu plan ya está activo: ${plan}`,
-    onText: (plan: string, account: string, url: string): string =>
-      `${account} está en el plan ${plan} desde ahora, y todo lo que incluye ya funciona:\n${url}\n\nGracias por la confianza.`,
+    onText: (plan: string, account: string, url: string, until?: string): string =>
+      `${account} está en el plan ${plan} desde ahora${until ? `, hasta el ${until}` : ""}, y todo lo que incluye ya funciona:\n${url}\n\n${until ? "Una semana antes de que acabe te lo recordamos; después vuelve a Gratis y no se borra nada.\n\n" : ""}Gracias por la confianza.`,
   },
 
   adminAccess: {

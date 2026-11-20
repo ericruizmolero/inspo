@@ -147,9 +147,10 @@ export function planRequestedMail(plan: PlanKey, period: PlanPeriod, account: st
 }
 
 /** To whoever asked for a plan: a partner switched it on */
-export function planOnMail(plan: PlanKey, account: string, url: string, locale: Locale): Mail {
+/** "Your plan is on", with its last day when it has one (a gift, or a partner's end date) */
+export function planOnMail(plan: PlanKey, account: string, url: string, locale: Locale, until?: Date | null): Mail {
   const t = mailDict(locale).plans, name = DICTS[locale].plans.items[plan].name;
-  return { subject: t.onSubject(name), text: signed(locale, t.onText(name, account, url)) };
+  return { subject: t.onSubject(name), text: signed(locale, t.onText(name, account, url, until ? fmtGiftDay(until, locale) : undefined)) };
 }
 
 export function adminAccessMail(url: string, granterName: string, locale: Locale): Mail {

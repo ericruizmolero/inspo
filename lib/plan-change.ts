@@ -45,8 +45,8 @@ const moveOf = (from: Plan, to: Plan): Move | null =>
   to.price.month > from.price.month ? "up" : to.price.month < from.price.month ? "down" : null;
 
 /** The email for each move. A move sideways (a partner setting the same plan to end a gift) sends none */
-const MAILS: Record<Move, (c: { cause: PlanChangeCause; from: Plan; to: Plan; account: string; url: string; locale: Locale }) => Mail> = {
-  up: (c) => planOnMail(c.to.key, c.account, c.url, c.locale),
+const MAILS: Record<Move, (c: { cause: PlanChangeCause; from: Plan; to: Plan; account: string; url: string; locale: Locale; until: Date | null }) => Mail> = {
+  up: (c) => planOnMail(c.to.key, c.account, c.url, c.locale, c.until),
   down: (c) => {
     const vaultLocks = c.from.vault === "full" && c.to.vault !== "full";
     return c.cause === "giftEnded"
@@ -82,7 +82,7 @@ export async function changePlan(c: PlanChange): Promise<{ from: PlanKey; to: Pl
     ? await db.select({ email: U.email, language: U.language }).from(U).where(eq(U.id, changed.ownerUserId))
     : [];
   if (move && owner) {
-    const mail = MAILS[move]({ cause: c.cause, from, to, account: changed.account, url: `${c.appUrl}/settings/plan`, locale: toLocale(owner.language) });
+    const mail = MAILS[move]({ cause: c.cause, from, to, account: changed.account, url: `${c.appUrl}/settings/plan`, locale: toLocale(owner.language), until: c.until ?? null });
     await tell([owner.email], mail, move === "up" ? "on" : "down");
   }
   log.info("plans.changed", { billingAccountId: c.accountId, from: from.key, to: to.key, cause: c.cause });
