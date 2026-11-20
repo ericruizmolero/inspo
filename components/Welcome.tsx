@@ -3,7 +3,8 @@
 // its first reference, and then, both optional, the Chrome extension and an AI client over MCP: the three ways
 // criterio works (collect, keep collecting from any site, take it out to an agent). Shown to a new account with
 // nothing saved, and again after a reload until it ends: each step reached is kept (user.welcome_step,
-// lib/welcome-core.ts). Each optional step says "Not now" and both live on in Connectors.
+// lib/welcome-core.ts). Each optional step says "Not now" and both live on in Connectors. Where the extension cannot
+// be installed (Safari, Firefox, a phone), its step says how to save without it and emails the install link.
 import { useEffect, useRef, useState } from "react";
 import { useT } from "./I18nProvider";
 import { Button, Icon, PromptInput } from "@/components/criterio";
@@ -13,8 +14,8 @@ import { BoardProgress, useBoardImport, type ImportBoard } from "./BoardImport";
 import ConnectDialog from "./ConnectDialog";
 import { canInstall, useExtension } from "@/hooks/use-extension";
 import { loadConnections } from "@/app/actions/mcp";
-import { saveWelcomeStep } from "@/app/actions/welcome";
-import { shownStep, stepsFor, type WelcomeAt, type WelcomeStep } from "@/lib/welcome-core";
+import { emailExtensionLink, saveWelcomeStep } from "@/app/actions/welcome";
+import { viewOf, WELCOME_ORDER, type WelcomeAt, type WelcomeStep } from "@/lib/welcome-core";
 import type { Project } from "@/types/inspo";
 import s from "./Welcome.module.css";
 
@@ -36,16 +37,16 @@ export default function Welcome({ at, arrival, onCreateProject, onAddUrl, onImpo
   const w = t.welcome;
   const [installable, setInstallable] = useState(false);
   useEffect(() => { setInstallable(canInstall()); }, []);
-  // The extension step only where the extension runs (Chrome on a computer)
-  const steps = stepsFor(installable);
-  const [kept, setKept] = useState<WelcomeStep>(at?.step ?? "name");
-  const step = shownStep(kept, steps);
+  const steps = WELCOME_ORDER;
+  const [step, setStep] = useState<WelcomeStep>(at?.step ?? "name");
   const index = steps.indexOf(step);
+  // The extension's step, away from Chrome, is how to save without it
+  const view = viewOf(step, installable);
   // Each step reached is kept, the first one included, so a reload comes back to it; the end gives it back
-  useEffect(() => { void saveWelcomeStep(kept); }, [kept]);
+  useEffect(() => { void saveWelcomeStep(step); }, [step]);
   const next = () => {
     const n = steps[index + 1];
-    if (n) { setKept(n); return; }
+    if (n) { setStep(n); return; }
     void saveWelcomeStep(null);
     onDone(projectId);
   };
@@ -93,7 +94,19 @@ export default function Welcome({ at, arrival, onCreateProject, onAddUrl, onImpo
   useEffect(() => { if (!connecting) void loadConnections().then((r) => { if (r.ok) setApps(r.data.length); }); }, [connecting]);
   const agentDone = apps > 0;
 
-  const copy = w.steps[step];
+  // ─── Away from Chrome: the install link by email ─────────────────────────────
+  const [sentTo, setSentTo] = useState<string | null>(null);
+  const [sending, setSending] = useState(false);
+  const [mailError, setMailError] = useState("");
+  const mailLink = async () => {
+    setSending(true); setMailError("");
+    try {
+      const r = await emailExtensionLink();
+      if (r.ok) setSentTo(r.data); else setMailError(r.error);
+    } finally { setSending(false); }
+  };
+
+  const copy = w.steps[view];
   return (
     <div className={s.scroll}>
       <section className={s.wrap} aria-labelledby="welcome-title">
@@ -101,7 +114,7 @@ export default function Welcome({ at, arrival, onCreateProject, onAddUrl, onImpo
           {steps.map((k, i) => (
             <li key={k} className={`${s.step}${i <= index ? ` ${s.on}` : ""}`} aria-current={i === index ? "step" : undefined}>
               <span className={s.num}>{String(i + 1).padStart(2, "0")}</span>
-              <span>{w.steps[k].label}</span>
+              <span>{w.steps[viewOf(k, installable)].label}</span>
             </li>
           ))}
         </ol>
@@ -128,7 +141,7 @@ export default function Welcome({ at, arrival, onCreateProject, onAddUrl, onImpo
           </>
         )}
 
-        {step === "extension" && (
+        {view === "extension" && (
           <div className={s.actions}>
             {extDone ? (
               <p className={s.done}><Icon name="check" size={16} />{w.steps.extension.done}</p>
@@ -140,6 +153,22 @@ export default function Welcome({ at, arrival, onCreateProject, onAddUrl, onImpo
             )}
             <Button variant={extDone ? "primary" : "secondary"} onClick={next}>{extDone ? w.next : w.notNow}</Button>
           </div>
+        )}
+
+        {view === "elsewhere" && (
+          <>
+            <div className={s.actions}>
+              {sentTo ? (
+                <p className={s.done} role="status"><Icon name="check" size={16} />{w.steps.elsewhere.sent(sentTo)}</p>
+              ) : (
+                <Button variant="primary" icon="mail" onClick={() => void mailLink()} disabled={sending} aria-busy={sending}>
+                  {sending ? w.steps.elsewhere.sending : w.steps.elsewhere.email}
+                </Button>
+              )}
+              <Button variant={sentTo ? "primary" : "secondary"} onClick={next}>{sentTo ? w.next : w.notNow}</Button>
+            </div>
+            {mailError && <p className={s.error} role="alert">{mailError}</p>}
+          </>
         )}
 
         {step === "agent" && (

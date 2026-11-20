@@ -204,6 +204,26 @@ export const mail = {
     why: "You get this because you opened an account on criterio.design.",
   },
 
+  afterWelcome: {
+    extensionLink: {
+      subject: "The Criterio extension, for your computer",
+      text: (url: string): string =>
+        `You asked for this link while setting up Criterio. Open it on a computer with Chrome, Edge, Arc or another Chromium browser, and install the extension from there:\n${url}\n\n` +
+        `With it, a click saves the page you are on, and your bookmarks on X and in the browser come in.`,
+    },
+    connect: {
+      subject: "Connect your agent to Criterio",
+      text: ({ address, url }: { address: string; url: string }): string =>
+        `You set up Criterio a few days ago without connecting your agent. Once it is connected, Claude, ChatGPT, Cursor or Claude Code read your references and your criterio.md before they build.\n\n` +
+        `It takes a minute. The connector's address is:\n${address}\n\n` +
+        `- Claude: open Settings, then Connectors, add a custom connector, paste the address and press Connect.\n` +
+        `- ChatGPT: open Settings, then Connectors, and create one (it asks for developer mode). Paste the address and leave the sign-in as OAuth.\n` +
+        `- Cursor: open Settings, then MCP, and add a server with the address.\n` +
+        `- Claude Code: type /plugin marketplace add ericruizmolero/inspo, then /plugin install criterio@criterio and /criterio:setup.\n\n` +
+        `Each one asks you to allow Criterio once. The same steps are in the app, under Connectors on the top bar:\n${url}`,
+    },
+  },
+
   paused: {
     subject: "We have paused your team summaries",
     text: (url: string): string => `You have not opened criterio.design in a month, so we have stopped sending the daily summary of your teams. Turn it back on here:\n${url}`,

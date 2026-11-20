@@ -194,6 +194,26 @@ export const mail: typeof EnMail = {
     why: "Te llega porque abriste una cuenta en criterio.design.",
   },
 
+  afterWelcome: {
+    extensionLink: {
+      subject: "La extensión de Criterio, para tu ordenador",
+      text: (url: string): string =>
+        `Pediste este enlace mientras empezabas en Criterio. Ábrelo en un ordenador con Chrome, Edge, Arc u otro navegador Chromium e instala la extensión desde ahí:\n${url}\n\n` +
+        `Con ella, un clic guarda la página en la que estás, y entran tus marcadores de X y del navegador.`,
+    },
+    connect: {
+      subject: "Conecta tu agente a Criterio",
+      text: ({ address, url }: { address: string; url: string }): string =>
+        `Empezaste en Criterio hace unos días sin conectar tu agente. Conectado, Claude, ChatGPT, Cursor o Claude Code leen tus referencias y tu criterio.md antes de construir.\n\n` +
+        `Se hace en un minuto. La dirección del conector es:\n${address}\n\n` +
+        `- Claude: abre Ajustes, luego Conectores, añade un conector personalizado, pega la dirección y pulsa Conectar.\n` +
+        `- ChatGPT: abre Ajustes, luego Conectores, y crea uno (pide el modo desarrollador). Pega la dirección y deja el acceso como OAuth.\n` +
+        `- Cursor: abre Ajustes, luego MCP, y añade un servidor con la dirección.\n` +
+        `- Claude Code: escribe /plugin marketplace add ericruizmolero/inspo, luego /plugin install criterio@criterio y /criterio:setup.\n\n` +
+        `Cada uno te pide permitir Criterio una vez. Los mismos pasos están en la app, en Conectores, en la barra de arriba:\n${url}`,
+    },
+  },
+
   paused: {
     subject: "Hemos parado los resúmenes de tus equipos",
     text: (url: string): string => `Llevas un mes sin abrir criterio.design, así que hemos dejado de mandarte el resumen diario de tus equipos. Vuelve a activarlo aquí:\n${url}`,

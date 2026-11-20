@@ -13,6 +13,7 @@ import { baseUrl, inBackground, unsubscribeUrl } from "./notify";
 import { firstSteps } from "./first-steps";
 import { REFS_GOAL, STEPS, nextStep } from "./first-steps-core";
 import { toLocale } from "./i18n/locale";
+import { mailed as connectMailed } from "./connect-mail";
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -66,6 +67,8 @@ export async function sendNudges(now = new Date()): Promise<{ due: number; sent:
       const steps = ws ? await firstSteps(p.id, ws) : null;
       const step = steps && nextStep(steps);
       if (!steps || !step) continue;
+      // The connect reminder already said it, with the steps
+      if (step === "out" && (await connectMailed(p.id))) continue;
       due++;
       const url = baseUrl() + STEPS.find((s) => s.key === step)!.href(steps);
       const stopUrl = unsubscribeUrl(p.id, "digest");

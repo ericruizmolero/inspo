@@ -9,6 +9,7 @@ import { QueueFull } from "./browser";
 import { openWorkspacesWithJobs, PER_WORKSPACE, runTagJob } from "./tag-jobs";
 import { baseUrl, sendDigests } from "./notify";
 import { sendNudges } from "./first-use-mail";
+import { sendConnectReminders } from "./connect-mail";
 import { sendInvitationReminders } from "./team-mail";
 import { settleGifts } from "./plan-change";
 import { sendWinBacks } from "./win-back";
@@ -59,11 +60,12 @@ const HANDLERS: Handlers = {
   async mail() {
     const digests = await sendDigests().catch((err) => { void recordFailure("job", "digest", err); return null; });
     const nudges = await sendNudges().catch((err) => { void recordFailure("job", "nudge", err); return null; });
+    const connects = await sendConnectReminders().catch((err) => { void recordFailure("job", "connect agent", err); return null; });
     const endings = await sendInvitationReminders().catch((err) => { void recordFailure("job", "invitation ending", err); return null; });
     const gifts = await settleGifts(baseUrl()).catch((err) => { void recordFailure("job", "gifts", err); return null; });
     const winBacks = await sendWinBacks().catch((err) => { void recordFailure("job", "win-back", err); return null; });
     const funnel = await sendWeeklyFunnel(baseUrl()).catch((err) => { void recordFailure("job", "weekly funnel", err); return null; });
-    if (!digests || !nudges || !endings || !gifts || !winBacks || funnel === null) throw new RetryLater(15 * 60);
+    if (!digests || !nudges || !endings || !gifts || !connects || !winBacks || funnel === null) throw new RetryLater(15 * 60);
   },
   async clientComments(job) { await tellClientComments(job.shareId); },
 };

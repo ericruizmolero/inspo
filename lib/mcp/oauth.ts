@@ -237,6 +237,12 @@ export async function listConnections(userId: string): Promise<McpConnection[]> 
   return rows.map((r) => ({ id: r.id, app: r.app, createdAt: r.createdAt.toISOString(), lastUsedAt: r.lastUsedAt?.toISOString() ?? null }));
 }
 
+/** Whether this person ever let an app in: a code was exchanged, whether the app was disconnected since or not */
+export async function everConnected(userId: string): Promise<boolean> {
+  const [g] = await db.select({ id: G.id }).from(G).where(and(eq(G.userId, userId), isNotNull(G.codeUsedAt))).limit(1);
+  return !!g;
+}
+
 export async function revokeConnection(userId: string, id: string): Promise<void> {
   await db.update(G).set({ revokedAt: new Date() }).where(and(eq(G.userId, userId), eq(G.id, String(id)), isNull(G.revokedAt)));
 }

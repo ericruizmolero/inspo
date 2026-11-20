@@ -376,6 +376,12 @@ export const ui = {
       name: { label: "Name", title: "Name what you are making.", why: "One project, one criterio.", lead: "A brand, a landing, a client. You can rename it later.", placeholder: "Landing for Studio North" },
       first: { label: "First reference", title: "Put the first reference in.", why: "One you would hate to lose.", lead: "Paste a link and Criterio reads it.", placeholder: "A link worth keeping", hint: "Or a board from Pinterest, Are.na or Cosmos." },
       extension: { label: "Extension", title: "Save from any site.", why: "No more copying links.", lead: "The Chrome extension saves the page you are on, and brings your bookmarks.", install: "Install the extension", connect: "Connect the extension", done: "Extension connected" },
+      elsewhere: {
+        label: "Saving", title: "Save from anywhere.", why: "Even without the extension.",
+        lead: "Paste any link into Criterio, or the link of a Pinterest, Are.na or Cosmos board, and everything on it comes in. The extension, which saves the page you are on in one click, runs in Chrome on a computer.",
+        email: "Email me the extension link", sending: "Sending",
+        sent: (email: string): string => `Sent to ${email}. Open it on a computer with Chrome.`,
+      },
       agent: { label: "Your AI", title: "Take your criterio to your AI.", why: "It reads it before it builds.", lead: "Connect Claude, ChatGPT or Cursor and they work from your references.", connect: "Connect an AI client", done: "AI client connected" },
     },
   },

@@ -283,6 +283,21 @@ export function nudgeMail(step: StepKey, at: NudgeAt, stopUrl: string, locale: L
   return { subject: copy[step].subject(at), text: signed(locale, `${copy[step].text(at)}\n\n${t.nudge.stuck}\n\n${t.nudge.why}\n${t.team.stopText(stopUrl)}`) };
 }
 
+// ─── After Welcome (components/Welcome.tsx, lib/connect-mail.ts) ──────────────────────────────────────────────
+
+/** Asked for at Welcome away from Chrome: the extension's install page, to open on a computer */
+export function extensionLinkMail(url: string, locale: Locale): Mail {
+  const t = mailDict(locale).afterWelcome.extensionLink;
+  return { subject: t.subject, text: signed(locale, t.text(url)) };
+}
+
+/** Days after Welcome ended with no AI client connected: the connector's address and how each client adds it. It
+ *  stops with the digest's switch */
+export function connectAgentMail(at: { address: string; url: string }, stopUrl: string, locale: Locale): Mail {
+  const t = mailDict(locale);
+  return { subject: t.afterWelcome.connect.subject, text: signed(locale, `${t.afterWelcome.connect.text(at)}\n\n${t.nudge.stuck}\n\n${t.nudge.why}\n${t.team.stopText(stopUrl)}`) };
+}
+
 /** A month without opening the app: the digest stops on its own, and this says so once. Its foot is the digest's: the
  *  signed link opens the page that turns it back on with one click */
 export function pausedMail(url: string, foot: TeamMailFoot, locale: Locale): Mail {

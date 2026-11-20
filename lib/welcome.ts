@@ -3,6 +3,7 @@ import "server-only";
 import { and, asc, eq, isNull } from "drizzle-orm";
 import { db, schema } from "./db";
 import { resumeStep, type WelcomeAt, type WelcomeStep } from "./welcome-core";
+import { connectLater } from "./connect-mail";
 
 /** Welcome under way for this person, with the project it made in this workspace; null when it is not */
 export async function welcomeAt(userId: string, organizationId: string): Promise<WelcomeAt | null> {
@@ -20,4 +21,10 @@ export async function welcomeAt(userId: string, organizationId: string): Promise
 /** The step reached, or null when Welcome ends */
 export async function setWelcomeStep(userId: string, step: WelcomeStep | null): Promise<void> {
   await db.update(schema.user).set({ welcomeStep: step }).where(eq(schema.user.id, userId));
+}
+
+/** Welcome is over: its step goes back to null, and without an AI client connected the reminder waits (lib/connect-mail.ts) */
+export async function endWelcome(userId: string): Promise<void> {
+  await setWelcomeStep(userId, null);
+  await connectLater(userId);
 }

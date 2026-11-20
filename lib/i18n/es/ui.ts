@@ -367,6 +367,12 @@ export const ui: typeof EnUi = {
       name: { label: "Nombre", title: "Ponle nombre a lo que haces.", why: "Un proyecto, un criterio.", lead: "Una marca, una landing, un cliente. Se cambia cuando quieras.", placeholder: "Landing de Estudio Norte" },
       first: { label: "Primera referencia", title: "Guarda la primera referencia.", why: "Una que no querrías perder.", lead: "Pega un enlace y Criterio la lee.", placeholder: "Un enlace que valga la pena", hint: "O un tablero de Pinterest, Are.na o Cosmos." },
       extension: { label: "Extensión", title: "Guarda desde cualquier web.", why: "Sin copiar enlaces.", lead: "La extensión de Chrome guarda la página en la que estás y trae tus marcadores.", install: "Instalar la extensión", connect: "Conectar la extensión", done: "Extensión conectada" },
+      elsewhere: {
+        label: "Guardar", title: "Guarda desde donde estés.", why: "También sin la extensión.",
+        lead: "Pega cualquier enlace en Criterio, o el de un tablero de Pinterest, Are.na o Cosmos, y entra todo lo que tiene. La extensión, que guarda de un clic la página en la que estás, funciona en Chrome en un ordenador.",
+        email: "Enviarme el enlace de la extensión", sending: "Enviando",
+        sent: (email: string): string => `Enviado a ${email}. Ábrelo en un ordenador con Chrome.`,
+      },
       agent: { label: "Tu IA", title: "Lleva tu criterio a tu IA.", why: "Lo lee antes de construir.", lead: "Conecta Claude, ChatGPT o Cursor y trabajan con tus referencias.", connect: "Conectar un cliente de IA", done: "Cliente de IA conectado" },
     },
   },

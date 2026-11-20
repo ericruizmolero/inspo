@@ -2,7 +2,7 @@
 // check_landing and any other caller spend the same month, /settings/plan reads it (quotaStatus), and the free plan's
 // eleventh is refused with the upgrade notice. The browser is a stand-in: the test is about the counting.
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
-import { eq, like } from "drizzle-orm";
+import { eq, inArray, like } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { createExtKey } from "@/lib/ext-keys";
 import { checkLandingFor } from "@/lib/landing-check";
@@ -39,6 +39,12 @@ beforeEach(async () => {
   await db.insert(schema.project).values({ id: project, organizationId: team.ws.id, name: `${team.tag} landing`, createdBy: team.user.id, createdAt: new Date(), updatedAt: new Date() });
 });
 afterEach(async () => {
+  // The connector's sign-in gives the person a personal workspace of their own: it goes with them
+  const own = await db.select({ id: schema.billingAccount.id }).from(schema.billingAccount).where(eq(schema.billingAccount.ownerUserId, team.user.id));
+  if (own.length) {
+    await db.delete(schema.organization).where(inArray(schema.organization.billingAccountId, own.map((a) => a.id)));
+    await db.delete(schema.billingAccount).where(inArray(schema.billingAccount.id, own.map((a) => a.id)));
+  }
   await db.delete(schema.appSetting).where(like(schema.appSetting.key, `landing_checks:${team.ws.billingAccountId}:%`));
   await cleanupTeam(team);
 });

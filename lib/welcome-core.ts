@@ -5,25 +5,25 @@ import type { WelcomeStep } from "./db/schema";
 
 export type { WelcomeStep };
 
+/** The steps in order, the same on every device (WELCOME_STEPS in lib/db/schema.ts keeps the stored ones) */
+export const WELCOME_ORDER: readonly WelcomeStep[] = ["name", "first", "extension", "agent"];
+
 /** Welcome under way, as the server reads it: the step to show and the project it made, if it made one yet */
 export interface WelcomeAt { step: WelcomeStep; project: string | null }
 
-/** The steps this device shows, in order: the extension only where it can be installed (Chrome on a computer) */
-export function stepsFor(installable: boolean): WelcomeStep[] {
-  return installable ? ["name", "first", "extension", "agent"] : ["name", "first", "agent"];
-}
+/**
+ * What a step shows on this device. Every device walks the same four steps, so the one kept resumes anywhere; the
+ * extension's step, where the extension cannot be installed (Safari, Firefox, a phone), says how to save without it
+ * and offers the install link by email, to open on a computer with Chrome.
+ */
+export type StepView = WelcomeStep | "elsewhere";
+
+export const viewOf = (step: WelcomeStep, installable: boolean): StepView => (step === "extension" && !installable ? "elsewhere" : step);
 
 /** The step a kept one resumes at. The project's name is kept only by making the project, at the first reference: with
  *  no project yet, the name is asked again */
 export function resumeStep(kept: WelcomeStep, hasProject: boolean): WelcomeStep {
   return kept === "first" && !hasProject ? "name" : kept;
-}
-
-/** The step shown: one this device skips (the extension away from Chrome) gives way to the next one it shows */
-export function shownStep(step: WelcomeStep, steps: readonly WelcomeStep[]): WelcomeStep {
-  if (steps.includes(step)) return step;
-  const all = stepsFor(true);
-  return all.slice(all.indexOf(step)).find((s) => steps.includes(s)) ?? steps[steps.length - 1];
 }
 
 /**

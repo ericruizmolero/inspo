@@ -2,7 +2,7 @@ import { afterAll, beforeAll, expect, test } from "vitest";
 import { eq } from "drizzle-orm";
 import { db, pool, schema } from "@/lib/db";
 import { WELCOME_STEPS } from "@/lib/db/schema";
-import { arrivalFor, opensWelcome, resumeStep, shownStep, stepsFor } from "@/lib/welcome-core";
+import { arrivalFor, opensWelcome, resumeStep, viewOf, WELCOME_ORDER } from "@/lib/welcome-core";
 import { welcomeAt } from "@/lib/welcome";
 import { saveWelcomeStep } from "@/app/actions/welcome";
 import { actAs } from "./harness";
@@ -36,15 +36,22 @@ test("a link pasted before signing up is the first reference while that step is 
 });
 
 test("a kept step resumes where it was, the name asked again when no project kept it", () => {
-  expect(stepsFor(true)).toEqual([...WELCOME_STEPS]);
+  expect(WELCOME_ORDER).toEqual([...WELCOME_STEPS]);
   expect(resumeStep("first", false)).toBe("name");
   expect(resumeStep("first", true)).toBe("first");
   expect(resumeStep("extension", true)).toBe("extension");
   expect(resumeStep("agent", false)).toBe("agent");
-  // The extension away from Chrome gives way to the AI client; on Chrome it shows
-  expect(shownStep("extension", stepsFor(false))).toBe("agent");
-  expect(shownStep("extension", stepsFor(true))).toBe("extension");
-  expect(shownStep("first", stepsFor(false))).toBe("first");
+});
+
+test("away from Chrome the extension's step says how to save without it; every other step shows as itself", () => {
+  expect(viewOf("extension", true)).toBe("extension");
+  expect(viewOf("extension", false)).toBe("elsewhere");
+  for (const step of WELCOME_ORDER.filter((s) => s !== "extension")) {
+    expect(viewOf(step, false)).toBe(step);
+    expect(viewOf(step, true)).toBe(step);
+  }
+  // The step kept is the same on any device, so one reached on Safari resumes on Chrome as the install
+  expect(resumeStep("extension", true)).toBe("extension");
 });
 
 test("the step reached is kept on the person's row and read back with the project Welcome made", async () => {
