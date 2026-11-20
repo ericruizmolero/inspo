@@ -1,4 +1,5 @@
-// The welcome and the day 3 and day 7 nudges (lib/first-use-mail.ts) against the LOCAL database, with mail going to
+// The welcome, the day 3 and day 7 nudges (lib/first-use-mail.ts) and the "Connect your agent" email after Welcome
+// (lib/connect-mail.ts) against the LOCAL database, with mail going to
 // the console and .data/last-mail.txt. It makes its own people, runs the nudges twice and the welcome once, and
 // removes what it made. The run is set on a morning years ahead, so no real account falls in its windows.
 // tests/first-use-mail.test.ts checks which step each nudge names.
@@ -14,6 +15,7 @@ import { runMigrations } from "../lib/db/migrate";
 import { ensurePersonalWorkspace, newId } from "../lib/workspace-core";
 import { ensureBuiltinTemplates } from "../lib/template-seed";
 import { NUDGE_DAYS, nudgeKey, nudgeWindow, sendNudges, sendWelcome, welcomeKey } from "../lib/first-use-mail";
+import { CONNECT_AFTER_DAYS, connectLater, connectMailKey, pendingKey, sendConnectReminders } from "../lib/connect-mail";
 
 const DAY = 24 * 60 * 60 * 1000;
 const LAST_MAIL = path.join(process.cwd(), ".data", "last-mail.txt");
@@ -90,8 +92,23 @@ async function main() {
     assert.equal(await sendWelcome(empty), false, "and only once");
     const welcome = await lastMail();
     assert.ok(welcome?.startsWith(emptyEs.email), "the last welcome went to lucia");
+
+    // Welcome ended unconnected: ana's waited long enough, carla's not yet, dani turned the digest off
+    await connectLater(empty.id, new Date(NOW.getTime() - (CONNECT_AFTER_DAYS + 0.5) * DAY));
+    await connectLater(early.id, new Date(NOW.getTime() - (CONNECT_AFTER_DAYS - 1) * DAY));
+    await connectLater(quiet.id, new Date(NOW.getTime() - (CONNECT_AFTER_DAYS + 0.5) * DAY));
+    await fs.rm(LAST_MAIL, { force: true });
+    await sendConnectReminders(NOW);
+    const connect = await lastMail();
+    assert.ok(connect?.startsWith(empty.email) && connect.includes("/mcp"), "the connect email went to ana with the connector's address");
+    const connectKeys = (await db.select({ key: schema.appSetting.key }).from(schema.appSetting)
+      .where(inArray(schema.appSetting.key, everyone.flatMap((p) => [connectMailKey(p.id), pendingKey(p.id)])))).map((r) => r.key).sort();
+    assert.deepEqual(connectKeys, [connectMailKey(empty.id), pendingKey(early.id)].sort(), "ana's sent and settled, carla's still waiting, dani's dropped");
+    await fs.rm(LAST_MAIL, { force: true });
+    await sendConnectReminders(NOW);
+    assert.equal(await lastMail(), null, "the next morning sends nothing more");
   } finally {
-    const keys = made.users.flatMap((id) => [welcomeKey(id), ...NUDGE_DAYS.map((d) => nudgeKey(d, id))]);
+    const keys = made.users.flatMap((id) => [welcomeKey(id), ...NUDGE_DAYS.map((d) => nudgeKey(d, id)), connectMailKey(id), pendingKey(id)]);
     if (keys.length) await db.delete(schema.appSetting).where(inArray(schema.appSetting.key, keys));
     if (made.orgs.length) await db.delete(schema.organization).where(inArray(schema.organization.id, made.orgs));
     if (made.users.length) {
