@@ -565,6 +565,8 @@ export const routes: Record<string, Surface> = {
   "route:app/api/health/route.ts#GET": { exempt: "health check: reads no data" },
   "route:app/api/health/deep/route.ts#GET": { exempt: "health check: pings the database, storage and the job queue, returns no rows" },
   "route:app/api/access/mode/route.ts#GET": { exempt: "public: whether sign-up is open" },
+  "route:app/api/waitlist/route.ts#POST": { exempt: "public waitlist sign-up from the marketing site's origin: takes an email, no session and no workspace id" },
+  "route:app/api/waitlist/route.ts#OPTIONS": { exempt: "CORS preflight for the marketing site's waitlist form: reads and writes nothing" },
   "route:app/api/dev-login/route.ts#GET": { exempt: "development only (DEV_LOGIN_EMAIL): signs in a fixed local account" },
   "route:app/extension/download/route.ts#GET": { exempt: "static zip of the browser extension" },
 };
