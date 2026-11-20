@@ -193,9 +193,11 @@ export default function InspoClient({
   // Inside a project the board comes first; polishing it (?view=polish) and the system (?view=system) are modes.
   // The Cajón has the board and Polish: it is not a project, so it has no system (Eric, 06-11)
   const defaultView = "board" as const;
-  // The system is the team's own view (Eric, 20-11): a client's project is Board and Polish, and what it knows reaches
-  // their agent through the connector. Still written underneath for everyone; only the way in is ours
-  const teamSystem = isAdmin;
+  // The system is the team's own view, and only where we build it (Eric, 20-11: "que yo lo vea como usuario final,
+  // solo que el sistema a nivel local lo podamos ver e ir modificando"): in production nobody has it, the partners
+  // included, so we see what everyone sees. A project is Board and Polish, and what it knows reaches the agent
+  // through the connector. Still written underneath for every project
+  const teamSystem = process.env.NODE_ENV === "development";
   const viewParam = sp.get("view");
   const projectView: "system" | "polish" | "board" = currentProject
     ? viewParam === "board" || viewParam === "polish" || (viewParam === "system" && teamSystem) ? viewParam : defaultView

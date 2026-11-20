@@ -19,7 +19,7 @@ La app vive en `/`. Lo que se ve depende de la query, sin cambiar de página, pa
 | `/?in=discover` | Descubrir: los recursos, la lista de la web de marketing con la miniatura que sigue al puntero |
 | `/?in=skills` | Descubrir: las skills para agentes, la lista de la web de marketing como tarjetas |
 | `/?in=<proyecto>` | Un proyecto: su tablón; Pulido es su otra vista. El Sistema es una vista interna del equipo → [decisión](decisiones/2026-11-20-el-sistema-es-una-vista-interna-del-equipo-el-cliente-tiene-tablon-pulido-y-conector.md) |
-| `&view=board` / `&view=polish` / `&view=system` | Fuerza una vista dentro del proyecto. `system` solo abre a los socios (`isAdmin`); a los demás les deja en el tablón |
+| `&view=board` / `&view=polish` / `&view=system` | Fuerza una vista dentro del proyecto. `system` solo abre en local (desarrollo); en producción deja a todo el mundo en el tablón |
 | `&view=system&brief=1` | Sistema con el panel Brief abierto; el panel se abre y la URL suelta `brief` (lo usa ⌘K → "Abrir el brief") |
 | `?add=<url>` | Abre "Añadir" con esa URL (viene del login de invitado) |
 | `/i/[id]` | La biblioteca con la ficha de una referencia abierta (enlace para compartir) |
