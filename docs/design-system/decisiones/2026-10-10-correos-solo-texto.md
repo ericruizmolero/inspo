@@ -1,7 +1,7 @@
 ---
 title: Los correos son solo texto, con el enlace arriba
 date: 2026-10-10
-status: vigente
+status: sustituida
 kind: diseño
 ---
 **Contexto.** El correo de acceso salía con una plantilla HTML genérica (cabecera, botón, pie con estilos) y la marca mezclada entre remitente, asunto y firma. Es lo primero que ve una persona nueva. Issue #39, chat de socios del 22/09/2026.
