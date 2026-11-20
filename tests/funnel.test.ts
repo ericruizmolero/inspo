@@ -15,7 +15,6 @@ vi.mock("@/lib/mail", async (importOriginal) => {
   return { ...(await importOriginal<object>()), sendMail: async (to: string | string[], m: { subject: string; text: string }) => { reached.push(["mail", { to: [to].flat(), subject: m.subject, text: m.text }]); } };
 });
 
-const DAY = 24 * 60 * 60 * 1000;
 const at = (iso: string) => new Date(iso);
 const mails = () => reached.filter(([what]) => what === "mail").map(([, m]) => m as { to: string[]; subject: string; text: string });
 

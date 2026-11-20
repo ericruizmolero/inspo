@@ -28,6 +28,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
         {
           items: [
             { slug: "overview", label: a.overview, icon: "overview" },
+            { slug: "funnel", label: a.funnel, icon: "funnel" },
             { slug: "usage", label: a.usage, icon: "usage" },
             { slug: "people", label: a.people, icon: "people" },
             { slug: "feedback", label: a.feedback, icon: "feedback" },

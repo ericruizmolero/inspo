@@ -13,13 +13,15 @@ import { listTeamInvites, listWaitlist, waveMetrics } from "@/lib/waves";
 import AdminPanel, { type AdminSection } from "../AdminPanel";
 import WaitlistPanel from "../WaitlistPanel";
 import PlansPanel from "../PlansPanel";
-import { listOpenPlanRequests } from "@/lib/plan-requests";
+import { listAccountPlans, listOpenPlanRequests } from "@/lib/plan-requests";
 import VaultPanel from "../VaultPanel";
 import { vaultReleaseState } from "@/lib/vault-release";
+import FunnelPanel from "../FunnelPanel";
+import { funnelOverview } from "@/lib/funnel";
 import UpdatedAt from "../UpdatedAt";
 import PeriodSwitch from "../PeriodSwitch";
 
-const SECTIONS: AdminSection[] = ["overview", "usage", "people", "feedback", "failures", "access", "waitlist", "plans", "vault"];
+const SECTIONS: AdminSection[] = ["overview", "funnel", "usage", "people", "feedback", "failures", "access", "waitlist", "plans", "vault"];
 const DAYS = [7, 30, 90];
 
 // Opening a wave mails up to 50 people 600 ms apart, and a Vault release mails its readers the same way, inside a
@@ -63,12 +65,24 @@ export default async function AdminSectionPage({ params, searchParams }: Props) 
   }
 
   if (section === "plans") {
-    const requests = await listOpenPlanRequests();
+    const [requests, accounts] = await Promise.all([listOpenPlanRequests(), listAccountPlans()]);
     return (
       <>
         <ActivityPing area="admin" />
         <SettingsHeading title={t.admin.sections.plans} lead={leadOf(t, section, days)} />
-        <PlansPanel requests={requests} />
+        <PlansPanel requests={requests} accounts={accounts} />
+      </>
+    );
+  }
+
+  if (section === "funnel") {
+    const funnel = await funnelOverview(days);
+    return (
+      <>
+        <ActivityPing area="admin" />
+        <SettingsHeading title={t.admin.sections.funnel} lead={leadOf(t, section, days)}
+          aside={<PeriodSwitch section={section} days={days} options={DAYS} labels={DAYS.map((d) => t.admin.days(d))} label={t.admin.period} />} />
+        <FunnelPanel {...funnel} />
       </>
     );
   }

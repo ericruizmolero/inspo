@@ -459,8 +459,8 @@ function FailuresPanel({ failures, days, now }: { failures: FailureRow[]; days: 
 
 type Kpi = { label: React.ReactNode; value: React.ReactNode; note?: React.ReactNode };
 
-/** One KPI strip for Overview and Usage: cells divided by hairlines, edge to edge of the window's body */
-function Kpis({ cells }: { cells: Kpi[] }) {
+/** One KPI strip for Overview, Funnel and Usage: cells divided by hairlines, edge to edge of the window's body */
+export function Kpis({ cells }: { cells: Kpi[] }) {
   return (
     <div className="ad-kpis">
       <dl className="ad-kpis__grid">
@@ -487,7 +487,7 @@ function Bar({ share }: { share: number }) {
 
 // ─── Panel ───────────────────────────────────────────────────────────────────
 
-export type AdminSection = "overview" | "usage" | "people" | "feedback" | "failures" | "access" | "waitlist" | "plans" | "vault";
+export type AdminSection = "overview" | "funnel" | "usage" | "people" | "feedback" | "failures" | "access" | "waitlist" | "plans" | "vault";
 
 // One section of the Activity area. Each page loads only the data its section shows.
 export default function AdminPanel({ section, data, usage, feedback, failures, admins, signup, invitesPerPerson, me }: {
