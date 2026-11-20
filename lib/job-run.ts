@@ -13,6 +13,7 @@ import { sendInvitationReminders } from "./team-mail";
 import { settleGifts } from "./plan-change";
 import { sendWinBacks } from "./win-back";
 import { tellClientComments } from "./client-comments";
+import { sendWeeklyFunnel } from "./funnel";
 import { recordFailure } from "./log";
 import { enqueue, enqueueEmbed, scheduleSweep, EMBED_BATCH, type Job } from "./jobs";
 
@@ -53,15 +54,16 @@ const HANDLERS: Handlers = {
     if (!res.ok) throw new RetryLater(60);
   },
   // Each runs even if another fails. Delivered again, nobody gets one twice: a digest moves its marker as it goes,
-  // and the nudge, the invitation's last day and a gift's warning go once per person, invitation or key
-  // (lib/mail-once.ts), the win-back once in 60 days, and an ended gift has no end date left
+  // and the nudge, the invitation's last day, a gift's warning and the partners' weekly funnel go once per person,
+  // invitation or key (lib/mail-once.ts), the win-back once in 60 days, and an ended gift has no end date left
   async mail() {
     const digests = await sendDigests().catch((err) => { void recordFailure("job", "digest", err); return null; });
     const nudges = await sendNudges().catch((err) => { void recordFailure("job", "nudge", err); return null; });
     const endings = await sendInvitationReminders().catch((err) => { void recordFailure("job", "invitation ending", err); return null; });
     const gifts = await settleGifts(baseUrl()).catch((err) => { void recordFailure("job", "gifts", err); return null; });
     const winBacks = await sendWinBacks().catch((err) => { void recordFailure("job", "win-back", err); return null; });
-    if (!digests || !nudges || !endings || !gifts || !winBacks) throw new RetryLater(15 * 60);
+    const funnel = await sendWeeklyFunnel(baseUrl()).catch((err) => { void recordFailure("job", "weekly funnel", err); return null; });
+    if (!digests || !nudges || !endings || !gifts || !winBacks || funnel === null) throw new RetryLater(15 * 60);
   },
   async clientComments(job) { await tellClientComments(job.shareId); },
 };

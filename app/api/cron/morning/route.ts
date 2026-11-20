@@ -15,6 +15,7 @@ export const maxDuration = 300;
 // invitation ends (lib/team-mail.ts), two weeks away (lib/win-back.ts) and the gifted plans (a week's warning, then back to free: lib/plan-change.ts),
 // run by the "mail" job (lib/job-run.ts). Then the jobs' sweep, which starts its own five-minute chain again if it ever stopped. The
 // sweep only sends jobs: each runs in its own function, not in these five minutes.
+// The first "mail" job of each week also emails the partners last week's activation funnel (lib/funnel.ts).
 export async function GET(req: NextRequest) {
   if (!cronAuthorized(req)) {
     return Response.json({ error: "unauthorized" }, { status: 401 });
