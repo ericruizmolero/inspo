@@ -55,6 +55,16 @@ La landing completa de la web, en inglés y castellano, vive en `marketing-site/
 - Mientras no haya cadencia, la manda un socio a mano desde `/admin/vault` (`sendVaultRelease` en `app/actions/vault-admin.ts`, tras `asAdmin`). Cada entrega es una fila de `vault_release` (`entry_ids`, `sent_by`, `sent_at`); la siguiente empieza en su `sent_at`. Sin nada pendiente no sale nada.
 - Dos envíos a la vez no mandan dos veces: `sendRelease` corta la entrega bajo `pg_advisory_xact_lock` (de transacción, se suelta al confirmar: el pooler no lo deja pegado) y escribe la fila antes de mandar el primer correo; quien esperaba el cerrojo ya no encuentra esas piezas. Por eso es como mucho una vez por persona: si se corta a medias, a algunos no les llega esa entrega, pero a nadie le llega dos veces. Los correos salen de uno en uno, 600 ms entre ellos (Resend), dentro del `maxDuration` de 120 s de `/admin/[section]`: unas 190 personas por entrega. Con más, el envío tendría que pasar a la cola (`lib/jobs.ts`). `npx vitest run tests/vault-release.test.ts` lo prueba.
 
+## Correos de los miembros de un equipo
+
+- Avisan a una persona de que su sitio en un equipo cambió (`lib/team-mail.ts`). Textos en `mail.ts` (`membership`), un solo constructor (`membershipMail` en `lib/mail.ts`, con `MembershipNews`), en el idioma de quien recibe y firmados por los socios. Un envío que falla queda en el log y nunca deshace lo hecho. `lib/auth.ts` importa el módulo al usarlo: llega a `lib/notify.ts`, que importa `lib/auth.ts`.
+- "X ha entrado en <equipo>": a quien invitó y al propietario (uno solo si son la misma persona, y solo si siguen en el equipo), desde `afterAcceptInvitation`, tras la comprobación del último asiento: a quien se queda sin sitio no se le anuncia.
+- "Tu rol en <equipo> ahora es admin|miembro" y "Ya no estás en <equipo>": al miembro afectado, desde `hooks.after` de Better Auth en `/organization/update-member-role` y `/organization/remove-member`, que sí sabe quién lo hizo (los `organizationHooks` no). Nada si alguien se lo hace a sí mismo; salir (`/organization/leave`) no pasa por ahí.
+- "Tu invitación a <equipo> caduca mañana": al invitado, una vez por invitación (`mailOnce`, clave `invite-ending:<id>`), en el trabajo `mail` del cron `morning` (`sendInvitationReminders`). Toma las pendientes que caducan el día UTC siguiente (`endingWindow`): una mañana por invitación, el día antes. Idioma: el de su cuenta o, sin cuenta, el de quien invitó; el enlace lleva `?lang=`.
+- Pasar el equipo: `handOverTeam` (`app/actions/workspace.ts`), solo el propietario, comprobado otra vez sobre su fila bloqueada en la transacción que hace propietario al otro y admin a él, así dos a la vez dejan un solo propietario. `billing_account.owner_user_id` no cambia. Al nuevo, "Ahora <equipo> es tuyo".
+- "<equipo> se ha eliminado": a todos los demás miembros, desde `deleteTeam`, antes de borrar las filas (son las que dicen quién estaba).
+- `npx vitest run tests/team-mail.test.ts` los prueba por las puertas de verdad: los endpoints de Better Auth con una cookie de sesión firmada, las acciones como quien pulsa y el trabajo de la mañana.
+
 ## Correos del primer uso
 
 - Dos correos por persona, cada uno una sola vez (`lib/first-use-mail.ts`, #103). Textos en `mail.ts` (`welcome`, `nudge`), en el idioma de la cuenta, firmados por los socios.
