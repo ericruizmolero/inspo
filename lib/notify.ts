@@ -17,6 +17,7 @@
 import "server-only";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { and, eq, gt, inArray, max, sql } from "drizzle-orm";
+import { lastSent } from "./mail-once";
 import { db, schema } from "./db";
 import { APP_URL } from "./auth";
 import { sendMail, digestMail, replyMail, proposalMail, pausedMail, unsubscribeHeaders, type Mail, type DigestGroup, type DigestLine, type TeamMailFoot } from "./mail";
@@ -154,6 +155,9 @@ export async function notifyProposalResolved(organizationId: string, input: { to
   await sendMail(to.email, m, { replyTo: from?.email, headers: unsubscribeHeaders(foot.stopUrl) });
   return true;
 }
+
+/** The marker of a share link's client email: when it last went out, which is as far as the digest may leave out */
+export const clientCommentsKey = (shareId: string) => `client-comments:${shareId}`;
 
 /** Who hears what a client wrote through a share link (lib/client-comments.ts): whoever made the link while they are
  *  in the workspace, everyone in it once they are gone. Only people with replies on */
@@ -400,13 +404,14 @@ export function digestGroups(events: TeamEvent[], locale: Locale, projectNames: 
   return groups.sort((a, b) => (a.title === library ? 1 : 0) - (b.title === library ? 1 : 0));
 }
 
-/** For each share link a client's comment in `events` came through, who its email reached */
-async function clientReadersOf(events: TeamEvent[], members: { userId: string; replies: boolean }[]): Promise<Map<string, Set<string>>> {
+/** For each share link a client's comment in `events` came through, who its email reached and up to when: a comment
+ *  after the last email that went out has reached nobody yet, so the digest still carries it */
+async function clientReadersOf(events: TeamEvent[], members: { userId: string; replies: boolean }[]): Promise<Map<string, { readers: Set<string>; until: Date | null }>> {
   const ids = [...new Set(events.flatMap((e) => (e.shareId ? [e.shareId] : [])))];
   if (!ids.length) return new Map();
   const S = schema.systemShare;
   const links = await db.select({ id: S.id, by: S.createdBy }).from(S).where(inArray(S.id, ids));
-  return new Map(links.map((l) => [l.id, new Set(clientReaders(l.by, members).map((r) => r.userId))]));
+  return new Map(await Promise.all(links.map(async (l) => [l.id, { readers: new Set(clientReaders(l.by, members).map((r) => r.userId)), until: await lastSent(clientCommentsKey(l.id)) }] as const)));
 }
 
 export interface DigestRun { teams: number; sent: number; paused: number; skipped: number; /** Held for another day: too soon since their last one for how long they have been away */ spaced: number; mails: (Mail & { to: string })[] }
@@ -449,7 +454,7 @@ export async function sendDigests(now = new Date(), dryRun = false): Promise<Dig
       const cover = async () => { if (!dryRun) await db.update(M).set({ digestSentAt: now }).where(eq(M.id, m.memberId)); };
       if (!m.digest) { await cover(); run.skipped++; continue; }
       const since = windowOf(m);
-      const theirs = events.filter((e) => e.at > since && e.by !== m.userId && !(e.shareId && toldTo.get(e.shareId)?.has(m.userId)));
+      const theirs = events.filter((e) => e.at > since && e.by !== m.userId && !(e.shareId && toldTo.get(e.shareId)?.readers.has(m.userId) && e.at <= (toldTo.get(e.shareId)?.until ?? new Date(0))));
       if (!theirs.length) { await cover(); run.skipped++; continue; }
       const locale = toLocale(m.language);
       const lastOpened = anywhere.get(m.userId) ?? m.userCreatedAt;

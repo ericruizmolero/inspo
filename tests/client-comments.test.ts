@@ -185,6 +185,14 @@ test("the digest leaves out a client's comment for those its email reached, and 
   expect(paused.text).toContain(`/unsubscribe?u=${encodeURIComponent(away.id)}&k=digest&s=`);
 });
 
+test("a client's comment that no email has covered yet stays in the digest", async () => {
+  await tick();
+  // After the last email of the link whose maker is gone: it reached nobody yet, so the digest still carries it
+  await comment(shares.gone, "Still there?", "Pia", `${tag}-guest-secret-0004`);
+  const run = await sendDigests(new Date(), true);
+  expect(run.mails.find((m) => m.to === mate.email)?.text).toContain("Still there?");
+});
+
 test("each invitation goes on its own: one that fails is reported, the rest still go", async () => {
   actAs(maker);
   const fail = `fail-${tag}@example.test`, ok1 = `${tag}-ok1@example.test`, ok2 = `${tag}-ok2@example.test`;

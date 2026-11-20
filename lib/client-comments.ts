@@ -12,7 +12,7 @@ import { db, schema } from "./db";
 import { enqueue } from "./jobs";
 import { claimEvery, giveBack, lastSent } from "./mail-once";
 import { clientCommentsMail, sendMail, unsubscribeHeaders } from "./mail";
-import { baseUrl, clientReaders, clip, mailPath, projectPath, unsubscribeUrl } from "./notify";
+import { baseUrl, clientCommentsKey, clientReaders, clip, mailPath, projectPath, unsubscribeUrl } from "./notify";
 import { toLocale } from "./i18n/locale";
 import { log } from "./log";
 
@@ -25,7 +25,7 @@ export const CLIENT_MAIL_EVERY = 60 * 60 * 1000;
 /** A link's first email reaches back this far at most: comments from before these emails existed are not news */
 const FIRST_REACH = 24 * 60 * 60 * 1000;
 
-export const clientCommentsKey = (shareId: string) => `client-comments:${shareId}`;
+export { clientCommentsKey };
 
 /** When the link's next email goes: past the gather and an hour after the last one, on the gather's grid */
 export function nextTellAt(now: Date, told: Date | null): Date {
