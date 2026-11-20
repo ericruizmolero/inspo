@@ -132,7 +132,7 @@ export const AddVaultInput = z.object({
   live_url: z.string().max(2000).optional().describe("A public page where it runs, when there is one besides the preview."),
   source_url: z.string().max(2000).optional().describe("The site it was learnt from, when there is one."),
   image_url: z.string().max(2000).optional().describe("A public address of its picture (PNG, WebP or JPEG). A file on your disk goes through the upload link in the answer instead."),
-  video_url: z.string().max(2000).optional().describe("A public address of a short loop of the piece running: the file itself, or a Screen Studio share link (MP4 or WebM, a few seconds, no sound, at the shape the piece asks for: the card takes the video's own). Only for a piece its card cannot play live: one that moves on scroll, needs a click or a drag, or is heavy to start. With it the card plays the loop, always, in place of the piece. A file on your disk of up to 4 MB goes through the upload link instead."),
+  video_url: z.string().max(2000).optional().describe("A public address of a short loop of the piece running: the file itself, or a Screen Studio share link (MP4 or WebM, a few seconds, no sound, at the shape the piece asks for: the card takes the video's own). Only for a piece its card cannot play live: one that moves on scroll, needs a click or a drag, or is heavy to start. With it the card plays the loop, always, in place of the piece. Prefer the Screen Studio link: it also brings the picture a shared link to the piece shows. A file on your disk of up to 4 MB goes through the upload link instead."),
   remove_video: z.boolean().optional().describe("True takes the loop away: the card plays the piece itself again."),
 });
 
@@ -192,8 +192,8 @@ export async function addToVault(ctx: McpCtx, origin: string, input: z.infer<typ
   let videoFailed = "";
   if (input.remove_video) { await setVaultVideo(entry.id, null); video = false; }
   if (input.video_url?.trim()) {
-    const body = await videoFromLink(input.video_url);
-    if (body) { await setVaultVideo(entry.id, body); video = true; }
+    const got = await videoFromLink(input.video_url);
+    if (got) { await setVaultVideo(entry.id, got.video, got.frame); video = true; }
     else videoFailed = `The video at video_url could not be read (MP4 or WebM, at most ${VAULT_VIDEO_MAX / 1024 / 1024} MB).`;
   }
   const link = uploadUrl(origin, ctx.user.id, entry.id);

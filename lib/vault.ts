@@ -11,6 +11,7 @@ import { deleteFiles, fileUrl, putFile } from "./storage";
 import { fetchFile } from "./remote-file";
 import { safeFetch } from "./safe-fetch";
 import { canPreview, previewDoc } from "./vault-preview";
+import { frameKeyOf, pictureCard } from "./vault-frame";
 import { VAULT_CATEGORIES, VAULT_LIMITS as L, vaultSlug, type VaultBlock, type VaultCard, type VaultEntry, type VaultEs } from "@/types/vault";
 import type { Locale } from "./i18n/locale";
 
@@ -180,10 +181,10 @@ export async function vaultPreview(ref: string, o: { drafts?: boolean } = {}): P
   return doc ? { doc, slug: r.slug, title: r.title, summary: r.summary, version: r.updatedAt.getTime().toString(36) } : null;
 }
 
-/** What the card of a shared link is made of (app/api/vault/[entry]/og): a published entry's name, category, ground and picture */
-export async function vaultShare(ref: string): Promise<{ title: string; category: string; ground: string | null; imageKey: string | null } | null> {
+/** What the card of a shared link is made of (app/api/vault/[entry]/og): a published entry's name, category, ground, picture and loop */
+export async function vaultShare(ref: string): Promise<{ title: string; category: string; ground: string | null; imageKey: string | null; videoKey: string | null } | null> {
   const r = await rowOf(ref);
-  return r?.publishedAt ? { title: r.title, category: r.category, ground: r.ground, imageKey: r.imageKey } : null;
+  return r?.publishedAt ? { title: r.title, category: r.category, ground: r.ground, imageKey: r.imageKey, videoKey: r.videoKey } : null;
 }
 
 /** Sets an entry's picture from its bytes. The type is what the bytes say; the one before is deleted */
@@ -201,8 +202,13 @@ export async function setVaultPicture(ref: string, body: Buffer): Promise<string
   return fileUrl(key);
 }
 
-/** Sets an entry's loop from its bytes, or takes it away (null): the card then plays the piece itself again */
-export async function setVaultVideo(ref: string, body: Buffer | null): Promise<{ video: string | null; ratio: number | null }> {
+/** The files of a loop: the video and the frame kept beside it (lib/vault-frame.ts), if it has one */
+const loopFiles = (videoKey: string | null): string[] => (videoKey ? [videoKey, frameKeyOf(videoKey)].filter((k): k is string => !!k) : []);
+
+/** Sets an entry's loop from its bytes, or takes it away (null): the card then plays the piece itself again.
+ *  `frame` is a picture of the video (what a Screen Studio share page shows of it): it becomes the card a shared
+ *  link shows. Without one, a frame kept from the same video before stays */
+export async function setVaultVideo(ref: string, body: Buffer | null, frame?: Buffer | null): Promise<{ video: string | null; ratio: number | null }> {
   const r = await rowOf(ref);
   if (!r) throw new HttpError(404, `No Vault entry "${ref}".`);
   let key: string | null = null;
@@ -214,27 +220,34 @@ export async function setVaultVideo(ref: string, body: Buffer | null): Promise<{
     key = `${VAULT_PREFIX}${r.id}/${createHash("sha256").update(body).digest("hex").slice(0, 16)}.${EXT[type]}`;
     await putFile(key, body, type);
     ratio = videoRatioOf(body);
+    const card = frame ? await pictureCard(frame) : null;
+    const frameKey = frameKeyOf(key);
+    if (card && frameKey) await putFile(frameKey, card, "image/jpeg").catch(() => {}); // the loop plays without its frame
   }
   await db.update(V).set({ videoKey: key, videoRatio: ratio, updatedAt: new Date() }).where(eq(V.id, r.id));
-  if (r.videoKey && r.videoKey !== key) await deleteFiles([r.videoKey]).catch(() => {});
+  if (r.videoKey && r.videoKey !== key) await deleteFiles(loopFiles(r.videoKey)).catch(() => {});
   return { video: key ? fileUrl(key) : null, ratio };
 }
 
 const VIDEO_TYPE = (t: string) => /^video\/(mp4|webm|quicktime)$/.test(t);
 /** The video a link leads to: the file itself, or the one a share page hands out as og:video (Screen Studio does;
- *  a page that only offers a player, not a file, gives null) */
-export async function videoFromLink(link: string): Promise<Buffer | null> {
+ *  a page that only offers a player, not a file, gives null). With it, the picture that page shows of the video
+ *  (og:image), when there is one: the frame for the card of a shared link */
+export async function videoFromLink(link: string): Promise<{ video: Buffer; frame: Buffer | null } | null> {
   const url = link.trim();
   if (!/^https?:\/\//i.test(url)) return null;
   const direct = await fetchFile(url, undefined, VIDEO_TYPE, VAULT_VIDEO_MAX).catch(() => null);
-  if (direct) return direct.body;
+  if (direct) return { video: direct.body, frame: null };
   const page = await safeFetch(new URL(url), { headers: { "User-Agent": "Mozilla/5.0", Accept: "text/html" }, signal: AbortSignal.timeout(15_000) }).catch(() => null);
   if (!page?.ok) return null;
   const html = (await page.text()).slice(0, 600_000);
   const found = [...html.matchAll(/<meta[^>]+(?:property|name)="og:video(?::secure_url|:url)?"[^>]+content="([^"]+)"/gi)].map((m) => m[1].replace(/&amp;/g, "&"));
   for (const src of found) {
     const f = await fetchFile(src, url, VIDEO_TYPE, VAULT_VIDEO_MAX).catch(() => null);
-    if (f) return f.body;
+    if (!f) continue;
+    const shown = html.match(/<meta[^>]+(?:property|name)="og:image(?::secure_url|:url)?"[^>]+content="([^"]+)"/i)?.[1].replace(/&amp;/g, "&");
+    const frame = shown ? await fetchFile(shown, url, (t) => /^image\/(png|webp|jpeg)$/.test(t), VAULT_IMAGE_MAX).catch(() => null) : null;
+    return { video: f.body, frame: frame?.body ?? null };
   }
   return null;
 }
@@ -249,7 +262,7 @@ export async function removeVault(ref: string): Promise<{ title: string }> {
   const r = await rowOf(ref);
   if (!r) throw new HttpError(404, `No Vault entry "${ref}".`);
   await db.delete(V).where(eq(V.id, r.id));
-  const files = [r.imageKey, r.videoKey].filter((k): k is string => !!k);
+  const files = [r.imageKey, ...loopFiles(r.videoKey)].filter((k): k is string => !!k);
   if (files.length) await deleteFiles(files).catch(() => {});
   return { title: r.title };
 }

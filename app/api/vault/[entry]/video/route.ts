@@ -27,15 +27,18 @@ export async function POST(req: Request, ctx: RouteContext<"/api/vault/[entry]/v
   try {
     const entry = (await ctx.params).entry;
     let body: Buffer | null;
+    let frame: Buffer | null = null;
     if ((req.headers.get("content-type") ?? "").startsWith("application/json")) {
       const { url } = (await req.json()) as { url?: string };
-      body = await videoFromLink(String(url ?? ""));
+      const got = await videoFromLink(String(url ?? ""));
+      body = got?.video ?? null;
+      frame = got?.frame ?? null;
       if (!body) throw new HttpError(422, "No video could be read from that link. It has to be a video file, or a share page that hands its video out (Screen Studio does).");
     } else {
       if (Number(req.headers.get("content-length") ?? 0) > VAULT_IMAGE_MAX) throw new HttpError(413, "The file is too large to send from here: pass a link to it instead.");
       body = Buffer.from(await req.arrayBuffer());
     }
-    return NextResponse.json(await setVaultVideo(entry, body));
+    return NextResponse.json(await setVaultVideo(entry, body, frame));
   } catch (e) { return fail(e); }
 }
 

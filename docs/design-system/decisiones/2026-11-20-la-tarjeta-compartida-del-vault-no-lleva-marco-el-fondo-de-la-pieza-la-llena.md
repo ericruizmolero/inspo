@@ -1,7 +1,7 @@
 ---
 title: La tarjeta compartida de una pieza del Vault no lleva marco, el fondo de la pieza la llena
 date: 2026-11-20
-status: vigente
+status: sustituida
 kind: diseño
 ---
 
