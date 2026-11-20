@@ -1,5 +1,6 @@
 // The waitlist home (WaitlistPage.astro): the menu key, the video's sound, the email form and Tino, who watches the
 // video with his back to us and turns to face whoever is writing their email.
+import { WAITLIST_URL, signupOpen } from "./signup-mode";
 
 const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const byId = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -38,8 +39,10 @@ onScroll();
   addEventListener("resize", () => { if (open) size(); });
 }
 
-// "Join the waitlist" in the menu goes to the form, which is already on screen
+// "Join the waitlist" in the menu goes to the form, which is already on screen. With signup open it is "Start free",
+// a plain link to the sign-in
 document.querySelectorAll<HTMLAnchorElement>('a[href="#mail"]').forEach((a) => a.addEventListener("click", (e) => {
+  if (signupOpen()) return;
   e.preventDefault();
   byId("mail").focus();
 }));
@@ -157,10 +160,8 @@ const tino = (() => {
   film.addEventListener("ended", () => { film.controls = false; screen.classList.remove("playing"); film.load(); play.focus(); });
 }
 
-// ── the email: checked here; the key sinks with its segment bar while it sends ──
+// ── the email: checked here; the key sinks with its segment bar while it sends to the app's /api/waitlist ──
 {
-  // The product's POST /api/waitlist (inspo#119) goes here once it exists; until then the form leads to the sign-in
-  const WAITLIST_URL = "";
   const form = byId<HTMLFormElement>("invite"), text = form.dataset;
   const mail = byId<HTMLInputElement>("mail"), note = byId("note");
   const box = form.querySelector<HTMLInputElement>('input[type="checkbox"]')!, honeypot = form.querySelector<HTMLInputElement>(".hp")!;
@@ -171,7 +172,6 @@ const tino = (() => {
     e.preventDefault();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(mail.value.trim())) { note.textContent = text.bad ?? ""; tino.react("skeptic"); mail.focus(); return; }
     if (!box.checked) { note.textContent = text.consent ?? ""; box.focus(); return; }
-    if (!WAITLIST_URL) { note.textContent = text.toLogin ?? ""; location.href = text.login ?? "/"; return; }
     button.classList.add("is-loading");
     button.disabled = true;
     note.textContent = "";
@@ -185,7 +185,7 @@ const tino = (() => {
     fetch(WAITLIST_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: mail.value.trim(), consent: true, locale: text.locale, source: "landing", website: honeypot.value }),
+      body: JSON.stringify({ email: mail.value.trim(), consent: true, locale: text.locale, website: honeypot.value }),
     }).then((r) => end(r.ok), () => end(false));
   });
 }

@@ -126,7 +126,6 @@ export const copy = {
       note: {
         bad: "That email is missing something.",
         consent: "Tick the box so we can email you.",
-        login: "Taking you to the Criterio sign-in.",
         ok: "You’re on the list. We’ll write when it’s your turn.",
         fail: "Couldn’t sign you up. Try again.",
       },
@@ -235,7 +234,6 @@ export const copy = {
       note: {
         bad: "A ese correo le falta algo.",
         consent: "Marca la casilla para que podamos escribirte.",
-        login: "Te llevamos al acceso de Criterio.",
         ok: "Ya estás en la lista. Te escribimos cuando te toque.",
         fail: "No se pudo apuntar. Prueba otra vez.",
       },

@@ -2,7 +2,7 @@
 // The home page while we gather the waitlist: the landing's hero alone. The nav, headline, subheadline and form stay
 // where the landing has them; under them, in place of the river of references, the Criterio video plays, and Tino
 // watches it from its corner. The full landing waits at /landing/ (src/pages/landing/index.astro).
-import { APP_URL, PAGES, copy, type Locale } from "../i18n";
+import { PAGES, copy, type Locale } from "../i18n";
 
 interface Props { locale: Locale }
 const { locale } = Astro.props;
@@ -52,7 +52,7 @@ const work = (["extension", "skills", "resources"] as const).map((key) => ({ lab
       <nav aria-label={w.menu.project}><small>{w.menu.project}</small>{w.project.map((p, i) => <a class={i === 0 ? "big" : undefined} href={p.href}>{p.label}</a>)}</nav>
       <div class="menu-foot">
         <div><small>{w.menu.work}</small><p>{work.map((p) => <a href={p.href}>{p.label}</a>)}</p></div>
-        <div class="menu-cta"><a class="btn btn-sm nav-cta" href="#mail">{w.join}</a><a class="btn btn-sm btn-paper" href={t.login.href}>{t.login.label}</a></div>
+        <div class="menu-cta"><a class="btn btn-sm nav-cta" href="#mail" data-open-href={t.login.href} data-open-label={t.pricing.start}>{w.join}</a><a class="btn btn-sm btn-paper" href={t.login.href}>{t.login.label}</a></div>
       </div>
     </div>
   </div></div>
@@ -62,11 +62,12 @@ const work = (["extension", "skills", "resources"] as const).map((key) => ({ lab
   <div class="copy">
     <h1>{w.headline.map((line) => <span class="l">{line}</span>)}</h1>
     <p class="hero-sub">{w.sub}</p>
-    <form class="invite" id="invite" novalidate data-locale={locale} data-login={`${APP_URL}/login`} data-bad={w.note.bad} data-consent={w.note.consent} data-to-login={w.note.login} data-ok={w.note.ok} data-fail={w.note.fail}>
+    <form class="invite" id="invite" novalidate data-locale={locale} data-bad={w.note.bad} data-consent={w.note.consent} data-ok={w.note.ok} data-fail={w.note.fail}>
       <label class="sr" for="mail">{w.email}</label>
       <div class="invite-row"><input id="mail" type="email" name="email" autocomplete="email" placeholder={w.placeholder} required aria-describedby="note"><button class="btn" type="submit"><span class="btn-label">{w.join}</span><span class="seg" aria-hidden="true"></span></button></div>
       <p class="form-note" id="note" role="status"></p>
       <label class="consent"><input type="checkbox" required><span>{w.consent} <a href={PAGES.privacy.path[locale]}>{PAGES.privacy.nav[locale]}</a></span></label><input class="hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+      <a class="btn start-free" href={t.login.href}>{t.pricing.start}</a>
     </form>
   </div>
 
@@ -187,6 +188,10 @@ html.scrolled .navblur { opacity: 1; }
 .consent input { flex: none; width: 17px; height: 17px; margin: 0; accent-color: var(--ember); } .consent a { color: inherit; }
 .form-note { order: 2; margin: 6px 0 0; font-size: 12.5px; line-height: 18px; color: var(--text-2); } .form-note:empty { display: none; }
 .hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+/* signup open (scripts/signup-mode.ts): the form is only its "Start free" key, a link to the sign-in */
+.start-free { display: none; }
+.signup-open .invite > :not(.start-free) { display: none; }
+.signup-open .invite > .start-free { display: inline-flex; }
 
 /* the video in a framed screen: as big as the space left under the form allows, 16:9, never past the fold. It waits on its poster until you press the key */
 .stage { flex: 1 1 0; min-height: 0; width: 100%; margin-top: clamp(20px, 3.4svh, 36px); container-type: size; display: flex; align-items: flex-start; justify-content: center; }

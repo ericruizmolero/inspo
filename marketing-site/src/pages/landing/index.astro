@@ -1353,6 +1353,10 @@ html.pie-on .pie-clip .pie-tino { pointer-events: auto; }
 .consent input { flex: none; width: 15px; height: 15px; margin: 0; accent-color: var(--ember); } .consent a { color: inherit; }
 .pie-form .consent { color: #B8B1A3; } .copy .invite { align-items: center; justify-items: center; } .copy .consent { justify-content: center; }
 .hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+/* signup open (src/scripts/signup-mode.ts): each form is only its "Start free" key, a link to the sign-in */
+.start-free { display: none; }
+.signup-open .invite > :not(.start-free) { display: none; }
+.signup-open .invite > .start-free { display: inline-flex; justify-self: start; }
 .pie small a { color: inherit; }
 .copy .form-note { display: block; min-height: 18px; margin: 4px 0 0; font-size: 12.5px; line-height: 18px; }
 .copy .consent { margin-top: 2px; }
@@ -1526,7 +1530,7 @@ html.pie-on .nav { visibility: hidden; transition: opacity 0.2s, visibility 0s 0
         <nav aria-label="Project"><small>Project</small><a class="big" href="https://criterio-landing.vercel.app/manifiesto/">Manifesto</a><a href="https://criterio-landing.vercel.app/mascota/">The mascot</a><a href="https://criterio-landing.vercel.app/brandbook/">Brandbook</a><a href="https://criterio-landing.vercel.app/versiones/">Versions</a></nav>
       </div>
       <button class="menu-vid" id="menu-vid" type="button" aria-label="Watch the Criterio video, one minute with voiceover"><video muted loop playsinline preload="none" poster="/assets/video/poster.jpg" src="/assets/video/teaser.mp4" aria-hidden="true"></video><span><i aria-hidden="true"></i>Watch it in a minute</span></button>
-      <div class="menu-foot"><div><small>For your work</small><p><a href="https://criterio.design/extension/">Extension</a><a href="https://criterio.design/skills/">Skills</a><a href="https://criterio.design/resources/">Resources</a></p></div><div class="menu-cta"><a class="btn btn-sm nav-cta" href="#invitar">Join the waitlist</a><a class="btn btn-sm btn-paper nav-login" href="https://app.criterio.design/login">Log in</a></div></div>
+      <div class="menu-foot"><div><small>For your work</small><p><a href="https://criterio.design/extension/">Extension</a><a href="https://criterio.design/skills/">Skills</a><a href="https://criterio.design/resources/">Resources</a></p></div><div class="menu-cta"><a class="btn btn-sm nav-cta" href="#invitar" data-open-href="https://app.criterio.design/login" data-open-label="Start free">Join the waitlist</a><a class="btn btn-sm btn-paper nav-login" href="https://app.criterio.design/login">Log in</a></div></div>
     </div></div></div>
 </header>
 <dialog class="vid-dlg" id="vid-dlg" aria-label="Criterio video"><button type="button" class="btn btn-sm btn-paper" id="vid-close">Close</button><video controls playsinline preload="none" poster="/assets/video/poster.jpg" src="/assets/video/criterio.mp4"></video></dialog>
@@ -1542,6 +1546,7 @@ html.pie-on .nav { visibility: hidden; transition: opacity 0.2s, visibility 0s 0
       <div class="invite-row"><input id="mail" type="email" name="email" autocomplete="email" placeholder="you@email.com" required aria-describedby="note"><button class="btn btn-sm" type="submit"><span class="btn-label">Join the waitlist</span><span class="seg" aria-hidden="true"></span></button></div>
       <p class="form-note" id="note" role="status"></p>
       <label class="consent"><input type="checkbox" id="ok-hero" required><span>I agree to receive email from Criterio. <a href="https://criterio.design/privacy/">Privacy</a></span></label><input class="hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+      <a class="btn btn-sm start-free" href="https://app.criterio.design/login">Start free</a>
     </form>
   </div>
   
@@ -1664,6 +1669,7 @@ html.pie-on .nav { visibility: hidden; transition: opacity 0.2s, visibility 0s 0
         <div class="invite-row"><input id="mail-pie" type="email" name="email" autocomplete="email" placeholder="you@email.com" required aria-describedby="note-pie"><button class="btn btn-sm" type="submit"><span class="btn-label">Join the waitlist</span><span class="seg" aria-hidden="true"></span></button></div>
         <p class="form-note" id="note-pie" role="status"></p>
         <label class="consent"><input type="checkbox" id="ok-pie" required><span>I agree to receive email from Criterio. <a href="https://criterio.design/privacy/">Privacy</a></span></label><input class="hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <a class="btn btn-sm start-free" href="https://app.criterio.design/login">Start free</a>
       </form>
       
       <small>© 2026 criterio.design · <a href="https://criterio.design/privacy/">Privacy</a> · <a href="https://criterio.design/terms/">Terms</a></small>
@@ -1679,6 +1685,7 @@ html.pie-on .nav { visibility: hidden; transition: opacity 0.2s, visibility 0s 0
 <!-- el motor de Tino de la app (inspo, components/tino/engine.js, 22-10): las caras nuevas, ojos en el visor, guiño y la cabeza que sigue al puntero -->
 <script is:inline type="module">import { create, POSES } from "/assets/mascota/tino-app/engine.js"; POSES.dormida = { ear: [50, 29], open: 0.02, move: { track: 0, osc: [["ear", 2, 2.5, 0.22]] } }; window.Peluche = { create }; dispatchEvent(new Event("tino-engine"));</script>
 <script>
+import { WAITLIST_URL } from "../../scripts/signup-mode";
 const $ = (s) => document.querySelector(s);
 const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const cl = (v) => Math.max(0, Math.min(1, v)), seg = (p, a, b) => cl((p - a) / (b - a)), mix = (a, b, t) => a + (b - a) * t;
@@ -2613,9 +2620,8 @@ tinoBox.addEventListener("pointerenter", (e) => {
 });
 tinoBox.addEventListener("pointermove", (e) => T && T.stroke(e.clientX, e.clientY));
 
-// ── el correo (la cabecera y el visor de Tino): se valida aquí y la tecla se hunde con la barra de segmentos (aún sin conectar a ningún sitio) ──
+// ── el correo (la cabecera y el visor de Tino): se valida aquí y la tecla se hunde con la barra de segmentos mientras va a /api/waitlist de la app ──
 const note = $("#note");
-const WAITLIST_URL = "", LOGIN_URL = "https://app.criterio.design/login";   // WAITLIST_URL: el POST /api/waitlist del producto (inspo#119), en cuanto exista
 document.querySelectorAll("form.invite").forEach((form) => form.addEventListener("submit", (e) => {
   e.preventDefault();
   const mail = form.querySelector("input"), note = form.querySelector(".form-note"), btn = form.querySelector(".btn"), msg = form.querySelector(".msg2"), inHero = form.id === "invite";
@@ -2623,10 +2629,9 @@ document.querySelectorAll("form.invite").forEach((form) => form.addEventListener
   const flash = (cls, text) => { if (!msg) return; msg.textContent = text; form.classList.remove("is-ok", "is-bad"); void form.offsetWidth; form.classList.add(cls); setTimeout(() => form.classList.remove(cls), 2600); };
   if (!ok) { note.textContent = "That email is missing something."; flash("is-bad", "HMM… SOMETHING’S MISSING"); mail.focus(); if (inHero) { tino("skeptic"); reactUntil = performance.now() + 2600; setTimeout(() => { if (performance.now() >= reactUntil) { sayText = ""; speak(""); tino("watching"); } }, 2650); } return; }
   const box = form.querySelector('input[type="checkbox"]'); if (box && !box.checked) { note.textContent = "Tick the box so we can email you."; box.focus(); return; }
-  if (!WAITLIST_URL) { note.textContent = "Taking you to the Criterio sign-in."; location.href = LOGIN_URL; return; }
   btn.classList.add("is-loading"); btn.disabled = true; note.textContent = "";
   const end = (good) => { btn.classList.remove("is-loading"); btn.disabled = false; note.textContent = good ? "You’re on the list. We’ll write when it’s your turn." : "Couldn’t sign you up. Try again."; if (good) { mail.value = ""; if (box) box.checked = false; } flash(good ? "is-ok" : "is-bad", good ? "YOU’RE IN!" : "HMM… TRY AGAIN"); if (inHero) { tino(good ? "admirer" : "skeptic"); reactUntil = performance.now() + 2600; setTimeout(() => { if (performance.now() >= reactUntil) { sayText = ""; speak(""); } }, 2650); } };
-  fetch(WAITLIST_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: mail.value.trim(), consent: true, locale: "en", source: "landing", website: form.querySelector(".hp").value }) }).then((r) => end(r.ok)).catch(() => end(false));
+  fetch(WAITLIST_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: mail.value.trim(), consent: true, locale: "en", website: form.querySelector(".hp").value }) }).then((r) => end(r.ok)).catch(() => end(false));
 }));
 
 const remeasure = () => { measure(); last = -1; if (!booting) frame(); else placeTino(tx, M.H - 10 - M.tw); };
