@@ -6,7 +6,7 @@ loadEnv({ path: ".env.local" }); loadEnv();
 import assert from "node:assert/strict";
 import { eq } from "drizzle-orm";
 import { db, schema } from "../lib/db";
-import { setAccountPlan } from "../lib/workspace-core";
+import { changePlan } from "../lib/plan-change";
 import { memberLimit, overCapacity, memberRank, assertQuota, countPendingInvitations } from "../lib/quota";
 
 const id = () => crypto.randomUUID().replace(/-/g, "").slice(0, 24);
@@ -68,7 +68,7 @@ async function main() {
   // 4. Downgrading leaves the team over the limit
   for (let i = 1; i <= 4; i++) await addMember(await addUser(i), new Date(+now + i));
   assert.equal(await overCapacity(orgId, "studio"), null, "5 people fit in Studio");
-  await setAccountPlan(orgId, "free");
+  await changePlan({ accountId: orgId, plan: "free", cause: "partner", appUrl: "http://localhost:3000" });
   const over = await overCapacity(orgId, "free");
   assert.deepEqual(over, { members: 5, limit: 2, plan: "free" }, "5 people don't fit in Free");
   await assertQuota({ id: orgId, plan: "free", billingAccountId: orgId }, "ai");

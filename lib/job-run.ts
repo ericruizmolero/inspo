@@ -7,9 +7,10 @@ import { embedItems } from "./embed";
 import { getOrCaptureShot } from "./screenshot";
 import { QueueFull } from "./browser";
 import { openWorkspacesWithJobs, PER_WORKSPACE, runTagJob } from "./tag-jobs";
-import { sendDigests } from "./notify";
+import { baseUrl, sendDigests } from "./notify";
 import { sendNudges } from "./first-use-mail";
 import { sendInvitationReminders } from "./team-mail";
+import { settleGifts } from "./plan-change";
 import { recordFailure } from "./log";
 import { enqueue, enqueueEmbed, scheduleSweep, EMBED_BATCH, type Job } from "./jobs";
 
@@ -50,12 +51,14 @@ const HANDLERS: Handlers = {
     if (!res.ok) throw new RetryLater(60);
   },
   // Each runs even if another fails. Delivered again, nobody gets one twice: a digest moves its marker as it goes,
-  // and the nudge and the invitation's last day go once per person and per invitation (lib/mail-once.ts)
+  // and the nudge, the invitation's last day and a gift's warning go once per person, invitation or key
+  // (lib/mail-once.ts), and an ended gift has no end date left
   async mail() {
     const digests = await sendDigests().catch((err) => { void recordFailure("job", "digest", err); return null; });
     const nudges = await sendNudges().catch((err) => { void recordFailure("job", "nudge", err); return null; });
     const endings = await sendInvitationReminders().catch((err) => { void recordFailure("job", "invitation ending", err); return null; });
-    if (!digests || !nudges || !endings) throw new RetryLater(15 * 60);
+    const gifts = await settleGifts(baseUrl()).catch((err) => { void recordFailure("job", "gifts", err); return null; });
+    if (!digests || !nudges || !endings || !gifts) throw new RetryLater(15 * 60);
   },
 };
 

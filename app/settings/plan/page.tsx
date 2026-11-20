@@ -12,6 +12,7 @@ import { fmtGb } from "@/lib/room";
 import { getT, fmtDate, type Dict } from "@/lib/i18n";
 import { FieldRow, Progress, SettingsWindow } from "@/components/criterio";
 import { planAsk } from "@/lib/plan-requests";
+import { fmtGiftDay } from "@/lib/i18n/format";
 import PlanChoice from "../_components/PlanChoice";
 
 
@@ -77,7 +78,8 @@ export default async function PlanPage() {
       <SettingsHeading title={t.settings.sections.plan} lead={t.settings.leads.plan} />
 
       <div className="page__body">
-        <PlanChoice current={q.plan} owner={ask.owner} payer={ask.payer} pending={ask.pending} />
+        <PlanChoice current={q.plan} owner={ask.owner} payer={ask.payer} pending={ask.pending}
+          giftUntil={ask.until && fmtGiftDay(ask.until, locale)} />
 
         <SettingsWindow title={t.plans.usageTitle}
           description={q.workspaces.used > 1 ? <>{t.plans.resets(planName, resets)}. {t.plans.aiShared(q.workspaces.used)}</> : t.plans.resets(planName, resets)}

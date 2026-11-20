@@ -14,8 +14,10 @@ import { Button, Icon, SegmentedControl, SettingsWindow } from "@/components/cri
  * Settings, Plan: the four plans side by side, the account's marked. Its owner asks for any plan above, monthly or
  * yearly; anyone else is told who pays. There is no payment on the site: a partner switches it on (/admin/plans).
  */
-export default function PlanChoice({ current, owner, payer, pending }: {
+export default function PlanChoice({ current, owner, payer, pending, giftUntil }: {
   current: PlanKey;
+  /** A gifted plan's last day, written out; null for a plan with no end */
+  giftUntil: string | null;
   /** The person signed in pays for this plan: only they can ask for another */
   owner: boolean;
   /** Who pays, for everyone else: a name or an email */
@@ -43,8 +45,11 @@ export default function PlanChoice({ current, owner, payer, pending }: {
     : pending ? <span role="status">{p.requested(p.items[pending.plan].name, p.periodWord[pending.period])}</span>
     : p.foot;
 
+  const gift = giftUntil ? t.gift.ends(p.items[current].name, giftUntil) : null;
+  const whoPays = !owner && payer ? p.askOwner(payer) : null;
+
   return (
-    <SettingsWindow title={p.plansTitle} description={!owner && payer ? p.askOwner(payer) : undefined} note={note}
+    <SettingsWindow title={p.plansTitle} description={gift || whoPays ? [gift, whoPays].filter(Boolean).join(" ") : undefined} note={note}
       actions={owner && rank < PLANS.length - 1 ? (
         <SegmentedControl tone="paper" size="s" choice label={p.pay} active={PLAN_PERIODS.indexOf(period)}
           onChange={(i) => setPeriod(PLAN_PERIODS[i])} items={PLAN_PERIODS.map((k) => ({ label: p.periods[k] }))} />

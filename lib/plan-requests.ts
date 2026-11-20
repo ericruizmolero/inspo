@@ -3,13 +3,13 @@
 // (app/actions/plans-admin.ts). One open request per account: asking again replaces it.
 import "server-only";
 import { and, asc, eq, inArray } from "drizzle-orm";
-import { db, schema } from "./db";
+import { db, schema, type Exec } from "./db";
 import type { PlanPeriod } from "./db/schema";
 import { planOf, plansAbove, type PlanKey } from "./plans";
-import { accountWorkspaces, HttpError, newId, setAccountPlan } from "./workspace-core";
+import { accountWorkspaces, HttpError, newId } from "./workspace-core";
 import { listAdmins } from "./activity";
-import { localeForEmail, planOnMail, planRequestedMail, planRequestMail, sendMail, type Mail } from "./mail";
-import { notifyOverCapacity } from "./quota";
+import { localeForEmail, planRequestedMail, planRequestMail } from "./mail";
+import { changePlan, tell } from "./plan-change";
 import { fmtPrice } from "./i18n/format";
 import { getT } from "./i18n";
 import { log } from "./log";
@@ -25,21 +25,18 @@ export async function openRequestOf(accountId: string): Promise<PendingPlan | nu
   return r ? { ...r, createdAt: r.createdAt.toISOString() } : null;
 }
 
-/** What Settings, Plan needs to offer a plan: whether this person pays, who does if not, and what is already asked */
-export async function planAsk(accountId: string, userId: string): Promise<{ owner: boolean; payer: string | null; pending: PendingPlan | null }> {
+/**
+ * What Settings, Plan needs to offer a plan: whether this person pays, who does if not, what is already asked, and
+ * the last day of a gifted plan (null for a plan with no end)
+ */
+export async function planAsk(accountId: string, userId: string): Promise<{ owner: boolean; payer: string | null; pending: PendingPlan | null; until: Date | null }> {
   const [[a], pending] = await Promise.all([
-    db.select({ ownerUserId: B.ownerUserId, name: schema.user.name, email: schema.user.email }).from(B)
+    db.select({ ownerUserId: B.ownerUserId, planUntil: B.planUntil, name: schema.user.name, email: schema.user.email }).from(B)
       .leftJoin(schema.user, eq(schema.user.id, B.ownerUserId)).where(eq(B.id, accountId)).limit(1),
     openRequestOf(accountId),
   ]);
   const payer = a?.name && a.email ? `${a.name} (${a.email})` : a?.email ?? null;
-  return { owner: a?.ownerUserId === userId, payer, pending };
-}
-
-/** A mail that must not undo what was already written: a failure is logged, never thrown */
-async function tell(to: string[], m: Mail, what: string): Promise<void> {
-  if (!to.length) return;
-  try { await sendMail(to, m); } catch (err) { log.warn(`plans.${what}_not_mailed`, { err }); }
+  return { owner: a?.ownerUserId === userId, payer, pending, until: a?.planUntil ?? null };
 }
 
 /**
@@ -100,33 +97,22 @@ export async function listOpenPlanRequests(): Promise<OpenPlanRequest[]> {
 export type PlanDecision = "done" | "declined";
 
 /**
- * A partner answers an open request. "done" sets the account's plan in the same transaction that closes the request,
- * so a second click finds nothing open; then whoever asked is emailed, and on a plan with fewer seats than before
- * each workspace left over its seats is told (notifyOverCapacity). "declined" only closes it.
+ * A partner answers an open request. "done" sets the account's plan through changePlan (lib/plan-change.ts), which
+ * mails the owner and, if the account moved above it since, tells the teams left over their seats; the request is
+ * closed in the same transaction, so a second click finds nothing open. "declined" only closes it.
  */
 export async function decidePlanRequest(id: string, decision: PlanDecision, by: string, appUrl: string): Promise<{ accountName: string; plan: PlanKey }> {
   const { t } = await getT();
-  const closed = await db.transaction(async (tx) => {
-    const [row] = await tx.update(R).set({ status: decision, decidedAt: new Date(), decidedBy: by })
-      .where(and(eq(R.id, id), eq(R.status, "open")))
-      .returning({ accountId: R.billingAccountId, plan: R.plan, requestedBy: R.requestedBy });
-    if (!row) throw new HttpError(409, t.admin.plans.gone);
-    const [a] = await tx.select({ name: B.name, plan: B.plan }).from(B).where(eq(B.id, row.accountId)).for("update");
-    if (decision === "done") await setAccountPlan(row.accountId, row.plan, tx);
-    return { ...row, accountName: a.name, before: planOf(a.plan) };
-  });
-
-  if (decision === "done") {
-    const after = planOf(closed.plan);
-    // A request is for a plan above, but the account may have moved since: then this is a downgrade
-    if (after.price.month < closed.before.price.month) {
-      for (const w of await accountWorkspaces(closed.accountId)) await notifyOverCapacity(w.id, after.key, w.name, appUrl);
-    }
-    const [who] = closed.requestedBy
-      ? await db.select({ email: schema.user.email }).from(schema.user).where(eq(schema.user.id, closed.requestedBy))
-      : [];
-    if (who) await tell([who.email], planOnMail(after.key, closed.accountName, `${appUrl}/settings/plan`, await localeForEmail(who.email)), "on");
-  }
-  log.info("plans.decided", { billingAccountId: closed.accountId, plan: closed.plan, decision, by });
-  return { accountName: closed.accountName, plan: closed.plan };
+  const [open] = await db.select({ accountId: R.billingAccountId, plan: R.plan, accountName: B.name }).from(R)
+    .innerJoin(B, eq(B.id, R.billingAccountId)).where(and(eq(R.id, id), eq(R.status, "open")));
+  if (!open) throw new HttpError(409, t.admin.plans.gone);
+  const close = async (tx: Exec) => {
+    const closed = await tx.update(R).set({ status: decision, decidedAt: new Date(), decidedBy: by })
+      .where(and(eq(R.id, id), eq(R.status, "open"))).returning({ id: R.id });
+    if (!closed.length) throw new HttpError(409, t.admin.plans.gone);
+  };
+  if (decision === "done") await changePlan({ accountId: open.accountId, plan: open.plan, cause: "partner", appUrl, alongside: close });
+  else await db.transaction(close);
+  log.info("plans.decided", { billingAccountId: open.accountId, plan: open.plan, decision, by });
+  return { accountName: open.accountName, plan: open.plan };
 }

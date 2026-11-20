@@ -297,9 +297,11 @@ export const auth = betterAuth({
           try { (await import("./first-use-mail")).welcomeLater(u); } catch (err) { log.warn("welcome.not_queued", { err }); }
           const inviteId = (u as { accessInviteId?: string | null }).accessInviteId;
           if (!inviteId) return;
-          const [invite] = await db.select({ plan: schema.accessInvite.grantsPlan }).from(schema.accessInvite).where(eq(schema.accessInvite.id, inviteId));
-          // The personal space is made now, on the invite's plan, instead of on the first page load
-          if (invite?.plan) await ensurePersonalWorkspace(u.id, u.name, u.email, (u as { language?: string }).language, invite.plan);
+          const [invite] = await db.select({ plan: schema.accessInvite.grantsPlan, until: schema.accessInvite.grantsUntil })
+            .from(schema.accessInvite).where(eq(schema.accessInvite.id, inviteId));
+          // The personal space is made now, on the invite's plan, instead of on the first page load. A gift with an
+          // end date keeps it on the account, and the morning job ends it (lib/plan-change.ts)
+          if (invite?.plan) await ensurePersonalWorkspace(u.id, u.name, u.email, (u as { language?: string }).language, invite.plan, invite.until);
         },
       },
     },

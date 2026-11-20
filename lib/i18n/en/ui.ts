@@ -2719,4 +2719,19 @@ export const ui = {
       download: "Download",
     },
   },
+  // ─── The plan's lifecycle and deleting an account (lib/plan-change.ts, lib/account-delete.ts) ──────────────
+  gift: {
+    ends: (plan: string, date: string): string => `${plan} is a gift until ${date}. Then the account goes back to Free; nothing is deleted.`,
+  },
+  deleteAccount: {
+    title: "Delete account",
+    hint: "Your personal space and the teams only you are in go for good, with their references, projects and files. You leave the other teams. Download your personal space first to keep a copy.",
+    download: "Download my space",
+    action: "Delete account",
+    confirm: "Delete your account?",
+    confirmHint: "This cannot be undone. We send one last email to this address to say it is done.",
+    confirmAction: "Delete my account",
+    failed: "Could not delete the account",
+    blocked: (teams: string): string => `You own ${teams}, with other people in it. Delete it or hand it over in Workspace first.`,
+  },
 };

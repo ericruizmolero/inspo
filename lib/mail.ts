@@ -11,6 +11,7 @@ import { eq } from "drizzle-orm";
 import { db, schema } from "./db";
 import { recordFailure } from "./log";
 import { toLocale, INTL_LOCALE, DEFAULT_LOCALE, type Locale } from "./i18n/locale";
+import { fmtGiftDay } from "./i18n/format";
 import en from "./i18n/en";
 import es from "./i18n/es";
 import { DEFAULT_PLAN, type PlanKey } from "./plans";
@@ -275,4 +276,33 @@ export function nudgeMail(step: StepKey, at: NudgeAt, stopUrl: string, locale: L
 export function pausedMail(url: string, locale: Locale): Mail {
   const t = mailDict(locale);
   return { subject: t.paused.subject, text: signed(locale, t.paused.text(url)) };
+}
+
+// ─── The plan's lifecycle (lib/plan-change.ts) and deleting an account (lib/account-delete.ts) ───────────────
+
+/** What a smaller plan means; the Vault line only when the move locks the paid pieces */
+const downWhat = (to: PlanKey, vaultLocks: boolean, locale: Locale) => mailDict(locale).planDown.what(DICTS[locale].plans.items[to].name, vaultLocks);
+
+/** To the account's owner: a partner moved it to a smaller plan */
+export function planDownMail(to: PlanKey, vaultLocks: boolean, account: string, url: string, locale: Locale): Mail {
+  const t = mailDict(locale).planDown, name = DICTS[locale].plans.items[to].name;
+  return { subject: t.subject(name), text: signed(locale, t.text(name, account, downWhat(to, vaultLocks, locale), url)) };
+}
+
+/** To the account's owner, a week ahead: the gifted plan ends on `until` */
+export function giftEndsMail(plan: PlanKey, until: Date, account: string, url: string, locale: Locale): Mail {
+  const t = mailDict(locale).giftEnds, day = fmtGiftDay(until, locale);
+  return { subject: t.subject(day), text: signed(locale, t.text(DICTS[locale].plans.items[plan].name, account, day, downWhat(DEFAULT_PLAN, true, locale), url)) };
+}
+
+/** To the account's owner: the gifted plan ran out and the account is back on the free plan */
+export function giftEndedMail(plan: PlanKey, vaultLocks: boolean, account: string, url: string, locale: Locale): Mail {
+  const t = mailDict(locale).giftEnded;
+  return { subject: t.subject, text: signed(locale, t.text(DICTS[locale].plans.items[plan].name, account, downWhat(DEFAULT_PLAN, vaultLocks, locale), url)) };
+}
+
+/** The last email to a person: their account is gone */
+export function accountDeletedMail(email: string, locale: Locale): Mail {
+  const t = mailDict(locale).accountDeleted;
+  return { subject: t.subject, text: signed(locale, t.text(email)) };
 }

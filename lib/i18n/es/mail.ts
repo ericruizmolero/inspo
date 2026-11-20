@@ -184,4 +184,32 @@ export const mail: typeof EnMail = {
     subject: "Hemos parado los resúmenes de tus equipos",
     text: (url: string): string => `Llevas un mes sin abrir criterio.design, así que hemos dejado de mandarte el resumen diario de tus equipos. Vuelve a activarlo aquí:\n${url}`,
   },
+
+  // ─── El ciclo del plan (lib/plan-change.ts) y borrar una cuenta (lib/account-delete.ts) ────────────────────
+  planDown: {
+    subject: (plan: string): string => `Tu plan ahora es ${plan}`,
+    text: (plan: string, account: string, what: string, url: string): string =>
+      `${account} está en el plan ${plan} desde hoy.\n\n${what}\n\nLos planes y lo que incluye cada uno:\n${url}`,
+    what: (plan: string, vaultLocks: boolean): string =>
+      `No se borra nada: tus referencias, proyectos, archivos y personas siguen donde están. Lo que pasa de los límites del plan ${plan} se queda, pero no se puede añadir más hasta que haya sitio o subas de plan.` +
+      (vaultLocks ? " Las piezas del Vault de los planes de pago vuelven a cerrarse." : ""),
+  },
+
+  giftEnds: {
+    subject: (date: string): string => `Tu regalo termina el ${date}`,
+    text: (plan: string, account: string, date: string, what: string, url: string): string =>
+      `El plan ${plan} que regalamos a ${account} termina el ${date}. Después la cuenta vuelve a Gratis.\n\n${what}\n\nPara seguir en ${plan}, pídelo aquí y lo activamos antes de que acabe el regalo:\n${url}`,
+  },
+
+  giftEnded: {
+    subject: "De vuelta en Gratis",
+    text: (plan: string, account: string, what: string, url: string): string =>
+      `El plan ${plan} que regalamos a ${account} ha terminado, y la cuenta vuelve a estar en Gratis.\n\n${what}\n\nPara volver a ${plan}, pídelo aquí:\n${url}`,
+  },
+
+  accountDeleted: {
+    subject: "Tu cuenta está borrada",
+    text: (email: string): string =>
+      `Hemos borrado tu cuenta de criterio.design (${email}): tu espacio personal, los equipos en los que solo estabas tú y tu sitio en los demás.\n\nSi no has sido tú quien lo ha pedido, responde a este correo cuanto antes.`,
+  },
 };

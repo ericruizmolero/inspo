@@ -65,10 +65,13 @@ export const newId = () => crypto.randomUUID().replace(/-/g, "").slice(0, 24);
 
 export interface BillingAccount { id: string; name: string; plan: PlanKey; ownerUserId: string | null }
 
-/** A new billing account, for a workspace that is about to be created. Returns its id. */
-export async function createBillingAccount(a: { name: string; ownerUserId: string | null; plan?: PlanKey }, exec: Exec = db): Promise<string> {
+/**
+ * A new billing account, for a workspace that is about to be created. Returns its id. `planUntil` is a gifted plan's
+ * last day (lib/plan-change.ts ends it). Its plan changes afterwards only through changePlan (lib/plan-change.ts).
+ */
+export async function createBillingAccount(a: { name: string; ownerUserId: string | null; plan?: PlanKey; planUntil?: Date | null }, exec: Exec = db): Promise<string> {
   const id = newId();
-  await exec.insert(schema.billingAccount).values({ id, name: a.name, ownerUserId: a.ownerUserId, ...(a.plan ? { plan: a.plan } : {}) });
+  await exec.insert(schema.billingAccount).values({ id, name: a.name, ownerUserId: a.ownerUserId, ...(a.plan ? { plan: a.plan, planUntil: a.planUntil ?? null } : {}) });
   return id;
 }
 
@@ -79,16 +82,6 @@ export async function accountOf(organizationId: string): Promise<BillingAccount 
     .innerJoin(B, eq(B.id, schema.organization.billingAccountId))
     .where(eq(schema.organization.id, organizationId)).limit(1);
   return r ? { ...r, plan: planKey(r.plan) } : null;
-}
-
-/**
- * Changes an account's plan, and so the plan of every workspace in it.
- * Whoever downgrades must notify the owners of each workspace that ends up over its seats:
- * notifyOverCapacity() in lib/quota.ts.
- */
-export async function setAccountPlan(accountId: string, plan: PlanKey, exec: Exec = db): Promise<void> {
-  const res = await exec.update(schema.billingAccount).set({ plan }).where(eq(schema.billingAccount.id, accountId));
-  if (!res.rowCount) throw new Error("Billing account not found");
 }
 
 /** The workspaces an account pays for, oldest first, with how many people each has */
@@ -112,7 +105,7 @@ export function slugify(s: string): string {
 }
 
 /** Creates the user's personal workspace if they don't have one yet. Returns its id. */
-export async function ensurePersonalWorkspace(userId: string, name: string, email: string, language?: string, plan?: PlanKey): Promise<string> {
+export async function ensurePersonalWorkspace(userId: string, name: string, email: string, language?: string, plan?: PlanKey, planUntil?: Date | null): Promise<string> {
   const rows = await db
     .select({ id: schema.organization.id })
     .from(schema.member)
@@ -125,7 +118,7 @@ export async function ensurePersonalWorkspace(userId: string, name: string, emai
   const now = new Date();
   const wsName = name || email.split("@")[0];
   await db.transaction(async (tx) => {
-    const billingAccountId = await createBillingAccount({ name: wsName, ownerUserId: userId, plan }, tx);
+    const billingAccountId = await createBillingAccount({ name: wsName, ownerUserId: userId, plan, planUntil }, tx);
     await tx.insert(schema.organization).values({
       id,
       name: wsName,

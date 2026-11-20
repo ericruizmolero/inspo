@@ -12,7 +12,8 @@ import assert from "node:assert/strict";
 import { promises as fs } from "fs";
 import { eq, inArray } from "drizzle-orm";
 import { db, schema } from "../lib/db";
-import { accountOf, createBillingAccount, dropEmptyAccount, setAccountPlan } from "../lib/workspace-core";
+import { accountOf, createBillingAccount, dropEmptyAccount } from "../lib/workspace-core";
+import { changePlan } from "../lib/plan-change";
 
 const BASE = process.env.BASE || "http://localhost:3000";
 const TAG = `flowcheck-${crypto.randomUUID().slice(0, 8)}`;
@@ -66,7 +67,7 @@ async function main() {
   assert.ok(orgId, `team was not created: ${JSON.stringify(created.body)}`);
   const accountId = (await accountOf(orgId))!.id;
   accounts.push(accountId);
-  await setAccountPlan(accountId, "studio");
+  await changePlan({ accountId, plan: "studio", cause: "partner", appUrl: BASE });
 
   // 1. Three people join: the team is at 4 of 5
   for (const who of ["one", "two", "three"]) {

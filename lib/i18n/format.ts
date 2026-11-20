@@ -10,6 +10,10 @@ export function fmtDate(v: DateLike, locale: Locale, opts: Intl.DateTimeFormatOp
   return asDate(v).toLocaleDateString(INTL_LOCALE[locale], opts);
 }
 
+/** A gifted plan's last day (billing_account.plan_until), on Settings, Plan and in its emails. In UTC: the day the
+ *  partner picked, wherever the reader is */
+export const fmtGiftDay = (until: Date, locale: Locale): string => fmtDate(until, locale, { day: "numeric", month: "long", timeZone: "UTC" });
+
 export function fmtDateTime(v: DateLike, locale: Locale, opts: Intl.DateTimeFormatOptions = { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }): string {
   return asDate(v).toLocaleString(INTL_LOCALE[locale], opts);
 }

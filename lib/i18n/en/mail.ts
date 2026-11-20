@@ -194,4 +194,33 @@ export const mail = {
     subject: "We have paused your team summaries",
     text: (url: string): string => `You have not opened criterio.design in a month, so we have stopped sending the daily summary of your teams. Turn it back on here:\n${url}`,
   },
+
+  // ─── The plan's lifecycle (lib/plan-change.ts) and deleting an account (lib/account-delete.ts) ─────────────
+  planDown: {
+    subject: (plan: string): string => `Your plan is now ${plan}`,
+    text: (plan: string, account: string, what: string, url: string): string =>
+      `${account} is on the ${plan} plan from today.\n\n${what}\n\nThe plans, and what each one includes:\n${url}`,
+    /** What a smaller plan means, the same in every email that announces one */
+    what: (plan: string, vaultLocks: boolean): string =>
+      `Nothing is deleted: your references, projects, files and people stay where they are. What goes past the ${plan} plan's limits stays, but adding more is refused until there is room or you move up a plan.` +
+      (vaultLocks ? " The Vault pieces of the paid plans lock again." : ""),
+  },
+
+  giftEnds: {
+    subject: (date: string): string => `Your gift ends on ${date}`,
+    text: (plan: string, account: string, date: string, what: string, url: string): string =>
+      `The ${plan} plan we gave ${account} ends on ${date}. Then the account goes back to Free.\n\n${what}\n\nTo stay on ${plan}, ask for it here and we will switch it on before the gift ends:\n${url}`,
+  },
+
+  giftEnded: {
+    subject: "Back on Free",
+    text: (plan: string, account: string, what: string, url: string): string =>
+      `The ${plan} plan we gave ${account} has ended, and the account is back on Free.\n\n${what}\n\nTo go back to ${plan}, ask for it here:\n${url}`,
+  },
+
+  accountDeleted: {
+    subject: "Your account is deleted",
+    text: (email: string): string =>
+      `We have deleted your criterio.design account (${email}): your personal space, the teams only you were in, and your place in the others.\n\nIf it was not you who asked for this, reply to this email at once.`,
+  },
 };

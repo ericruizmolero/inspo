@@ -2696,4 +2696,19 @@ export const ui: typeof EnUi = {
       download: "Descargar",
     },
   },
+  // ─── El ciclo del plan y borrar una cuenta (lib/plan-change.ts, lib/account-delete.ts) ─────────────────────
+  gift: {
+    ends: (plan: string, date: string): string => `${plan} es un regalo hasta el ${date}. Después la cuenta vuelve a Gratis; no se borra nada.`,
+  },
+  deleteAccount: {
+    title: "Borrar la cuenta",
+    hint: "Tu espacio personal y los equipos en los que solo estás tú se van para siempre, con sus referencias, proyectos y archivos. De los demás equipos sales. Descarga antes tu espacio personal para guardar una copia.",
+    download: "Descargar mi espacio",
+    action: "Borrar la cuenta",
+    confirm: "¿Borrar tu cuenta?",
+    confirmHint: "No se puede deshacer. Mandamos un último correo a esta dirección para decir que está hecho.",
+    confirmAction: "Borrar mi cuenta",
+    failed: "No se ha podido borrar la cuenta",
+    blocked: (teams: string): string => `Eres dueño de ${teams}, con más gente dentro. Bórralo o pásaselo a otra persona en Espacio antes.`,
+  },
 };
