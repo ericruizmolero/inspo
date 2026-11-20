@@ -14,7 +14,8 @@ const walk = (dir) => readdirSync(dir).flatMap((name) => {
   const p = join(dir, name);
   return statSync(p).isDirectory() ? walk(p) : [p];
 });
-const pages = walk(dist).filter((p) => p.endsWith(".html") && !p.endsWith("404.html"));
+// A document under assets/ is a piece a page frames (the Vault pieces and the built site in the home's demo), not a page
+const pages = walk(dist).filter((p) => p.endsWith(".html") && !p.endsWith("404.html") && !relative(dist, p).startsWith("assets/"));
 const addressOf = (file) => "/" + relative(dist, file).replace(/index\.html$/, "");
 
 /** An internal address (no host, or this site's) as a file in dist, or null when nothing there answers it */
