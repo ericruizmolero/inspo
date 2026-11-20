@@ -10,7 +10,7 @@ import { vaultUrl } from "./mcp/vault";
 import { listAdmins } from "./activity";
 import { planOf } from "./plans";
 import { baseUrl, unsubscribeUrl } from "./notify";
-import { sendMail, unsubscribeHeaders, vaultReleaseMail } from "./mail";
+import { sendMail, vaultReleaseMail } from "./mail";
 import { toLocale, type Locale } from "./i18n/locale";
 import en from "./i18n/en";
 import es from "./i18n/es";
@@ -113,7 +113,7 @@ export async function sendRelease(partnerId: string, o: { gapMs?: number } = {})
     if (i > 0 && gap > 0) await new Promise((r) => setTimeout(r, gap));
     const stopUrl = unsubscribeUrl(reader.id, "vault");
     const mail = vaultReleaseMail(cut.entries.map((e) => pieceOf(e, reader.language)), stopUrl, reader.language);
-    sent += await sendMail(reader.email, mail, { headers: unsubscribeHeaders(stopUrl) }).then(() => 1, () => 0);
+    sent += await sendMail(reader.email, mail).then(() => 1, () => 0);
   }
   return { id: cut.id, pieces: cut.entries.length, readers: readers.length, sent };
 }

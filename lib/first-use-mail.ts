@@ -7,7 +7,7 @@
 import "server-only";
 import { and, asc, desc, eq, gte, isNull, lt, sql } from "drizzle-orm";
 import { db, schema } from "./db";
-import { welcomeMail, nudgeMail, unsubscribeHeaders } from "./mail";
+import { welcomeMail, nudgeMail } from "./mail";
 import { mailOnce } from "./mail-once";
 import { baseUrl, inBackground, unsubscribeUrl } from "./notify";
 import { firstSteps } from "./first-steps";
@@ -73,7 +73,7 @@ export async function sendNudges(now = new Date()): Promise<{ due: number; sent:
       const url = baseUrl() + STEPS.find((s) => s.key === step)!.href(steps);
       const stopUrl = unsubscribeUrl(p.id, "digest");
       const mail = nudgeMail(step, { url, refs: steps.refs, goal: REFS_GOAL }, stopUrl, toLocale(p.language));
-      if (await mailOnce(nudgeKey(day, p.id), [p.email], mail, { headers: unsubscribeHeaders(stopUrl) })) sent++;
+      if (await mailOnce(nudgeKey(day, p.id), [p.email], mail)) sent++;
     }
   }
   return { due, sent };

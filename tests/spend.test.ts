@@ -8,18 +8,19 @@ import { totalCostSince } from "@/lib/usage";
 import { assertSpendRoom, SpendCapError } from "@/lib/spend";
 import { assertQuota } from "@/lib/quota";
 import { fixedAdmins } from "@/lib/activity";
-import { reached } from "./harness";
+import type { Mail } from "@/lib/mail-templates";
+import { bodyText, reached } from "./harness";
 import { cleanupTeam, seedTeam, type Team } from "./library/seed";
 
 vi.mock("@/lib/mail", async (importOriginal) => {
-  const { reached } = await import("./harness");
-  return { ...(await importOriginal<object>()), sendMail: async (to: unknown, m: { subject: string }) => { reached.push(["mail", { to, subject: m.subject }]); } };
+  const { reached, checkedMail } = await import("./harness");
+  return { ...(await importOriginal<object>()), sendMail: async (to: unknown, m: Mail) => { reached.push(["mail", { to, ...checkedMail(m) }]); } };
 });
 
 const midnight = () => { const d = new Date(); d.setUTCHours(0, 0, 0, 0); return d; };
 const day = midnight().toISOString().slice(0, 10);
 const spendKeys = [`spend_alert:${day}`, `spend_cap:${day}`];
-const mails = () => reached.filter(([what]) => what === "mail").map(([, m]) => m as { to: string[]; subject: string });
+const mails = () => reached.filter(([what]) => what === "mail").map(([, m]) => m as Mail & { to: string[] });
 let team: Team;
 
 const spend = (usd: number) => db.insert(schema.aiUsage).values({
@@ -53,13 +54,15 @@ test("the team hears once past the alert, and every model call stops at the cap"
   await assertSpendRoom();
   expect(mails()).toHaveLength(1);
   expect(mails()[0].to).toEqual(fixedAdmins());
-  expect(mails()[0].subject).toMatch(/past the \$\d+\.\d\d alert/);
+  expect(mails()[0]).toMatchObject({ template: "letter", locale: "en", vars: { SUBJECT: expect.stringMatching(/past the \$\d+\.\d\d alert/) } });
+  expect(bodyText(mails()[0])).toMatch(/^Today \(UTC\) the app has spent \$\d+\.\d\d on AI\./);
 
   await spend(2);
   await expect(assertSpendRoom()).rejects.toBeInstanceOf(SpendCapError);
   await expect(assertSpendRoom()).rejects.toBeInstanceOf(SpendCapError);
   expect(mails()).toHaveLength(2);
-  expect(mails()[1].subject).toMatch(/^AI is off until 00:00 UTC/);
+  expect(mails()[1]).toMatchObject({ template: "letter", locale: "en", vars: { SUBJECT: expect.stringMatching(/^AI is off until 00:00 UTC/) } });
+  expect(bodyText(mails()[1])).toContain("Nobody can use the AI until then.");
 });
 
 test("past the fair-use ceiling the search goes through, and the team and the owner hear once a month", async () => {
@@ -77,5 +80,6 @@ test("past the fair-use ceiling the search goes through, and the team and the ow
   await assertQuota(ws, "jev_search");
   await assertQuota(ws, "jev_search");
   expect(mails().map((m) => m.to)).toEqual([fixedAdmins(), [team.user.email]]);
-  expect(mails()[1].subject).toBe(`${team.ws.name} has passed 3,000 searches this month`);
+  expect(mails()[0]).toMatchObject({ template: "letter", vars: { SUBJECT: `${team.ws.name} passed the fair-use ceiling: 3000 searches this month on duo` } });
+  expect(mails()[1]).toMatchObject({ template: "fair-use", locale: "en", vars: { ACCOUNT: team.ws.name, PLAN: "Duo", USED: "3,000", CEILING: "3,000" } });
 });

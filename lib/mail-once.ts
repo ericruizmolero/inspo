@@ -5,7 +5,8 @@
 import "server-only";
 import { and, eq, lte } from "drizzle-orm";
 import { db, schema } from "./db";
-import { sendMail, type Mail } from "./mail";
+import { sendMail } from "./mail";
+import type { Mail } from "./mail-templates";
 import { log } from "./log";
 
 const A = schema.appSetting;
@@ -18,10 +19,10 @@ export async function firstTime(key: string): Promise<boolean> {
 }
 
 /** Sends `mail` once per `key`, and says whether this call sent it. A failed send gives the key back, so the next call tries again */
-export async function mailOnce(key: string, to: string[], mail: Mail, opts: { headers?: Record<string, string> } = {}): Promise<boolean> {
+export async function mailOnce(key: string, to: string[], mail: Mail): Promise<boolean> {
   if (!(await firstTime(key))) return false;
   try {
-    await sendMail(to, mail, opts);
+    await sendMail(to, mail);
     return true;
   } catch (err) {
     log.warn("mail.not_sent_once", { key, err });
@@ -54,11 +55,11 @@ export async function giveBack(key: string, before: Date | null, now: Date): Pro
 
 /** Sends `mail` unless `key` sent one less than `everyMs` before `now`, and says whether this call sent it. A failed
  *  send gives the key back */
-export async function mailEvery(key: string, everyMs: number, to: string[], mail: Mail, opts: { headers?: Record<string, string> } = {}, now = new Date()): Promise<boolean> {
+export async function mailEvery(key: string, everyMs: number, to: string[], mail: Mail, now = new Date()): Promise<boolean> {
   const before = await lastSent(key);
   if (!(await claimEvery(key, everyMs, now))) return false;
   try {
-    await sendMail(to, mail, opts);
+    await sendMail(to, mail);
     return true;
   } catch (err) {
     log.warn("mail.not_sent_every", { key, err });

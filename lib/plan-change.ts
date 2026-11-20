@@ -11,7 +11,8 @@ import { planOf, type Plan, type PlanKey } from "./plans";
 import { accountWorkspaces } from "./workspace-core";
 import { notifyOverCapacity } from "./quota";
 import { mailOnce } from "./mail-once";
-import { giftEndedMail, giftEndsMail, planDownMail, planOnMail, sendMail, type Mail } from "./mail";
+import { giftEndedMail, giftEndsMail, planDownMail, planOnMail, sendMail } from "./mail";
+import type { Mail } from "./mail-templates";
 import { toLocale, type Locale } from "./i18n/locale";
 import { log } from "./log";
 

@@ -10,7 +10,7 @@
 import "server-only";
 import { sql } from "drizzle-orm";
 import { db } from "./db";
-import { unsubscribeHeaders, winBackMail } from "./mail";
+import { winBackMail } from "./mail";
 import { mailEvery } from "./mail-once";
 import { baseUrl, mailPath, projectPath, unsubscribeUrl } from "./notify";
 import { toLocale } from "./i18n/locale";
@@ -50,7 +50,7 @@ export async function sendWinBacks(now = new Date()): Promise<{ due: number; sen
   for (const p of rows) {
     const stopUrl = unsubscribeUrl(p.id, "digest");
     const mail = winBackMail({ project: p.project, url: `${baseUrl()}${mailPath(projectPath(p.project_id))}` }, stopUrl, toLocale(p.language));
-    if (await mailEvery(winBackKey(p.id), WIN_BACK_EVERY, [p.email], mail, { headers: unsubscribeHeaders(stopUrl) }, now)) sent++;
+    if (await mailEvery(winBackKey(p.id), WIN_BACK_EVERY, [p.email], mail, now)) sent++;
   }
   return { due: rows.length, sent };
 }

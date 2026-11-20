@@ -7,6 +7,7 @@ loadEnv({ path: ".env.local" }); loadEnv();
 import assert from "node:assert/strict";
 import { pool } from "../lib/db";
 import { runMigrations } from "../lib/db/migrate";
+import { preview } from "../lib/mail-templates";
 import { activityLines, digestGroups, digestSummary, digestTime, sendDigests, unsubscribeUrl, unsubscribeValid, type TeamEvent } from "../lib/notify";
 
 async function main() {
@@ -56,7 +57,7 @@ async function main() {
   // The real thing, dry: what the cron would send this morning
   const run = await sendDigests(new Date(), true);
   console.log(`teams ${run.teams}, would send ${run.sent}, pause ${run.paused}, skip ${run.skipped}, hold ${run.spaced}`);
-  for (const m of run.mails) console.log(`\n→ ${m.to}\n${m.subject}\n${m.text}`);
+  for (const m of run.mails) console.log(`\n→ ${m.to}\n${preview(m)}`);
   console.log("\ncheck:notifications ok");
 }
 

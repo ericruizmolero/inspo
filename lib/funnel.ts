@@ -6,7 +6,8 @@ import { db, schema } from "./db";
 import { isSampleItem } from "./sample-items";
 import { fixedAdmins } from "./activity";
 import { mailOnce } from "./mail-once";
-import type { Mail } from "./mail";
+import { letter, type Mail } from "./mail-templates";
+import { prose } from "./mail-layout";
 import { conversion, FUNNEL_STEPS, funnelOf, weekStart, type Funnel, type FunnelPerson, type FunnelStep, type FunnelWeek, type WaitlistFunnel } from "./funnel-core";
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -62,10 +63,9 @@ const day = (week: string) => new Date(`${week}T12:00:00Z`).toLocaleDateString("
 export function funnelWeekMail(last: FunnelWeek, before: FunnelWeek, url: string): Mail {
   const lines = FUNNEL_STEPS.map((step) =>
     `${STEP_NAMES[step]}: ${last.counts[step]}${pct(conversion(last.counts, step))} (week before: ${before.counts[step]}${pct(conversion(before.counts, step))})`);
-  return {
-    subject: `Funnel, week of ${day(last.week)}: ${last.counts.signedUp} sign-ups (${before.counts.signedUp} the week before)`,
-    text: `The people who signed up in the week of ${day(last.week)}, against those of the week of ${day(before.week)}. Each step counts who reached it by this morning, so the week before had a week longer to get there.\n\n${lines.join("\n")}\n\nEvery week, and the waitlist, in ${url}/admin/funnel`,
-  };
+  return letter("en",
+    `Funnel, week of ${day(last.week)}: ${last.counts.signedUp} sign-ups (${before.counts.signedUp} the week before)`,
+    prose(`The people who signed up in the week of ${day(last.week)}, against those of the week of ${day(before.week)}. Each step counts who reached it by this morning, so the week before had a week longer to get there.\n\n${lines.join("\n")}\n\nEvery week, and the waitlist, in ${url}/admin/funnel`));
 }
 
 /** The key of a week's email: once per week reported, however many mornings the job runs */

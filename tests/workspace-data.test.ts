@@ -12,13 +12,14 @@ import { bufferSource, openZip, zip } from "@/lib/zip";
 import { GET as exportRoute } from "@/app/api/workspace/export/route";
 import { POST as importRoute } from "@/app/api/workspace/import/route";
 import { letWorkspaceGo } from "@/app/actions/billing";
+import type { Mail } from "@/lib/mail-templates";
 import { actAs, files, reached, type Actor } from "./harness";
 
 vi.mock("@/lib/mail", async (importOriginal) => {
-  const { reached } = await import("./harness");
+  const { reached, checkedMail } = await import("./harness");
   return {
     ...(await importOriginal<object>()),
-    sendMail: async (to: string | string[], m: { subject: string; text: string }) => { reached.push(["mail", { to: [to].flat(), subject: m.subject, text: m.text }]); },
+    sendMail: async (to: string | string[], m: Mail) => { reached.push(["mail", { to: [to].flat(), ...checkedMail(m) }]); },
   };
 });
 
@@ -200,10 +201,9 @@ test("the payer lets a client's workspace go: a free account its owner owns, an 
   expect(await db.select({ id: schema.organization.id }).from(schema.organization).where(eq(schema.organization.billingAccountId, `${tag}-agency`)),
     "the agency keeps its own").toContainEqual({ id: SRC });
 
-  const mails = reached.filter(([what]) => what === "mail").map(([, m]) => m as { to: string[]; subject: string; text: string });
+  const mails = reached.filter(([what]) => what === "mail").map(([, m]) => m as Mail & { to: string[] });
   expect(mails.map((m) => m.to), "one email, to the client's owner").toEqual([[client.email]]);
-  expect(mails[0].subject).toBe(`${tag} Client is on a plan of its own`);
-  expect(mails[0].text).toContain(`${tag} Studio no longer pays for ${tag} Client`);
+  expect(mails[0], "the agency's paid Vault locks on Free").toMatchObject({ template: "let-go-vault", locale: "en", vars: { WORKSPACE: `${tag} Client`, ACCOUNT: `${tag} Studio` } });
 
   expect((await letWorkspaceGo(CLIENT)).ok, "once gone, it is not the agency's to let go again").toBe(false);
 });

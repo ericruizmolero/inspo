@@ -7,13 +7,14 @@ import { afterAll, beforeEach, expect, test, vi } from "vitest";
 import { db, schema } from "@/lib/db";
 import { MARKETING_URL } from "@/lib/site";
 import { OPTIONS, POST } from "@/app/api/waitlist/route";
+import type { Mail } from "@/lib/mail-templates";
 import { request } from "./isolation/probe";
 
-const sent = vi.hoisted(() => [] as { to: string[]; subject: string; text: string }[]);
-vi.mock("@/lib/mail", async (importOriginal) => ({
-  ...(await importOriginal<object>()),
-  sendMail: async (to: string | string[], m: { subject: string; text: string }) => { sent.push({ to: [to].flat(), ...m }); },
-}));
+const sent = vi.hoisted(() => [] as (Mail & { to: string[] })[]);
+vi.mock("@/lib/mail", async (importOriginal) => {
+  const { checkedMail } = await import("./harness");
+  return { ...(await importOriginal<object>()), sendMail: async (to: string | string[], m: Mail) => { sent.push({ to: [to].flat(), ...checkedMail(m) }); } };
+});
 
 const tag = `wl-${randomBytes(4).toString("hex")}`;
 const W = schema.waitlistEntry;
@@ -43,10 +44,7 @@ test("a new address is stored once with source landing and its locale, and gets 
 
   const [row] = await rows(email);
   expect({ source: row.source, locale: row.locale, status: row.status }).toEqual({ source: "landing", locale: "es", status: "pending" });
-  expect(sent).toHaveLength(1);
-  expect(sent[0].to).toEqual([email]);
-  expect(sent[0].subject).toBe("Ya estás en la lista");
-  expect(sent[0].text).toContain(email);
+  expect(sent).toEqual([{ to: [email], template: "on-the-list", locale: "es", vars: { YOUR_EMAIL: email } }]);
 
   const again = await post({ email, locale: "en", consent: true, website: "" });
   expect(again.status, "a repeat answers the same").toBe(200);

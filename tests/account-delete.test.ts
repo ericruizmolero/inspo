@@ -9,17 +9,18 @@ import { createBillingAccount, ensurePersonalWorkspace, newId } from "@/lib/work
 import { deleteAccount, spacesOnDelete } from "@/lib/account-delete";
 import { firstTime } from "@/lib/mail-once";
 import { deleteMyAccount } from "@/app/actions/account";
+import type { Mail } from "@/lib/mail-templates";
 import { actAs, reached, type Actor } from "./harness";
 
 vi.mock("@/lib/mail", async (importOriginal) => {
-  const { reached } = await import("./harness");
-  return { ...(await importOriginal<object>()), sendMail: async (to: string | string[], m: { subject: string }) => { reached.push(["mail", { to: [to].flat(), subject: m.subject }]); } };
+  const { reached, checkedMail } = await import("./harness");
+  return { ...(await importOriginal<object>()), sendMail: async (to: string | string[], m: Mail) => { reached.push(["mail", { to: [to].flat(), ...checkedMail(m) }]); } };
 });
 
 const tag = `adel${randomBytes(4).toString("hex")}`;
 const O = schema.organization, M = schema.member, B = schema.billingAccount, U = schema.user;
 const users: string[] = [], orgs: string[] = [];
-const mails = () => reached.filter(([what]) => what === "mail").map(([, m]) => m as { to: string[]; subject: string });
+const mails = () => reached.filter(([what]) => what === "mail").map(([, m]) => m as Mail & { to: string[] });
 
 async function user(who: string): Promise<Actor> {
   const id = `${tag}-${who}`, email = `${id}@example.test`, now = new Date();
@@ -109,7 +110,7 @@ test("a person with nothing in the way is deleted in one go, with the email", as
   const own = await team("own", lone);
   const account = await personalAccountOf(lone.workspaceId);
   expect(await deleteAccount(lone.id)).toMatchObject({ storageClean: true });
-  expect(mails()).toEqual([{ to: [lone.email], subject: "Your account is deleted" }]);
+  expect(mails()).toEqual([{ to: [lone.email], template: "account-deleted", locale: "en", vars: { YOUR_EMAIL: lone.email } }]);
   for (const [t, id] of [[U, lone.id], [O, lone.workspaceId], [O, own.id], [B, account], [B, own.accountId]] as const) expect(await exists(t, id)).toBe(false);
   await db.delete(schema.appSetting).where(eq(schema.appSetting.key, `account-deleted:${lone.id}`));
 });

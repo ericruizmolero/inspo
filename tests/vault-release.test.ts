@@ -11,13 +11,14 @@ import { unsubscribeUrl, unsubscribeValid } from "@/lib/notify";
 import { POST as unsubscribe } from "@/app/api/unsubscribe/route";
 import { resubscribe } from "@/app/actions/notifications";
 import { mailDict } from "@/lib/mail";
+import type { Mail } from "@/lib/mail-templates";
+import { bodyText } from "./harness";
 
-interface Sent { to: string[]; subject: string; text: string; headers?: Record<string, string> }
-const sent: Sent[] = [];
-vi.mock("@/lib/mail", async (importOriginal) => ({
-  ...(await importOriginal<object>()),
-  sendMail: async (to: string | string[], m: { subject: string; text: string }, o: { headers?: Record<string, string> } = {}) => { sent.push({ to: [to].flat(), ...m, headers: o.headers }); },
-}));
+const sent: (Mail & { to: string[] })[] = [];
+vi.mock("@/lib/mail", async (importOriginal) => {
+  const { checkedMail } = await import("./harness");
+  return { ...(await importOriginal<object>()), sendMail: async (to: string | string[], m: Mail) => { sent.push({ to: [to].flat(), ...checkedMail(m) }); } };
+});
 
 const tag = `vrel${randomBytes(4).toString("hex")}`;
 const person = (who: string, language = "en") => ({ id: `${tag}-${who}`, name: `${tag} ${who}`, email: `${tag}-${who}@example.test`, language });
@@ -88,16 +89,12 @@ test("pending is every published piece the last release did not reach, and a rel
   expect(row.sentBy).toBe(partner.id);
   expect(mine(await pendingRelease()), "nothing of it is pending any more").toEqual([]);
 
-  // In the reader's language, with each piece's line and its address in the app, and the stop link in the headers
+  // In the reader's language, with each piece's line and its address in the app, and the Vault's stop link
   const [es] = to(paid);
   expect(to(paid), "one email per reader").toHaveLength(1);
-  expect(es.subject).toBe(mailDict("es").vaultRelease.subject(release!.pieces));
-  expect(es.text).toContain(`${tag} b es (Hero)`);
-  expect(es.text).toContain(`What b is`);
-  expect(es.text).toContain(`/?in=vault&entry=${tag}-b`);
-  expect(es.text).toContain(mailDict("es").signature);
-  expect(es.headers?.["List-Unsubscribe"]).toBe(`<${unsubscribeUrl(paid.id, "vault")}>`);
-  expect(to(inTeam)[0].subject).toBe(mailDict("en").vaultRelease.subject(release!.pieces));
+  expect(es).toMatchObject({ template: "letter-vault", locale: "es", vars: { SUBJECT: mailDict("es").vaultRelease.subject(release!.pieces), STOP_URL: unsubscribeUrl(paid.id, "vault") } });
+  expect(bodyText(es)).toMatch(new RegExp(`${tag} b es \\(https?://[^)]+/\\?in=vault&entry=${tag}-b\\) \\(Hero\\)\n\nWhat b is`));
+  expect(to(inTeam)[0]).toMatchObject({ template: "letter-vault", locale: "en", vars: { SUBJECT: mailDict("en").vaultRelease.subject(release!.pieces), STOP_URL: unsubscribeUrl(inTeam.id, "vault") } });
   expect(to(partner)).toHaveLength(1);
   expect(to(free), "a free account gets nothing").toEqual([]);
   expect(to(muted), "nor someone who turned it off").toEqual([]);

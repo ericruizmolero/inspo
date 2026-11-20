@@ -12,6 +12,8 @@ import { getT } from "./i18n";
 import { fairUseMail, overCapacityMail, sendMail, localeForEmail } from "./mail";
 import { fixedAdmins } from "./activity";
 import { mailOnce } from "./mail-once";
+import { letter } from "./mail-templates";
+import { prose } from "./mail-layout";
 import { log } from "./log";
 import { isSampleItem } from "./sample-items";
 import { fmtGb, mayCreateTeam, roomLeft, whatIsFull, type Full, type Room, type Usage } from "./room";
@@ -313,10 +315,9 @@ async function fairUsePassed(accountId: string, plan: Plan, used: number, ceilin
   const [a] = await db.select({ name: B.name, owner: schema.user.email }).from(B)
     .leftJoin(schema.user, eq(schema.user.id, B.ownerUserId)).where(eq(B.id, accountId)).limit(1);
   const name = a?.name ?? accountId;
-  await mailOnce(key, fixedAdmins(), {
-    subject: `${name} passed the fair-use ceiling: ${used} searches this month on ${plan.key}`,
-    text: `The ${plan.key} plan's searches are fair use, with an internal ceiling of ${ceiling} a month. ${name} (billing account ${accountId}, owner ${a?.owner ?? "none"}) has made ${used}.\n\nNobody is cut off${a?.owner ? ", and the owner gets an email of their own" : ""}. Its usage is in /admin.`,
-  });
+  await mailOnce(key, fixedAdmins(), letter("en",
+    `${name} passed the fair-use ceiling: ${used} searches this month on ${plan.key}`,
+    prose(`The ${plan.key} plan's searches are fair use, with an internal ceiling of ${ceiling} a month. ${name} (billing account ${accountId}, owner ${a?.owner ?? "none"}) has made ${used}.\n\nNobody is cut off${a?.owner ? ", and the owner gets an email of their own" : ""}. Its usage is in /admin.`)));
   if (a?.owner) await mailOnce(`${key}:owner`, [a.owner], fairUseMail(name, plan.key, used, ceiling, await localeForEmail(a.owner)));
 }
 

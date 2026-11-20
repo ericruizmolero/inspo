@@ -7,14 +7,15 @@ import { afterAll, beforeAll, beforeEach, expect, test, vi } from "vitest";
 import { db, schema } from "@/lib/db";
 import { createBillingAccount, ensurePersonalWorkspace, newId } from "@/lib/workspace-core";
 import { sendWinBacks, winBackKey } from "@/lib/win-back";
+import type { Mail } from "@/lib/mail-templates";
 import { reached } from "./harness";
 
 vi.mock("@/lib/mail", async (importOriginal) => {
-  const { reached } = await import("./harness");
-  return { ...(await importOriginal<object>()), sendMail: async (to: string | string[], m: { subject: string; text: string }) => { reached.push(["mail", { to: [to].flat()[0], subject: m.subject, text: m.text }]); } };
+  const { reached, checkedMail } = await import("./harness");
+  return { ...(await importOriginal<object>()), sendMail: async (to: string | string[], m: Mail) => { reached.push(["mail", { to: [to].flat()[0], ...checkedMail(m) }]); } };
 });
 
-type Sent = { to: string; subject: string; text: string };
+type Sent = Mail & { to: string };
 const mails = () => reached.filter(([what]) => what === "mail").map(([, m]) => m as Sent);
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -81,12 +82,11 @@ test("two weeks away, alone or in a quiet team, names the latest project with it
   expect(await sendWinBacks(NOW)).toEqual({ due: 3, sent: 3 });
   expect(mails().map((m) => m.to).sort()).toEqual([p.away, p.spanish, p.quiet].map((x) => x.email).sort());
   const m = mails().find((x) => x.to === p.away.email)!;
-  expect(m.subject).toBe("Your criterio is where you left it");
-  expect(m.text).toContain(`away landing is where you left it:\nhttp`);
-  expect(m.text).toContain(`/p/${p.away.project}?view=board`);
-  expect(m.text).toContain(`/unsubscribe?u=${encodeURIComponent(p.away.id)}&k=digest&s=`);
-  expect(m.text).toContain("Eric, Andoni and Alberto");
-  expect(mails().find((x) => x.to === p.spanish.email)?.subject).toBe("Tu criterio sigue donde lo dejaste");
+  expect(m).toEqual({
+    to: p.away.email, template: "win-back", locale: "en",
+    vars: { PROJECT: "away landing", URL: expect.stringMatching(new RegExp(`^https?://[^/]+/p/${p.away.project}\\?view=board$`)), STOP_URL: expect.stringContaining(`/unsubscribe?u=${encodeURIComponent(p.away.id)}&k=digest&s=`) },
+  });
+  expect(mails().find((x) => x.to === p.spanish.email)).toMatchObject({ template: "win-back", locale: "es", vars: { PROJECT: "spanish landing" } });
 });
 
 test("at most once in 60 days, even after coming back and leaving again", async () => {

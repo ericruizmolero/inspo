@@ -1,5 +1,6 @@
 // What tests/setup.ts mocks read and what tests set: who is signed in, the request's headers and cookies,
 // the in-memory file store, and every external call something tried to make.
+import { resendVariables, type Mail } from "@/lib/mail-templates";
 
 export interface Actor { id: string; name: string; email: string; workspaceId: string }
 
@@ -64,4 +65,16 @@ export const reached = state.reached;
 export function blocked(what: string, detail?: unknown): never {
   reached.push([what, detail]);
   throw new Error(`external call in a test: ${what}`);
+}
+
+/** An email a mocked sendMail records, checked as Resend would take it: a missing, extra or mistyped variable throws */
+export function checkedMail(m: Mail): Mail {
+  resendVariables(m, "Hi,");
+  return m;
+}
+
+/** The plain-text body of an email built in code (a letter template); throws for any other, whose words live in Resend */
+export function bodyText(m: Mail | undefined): string {
+  if (!m || !("BODY_TEXT" in m.vars)) throw new Error(`not a letter: ${m?.template}`);
+  return m.vars.BODY_TEXT;
 }

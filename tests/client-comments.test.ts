@@ -9,16 +9,17 @@ import { createBillingAccount, ensurePersonalWorkspace, newId } from "@/lib/work
 import { guestComment, inviteMore, makeShare } from "@/app/actions/share";
 import { clientCommented, clientCommentsKey, nextTellAt, tellClientComments, CLIENT_MAIL_EVERY } from "@/lib/client-comments";
 import { sendDigests } from "@/lib/notify";
-import { actAs, reached, type Actor } from "./harness";
+import type { Mail } from "@/lib/mail-templates";
+import { actAs, bodyText, checkedMail, reached, type Actor } from "./harness";
 
 vi.mock("@/lib/mail", async (importOriginal) => {
-  const { reached } = await import("./harness");
+  const { reached, checkedMail } = await import("./harness");
   return {
     ...(await importOriginal<object>()),
-    sendMail: async (to: string | string[], m: { subject: string; text: string }) => {
+    sendMail: async (to: string | string[], m: Mail) => {
       const first = [to].flat()[0];
       if (first.startsWith("fail")) throw new Error("Resend 500");
-      reached.push(["mail", { to: first, subject: m.subject, text: m.text }]);
+      reached.push(["mail", { to: first, ...checkedMail(m) }]);
     },
   };
 });
@@ -28,7 +29,7 @@ vi.mock("@/lib/jobs", async (importOriginal) => {
   return { ...(await importOriginal<object>()), enqueue: async (jobs: unknown, opts: unknown) => { reached.push(["queue", { jobs, opts }]); }, scheduleSweep: async () => {} };
 });
 
-type Sent = { to: string; subject: string; text: string };
+type Sent = Mail & { to: string };
 const mails = () => reached.filter(([what]) => what === "mail").map(([, m]) => m as Sent);
 const mailsTo = (p: { email: string }) => mails().filter((m) => m.to === p.email);
 const queued = () => reached.filter(([what]) => what === "queue").map(([, q]) => q as { jobs: { kind: string; shareId: string }; opts: { delaySeconds: number; idempotencyKey: string } });
@@ -124,13 +125,13 @@ test("the link's maker gets one email with every comment, at most one an hour", 
   expect(await tellClientComments(shares.team.id, now)).toBe(1);
   expect(mailsTo(mate)).toEqual([]);
   const [m] = mailsTo(maker);
-  expect(m.subject).toBe("Your client commented on team site");
-  expect(m.text).toContain('through the link "For Andoni"');
-  expect(m.text).toContain("Ana on Linear: Love the type here");
-  expect(m.text).toContain("Luis on Linear: Too dark for us");
-  expect(m.text).toContain(`/p/${tag}-team?view=board`);
-  expect(m.text).toContain(`/unsubscribe?u=${encodeURIComponent(maker.id)}&k=replies`);
-  expect(m.text).toContain("Eric, Andoni and Alberto");
+  expect(m).toMatchObject({ template: "letter-team", locale: "en", vars: { SUBJECT: "Your client commented on team site", TEAM: `${tag} Studio` } });
+  expect(m.vars).toHaveProperty("STOP_URL", expect.stringContaining(`/unsubscribe?u=${encodeURIComponent(maker.id)}&k=replies`));
+  const text = bodyText(m);
+  expect(text).toContain('through the link "For Andoni"');
+  expect(text).toContain('Ana on Linear\n\n"Love the type here"');
+  expect(text).toContain('Luis on Linear\n\n"Too dark for us"');
+  expect(text).toContain(`/p/${tag}-team?view=board`);
 
   // Delivered twice: nothing new
   expect(await tellClientComments(shares.team.id, now)).toBe(0);
@@ -146,8 +147,8 @@ test("the link's maker gets one email with every comment, at most one an hour", 
 
   expect(await tellClientComments(shares.team.id, new Date(+now + CLIENT_MAIL_EVERY + MIN))).toBe(1);
   expect(mailsTo(maker)).toHaveLength(1);
-  expect(mailsTo(maker)[0].text).toContain("And the footer?");
-  expect(mailsTo(maker)[0].text).not.toContain("Love the type");
+  expect(bodyText(mailsTo(maker)[0])).toContain("And the footer?");
+  expect(bodyText(mailsTo(maker)[0])).not.toContain("Love the type");
 });
 
 test("once the link's maker is gone, the whole team hears; with replies off, nobody does", async () => {
@@ -167,22 +168,21 @@ test("a workspace of one hears of its client too", async () => {
   await tick();
   await comment(shares.solo, "Can we see more?", "Marta", `${tag}-guest-secret-0003`);
   expect(await tellClientComments(shares.solo.id, new Date(Date.now() + CLIENT_MAIL_EVERY + MIN))).toBe(1);
-  expect(mailsTo(solo)[0].text).toContain("Marta on Linear: Can we see more?");
-  expect(mailsTo(solo)[0].text).not.toContain("Nice board");
+  expect(bodyText(mailsTo(solo)[0])).toContain('Marta on Linear\n\n"Can we see more?"');
+  expect(bodyText(mailsTo(solo)[0])).not.toContain("Nice board");
 });
 
 test("the digest leaves out a client's comment for those its email reached, and the paused one keeps its stop link", async () => {
   const run = await sendDigests(new Date(), true);
   const digestOf = (p: Actor) => run.mails.find((m) => m.to === p.email);
   // The maker heard of both links by email; the rest of the team, only of the one whose maker is gone
-  expect(digestOf(maker)?.text).not.toMatch(/Love the type|Who made this/);
-  expect(digestOf(mate)?.text).toContain("Love the type here");
-  expect(digestOf(mate)?.text).not.toContain("Who made this?");
+  expect(bodyText(digestOf(maker))).not.toMatch(/Love the type|Who made this/);
+  expect(bodyText(digestOf(mate))).toContain("Love the type here");
+  expect(bodyText(digestOf(mate))).not.toContain("Who made this?");
 
-  const paused = digestOf(away)!;
-  expect(paused.subject).toBe("We have paused your team summaries");
-  expect(paused.text).toContain(`You get this because you are in ${tag} Studio on criterio.design.`);
-  expect(paused.text).toContain(`/unsubscribe?u=${encodeURIComponent(away.id)}&k=digest&s=`);
+  const paused = checkedMail(digestOf(away)!);
+  expect(paused).toMatchObject({ template: "paused", locale: "en", vars: { TEAM: `${tag} Studio` } });
+  expect(paused.vars).toHaveProperty("STOP_URL", expect.stringContaining(`/unsubscribe?u=${encodeURIComponent(away.id)}&k=digest&s=`));
 });
 
 test("a client's comment that no email has covered yet stays in the digest", async () => {
@@ -190,7 +190,7 @@ test("a client's comment that no email has covered yet stays in the digest", asy
   // After the last email of the link whose maker is gone: it reached nobody yet, so the digest still carries it
   await comment(shares.gone, "Still there?", "Pia", `${tag}-guest-secret-0004`);
   const run = await sendDigests(new Date(), true);
-  expect(run.mails.find((m) => m.to === mate.email)?.text).toContain("Still there?");
+  expect(bodyText(run.mails.find((m) => m.to === mate.email))).toContain("Still there?");
 });
 
 test("each invitation goes on its own: one that fails is reported, the rest still go", async () => {

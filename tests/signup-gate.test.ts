@@ -10,15 +10,16 @@ import { auth } from "@/lib/auth";
 import { createInvite, setSignupMode, signupModeState } from "@/lib/access";
 import { newTeamRefusal } from "@/lib/quota";
 import { httpErrorBody, QuotaError } from "@/lib/workspace-core";
+import type { Mail } from "@/lib/mail-templates";
 import { actAs, cookieJar } from "./harness";
 import LoginForm from "@/components/LoginForm";
 import LoginPage from "@/app/login/page";
 
-const sent = vi.hoisted(() => [] as { to: string[]; text: string }[]);
-vi.mock("@/lib/mail", async (importOriginal) => ({
-  ...(await importOriginal<object>()),
-  sendMail: async (to: string | string[], m: { text: string }) => { sent.push({ to: [to].flat(), text: m.text }); },
-}));
+const sent = vi.hoisted(() => [] as (Mail & { to: string[] })[]);
+vi.mock("@/lib/mail", async (importOriginal) => {
+  const { checkedMail } = await import("./harness");
+  return { ...(await importOriginal<object>()), sendMail: async (to: string | string[], m: Mail) => { sent.push({ to: [to].flat(), ...checkedMail(m) }); } };
+});
 
 const BASE = "http://localhost:3000";
 const tag = `gate-${randomBytes(4).toString("hex")}`;
@@ -31,7 +32,13 @@ const askLink = (email: string, o: { invite?: string; cookie?: string } = {}) =>
   headers: { "content-type": "application/json", origin: BASE, ...(o.cookie ? { cookie: o.cookie } : {}) },
   body: JSON.stringify({ email, callbackURL: "/", ...(o.invite ? { metadata: { invite: o.invite } } : {}) }),
 }));
-const linkSentTo = (email: string) => sent.find((m) => m.to.includes(email))?.text.match(/https?:\/\/\S+\/magic-link\/verify\S+/)?.[0];
+function linkSentTo(email: string) {
+  const m = sent.find((x) => x.to.includes(email));
+  if (!m) return undefined;
+  if (m.template !== "magic-link") throw new Error(`${email} got ${m.template}, not the magic link`);
+  expect(m.vars.URL).toMatch(/^https?:\/\/\S+\/magic-link\/verify\S+$/);
+  return m.vars.URL;
+}
 /** Opens the link as a browser that never saw /login: no cookie at all */
 const openElsewhere = (link: string) => auth.handler(new Request(link, { redirect: "manual" }));
 const userOf = async (email: string) => (await db.select().from(schema.user).where(eq(schema.user.email, email)))[0];

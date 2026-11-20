@@ -7,15 +7,13 @@ import { db, pool, schema } from "@/lib/db";
 import { CONNECT_AFTER_DAYS, connectLater, connectMailKey, pendingKey, sendConnectReminders } from "@/lib/connect-mail";
 import { saveWelcomeStep, emailExtensionLink } from "@/app/actions/welcome";
 import { ensurePersonalWorkspace } from "@/lib/workspace-core";
-import { actAs } from "./harness";
+import type { Mail } from "@/lib/mail-templates";
+import { actAs, checkedMail } from "./harness";
 
-type Sent = { to: string; subject: string; text: string; headers?: Record<string, string> };
-const sent: Sent[] = [];
+const sent: (Mail & { to: string })[] = [];
 vi.mock("@/lib/mail", async (importOriginal) => ({
   ...(await importOriginal<object>()),
-  sendMail: async (to: string | string[], m: { subject: string; text: string }, opts: { headers?: Record<string, string> } = {}) => {
-    sent.push({ to: [to].flat()[0], subject: m.subject, text: m.text, headers: opts.headers });
-  },
+  sendMail: async (to: string | string[], m: Mail) => { sent.push({ to: [to].flat()[0], ...checkedMail(m) }); },
 }));
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -62,12 +60,10 @@ test(`ending Welcome unconnected sends the email after ${CONNECT_AFTER_DAYS} day
   await sendConnectReminders();
   const [mail, ...more] = to(ana);
   expect(more).toEqual([]);
-  expect(mail.subject).toBe("Connect your agent to Criterio");
-  expect(mail.text).toMatch(/\/mcp\n/);
-  expect(mail.text).toContain("Claude Code");
-  expect(mail.text).toContain("/unsubscribe?u=");
-  expect(mail.text).toContain("Eric, Andoni and Alberto");
-  expect(mail.headers?.["List-Unsubscribe"]).toContain("/unsubscribe?u=");
+  expect(mail).toEqual({
+    to: `${ana}@example.test`, template: "connect-agent", locale: "en",
+    vars: { ADDRESS: expect.stringMatching(/^https?:\/\/[^/]+\/mcp$/), URL: expect.stringMatching(/\/\?in=home$/), STOP_URL: expect.stringContaining(`/unsubscribe?u=${encodeURIComponent(ana)}&k=digest`) },
+  });
 
   await sendConnectReminders();
   expect(to(ana), "the next morning sends nothing more").toHaveLength(1);
@@ -81,7 +77,7 @@ test("it goes in the person's language", async () => {
   const lucia = await person("lucia", { language: "es" });
   await connectLater(lucia, daysAgo(CONNECT_AFTER_DAYS + 1));
   await sendConnectReminders();
-  expect(to(lucia).map((m) => m.subject)).toEqual(["Conecta tu agente a Criterio"]);
+  expect(to(lucia).map((m) => [m.template, m.locale])).toEqual([["connect-agent", "es"]]);
 });
 
 test("nobody is mailed who connected since, connected before the end, or turned the digest off", async () => {
@@ -114,8 +110,7 @@ test("away from Chrome, the install link goes to the person's own address, a few
   const r = await emailExtensionLink();
   expect(r).toEqual({ ok: true, data: `${eva}@example.test` });
   const [mail] = to(eva);
-  expect(mail.text).toMatch(/\/extension\/install\n/);
-  expect(mail.text).toContain("Chrome");
+  expect(mail).toEqual({ to: `${eva}@example.test`, template: "extension-link", locale: "en", vars: { URL: expect.stringMatching(/^https?:\/\/[^/]+\/extension\/install$/) } });
   await emailExtensionLink();
   await emailExtensionLink();
   expect((await emailExtensionLink()).ok, "the fourth in an hour is refused").toBe(false);

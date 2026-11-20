@@ -10,17 +10,19 @@ import { declinePlanRequest, setAccountPlan, setRequestedPlan } from "@/app/acti
 import { listAccountPlans, listOpenPlanRequests } from "@/lib/plan-requests";
 import { listAdmins } from "@/lib/activity";
 import { localeForEmail, mailDict } from "@/lib/mail";
-import { actAs, reached, type Actor } from "./harness";
+import type { Mail } from "@/lib/mail-templates";
+import { actAs, bodyText, reached, type Actor } from "./harness";
 
 vi.mock("@/lib/mail", async (importOriginal) => {
-  const { reached } = await import("./harness");
-  return { ...(await importOriginal<object>()), sendMail: async (to: string | string[], m: { subject: string }) => { reached.push(["mail", { to: [to].flat(), subject: m.subject }]); } };
+  const { reached, checkedMail } = await import("./harness");
+  return { ...(await importOriginal<object>()), sendMail: async (to: string | string[], m: Mail) => { reached.push(["mail", { to: [to].flat(), ...checkedMail(m) }]); } };
 });
 
 const tag = `preq${randomBytes(4).toString("hex")}`;
 const person = (who: string): Actor => ({ id: `${tag}-${who}`, name: `${tag} ${who}`, email: `${tag}-${who}@example.test`, workspaceId: "" });
 const owner = person("owner"), teammate = person("mate"), partner = person("partner");
-const mails = () => reached.filter(([what]) => what === "mail").map(([, m]) => m as { to: string[]; subject: string });
+const mails = () => reached.filter(([what]) => what === "mail").map(([, m]) => m as Mail & { to: string[] });
+const toOwner = () => mails().filter((m) => m.to.includes(owner.email)).map(({ template, vars }) => [template, "PLAN" in vars && vars.PLAN]);
 let accountId = "";
 
 const openRows = () => db.select().from(schema.planRequest).where(and(eq(schema.planRequest.billingAccountId, accountId), eq(schema.planRequest.status, "open")));
@@ -72,8 +74,11 @@ test("the owner's request emails the partners and the owner, and asking again re
   // The partners read it in the language of the first partner on the list, which depends on who that is here
   const partnerLocale = await localeForEmail((await listAdmins())[0].email);
   const t = mailDict(partnerLocale).plans;
-  expect(sent.find((m) => m.to.includes(partner.email))?.subject, "the partners hear of it").toBe(t.newSubject(owner.name, "Duo", t.period.month));
-  expect(sent.find((m) => m.to.includes(owner.email))?.subject, "the owner is told it arrived").toBe("We got your request");
+  const toPartners = sent.find((m) => m.to.includes(partner.email));
+  expect(toPartners, "the partners hear of it").toMatchObject({ template: "letter", locale: partnerLocale, vars: { SUBJECT: t.newSubject(owner.name, "Duo", t.period.month) } });
+  expect(bodyText(toPartners)).toContain(`${owner.name} (${owner.email})`);
+  expect(bodyText(toPartners)).toContain("/admin/plans");
+  expect(sent.find((m) => m.to.includes(owner.email)), "the owner is told it arrived").toEqual({ to: [owner.email], template: "plan-requested", locale: "en", vars: { PLAN: "Duo", PERIOD: "monthly", ACCOUNT: owner.name } });
 
   const again = await requestPlan("studio", "year");
   expect(again).toMatchObject({ ok: true, data: { plan: "studio", period: "year" } });
@@ -97,7 +102,7 @@ test("/admin/plans lists the request; only a partner sets it, which switches the
   expect(done.status).toBe("done");
   expect(done.decidedBy).toBe(partner.id);
   expect(done.decidedAt).toBeInstanceOf(Date);
-  expect(mails().filter((m) => m.to.includes(owner.email)).map((m) => m.subject), "the owner is told it is on").toEqual(["Your plan is on: Studio"]);
+  expect(toOwner(), "the owner is told it is on").toEqual([["plan-on", "Studio"]]);
 
   expect((await setRequestedPlan(row.id)).ok, "a second click finds nothing open").toBe(false);
 });
@@ -139,10 +144,10 @@ test("/admin/plans lists every account; only a partner changes one's plan, with 
   expect(await setAccountPlan(accountId, "agency", "2099-06-30")).toEqual({ ok: true, data: { from: "studio", to: "agency" } });
   expect(await plan(), "an end date is the last moment of that day").toEqual({ plan: "agency", until: new Date("2099-06-30T23:59:59Z") });
   expect((await listAccountPlans()).find((a) => a.id === accountId)?.until).toBe("2099-06-30T23:59:59.000Z");
-  expect(mails().filter((m) => m.to.includes(owner.email)).map((m) => m.subject), "changePlan tells the owner").toEqual(["Your plan is on: Agency"]);
+  expect(toOwner(), "changePlan tells the owner").toEqual([["plan-on-until", "Agency"]]);
 
   reached.length = 0;
   expect(await setAccountPlan(accountId, "duo", null)).toEqual({ ok: true, data: { from: "agency", to: "duo" } });
   expect(await plan(), "with no end date the plan has none").toEqual({ plan: "duo", until: null });
-  expect(mails().filter((m) => m.to.includes(owner.email)).map((m) => m.subject)).toEqual(["Your plan is now Duo"]);
+  expect(toOwner()).toEqual([["plan-down", "Duo"]]);
 });

@@ -7,6 +7,8 @@ import { gte, sql } from "drizzle-orm";
 import { db, schema } from "./db";
 import { fixedAdmins } from "./activity";
 import { mailOnce } from "./mail-once";
+import { letter } from "./mail-templates";
+import { prose } from "./mail-layout";
 import { log } from "./log";
 
 /** The costliest day so far was $1.44 (2026-09-21): the alert sits far above any real day, the cap stops a runaway one */
@@ -36,16 +38,14 @@ export async function assertSpendRoom(): Promise<void> {
   const where = "Spend by workspace and by person is in /admin. To move the lines, set AI_DAILY_ALERT_USD and AI_DAILY_CAP_USD on Vercel and redeploy.";
   if (spent < capUsd) {
     log.warn("spend.alert", { spent, alertUsd });
-    await mailOnce(`spend_alert:${day}`, fixedAdmins(), {
-      subject: `AI spend today is ${usd(spent)}, past the ${usd(alertUsd)} alert`,
-      text: `Today (UTC) the app has spent ${usd(spent)} on AI. ${lines}\n\n${where}`,
-    });
+    await mailOnce(`spend_alert:${day}`, fixedAdmins(), letter("en",
+      `AI spend today is ${usd(spent)}, past the ${usd(alertUsd)} alert`,
+      prose(`Today (UTC) the app has spent ${usd(spent)} on AI. ${lines}\n\n${where}`)));
     return;
   }
   log.error("spend.cap", { spent, capUsd });
-  await mailOnce(`spend_cap:${day}`, fixedAdmins(), {
-    subject: `AI is off until 00:00 UTC, today's spend reached the ${usd(capUsd)} cap`,
-    text: `Today (UTC) the app has spent ${usd(spent)} on AI. ${lines}\n\nNobody can use the AI until then. ${where}`,
-  });
+  await mailOnce(`spend_cap:${day}`, fixedAdmins(), letter("en",
+    `AI is off until 00:00 UTC, today's spend reached the ${usd(capUsd)} cap`,
+    prose(`Today (UTC) the app has spent ${usd(spent)} on AI. ${lines}\n\nNobody can use the AI until then. ${where}`)));
   throw new SpendCapError(`Today's AI spend reached the ${usd(capUsd)} cap`);
 }

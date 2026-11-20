@@ -9,13 +9,14 @@ import { auth } from "@/lib/auth";
 import { createBillingAccount, ensurePersonalWorkspace, newId } from "@/lib/workspace-core";
 import { handOverTeam, deleteTeam } from "@/app/actions/workspace";
 import { sendInvitationReminders } from "@/lib/team-mail";
+import type { Mail } from "@/lib/mail-templates";
 import { actAs, reached, type Actor } from "./harness";
 
 vi.mock("@/lib/mail", async (importOriginal) => {
-  const { reached } = await import("./harness");
+  const { reached, checkedMail } = await import("./harness");
   return {
     ...(await importOriginal<object>()),
-    sendMail: async (to: string | string[], m: { subject: string; text: string }) => { reached.push(["mail", { to: [to].flat(), subject: m.subject, text: m.text }]); },
+    sendMail: async (to: string | string[], m: Mail) => { reached.push(["mail", { to: [to].flat(), ...checkedMail(m) }]); },
   };
 });
 
@@ -28,7 +29,7 @@ const everyone = [owner, admin, joiner, second, third];
 let team = "", accountId = "";
 const memberIds: Record<string, string> = {};
 
-type Sent = { to: string[]; subject: string; text: string };
+type Sent = Mail & { to: string[] };
 const mails = () => reached.filter(([what]) => what === "mail").map(([, m]) => m as Sent);
 const sentTo = (p: Actor) => mails().filter((m) => m.to.includes(p.email));
 
@@ -86,8 +87,9 @@ async function accept(who: Actor, invitationId: string) {
 
 test("an accepted invitation tells whoever sent it and the owner, each in their language, and not the one who joined", async () => {
   await accept(joiner, await invite(admin, joiner));
-  expect(sentTo(admin).map((m) => m.subject), "the admin who invited").toEqual([`${joiner.name} joined ${TEAM}`]);
-  expect(sentTo(owner).map((m) => m.subject), "the owner").toEqual([`${joiner.name} joined ${TEAM}`]);
+  const joined = { template: "member-joined", locale: "en", vars: { WHO: joiner.name, TEAM } };
+  expect(sentTo(admin), "the admin who invited").toMatchObject([joined]);
+  expect(sentTo(owner), "the owner").toMatchObject([joined]);
   expect(sentTo(joiner), "nothing to the one who joined").toEqual([]);
   expect(mails().length).toBe(2);
 });
@@ -100,7 +102,7 @@ test("when the owner sent the invitation, the owner gets one email, not two", as
 test("a role changed by someone else tells that person; a role someone changes on themselves tells nobody", async () => {
   await auth.api.updateMemberRole({ body: { memberId: memberIds[joiner.id], role: "admin", organizationId: team }, headers: await as(owner) });
   expect(await roleOf(joiner)).toBe("admin");
-  expect(mails().map((m) => [m.to, m.subject]), "in Spanish, the joiner's language").toEqual([[[joiner.email], `Tu rol en ${TEAM} ahora es admin`]]);
+  expect(mails(), "in Spanish, the joiner's language").toMatchObject([{ to: [joiner.email], template: "member-now-admin", locale: "es", vars: { WHO: owner.name, TEAM } }]);
 
   reached.length = 0;
   await auth.api.updateMemberRole({ body: { memberId: memberIds[admin.id], role: "member", organizationId: team }, headers: await as(admin) });
@@ -111,7 +113,7 @@ test("a role changed by someone else tells that person; a role someone changes o
 
 test("removing someone tells them; leaving, or removing yourself, tells nobody", async () => {
   await auth.api.removeMember({ body: { memberIdOrEmail: memberIds[second.id], organizationId: team }, headers: await as(owner) });
-  expect(mails().map((m) => [m.to, m.subject])).toEqual([[[second.email], `You're no longer in ${TEAM}`]]);
+  expect(mails()).toEqual([{ to: [second.email], template: "member-removed", locale: "en", vars: { WHO: owner.name, TEAM } }]);
 
   reached.length = 0;
   await accept(third, await invite(owner, third));
@@ -137,7 +139,7 @@ test("only the owner can hand the team over; the new owner is told, the old one 
   expect(await roleOf(owner), "the old owner").toBe("admin");
   const [account] = await db.select({ ownerUserId: schema.billingAccount.ownerUserId }).from(schema.billingAccount).where(eq(schema.billingAccount.id, accountId));
   expect(account.ownerUserId, "the billing account stays with whoever paid").toBe(owner.id);
-  expect(mails().map((m) => [m.to, m.subject])).toEqual([[[joiner.email], `Ahora ${TEAM} es tuyo`]]);
+  expect(mails()).toMatchObject([{ to: [joiner.email], template: "member-now-owner", locale: "es", vars: { WHO: owner.name, TEAM } }]);
 
   expect((await handOverTeam(team, memberIds[admin.id])).ok, "the old owner cannot do it a second time").toBe(false);
   // Now an admin, the old owner leaves like anyone else
@@ -154,11 +156,11 @@ test("the morning reminds an invitation once, only the day before it ends, in th
   const today = await invite(admin, owner, { expiresAt: at(0, 23) });
   for (const id of [tomorrow, later, today]) invitationIds.add(id);
   // The local database may hold other teams' invitations: only this team's mail is looked at
-  const ours = () => mails().filter((m) => m.subject.includes(TEAM));
+  const ours = () => mails().filter((m) => "TEAM" in m.vars && m.vars.TEAM === TEAM);
 
   await sendInvitationReminders(now);
-  expect(ours().map((m) => [m.to, m.subject]), "only the one ending tomorrow").toEqual([[[second.email], `Your invitation to ${TEAM} ends tomorrow`]]);
-  expect(ours()[0].text, "the link to accept").toContain(`/invite/${tomorrow}?lang=en`);
+  expect(ours(), "only the one ending tomorrow").toMatchObject([{ to: [second.email], template: "member-invite-ending", locale: "en", vars: { INVITER: admin.name, TEAM, INVITEE: second.email } }]);
+  expect(ours()[0].vars, "the link to accept").toHaveProperty("URL", expect.stringMatching(new RegExp(`/invite/${tomorrow}\\?lang=en$`)));
 
   reached.length = 0;
   await sendInvitationReminders(now);
@@ -176,6 +178,6 @@ test("deleting a team tells every other member before it goes, never the one who
   const others = left.map((m) => m.userId).filter((id) => id !== joiner.id);
   expect(others.length, "someone else is still in the team").toBeGreaterThan(0);
   expect(mails().flatMap((m) => m.to).sort()).toEqual(everyone.filter((a) => others.includes(a.id)).map((a) => a.email).sort());
-  expect(mails().every((m) => m.subject === `${TEAM} was deleted`)).toBe(true);
+  expect(mails().map(({ template, vars }) => [template, vars])).toEqual(mails().map(() => ["team-deleted", { WHO: joiner.name, TEAM }]));
   expect(sentTo(joiner)).toEqual([]);
 });

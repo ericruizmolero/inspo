@@ -7,14 +7,16 @@ import { db, pool, schema } from "@/lib/db";
 import { ensurePersonalWorkspace } from "@/lib/workspace-core";
 import { REFS_GOAL } from "@/lib/first-steps-core";
 import { nudgeKey, nudgeWindow, sendNudges, welcomeKey, sendWelcome } from "@/lib/first-use-mail";
+import type { Mail } from "@/lib/mail-templates";
 import { reached } from "./harness";
 
 vi.mock("@/lib/mail", async (importOriginal) => {
-  const { reached } = await import("./harness");
-  return { ...(await importOriginal<object>()), sendMail: async (to: string | string[], m: { subject: string; text: string }) => { reached.push(["mail", { to: [to].flat()[0], subject: m.subject, text: m.text }]); } };
+  const { reached, checkedMail } = await import("./harness");
+  return { ...(await importOriginal<object>()), sendMail: async (to: string | string[], m: Mail) => { reached.push(["mail", { to: [to].flat()[0], ...checkedMail(m) }]); } };
 });
 
-type Sent = { to: string; subject: string; text: string };
+type Sent = Mail & { to: string };
+const at = (path: string) => expect.stringMatching(new RegExp(`^https?://[^/]+${path.replace(/[?.]/g, "\\$&")}$`));
 const mails = () => reached.filter(([what]) => what === "mail").map(([, m]) => m as Sent);
 const mailTo = (email: string) => mails().find((m) => m.to === email);
 
@@ -79,16 +81,13 @@ test("a nudge names the first step not done, with its link, on day 3 and day 7",
   expect(await sendNudges(NOW)).toEqual({ due: 4, sent: 4 });
   expect(mails().map((m) => m.to).sort()).toEqual([p.empty, p.some, p.ready, p.polished].map((x) => x.email).sort());
 
-  expect(mailTo(p.empty.email)?.subject).toBe("Your Criterio account has no project yet");
-  expect(mailTo(p.empty.email)?.text).toContain("/?in=home");
-  expect(mailTo(p.some.email)?.subject).toBe(`Your project has 1 of its first ${REFS_GOAL} references`);
-  expect(mailTo(p.some.email)?.text).toContain(`/?in=${p.some.project}\n`);
+  expect(mailTo(p.empty.email)).toMatchObject({ template: "nudge-project", locale: "en", vars: { URL: at("/?in=home") } });
+  expect(mailTo(p.some.email)).toMatchObject({ template: "nudge-refs", locale: "en", vars: { URL: at(`/?in=${p.some.project}`), REFS: 1, GOAL: REFS_GOAL } });
   // In the recipient's language
-  expect(mailTo(p.ready.email)?.subject).toBe("Tu tablón está listo para pulir");
-  expect(mailTo(p.ready.email)?.text).toContain(`/?in=${p.ready.project}&view=polish`);
-  expect(mailTo(p.polished.email)?.subject).toBe("Connect your AI to your references");
+  expect(mailTo(p.ready.email)).toMatchObject({ template: "nudge-polish", locale: "es", vars: { URL: at(`/?in=${p.ready.project}&view=polish`) } });
+  expect(mailTo(p.polished.email)).toMatchObject({ template: "nudge-out", locale: "en" });
   // Every nudge keeps the digest's stop link
-  expect(mails().filter((m) => !/k=digest/.test(m.text))).toEqual([]);
+  expect(mails().filter((m) => !("STOP_URL" in m.vars && /k=digest/.test(m.vars.STOP_URL)))).toEqual([]);
 
   const keys = (await db.select({ key: schema.appSetting.key }).from(schema.appSetting).where(like(schema.appSetting.key, `%${tag}%`))).map((r) => r.key).sort();
   expect(keys).toEqual([nudgeKey(3, p.empty.id), nudgeKey(3, p.some.id), nudgeKey(3, p.ready.id), nudgeKey(7, p.polished.id)].sort());
@@ -106,16 +105,15 @@ test("each day's nudge goes once, and day 7 names the step still to do then", as
   await db.insert(schema.project).values({ id: `${p.empty.id}-p`, organizationId: p.empty.ws, name: "made since", createdBy: p.empty.id, createdAt: NOW, updatedAt: NOW });
   const later = new Date(+NOW + 4 * DAY);
   expect(await sendNudges(later)).toEqual({ due: 3, sent: 3 });
-  expect(mailTo(p.empty.email)?.subject).toBe("Your project is still empty");
+  expect(mailTo(p.empty.email)).toMatchObject({ template: "nudge-refs-empty", locale: "en", vars: { URL: at(`/?in=${p.empty.id}-p`), GOAL: REFS_GOAL } });
   expect(await sendNudges(later)).toEqual({ due: 3, sent: 0 });
 });
 
-test("the welcome lists the first steps in the app's order, in the person's language", async () => {
+test("the welcome goes once, with the app's link and the references goal, in the person's language", async () => {
   expect(await sendWelcome({ id: p.some.id, email: p.some.email, language: "en" })).toBe(true);
   expect(await sendWelcome({ id: p.some.id, email: p.some.email, language: "en" })).toBe(false);
-  const text = mailTo(p.some.email)!.text;
-  expect(text.match(/^\d\. .+$/gm)?.map((l) => l.split(".")[1].trim())).toEqual(["Create a project", `Save ${REFS_GOAL} references to it`, "Polish the board", "Connect your AI"]);
+  expect(mails()).toEqual([{ to: p.some.email, template: "welcome", locale: "en", vars: { URL: expect.stringMatching(/^https?:\/\/[^/]+$/), GOAL: REFS_GOAL } }]);
   expect(await sendWelcome({ id: p.ready.id, email: p.ready.email, language: "es" })).toBe(true);
-  expect(mailTo(p.ready.email)!.subject).toBe("Por dónde empezar en Criterio");
+  expect(mailTo(p.ready.email)).toMatchObject({ template: "welcome", locale: "es" });
   await db.delete(schema.appSetting).where(inArray(schema.appSetting.key, [welcomeKey(p.some.id), welcomeKey(p.ready.id)]));
 });

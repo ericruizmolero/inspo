@@ -8,18 +8,19 @@ import { accountOf, ensurePersonalWorkspace, newId } from "@/lib/workspace-core"
 import { changePlan, giftWarningKey, settleGifts } from "@/lib/plan-change";
 import { createInvite } from "@/lib/access";
 import { auth } from "@/lib/auth";
+import type { Mail } from "@/lib/mail-templates";
 import { reached } from "./harness";
 
 vi.mock("@/lib/mail", async (importOriginal) => {
-  const { reached } = await import("./harness");
-  return { ...(await importOriginal<object>()), sendMail: async (to: string | string[], m: { subject: string; text: string }) => { reached.push(["mail", { to: [to].flat(), subject: m.subject, text: m.text }]); } };
+  const { reached, checkedMail } = await import("./harness");
+  return { ...(await importOriginal<object>()), sendMail: async (to: string | string[], m: Mail) => { reached.push(["mail", { to: [to].flat(), ...checkedMail(m) }]); } };
 });
 
 const tag = `pchg${randomBytes(4).toString("hex")}`;
 const DAY = 24 * 60 * 60 * 1000;
 const APP = "http://app.test";
 const B = schema.billingAccount;
-const mails = () => reached.filter(([what]) => what === "mail").map(([, m]) => m as { to: string[]; subject: string; text: string });
+const mails = () => reached.filter(([what]) => what === "mail").map(([, m]) => m as Mail & { to: string[] });
 const mailsTo = (email: string) => mails().filter((m) => m.to.includes(email));
 
 interface Person { id: string; email: string; workspaceId: string; accountId: string }
@@ -52,7 +53,7 @@ test("a move up sets the plan, ends any gift and tells the owner it is on", asyn
   const a = await account(p);
   expect(a.plan).toBe("studio");
   expect(a.planUntil, "a plan a partner sets has no end").toBeNull();
-  expect(mailsTo(p.email).map((m) => m.subject)).toEqual(["Your plan is on: Studio"]);
+  expect(mailsTo(p.email)).toMatchObject([{ template: "plan-on", locale: "en", vars: { PLAN: "Studio", URL: `${APP}/settings/plan` } }]);
 });
 
 test("a move up with an end date says the last day in the email", async () => {
@@ -60,10 +61,7 @@ test("a move up with an end date says the last day in the email", async () => {
   const until = new Date(Date.UTC(2027, 2, 31, 23, 59, 59));
   await changePlan({ accountId: p.accountId, plan: "duo", cause: "partner", appUrl: APP, until });
   expect((await account(p)).planUntil?.toISOString()).toBe(until.toISOString());
-  const [m] = mailsTo(p.email);
-  expect(m.subject).toBe("Your plan is on: Duo");
-  expect(m.text).toContain("until 31 March");
-  expect(m.text).toContain("goes back to Free and nothing is deleted");
+  expect(mailsTo(p.email)).toMatchObject([{ template: "plan-on-until", locale: "en", vars: { PLAN: "Duo", UNTIL: "31 March", URL: `${APP}/settings/plan` } }]);
 });
 
 test("a move down tells the owner what it means, and the teams left over their seats", async () => {
@@ -78,18 +76,15 @@ test("a move down tells the owner what it means, and the teams left over their s
   await changePlan({ accountId: p.accountId, plan: "duo", cause: "partner", appUrl: APP });
   expect((await account(p)).plan).toBe("duo");
   const told = mailsTo(p.email);
-  const down = told.find((m) => m.subject === "Your plan is now Duo");
-  expect(down, "the owner hears the plan is smaller").toBeTruthy();
-  expect(down!.text).toContain("Nothing is deleted");
-  expect(down!.text).toContain("adding more is refused");
-  expect(down!.text, "Duo keeps the whole Vault").not.toContain("Vault");
-  expect(down!.text).toContain(`${APP}/settings/plan`);
-  expect(told.some((m) => /has 3 people and the Duo plan allows 2/.test(m.subject)), "the over-seats email goes out").toBe(true);
+  expect(told.map((m) => m.template).sort(), "Duo keeps the whole Vault").toEqual(["over-capacity", "plan-down"]);
+  expect(told.find((m) => m.template === "plan-down"), "the owner hears the plan is smaller").toMatchObject({ locale: "en", vars: { PLAN: "Duo", URL: `${APP}/settings/plan` } });
+  expect(told.find((m) => m.template === "over-capacity"), "the over-seats email goes out").toMatchObject({ vars: { PLAN: "Duo", MEMBERS: 3, LIMIT: 2, URL: `${APP}/settings/members` } });
   expect(mails().filter((m) => m.to.some((to) => mates.some((x) => x.email === to))), "members are not told").toEqual([]);
 
   reached.length = 0;
   await changePlan({ accountId: p.accountId, plan: "free", cause: "partner", appUrl: APP });
-  expect(mailsTo(p.email).find((m) => m.subject === "Your plan is now Free")?.text, "a move to free locks the paid Vault").toContain("The Vault pieces of the paid plans lock again.");
+  expect(mailsTo(p.email).map((m) => m.template).sort(), "a move to free locks the paid Vault").toEqual(["over-capacity", "plan-down-vault"]);
+  expect(mailsTo(p.email).find((m) => m.template === "plan-down-vault")).toMatchObject({ vars: { PLAN: "Free" } });
 });
 
 test("setting the plan an account is already on only ends its gift, with no email", async () => {
@@ -129,9 +124,7 @@ test("the morning warns once a week ahead, and ends a gift that has passed once"
   await settleGifts(APP);
   const day = soon.toLocaleDateString("en-GB", { day: "numeric", month: "long", timeZone: "UTC" });
   const warning = mailsTo(warned.email);
-  expect(warning.map((m) => m.subject)).toEqual([`Your gift ends on ${day}`]);
-  expect(warning[0].text).toContain(`${APP}/settings/plan`);
-  expect(warning[0].text).toContain("Studio plan");
+  expect(warning).toMatchObject([{ template: "gift-ends", locale: "en", vars: { PLAN: "Studio", UNTIL: day, URL: `${APP}/settings/plan` } }]);
   expect(await account(warned)).toMatchObject({ plan: "studio", planUntil: soon });
 
   expect(mailsTo(notYet.email), "ten days ahead is too early").toEqual([]);
@@ -139,9 +132,7 @@ test("the morning warns once a week ahead, and ends a gift that has passed once"
 
   expect(await account(ended)).toMatchObject({ plan: "free", planUntil: null });
   const back = mailsTo(ended.email);
-  expect(back.map((m) => m.subject)).toEqual(["Back on Free"]);
-  expect(back[0].text).toContain("The Agency plan we gave");
-  expect(back[0].text).toContain("The Vault pieces of the paid plans lock again.");
+  expect(back, "the paid Vault locks again").toMatchObject([{ template: "gift-ended-vault", locale: "en", vars: { PLAN: "Agency", URL: `${APP}/settings/plan` } }]);
 
   reached.length = 0;
   await settleGifts(APP);

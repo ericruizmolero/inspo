@@ -6,7 +6,7 @@
 import "server-only";
 import { and, eq, like, lte } from "drizzle-orm";
 import { db, schema } from "./db";
-import { connectAgentMail, unsubscribeHeaders } from "./mail";
+import { connectAgentMail } from "./mail";
 import { mailOnce } from "./mail-once";
 import { everConnected } from "./mcp/oauth";
 import { baseUrl, unsubscribeUrl } from "./notify";
@@ -41,7 +41,7 @@ export async function sendConnectReminders(now = new Date()): Promise<{ due: num
     const stopUrl = unsubscribeUrl(r.id, "digest");
     const mail = connectAgentMail({ address: `${baseUrl()}/mcp`, url: `${baseUrl()}/?in=home` }, stopUrl, toLocale(r.language));
     // A send that fails keeps the pending row, so the next morning tries again
-    if (await mailOnce(connectMailKey(r.id), [r.email], mail, { headers: unsubscribeHeaders(stopUrl) })) { sent++; await settle(r.key); }
+    if (await mailOnce(connectMailKey(r.id), [r.email], mail)) { sent++; await settle(r.key); }
     else if (await mailed(r.id)) await settle(r.key);
   }
   return { due, sent };

@@ -98,6 +98,10 @@ export function letter(locale: Locale, subject: string, body: Body, foot?: { tea
 
 export const aliasOf = (key: TemplateKey, locale: Locale) => `criterio-${key}-${locale}`;
 
+/** An email as a person reads it in a log: the template and its variables, without the letter's HTML (its text says the same) */
+export const preview = (m: Mail, extra: Record<string, string> = {}): string =>
+  [aliasOf(m.template, m.locale), ...Object.entries({ ...extra, ...m.vars }).filter(([k]) => k !== "BODY").map(([k, v]) => `${k}: ${v}`)].join("\n");
+
 export const stopOf = (key: TemplateKey): Stop | undefined => (TEMPLATES[key] as Spec).stop;
 
 /** Every variable a template takes, its own and the layout's (GREETING always; the foot's when it has a stop link) */

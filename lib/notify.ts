@@ -20,7 +20,8 @@ import { and, eq, gt, inArray, max, sql } from "drizzle-orm";
 import { lastSent } from "./mail-once";
 import { db, schema } from "./db";
 import { APP_URL } from "./auth";
-import { sendMail, digestMail, replyMail, proposalMail, pausedMail, unsubscribeHeaders, type Mail, type DigestGroup, type DigestLine, type TeamMailFoot } from "./mail";
+import { sendMail, digestMail, replyMail, proposalMail, pausedMail, type DigestGroup, type DigestLine, type TeamMailFoot } from "./mail";
+import type { Mail } from "./mail-templates";
 import { toLocale, type Locale } from "./i18n/locale";
 import en from "./i18n/en";
 import es from "./i18n/es";
@@ -141,7 +142,7 @@ export async function notifyReply(organizationId: string, input: { toUserId: str
   if (!to || !to.replies) return false;
   const foot = footOf(to.id, "replies", team);
   const m = replyMail({ who: input.fromName, mine: clip(input.mine), theirs: clip(input.theirs, 600), url: `${baseUrl()}${mailPath(input.path)}` }, foot, to.language);
-  await sendMail(to.email, m, { replyTo: from?.email, headers: unsubscribeHeaders(foot.stopUrl) });
+  await sendMail(to.email, m, { replyTo: from?.email });
   return true;
 }
 
@@ -152,7 +153,7 @@ export async function notifyProposalResolved(organizationId: string, input: { to
   if (!to || !to.replies) return false;
   const foot = footOf(to.id, "replies", team);
   const m = proposalMail({ who: input.fromName, accepted: input.accepted, area: areaName(to.language, input.area), project: input.projectName, decision: clip(input.decision, 300), url: `${baseUrl()}${mailPath(systemPath(input.projectId))}` }, foot, to.language);
-  await sendMail(to.email, m, { replyTo: from?.email, headers: unsubscribeHeaders(foot.stopUrl) });
+  await sendMail(to.email, m, { replyTo: from?.email });
   return true;
 }
 
@@ -466,7 +467,7 @@ export async function sendDigests(now = new Date(), dryRun = false): Promise<Dig
         const foot = footOf(m.userId, "digest", team.name);
         const p = pausedMail(`${baseUrl()}/settings/account`, foot, locale);
         run.mails.push({ to: m.email, ...p });
-        if (!dryRun) { await setEmailPref(m.userId, "digest", false); await sendMail(m.email, p, { headers: unsubscribeHeaders(foot.stopUrl) }); }
+        if (!dryRun) { await setEmailPref(m.userId, "digest", false); await sendMail(m.email, p); }
         await cover(); run.paused++;
         continue;
       }
@@ -476,7 +477,7 @@ export async function sendDigests(now = new Date(), dryRun = false): Promise<Dig
       // The button opens where most happened: the first group
       const d = digestMail({ summary: digestSummary(theirs, locale), url: groups[0].url, groups }, foot, locale);
       run.mails.push({ to: m.email, ...d });
-      if (!dryRun) await sendMail(m.email, d, { headers: unsubscribeHeaders(foot.stopUrl) });
+      if (!dryRun) await sendMail(m.email, d);
       await cover(); run.sent++;
     }
   }

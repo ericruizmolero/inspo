@@ -8,15 +8,16 @@ import { ensurePersonalWorkspace, newId } from "@/lib/workspace-core";
 import { fixedAdmins } from "@/lib/activity";
 import { conversion, funnelOf, weekStart, type FunnelPerson } from "@/lib/funnel-core";
 import { funnelMailKey, funnelPeople, sendWeeklyFunnel } from "@/lib/funnel";
-import { reached } from "./harness";
+import type { Mail } from "@/lib/mail-templates";
+import { bodyText, reached } from "./harness";
 
 vi.mock("@/lib/mail", async (importOriginal) => {
-  const { reached } = await import("./harness");
-  return { ...(await importOriginal<object>()), sendMail: async (to: string | string[], m: { subject: string; text: string }) => { reached.push(["mail", { to: [to].flat(), subject: m.subject, text: m.text }]); } };
+  const { reached, checkedMail } = await import("./harness");
+  return { ...(await importOriginal<object>()), sendMail: async (to: string | string[], m: Mail) => { reached.push(["mail", { to: [to].flat(), ...checkedMail(m) }]); } };
 });
 
 const at = (iso: string) => new Date(iso);
-const mails = () => reached.filter(([what]) => what === "mail").map(([, m]) => m as { to: string[]; subject: string; text: string });
+const mails = () => reached.filter(([what]) => what === "mail").map(([, m]) => m as Mail & { to: string[] });
 
 beforeEach(() => { reached.length = 0; });
 
@@ -108,17 +109,17 @@ test("Monday's email goes to the partners once a week, last week against the one
   expect(await sendWeeklyFunnel("http://app.test", monday)).toBe(true);
   const [mail] = mails();
   expect(mail.to).toEqual(fixedAdmins());
-  expect(mail.subject).toBe("Funnel, week of 8 Mar: 2 sign-ups (4 the week before)");
-  expect(mail.text).toContain("First reference saved: 1, 50% of the step before (week before: 3, 75% of the step before)");
-  expect(mail.text).toContain("On a paid plan now: 0, 0% of the step before (week before: 1, 100% of the step before)");
-  expect(mail.text).toContain("http://app.test/admin/funnel");
+  expect(mail).toMatchObject({ template: "letter", locale: "en", vars: { SUBJECT: "Funnel, week of 8 Mar: 2 sign-ups (4 the week before)" } });
+  expect(bodyText(mail)).toContain("First reference saved: 1, 50% of the step before (week before: 3, 75% of the step before)");
+  expect(bodyText(mail)).toContain("On a paid plan now: 0, 0% of the step before (week before: 1, 100% of the step before)");
+  expect(bodyText(mail)).toContain("http://app.test/admin/funnel");
 
   reached.length = 0;
   expect(await sendWeeklyFunnel("http://app.test", at("2032-03-17T06:30:00Z")), "the rest of the week sends nothing").toBe(false);
   expect(mails()).toEqual([]);
 
   expect(await sendWeeklyFunnel("http://app.test", at("2032-03-22T06:30:00Z")), "the next Monday sends the next week").toBe(true);
-  expect(mails().map((m) => m.subject)).toEqual(["Funnel, week of 15 Mar: 0 sign-ups (2 the week before)"]);
+  expect(mails().map((m) => "SUBJECT" in m.vars && m.vars.SUBJECT)).toEqual(["Funnel, week of 15 Mar: 0 sign-ups (2 the week before)"]);
   expect((await db.select().from(schema.appSetting).where(like(schema.appSetting.key, "funnel-week:2032-%"))).map((r) => r.key).sort())
     .toEqual([funnelMailKey("2032-03-08"), funnelMailKey("2032-03-15")]);
 });

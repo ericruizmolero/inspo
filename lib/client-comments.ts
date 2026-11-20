@@ -11,7 +11,7 @@ import { and, asc, eq, gt, isNotNull, lte, type SQL } from "drizzle-orm";
 import { db, schema } from "./db";
 import { enqueue } from "./jobs";
 import { claimEvery, giveBack, lastSent } from "./mail-once";
-import { clientCommentsMail, sendMail, unsubscribeHeaders } from "./mail";
+import { clientCommentsMail, sendMail } from "./mail";
 import { baseUrl, clientCommentsKey, clientReaders, clip, mailPath, projectPath, unsubscribeUrl } from "./notify";
 import { toLocale } from "./i18n/locale";
 import { log } from "./log";
@@ -69,7 +69,7 @@ export async function tellClientComments(shareId: string, now = new Date()): Pro
   const sent = await Promise.all(readers.map(async (r) => {
     const foot = { team: team?.name ?? "", stopUrl: unsubscribeUrl(r.userId, "replies") };
     try {
-      await sendMail(r.email, clientCommentsMail({ project: project.name, link: link.label, comments: said, url }, foot, toLocale(r.language)), { headers: unsubscribeHeaders(foot.stopUrl) });
+      await sendMail(r.email, clientCommentsMail({ project: project.name, link: link.label, comments: said, url }, foot, toLocale(r.language)));
       return true;
     } catch (err) {
       log.warn("client_comments.not_sent", { ref: shareId, err });
