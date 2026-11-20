@@ -17,7 +17,7 @@ import { TINO_VOICE } from "./tools-voice";
 import { ContextInput, bringContext } from "./context";
 import { REF_ROLES } from "@/types/suggestions";
 import { uploadLink } from "./upload";
-import { AddVaultInput, SearchVaultInput, addToVault, readVaultEntry, removeFromVault, searchVault } from "./vault";
+import { AddVaultInput, FULL_PLANS, SearchVaultInput, addToVault, readVaultEntry, removeFromVault, searchVault } from "./vault";
 
 /** A landing's section, as set_outline takes it */
 const Section = z.object({
@@ -290,6 +290,7 @@ export const TOOLS: Tool[] = [
     description: [
       "The Vault: pieces of a site that criterio's team built and documented with their code, by category: kinds of section (hero, nav, pricing, faq, footer…) and details (buttons, text, scroll, transitions, cursor, sliders, media, utilities). It is the same for every project.",
       "Call it before building a section or a detail, with its category or a few words, and read_vault for the code of the one that fits. With no arguments it lists everything and how many each category holds. A few words find whatever holds any of them, the fullest match first. Every answer also brings always_apply: the rules (utilities) that hold across whatever you build, to read and apply even if you did not look for them.",
+      `The code is for the paid plans (${FULL_PLANS}); on Free, only the pieces marked free and the rules. Each entry says code: readable or locked for this person's workspace. A locked one still shows what it is and its live preview, never its code: prefer a readable one, and when a locked one is the fit, tell the person in a line that its code comes with a paid plan, with the plans page the answer gives.`,
     ].join("\n"),
     input: SearchVaultInput,
     annotations: { readOnlyHint: true },
@@ -297,7 +298,7 @@ export const TOOLS: Tool[] = [
   }),
   tool({
     name: "read_vault", title: "Read a Vault entry",
-    description: "One entry of the Vault, whole: what it is, when to use it, its documentation block by block (the scripts to load, the HTML, the CSS, the JavaScript) and its picture. Use it as the start of a section: keep its structure and motion, and take type, color, spacing and copy from the project's criterio, which always comes first.",
+    description: `One entry of the Vault, whole: what it is, when to use it, its documentation block by block (the scripts to load, the HTML, the CSS, the JavaScript) and its picture. Use it as the start of a section: keep its structure and motion, and take type, color, spacing and copy from the project's criterio, which always comes first. A piece whose code is locked for this workspace (code: locked) comes without its documentation: what it is, its live preview and the plans page. Tell the person its code comes with ${FULL_PLANS}, and build without it.`,
     input: z.object({ entry: z.string().min(1).max(80).describe("The entry's name, as search_vault and criterio.md give it.") }),
     annotations: { readOnlyHint: true },
     run: (i, ctx, origin) => readVaultEntry(ctx, origin, i.entry),
@@ -307,6 +308,7 @@ export const TOOLS: Tool[] = [
     description: [
       "Writes an entry of the Vault: a piece we built (a section or a detail) with its documentation, the code block by block as it is pasted. The same title or entry updates it; a field left out stays as it was, and blocks replaces every block.",
       "An entry is published as it is written, for everyone: there are no drafts. Its picture goes with the curl line in the answer (picture_upload), never as base64 through you; a loop of it running, for a piece its card cannot play live, goes the same way (video_upload) or by address (video_url). Write title, summary, use, tags and the blocks' titles and notes in English, and the same in Spanish in es: the English is what an agent reads, the Spanish what a person reading the app in Spanish sees.",
+      "An entry's code is for the paid plans unless access is free: a new entry is paid, and opening one to Free is the partner's call. Pass access on an existing entry to change it. Rules (utilities) reach everyone either way.",
     ].join("\n"),
     input: AddVaultInput,
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true },
@@ -339,6 +341,6 @@ export const INSTRUCTIONS = [
   "Two ways to work. In a conversation, ask one thing at a time and save what the person says. When you arrive with context already worked out (research, a brief, references, answers, a plan from your own work or another conversation), bring it all with bring_context, without asking piece by piece: it goes straight into the project. Then say in a line or two what you left and what is missing, and talk little.",
   "To see a reference's picture, call read_reference with its id (list_references maps R1, R2… to ids): the picture comes inside the answer. Do not fetch the file links in criterio.md to look at a picture; they may be blocked where you run.",
   "A picture the person pastes or drops in the conversation goes on the board through upload_link (curl from your shell), never as base64 through you.",
-  "Before building a section or a detail of a page, look in the Vault (search_vault, then read_vault for the code): pieces criterio's team built and documented. An entry gives structure and motion; the project's criterio decides type, color, spacing and copy.",
+  "Before building a section or a detail of a page, look in the Vault (search_vault, then read_vault for the code): pieces criterio's team built and documented. An entry gives structure and motion; the project's criterio decides type, color, spacing and copy. Its code comes with the paid plans: on Free only the free pieces and the rules are readable, and a locked one is a line to the person, never a dead end.",
   "What you bring on your own (bring_context, or add_reference with suggested) goes in at once too, so bring only what you found, never what you made up. What an area says is the one thing that waits for the team's yes.",
 ].join("\n");

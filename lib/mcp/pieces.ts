@@ -60,7 +60,7 @@ import { PLAYBOOK_QUESTIONS, openQuestions, questionById, questionText } from ".
 import { SYSTEM_AREAS, cleanDecision, NEVER_MAX, LEARNING_NOTE_MAX, type SystemArea } from "@/types/system";
 import { BRIEF_LIMITS, readBrief } from "@/types/brief";
 import type { McpCtx } from "./auth";
-import { vaultMd } from "./vault";
+import { vaultMd, vaultReader } from "./vault";
 
 const P = schema.project;
 const PI = schema.projectItem;
@@ -162,7 +162,7 @@ async function criterioAnswer(ctx: McpCtx, origin: string, ref: string, section:
   // One area alone is the cheap read: it comes as it is. Every other read opens with what the team kept
   if (section !== "all" && section !== "guide" && section !== "decisions") return { md, pictures: [] };
   const kept = await keptReferences(project.workspace.id, project.id, withPictures);
-  const tail = section === "decisions" ? "" : await broughtMd(project.workspace.id, project.id) + await vaultMd(project.workspace.id, project.id);
+  const tail = section === "decisions" ? "" : await broughtMd(project.workspace.id, project.id) + await vaultMd(await vaultReader(ctx), origin, project.workspace.id, project.id);
   // Under the file's own head (its title and what the project is), before its first section
   const at = md.search(/^## /m);
   return { md: (at < 0 ? `${md}\n\n${kept.md}` : md.slice(0, at) + kept.md + md.slice(at)) + tail, pictures: kept.pictures };

@@ -12,7 +12,7 @@ import { fetchFile } from "./remote-file";
 import { safeFetch } from "./safe-fetch";
 import { canPreview, previewDoc } from "./vault-preview";
 import { frameKeyOf, pictureCard } from "./vault-frame";
-import { VAULT_CATEGORIES, VAULT_LIMITS as L, vaultSlug, type VaultBlock, type VaultCard, type VaultEntry, type VaultEs } from "@/types/vault";
+import { VAULT_CATEGORIES, VAULT_LIMITS as L, vaultSlug, type VaultAccess, type VaultBlock, type VaultCard, type VaultEntry, type VaultEs } from "@/types/vault";
 import type { Locale } from "./i18n/locale";
 
 const V = schema.vaultItem;
@@ -65,7 +65,7 @@ const cardOf = (r: Row, locale?: Locale): VaultCard => ({
   id: r.id, slug: r.slug, title: esOf(r, locale).title || r.title, category: r.category,
   // Tags go one to one: a list that no longer matches the English one is from before a change
   tags: esOf(r, locale).tags?.length === r.tags.length ? esOf(r, locale).tags! : r.tags, summary: esOf(r, locale).summary || r.summary,
-  image: r.imageKey ? fileUrl(r.imageKey) : null, video: r.videoKey ? fileUrl(r.videoKey) : null, videoRatio: r.videoKey ? r.videoRatio : null, liveUrl: r.liveUrl, published: !!r.publishedAt, preview: canPreview(r), createdAt: (r.publishedAt ?? r.createdAt).toISOString(),
+  image: r.imageKey ? fileUrl(r.imageKey) : null, video: r.videoKey ? fileUrl(r.videoKey) : null, videoRatio: r.videoKey ? r.videoRatio : null, liveUrl: r.liveUrl, published: !!r.publishedAt, preview: canPreview(r), access: r.access, createdAt: (r.publishedAt ?? r.createdAt).toISOString(),
 });
 
 /** The Vault's cards, newest first. Drafts only for partners */
@@ -107,6 +107,8 @@ const address = (s: unknown) => { const u = line(s, 2000); return /^https?:\/\//
 export interface VaultInput {
   title: string; category: string; slug?: string; summary?: string; use?: string; tags?: readonly string[];
   blocks?: readonly VaultBlock[]; demo?: string; ground?: string; live_url?: string; source_url?: string;
+  /** Who reads its code. Left out, a new entry is "paid" and an existing one keeps its own */
+  access?: VaultAccess;
   /** The same words in Spanish, piece by piece: one left out stays, unless its English changed in this write */
   es?: VaultEs;
 }
@@ -160,6 +162,7 @@ export async function saveVault(input: VaultInput, userId: string): Promise<{ en
     ...(input.ground !== undefined ? { ground: /^#[0-9a-f]{6}$/i.test(input.ground.trim()) ? input.ground.trim().toUpperCase() : null } : {}),
     ...(input.live_url !== undefined ? { liveUrl: address(input.live_url) } : {}),
     ...(input.source_url !== undefined ? { sourceUrl: address(input.source_url) } : {}),
+    ...(input.access ? { access: input.access } : {}),
     // There are no drafts: an entry is published as it is written, and one left unpublished from before is published by its next write
     publishedAt: existing?.publishedAt ?? now,
     updatedAt: now,

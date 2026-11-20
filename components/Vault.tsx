@@ -15,7 +15,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { fmtDate } from "@/lib/i18n/format";
 import { plain } from "@/lib/resources";
 import { tokenLines } from "@/lib/code-tokens";
-import type { VaultCard, VaultEntry } from "@/types/vault";
+import { canReadVault, type VaultCard, type VaultEntry } from "@/types/vault";
+import type { Plan } from "@/lib/plans";
 import { useT } from "./I18nProvider";
 import { growFromPress, shrinkAway } from "./ItemPanel";
 import LoopVideo from "./LoopVideo";
@@ -23,7 +24,14 @@ import SoundControl from "./SoundControl";
 import ZoomPill from "./ZoomPill";
 import "./Vault.css";
 
-interface Listing { entries: VaultCard[]; partner: boolean; picks: Record<string, string[]> }
+/** vault: how much code the active workspace's plan opens, which with each card's access says which are locked */
+interface Listing { entries: VaultCard[]; partner: boolean; picks: Record<string, string[]>; vault: Plan["vault"] }
+
+/** What a card and its sheet say of the code: locked for this workspace, marked free (where that tells something:
+ *  on a plan without the whole Vault, and to partners, who see each entry's access), or nothing */
+type CodeMark = "locked" | "free" | null;
+const markOf = (d: Pick<Listing, "partner" | "vault">, e: VaultCard): CodeMark =>
+  !canReadVault({ vault: d.vault }, e, d.partner) ? "locked" : e.access === "free" && (d.partner || d.vault !== "full") ? "free" : null;
 // Read once per visit: coming back from an entry, or from another section, shows the cards at once
 let cache: Listing | null = null;
 
@@ -177,7 +185,7 @@ export default function Vault({ query, head, projects }: { projects: readonly { 
   return (
     <>
       {open && data && (
-        <VaultSheet slug={open} near={[before?.slug, after?.slug]} onPrev={before ? () => step(before.slug) : undefined} onNext={after ? () => step(after.slug) : undefined} card={opened} partner={data.partner} projects={projects} used={opened ? data.picks?.[opened.id] ?? [] : []} onPicks={(v) => { if (opened) setPicks(opened.id, v); }} labelOf={labelOf} onClose={() => show(null)}
+        <VaultSheet slug={open} near={[before?.slug, after?.slug]} onPrev={before ? () => step(before.slug) : undefined} onNext={after ? () => step(after.slug) : undefined} card={opened} partner={data.partner} mark={opened ? markOf(data, opened) : null} projects={projects} used={opened ? data.picks?.[opened.id] ?? [] : []} onPicks={(v) => { if (opened) setPicks(opened.id, v); }} labelOf={labelOf} onClose={() => show(null)}
           onPatch={(fields) => { if (opened) patch(opened.id, fields); }} onCategory={(c) => { setCategory(c); show(null); }} />
       )}
       <div className="disc-list" ref={scroller}>
@@ -208,7 +216,7 @@ export default function Vault({ query, head, projects }: { projects: readonly { 
             {layout && shown.map((e) => {
               const p = layout.at.get(e.id)!;
               return (
-                <li key={e.id} style={{ width: layout.col, transform: `translate(${p.x}px, ${p.y}px)` }}><VaultTile entry={e} kind={category ? null : labelOf(e.category)} blank={labelOf(e.category)} projects={projects} used={data.picks?.[e.id] ?? []} onPicks={(v) => setPicks(e.id, v)} onShape={(videoRatio) => patch(e.id, { videoRatio })} onOpen={() => show(e.slug)} /></li>
+                <li key={e.id} style={{ width: layout.col, transform: `translate(${p.x}px, ${p.y}px)` }}><VaultTile entry={e} mark={markOf(data, e)} kind={category ? null : labelOf(e.category)} blank={labelOf(e.category)} projects={projects} used={data.picks?.[e.id] ?? []} onPicks={(v) => setPicks(e.id, v)} onShape={(videoRatio) => patch(e.id, { videoRatio })} onOpen={() => show(e.slug)} /></li>
               );
             })}
           </ul>
@@ -254,7 +262,7 @@ const PLAY_AFTER_MS = 140;
  *  itself over the picture (the sandboxed preview, scaled to the card): what moves by itself moves, and what answers
  *  to the pointer answers. An entry with a loop plays that instead, by itself and for as long as the card is in view,
  *  and the card takes the loop's shape. A click anywhere, the piece included, opens the entry */
-function VaultTile({ entry: e, kind, blank, projects, used, onPicks, onShape, onOpen }: { entry: VaultCard; kind: string | null; blank: string; projects: readonly { id: string; name: string }[]; used: readonly string[]; onPicks: (projects: string[]) => void; onShape: (ratio: number) => void; onOpen: () => void }) {
+function VaultTile({ entry: e, mark, kind, blank, projects, used, onPicks, onShape, onOpen }: { entry: VaultCard; mark: CodeMark; kind: string | null; blank: string; projects: readonly { id: string; name: string }[]; used: readonly string[]; onPicks: (projects: string[]) => void; onShape: (ratio: number) => void; onOpen: () => void }) {
   const { t } = useT();
   const shot = useRef<HTMLSpanElement>(null);
   const frame = useRef<HTMLIFrameElement>(null);
@@ -311,6 +319,8 @@ function VaultTile({ entry: e, kind, blank, projects, used, onPicks, onShape, on
           <span className="vault-card__name">{e.title}</span>
           {kind && <span className="vault-card__kind">{kind}</span>}
         </span>
+        {mark === "locked" && <span className="vault-card__lock" role="img" aria-label={t.vault.locked} data-tip={t.vault.locked}><Icon name="lock" size={14} /></span>}
+        {mark === "free" && <span className="vault-mark">{t.vault.free}</span>}
         <span className="vault-card__go" aria-hidden><Icon name="chevron-right" size={14} /></span>
       </span>
     </a>
@@ -321,12 +331,12 @@ function VaultTile({ entry: e, kind, blank, projects, used, onPicks, onShape, on
  *  or filling it when it runs live; down the right, what it is, who made it, the ways to use it, its facts and tags.
  *  For partners the stage has a second view, its documentation. The arrows (and the keys, and a swipe on a phone) walk
  *  the grid in its order, in the same sheet. Esc, the veil or the cross close it */
-function VaultSheet({ slug, near, card, partner, projects, used, onPicks, onPatch, labelOf, onClose, onCategory, onPrev, onNext }: {
+function VaultSheet({ slug, near, card, partner, mark, projects, used, onPicks, onPatch, labelOf, onClose, onCategory, onPrev, onNext }: {
   /** The entry before and after this one in the grid; absent at either end */
   onPrev?: () => void; onNext?: () => void;
   /** The entries beside this one, read ahead */
   near?: readonly (string | undefined)[];
-  slug: string; card: VaultCard | null; partner: boolean; projects: readonly { id: string; name: string }[]; used: readonly string[]; onPicks: (projects: string[]) => void; onPatch: (fields: Partial<VaultCard>) => void; labelOf: (key: string) => string; onClose: () => void; onCategory: (c: string) => void;
+  slug: string; card: VaultCard | null; partner: boolean; mark: CodeMark; projects: readonly { id: string; name: string }[]; used: readonly string[]; onPicks: (projects: string[]) => void; onPatch: (fields: Partial<VaultCard>) => void; labelOf: (key: string) => string; onClose: () => void; onCategory: (c: string) => void;
 }) {
   const { t, locale } = useT();
   const [entry, setEntry] = useState<VaultEntry | null>(() => entries.get(slug) ?? null);
@@ -508,6 +518,7 @@ function VaultSheet({ slug, near, card, partner, projects, used, onPicks, onPatc
               <dl className="vault-facts">
                 <div><dt>{t.vault.category}</dt><dd><button type="button" className="vault-facts__link" onClick={() => onCategory(e.category)}>{labelOf(e.category)}</button></dd></div>
                 {!entry?.by && <div><dt>{t.vault.published}</dt><dd>{when}</dd></div>}
+                {(partner || mark === "free") && <div><dt>{t.vault.access}</dt><dd>{t.vault.accessOf[e.access]}</dd></div>}
                 {entry?.sourceUrl && partner && <div><dt>{t.vault.source}</dt><dd><a className="vault-facts__link" href={entry.sourceUrl} target="_blank" rel="noopener noreferrer">{hostOf(entry.sourceUrl)}</a></dd></div>}
               </dl>
               {e.tags.length > 0 && <ul className="vault-tags">{e.tags.map((tag) => <li key={tag}>{tag}</li>)}</ul>}
@@ -519,7 +530,14 @@ function VaultSheet({ slug, near, card, partner, projects, used, onPicks, onPatc
                   <p>{entry.use}</p>
                 </section>
               )}
-              {entry && !partner && <p className="vault-sheet__note">{t.vault.docsViaAgent}</p>}
+              {/* Nobody but the team reads the code here. Everyone else hears where it goes: to their agent, or, when their
+                  plan does not open this piece, to a paid plan */}
+              {entry && !partner && (mark === "locked" ? (
+                <div className="vault-locked">
+                  <p className="vault-sheet__note"><Icon name="lock" size={14} />{t.vault.lockedNote}</p>
+                  <Button size="s" href="/settings/plan" className="vault-sheet__go">{t.vault.seePlans}</Button>
+                </div>
+              ) : <p className="vault-sheet__note">{t.vault.docsViaAgent}</p>)}
               {partner && entry && <VideoControl slug={slug} video={video} onChange={(v, ratio) => { setVideo(v); setShape(ratio); onPatch({ video: v, videoRatio: ratio }); const kept = entries.get(slug); if (kept) entries.set(slug, { ...kept, video: v, videoRatio: ratio }); }} />}
             </section>
           </div>
