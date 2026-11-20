@@ -227,7 +227,7 @@ export const auth = betterAuth({
         // app/actions/billing.ts).
         async beforeCreateOrganization({ organization: org, user }) {
           const refused = await newTeamRefusal(user.id);
-          if (refused) throw new APIError("FORBIDDEN", { message: refused });
+          if (refused) throw planRefusal(refused);
           const billingAccountId = await createBillingAccount({ name: org.name ?? "", ownerUserId: user.id ?? null });
           return { data: { ...org, billingAccountId, outputLanguage: toOutputLanguage((user as { language?: unknown }).language) } };
         },
@@ -335,7 +335,7 @@ async function tellMemberChange(ctx: AfterCtx) {
   });
 }
 
-/** A seat limit as Better Auth answers it: a 402 whose body carries what the upgrade notice reads, under `message` */
+/** A plan's limit (a seat, a new team) as Better Auth answers it: a 402 whose body carries what the upgrade notice reads, under `message` */
 const planRefusal = (e: QuotaError) => {
   const { error, ...limit } = httpErrorBody(e);
   return new APIError("PAYMENT_REQUIRED", { message: error, ...limit });

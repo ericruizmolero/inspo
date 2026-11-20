@@ -6,6 +6,7 @@ import { authClient } from "@/lib/auth-client";
 import { useT } from "./I18nProvider";
 import { Busy, Button, TextField } from "@/components/criterio";
 import { Dialog, DialogClose, DialogDescription, DialogWindow } from "@/components/ui/dialog";
+import { reportPlanLimit } from "./PlanLimitNotice";
 
 function slugify(s: string) {
   return s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40);
@@ -26,7 +27,8 @@ export default function CreateTeamDialog({ open, onOpenChange }: { open: boolean
     const slug = `${slugify(value) || "team"}-${Math.random().toString(36).slice(2, 6)}`;
     const { error: err } = await authClient.organization.create({ name: value, slug });
     setBusy(false);
-    if (err) { setError(err.message ?? t.team.createFailed); return; }
+    // Without a paid plan there is no new team: the upgrade notice says so, and the dialog steps out of its way
+    if (err) { if (reportPlanLimit(err)) onOpenChange(false); else setError(err.message ?? t.team.createFailed); return; }
     setName(""); onOpenChange(false);
     // The new team is the active workspace now: its members page is the next step
     router.push("/settings/members"); router.refresh();

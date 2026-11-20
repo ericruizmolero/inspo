@@ -2419,7 +2419,7 @@ export const ui: typeof EnUi = {
     planAllows: (plan: string, people: string): string => `El plan ${plan} admite ${people}.`,
     pendingInvites: (n: number): string => (n === 1 ? "1 invitación sin aceptar" : `${n} invitaciones sin aceptar`),
     withPending: (allows: string, members: string, pending: string): string =>
-      `${allows} Ahora hay ${members} en el equipo y ${pending}. Cancela una invitación en /equipo o amplía el plan.`,
+      `${allows} Ahora hay ${members} en el equipo y ${pending}. Cancelar una de esas invitaciones libera su plaza.`,
     movePlan: (allows: string): string => `${allows} Amplía el plan para invitar a más.`,
     itemsFull: (limit: number, plan: string): string =>
       `La biblioteca está llena: el plan ${plan} guarda ${limit} referencias. Puedes seguir viendo, buscando y exportando. Amplía el plan para guardar más.`,

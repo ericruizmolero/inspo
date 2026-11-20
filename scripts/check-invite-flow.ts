@@ -55,7 +55,9 @@ async function main() {
   const owner = await login(mail("owner"));
   // One free workspace each: with only free ones, a new team is refused, with a paid one it is allowed
   const refused = await post("/api/auth/organization/create", owner, { name: TAG, slug: TAG });
-  assert.equal(refused.status, 403, `a second free workspace was created: ${JSON.stringify(refused.body)}`);
+  // A plan's limit like the others: 402 naming the cheapest paid plan, which the app turns into the upgrade notice
+  assert.equal(refused.status, 402, `a second free workspace was created: ${JSON.stringify(refused.body)}`);
+  assert.deepEqual([refused.body.quota, refused.body.upgrade], [true, "duo"], "the refusal names the plan that lifts it");
   const [me] = await db.select({ id: schema.user.id }).from(schema.user).where(eq(schema.user.email, mail("owner")));
   paidId = newId();
   const paidAccount = await createBillingAccount({ name: `${TAG}-paid`, ownerUserId: me.id, plan: "studio" });

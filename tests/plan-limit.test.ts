@@ -12,6 +12,8 @@ test("the plan named is the cheapest above that gives more of what ran out", () 
   expect(planThatLifts("members", "free"), "Duo is two people too: Studio is the first with more seats").toBe("studio");
   expect(planThatLifts("workspaces", "studio"), "only Agency holds several workspaces").toBe("agency");
   expect(planThatLifts("checks", "free")).toBe("duo");
+  expect(planThatLifts("teams", "free"), "any paid plan lets a person start a team").toBe("duo");
+  expect(planThatLifts("teams", "duo")).toBeNull();
   expect(planThatLifts("members", "agency"), "nothing above the top").toBeNull();
   expect(planThatLifts("items", "duo"), "a limit the plan does not have is lifted by nothing").toBeNull();
 });

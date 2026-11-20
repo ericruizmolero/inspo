@@ -68,7 +68,7 @@ export const isPlanKey = (k: string): k is PlanKey => PLANS.some((p) => p.key ==
 export const plansAbove = (from: PlanKey): Plan[] => PLANS.filter((p) => p.price.month > planOf(from).price.month);
 
 /** What a plan can run out of. Each one is a QuotaError (lib/workspace-core.ts) when it does */
-export type PlanLimit = "ai" | "searches" | "members" | "items" | "projects" | "storage" | "workspaces" | "checks";
+export type PlanLimit = "ai" | "searches" | "members" | "items" | "projects" | "storage" | "workspaces" | "teams" | "checks";
 
 /** How much of each limit a plan gives: null is no cap */
 const ROOM: Record<PlanLimit, (p: Plan) => number | null> = {
@@ -79,6 +79,8 @@ const ROOM: Record<PlanLimit, (p: Plan) => number | null> = {
   projects: (p) => p.projectsMax,
   storage: (p) => p.storageMaxBytes,
   workspaces: (p) => p.workspaces,
+  // Teams a person may start beyond their personal space: none without a paid plan (lib/room.ts mayCreateTeam)
+  teams: (p) => (isPaid(p) ? null : 0),
   checks: (p) => (isPaid(p) ? null : FREE_CHECKS_PER_MONTH),
 };
 

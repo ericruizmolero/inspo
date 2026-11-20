@@ -2441,7 +2441,7 @@ export const ui = {
     planAllows: (plan: string, people: string): string => `The ${plan} plan allows ${people}.`,
     pendingInvites: (n: number): string => (n === 1 ? "1 invitation not yet accepted" : `${n} invitations not yet accepted`),
     withPending: (allows: string, members: string, pending: string): string =>
-      `${allows} Right now there are ${members} on the team and ${pending}. Cancel an invitation in /equipo, or move up a plan.`,
+      `${allows} Right now there are ${members} on the team and ${pending}. Cancelling one of those invitations frees its seat.`,
     movePlan: (allows: string): string => `${allows} Move up a plan to invite more.`,
     itemsFull: (limit: number, plan: string): string =>
       `The library is full: the ${plan} plan keeps ${limit} references. Viewing, searching and exporting still work. Move up a plan to save more.`,

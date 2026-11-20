@@ -241,11 +241,12 @@ export async function assertRoomIn(organizationId: string, need: { items?: numbe
  * the free workspace each person gets is their personal space: another one takes paying for a plan, that is, owning
  * a billing account on a paid plan. Being an owner of a workspace someone else pays for (an agency's client) is not.
  */
-export async function newTeamRefusal(userId: string): Promise<string | null> {
+export async function newTeamRefusal(userId: string): Promise<QuotaError | null> {
   const B = schema.billingAccount;
   const paying = await db.select({ plan: B.plan }).from(B).where(eq(B.ownerUserId, userId));
   if (mayCreateTeam(paying.map((r) => planOf(r.plan)))) return null;
-  return (await getT()).t.quota.secondTeam;
+  // Refused means none of them is paid, so the person is on the free plan wherever they pay
+  return new QuotaError("teams", "free", (await getT()).t.quota.secondTeam);
 }
 
 export interface OverCapacity { members: number; limit: number; plan: PlanKey }

@@ -138,7 +138,7 @@ async function main() {
     assert.ok(await newTeamRefusal(owner), "only the personal space: refused");
     const second = await create(owner);
     assert.equal(second.ok, false, "a second free workspace is not created");
-    assert.equal(second.ok ? "" : second.status, "FORBIDDEN");
+    assert.equal(second.ok ? "" : second.status, "PAYMENT_REQUIRED", "a plan's limit, so the upgrade notice shows it");
     console.log(`✓ only free workspaces: refused, "${second.ok ? "" : second.message}"`);
     const payer = await newUser("payer");
     await newOrg(payer, "personal", free.key);
