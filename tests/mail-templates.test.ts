@@ -50,7 +50,7 @@ test("the compiler refuses a template's variables when one is missing or extra",
   mail("reply", "en", { WHO: "a", MINE: "b", THEIRS: "c", URL: "u" });
 });
 
-test("someone's words are escaped for the HTML; a link's & and a quote stay as written for the subject and text", () => {
+test("someone's words are escaped for the HTML; a link's & and a quote stay as written for the text part", () => {
   const m = replyMail({ who: "<b>Eve</b> & co", mine: "5 &lt; 6", theirs: "It's \"fine\"", url: "https://app.test/p/1?a=1&lang=es" }, { team: "Ana & Bea", stopUrl: "https://app.test/unsubscribe?u=1&k=replies" }, "en");
   const v = resendVariables(m, greeting("en", "Ana"));
   expect(v.WHO).toBe("&lt;b&gt;Eve&lt;/b&gt; & co");

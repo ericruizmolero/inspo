@@ -34,7 +34,7 @@ const MONO = "ui-monospace,SFMono-Regular,Menlo,Consolas,monospace";
 /**
  * Makes a value safe in an email's HTML. Only what HTML would read as markup: an ampersand that starts an entity,
  * and the angle brackets. A plain "&" or a quote stays as written, because Resend puts the same value, unescaped,
- * in the subject and the plain-text part.
+ * in the plain-text part it keeps for each template. The subject reads the raw twin instead (lib/mail-templates.ts).
  */
 export const escapeHtml = (s: string): string => s.replace(/&(?=#?\w+;)/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 const attr = (s: string) => escapeHtml(s).replace(/"/g, "&quot;");
