@@ -10,3 +10,7 @@ export const MARKETING_URL = process.env.NEXT_PUBLIC_MARKETING_URL || "https://c
 
 /** A page of the marketing site in the reader's language: English at /, Spanish under /es/ */
 export const marketingHref = (path: string, locale: Locale) => `${MARKETING_URL}${locale === "es" ? "/es" : ""}${path}`;
+
+/** Where someone with no session lands from the app's home: the marketing landing in production, and the app's own
+ *  sign-in in development, so a local server never sends you off to criterio.design (Alberto, 20-11) */
+export const guestHome = (locale: Locale) => (process.env.NODE_ENV === "development" ? "/login" : marketingHref("/", locale));
