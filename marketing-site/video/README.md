@@ -18,15 +18,16 @@ marketing-site/video/
   voz/es, voz/en       la locución publicada: siete bloques por idioma y las marcas de tiempo de la toma
   landing/
     plantilla.html     LA FUENTE de la portada: marcado, estilos, textos y la demo
-    construir.py       plantilla.html → public/index.html y public/es/index.html
+    construir.py       plantilla.html → src/pages/index.astro y src/pages/es/index.astro
     traer-vault.py     trae una pieza del Vault a la portada
     revisar.cjs        revisión completa en Chrome y WebKit, escritorio y móvil
 ```
 
 Lo que se genera y **no** se sube (`.gitignore`): `rec-*/` (grabaciones), `hf-*/` (composición y renders) y `entrega/`.
 
+Las páginas que sirve la web, **generadas** por `construir.py` y que no se editan a mano: `marketing-site/src/pages/index.astro` y `src/pages/es/index.astro`. Son la plantilla tal cual, con cada `<script>` y `<style>` en `is:inline` para que Astro no los empaquete ni los reescriba.
+
 Lo que la portada usa y ya está en `marketing-site/public/`:
-- `index.html`, `es/index.html`: **generados**, no se editan a mano.
 - `assets/vault/`: imágenes, piezas del Vault (`vault/`), la web de ejemplo que construye la IA en la demo (`altura/`) y el vídeo (`video/criterio-es.mp4`, `criterio-en.mp4` y sus pósteres).
 - La música es una de las de la app: `public/polish/keeping-cool.mp3` (HoliznaCC0, CC0).
 
@@ -172,7 +173,7 @@ node marketing-site/video/landing/revisar.cjs https://criterio.design/ publicada
 - `hyperframes check` avisa de `nested_structure_needs_subcomposition`: son avisos, no bloquean.
 - `hyperframes check` y `render` dejan procesos de Chrome vivos: `pkill -f chrome-headless-shell; pkill -f warmCheck`.
 - WebKit sin pantalla no pinta la perspectiva CSS: el giro de las tarjetas del Pulido solo se ve bien en Chrome y en un Safari real.
-- `scripts/check-dist.mjs` lee cualquier `src="…"` del HTML, también dentro del JavaScript. `construir.py` ya lo resuelve; por eso no se edita `public/index.html` a mano.
+- `scripts/check-dist.mjs` lee cualquier `src="…"` del HTML, también dentro del JavaScript. `construir.py` ya lo resuelve; por eso no se edita `src/pages/index.astro` a mano.
 - El formulario no guarda correos: sin `POST /api/waitlist` (#119) lleva al acceso de la app.
 
 ## Pendiente

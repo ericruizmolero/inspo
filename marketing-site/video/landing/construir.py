@@ -1,15 +1,15 @@
-# Construye la portada (/ y /es/) desde plantilla.html y la deja en marketing-site/public/.
+# Construye la portada (/ y /es/) desde plantilla.html y la deja en marketing-site/src/pages/, donde la sirve Astro.
 # Uso, desde cualquier sitio: python3 marketing-site/video/landing/construir.py
 #   plantilla.html      toda la portada: marcado, estilos, textos (COPY) y la demo de la ventana del producto
-#   → public/index.html     inglés
-#   → public/es/index.html  castellano
+#   → src/pages/index.astro     inglés
+#   → src/pages/es/index.astro  castellano
 # Los recursos propios (imágenes, vídeo, piezas del Vault, la web de Altura) ya viven en public/assets/vault/.
-# No editar public/index.html a mano: se pisa al volver a construir.
+# No editar las páginas generadas a mano: se pisan al volver a construir.
 import json, os, re, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 MS = os.path.join(HERE, '..', '..')
-PUB = os.path.join(MS, 'public')
+PAGES = os.path.join(MS, 'src', 'pages')
 SITE = 'https://criterio.design'
 read = lambda *p: open(os.path.join(*p), encoding='utf-8').read()
 
@@ -32,6 +32,8 @@ h = re.sub(r'''(["'`(])(gsap\.min\.js|mtn\.js|tino-dock\.png|(?:vf|refs|art|equi
 # scripts/check-dist.mjs lee cualquier src="…" o href="…" del HTML, también los de las plantillas del JS:
 # donde la ruta lleva ${…}, el espacio de delante va escrito \x20 (vale igual dentro de una plantilla)
 h = re.sub(r' (src|href|poster)="([^"]*\$\{)', r'\\x20\1="\2', h)
+# Astro sirve la página tal cual: con is:inline no empaqueta ni reescribe ningún script ni estilo
+h = re.sub(r'<(script|style)(?=[\s>])', r'<\1 is:inline', h)
 
 T = {
     'en': dict(at='/', title='Criterio · Your team decides the look. Your agent builds the landing', desc='Gather references, vote on what stays and get a criterio.md your agent reads before it builds the landing. Join the waitlist and we’ll email you when your invite is ready.', alt='Your references, written down as decisions. Tino reads a row of references.', loc='en_US'),
@@ -64,7 +66,8 @@ for l, x in T.items():
             sys.exit(f'{l}: falta {must}')
     if 'noindex' in p:
         sys.exit(f'{l}: sigue noindex')
-    out = os.path.join(PUB, 'index.html') if l == 'en' else os.path.join(PUB, 'es', 'index.html')
+    out = os.path.join(PAGES, 'index.astro') if l == 'en' else os.path.join(PAGES, 'es', 'index.astro')
+    p = '---\n// Generada por marketing-site/video/landing/construir.py desde plantilla.html: no se edita a mano\n---\n' + p
     os.makedirs(os.path.dirname(out), exist_ok=True)
     open(out, 'w', encoding='utf-8').write(p)
     print(os.path.relpath(out, MS), len(p))
