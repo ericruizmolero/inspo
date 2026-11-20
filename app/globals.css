@@ -2045,6 +2045,8 @@ video.vp__media { object-fit: contain; }
 .ad-priority { width: 80px; }
 .ad-pick { width: 28px; }
 .ad-actions { display: inline-flex; gap: 4px; }
+/* /admin/plans, Accounts: the plan and its last day side by side while a row is changed */
+.ad-plan-edit { display: inline-flex; flex-wrap: wrap; gap: 8px; }
 /* /admin/failures: the error gets the room, the request id is literal data */
 .ad-failure { max-width: 360px; }
 .ad-mono { font-family: var(--font-mono); }

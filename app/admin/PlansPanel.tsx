@@ -2,15 +2,16 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { declinePlanRequest, setRequestedPlan } from "@/app/actions/plans-admin";
-import type { OpenPlanRequest } from "@/lib/plan-requests";
+import { declinePlanRequest, setAccountPlan, setRequestedPlan } from "@/app/actions/plans-admin";
+import type { AccountPlan, OpenPlanRequest } from "@/lib/plan-requests";
+import { isPaid, planOf, PLANS, type PlanKey } from "@/lib/plans";
 import { useT } from "@/components/I18nProvider";
-import { timeAgo } from "@/lib/i18n/format";
+import { fmtGiftDay, timeAgo } from "@/lib/i18n/format";
 import { Button, EmptyState, SettingsWindow } from "@/components/criterio";
 import { useConfirm } from "@/components/useConfirm";
 
-/** /admin/plans: the plans accounts asked for, oldest first, each set or declined by hand */
-export default function PlansPanel({ requests }: { requests: OpenPlanRequest[] }) {
+/** /admin/plans: the plans accounts asked for, oldest first, each set or declined by hand; then every account's plan */
+export default function PlansPanel({ requests, accounts }: { requests: OpenPlanRequest[]; accounts: AccountPlan[] }) {
   const { locale, t } = useT();
   const p = t.admin.plans;
   const router = useRouter();
@@ -75,6 +76,122 @@ export default function PlansPanel({ requests }: { requests: OpenPlanRequest[] }
           </div>
         )}
       </SettingsWindow>
+      <AccountsWindow accounts={accounts} />
     </div>
+  );
+}
+
+const SHOWN = 25;
+
+/** The day a plan ends, as the date field writes it, at the moment setAccountPlan stores (the end of that day, UTC) */
+const endOf = (day: string) => new Date(`${day}T23:59:59Z`);
+
+/** Every account and its plan, each changed in its own row, with an optional last day */
+function AccountsWindow({ accounts }: { accounts: AccountPlan[] }) {
+  const { locale, t } = useT();
+  const a = t.admin.accounts;
+  const router = useRouter();
+  const [confirm, confirmDialog] = useConfirm();
+  const [q, setQ] = useState("");
+  const [showAll, setShowAll] = useState(false);
+  const [editing, setEditing] = useState<{ id: string; plan: PlanKey; until: string } | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<{ text: string; error?: boolean } | null>(null);
+  const name = (k: PlanKey) => t.plans.items[k].name;
+  const needle = q.trim().toLowerCase();
+  const shown = accounts.filter((r) => !needle || [r.name, r.ownerEmail, ...r.workspaces].some((v) => v?.toLowerCase().includes(needle)));
+  const visible = showAll ? shown : shown.slice(0, SHOWN);
+  const paid = accounts.filter((r) => isPaid(planOf(r.plan))).length;
+
+  const save = async (r: AccountPlan) => {
+    if (!editing) return;
+    const until = editing.plan !== "free" && editing.until ? editing.until : null;
+    if (!(await confirm({ title: a.confirm(r.name, name(editing.plan), until ? fmtGiftDay(endOf(until), locale) : null), action: a.save }))) return;
+    setBusy(true); setMsg(null);
+    const res = await setAccountPlan(r.id, editing.plan, until).catch(() => null);
+    setBusy(false);
+    if (!res?.ok) { setMsg({ text: res?.error ?? a.failed, error: true }); return; }
+    setEditing(null);
+    setMsg({ text: a.done(r.name, name(editing.plan)) });
+    router.refresh();
+  };
+
+  const note = msg ? <span className={msg.error ? "cr-field-hint is-error" : undefined} role={msg.error ? "alert" : "status"}>{msg.text}</span> : a.hint;
+  return (
+    <SettingsWindow title={a.title} figure={accounts.length || undefined} description={accounts.length ? a.meta(paid, accounts.length) : undefined} note={note}>
+      {confirmDialog}
+      {accounts.length === 0 ? <EmptyState title={t.admin.nothingYet}>{a.empty}</EmptyState> : (
+        <>
+          <div className="ad-tools">
+            <input type="search" className="cr-input cr-input-s ad-tools__search" placeholder={a.search} aria-label={a.search}
+              value={q} onChange={(e) => setQ(e.target.value)} />
+          </div>
+          {shown.length === 0 ? <p className="ad-muted t-small">{a.noMatch}</p> : (
+            <div className="ad-table-wrap">
+              <table className="ad-table t-small">
+                <thead>
+                  <tr>
+                    <th>{a.thAccount}</th>
+                    <th>{a.thWorkspaces}</th>
+                    <th>{a.thPlan}</th>
+                    <th className="ad-keep"><span className="cr-visually-hidden">{a.change}</span></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {visible.map((r) => {
+                    const edit = editing?.id === r.id ? editing : null;
+                    return (
+                      <tr key={r.id}>
+                        <td>
+                          <span className="list__main">
+                            <span className="list__name t-ui"><span className="list__text" title={r.name}>{r.name}</span></span>
+                            <span className="list__sub t-small">{r.ownerEmail ?? a.noOwner}</span>
+                          </span>
+                        </td>
+                        <td className="ad-cell-trunc" title={r.workspaces.join(", ")}>{r.workspaces.join(", ")}</td>
+                        <td>
+                          {edit ? (
+                            <span className="ad-plan-edit">
+                              <select className="cr-input cr-input-s" aria-label={a.planOf(r.name)} value={edit.plan}
+                                onChange={(e) => setEditing({ ...edit, plan: e.target.value as PlanKey })} disabled={busy}>
+                                {PLANS.map((p) => <option key={p.key} value={p.key}>{name(p.key)}</option>)}
+                              </select>
+                              {edit.plan !== "free" && (
+                                <input type="date" className="cr-input cr-input-s" aria-label={a.untilOf(r.name)} value={edit.until}
+                                  onChange={(e) => setEditing({ ...edit, until: e.target.value })} disabled={busy} />
+                              )}
+                            </span>
+                          ) : (
+                            <>{name(r.plan)}{r.until && <span className="ad-muted"> {a.until(fmtGiftDay(new Date(r.until), locale))}</span>}</>
+                          )}
+                        </td>
+                        <td className="ad-keep">
+                          <span className="ad-actions">
+                            {edit ? (
+                              <>
+                                <Button variant="quiet" size="s" onClick={() => setEditing(null)} disabled={busy}>{a.cancel}</Button>
+                                <Button size="s" onClick={() => void save(r)} disabled={busy}>{a.save}</Button>
+                              </>
+                            ) : (
+                              <Button variant="quiet" size="s" disabled={busy}
+                                onClick={() => { setMsg(null); setEditing({ id: r.id, plan: r.plan, until: r.until?.slice(0, 10) ?? "" }); }}>{a.change}</Button>
+                            )}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+          {shown.length > SHOWN && (
+            <Button variant="quiet" size="s" className="list__more" aria-expanded={showAll} onClick={() => setShowAll((v) => !v)}>
+              {showAll ? t.admin.seeLess : t.admin.seeAll(shown.length)}
+            </Button>
+          )}
+        </>
+      )}
+    </SettingsWindow>
   );
 }
