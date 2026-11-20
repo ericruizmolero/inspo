@@ -44,7 +44,8 @@ Lo que la portada usa y ya está en `marketing-site/public/`:
 
 Solo hace falta para generar voz nueva (apartado 3). Regrabar, remontar, cambiar la música o tocar la portada **no la necesitan**: las tomas publicadas ya están en `voz/`.
 
-- **Existe una clave del proyecto**, creada por Andoni en su cuenta de ElevenLabs, limitada a texto a voz y con un tope de gasto. Las voces del vídeo (Emilio y Jessica) están en esa cuenta, así que con esa clave funcionan los comandos de este documento tal cual. **Se le pide a Andoni**, que la pasa por un canal privado.
+- **Existe una clave del proyecto**, creada por Andoni el 20/11 en su cuenta de ElevenLabs. Las voces del vídeo (Emilio y Jessica) están en esa cuenta, así que con esa clave funcionan los comandos de este documento tal cual; comprobado el 20/11 con `node voz-eleven.cjs voces`, que las lista y no gasta créditos. **Se le pide a Andoni**, que la pasa por un canal privado. Si todavía no te la ha pasado, pídesela: no uses otra cuenta ni otra voz.
+- **Para guardarla**, con la clave copiada en el portapapeles: `pbpaste > marketing-site/video/clave-elevenlabs.local` (en macOS, desde la raíz del repositorio).
 - **Dónde se pone**, una de dos:
   - en la variable de entorno `ELEVENLABS_API_KEY`, o
   - en el archivo `marketing-site/video/clave-elevenlabs.local`, con la clave en una sola línea. Ese nombre está en `.gitignore`.
