@@ -42,6 +42,7 @@
     "check:mcp": "tsx --conditions=react-server scripts/check-mcp.ts",
     "check:notifications": "tsx --conditions=react-server scripts/check-notifications.ts",
     "check:onboarding-mail": "tsx --conditions=react-server scripts/check-onboarding-mail.ts",
+    "mail:templates": "tsx scripts/mail-templates.ts",
     "bench:library": "tsx --conditions=react-server scripts/bench-library.ts",
     "check:jobs": "tsx --conditions=react-server scripts/check-jobs.ts",
     "check:workspace-delete": "tsx --conditions=react-server scripts/check-workspace-delete.ts",

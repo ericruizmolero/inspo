@@ -5,6 +5,19 @@
 export const mail = {
   signature: "Eric, Andoni and Alberto",
 
+  /** What every email says around its body (lib/mail-layout.ts): the greeting, the signature and the foot */
+  layout: {
+    greeting: (name?: string): string => (name ? `Hi ${name},` : "Hi there,"),
+    signature: "Eric, Andoni and Alberto",
+    why: {
+      team: (team: string): string => `You get this because you are in ${team} on criterio.design.`,
+      account: "You get this because you have an account on criterio.design.",
+      vault: "You get this because you read the whole Vault on criterio.design.",
+    },
+    stop: "Stop these emails",
+    stopNote: "(one click, no sign-in)",
+  },
+
   magicLink: {
     subject: "Your link to sign in to criterio.design",
     text: (url: string): string => `Your link to sign in:\n${url}\n\nIt expires in 10 minutes and works once. If you did not ask for it, ignore this email.`,

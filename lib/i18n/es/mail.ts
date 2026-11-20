@@ -3,6 +3,18 @@ import type { mail as EnMail } from "../en/mail";
 export const mail: typeof EnMail = {
   signature: "Eric, Andoni y Alberto",
 
+  layout: {
+    greeting: (name?: string): string => (name ? `Hola, ${name}:` : "Hola:"),
+    signature: "Eric, Andoni y Alberto",
+    why: {
+      team: (team: string): string => `Te llega porque estás en ${team} en criterio.design.`,
+      account: "Te llega porque tienes una cuenta en criterio.design.",
+      vault: "Te llega porque lees el Vault entero en criterio.design.",
+    },
+    stop: "Dejar de recibir estos correos",
+    stopNote: "(un clic, sin entrar)",
+  },
+
   magicLink: {
     subject: "Tu enlace para entrar en criterio.design",
     text: (url: string): string => `Tu enlace para entrar:\n${url}\n\nCaduca en 10 minutos y solo funciona una vez. Si no lo has pedido, ignora este correo.`,
