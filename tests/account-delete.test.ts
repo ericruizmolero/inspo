@@ -90,7 +90,7 @@ test("a retry after a crash finishes the job: spaces gone, others' teams left, b
   expect(await firstTime(`account-deleted:${me.id}`)).toBe(true);
 
   actAs(me);
-  expect(await deleteMyAccount()).toMatchObject({ ok: true });
+  await expect(deleteMyAccount(), "done, the browser goes to /login").rejects.toMatchObject({ kind: "redirect", url: "/login" });
   expect(await exists(U, me.id), "the user row is gone").toBe(false);
   expect(await exists(O, me.workspaceId), "the personal space is gone").toBe(false);
   expect(await exists(O, solo.id), "the solo team is gone").toBe(false);

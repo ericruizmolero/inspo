@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { unstable_rethrow, useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { fileToSquareDataURL } from "@/lib/image-client";
 import type { SessionUser, Workspace } from "@/lib/workspace-core";
@@ -147,17 +147,21 @@ function DeleteAccount({ email, personal, blockedBy }: { email: string; personal
   const { t } = useT();
   const d = t.deleteAccount;
   const [confirm, confirmDialog] = useConfirm();
-  const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
   const remove = async () => {
     if (!(await confirm({ title: d.confirm, description: d.confirmHint, action: d.confirmAction, danger: true, typed: email }))) return;
     setBusy(true); setError("");
-    const res = await deleteMyAccount().catch(() => null);
-    if (!res?.ok) { setBusy(false); setError(res?.error ?? d.failed); return; }
-    router.push("/login");
-    router.refresh();
+    try {
+      // Done, the action sends the browser to /login: its redirect comes back here as a rejection, passed on
+      const res = await deleteMyAccount();
+      setError(res.ok ? "" : res.error);
+    } catch (err) {
+      unstable_rethrow(err);
+      setError(d.failed);
+    }
+    setBusy(false);
   };
 
   const note = error ? <span className="cr-field-hint is-error" role="alert">{error}</span> : blockedBy ? d.blocked(blockedBy) : undefined;
