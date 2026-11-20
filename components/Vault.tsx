@@ -24,7 +24,7 @@ import SoundControl from "./SoundControl";
 import ZoomPill from "./ZoomPill";
 import "./Vault.css";
 
-/** vault: how much code the active workspace's plan opens, which with each card's access says which are locked */
+/** vault: how much code this person reads (vaultOf, as their agent does), which with each card's access says which are locked */
 interface Listing { entries: VaultCard[]; partner: boolean; picks: Record<string, string[]>; vault: Plan["vault"] }
 
 /** What a card and its sheet say of the code: locked for this workspace, marked free (where that tells something:
