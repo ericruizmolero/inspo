@@ -20,7 +20,8 @@ async function main() {
   const { addItem } = await import("../lib/items");
   const { addMany } = await import("../lib/add-many");
   const { createProject } = await import("../lib/projects");
-  const { countItems, storageUsed, newTeamRefusal, assertRoom, assertQuota } = await import("../lib/quota");
+  const { useTemplate: openExample } = await import("../lib/templates");
+  const { countItems, countProjects, storageUsed, newTeamRefusal, assertRoom, assertQuota } = await import("../lib/quota");
   const { TEMPLATE_AUTHOR } = await import("../lib/sample-items");
   const { auth } = await import("../lib/auth");
   const { HttpError, createBillingAccount, accountOf, dropEmptyAccount } = await import("../lib/workspace-core");
@@ -99,6 +100,15 @@ async function main() {
     const another = await as402(createProject(ws, `${TAG} two`, owner));
     assert.ok(another && /one project/.test(another), "a second project is refused with a 402");
     console.log(`✓ one project, the template left out; a second answers 402: "${another}"`);
+
+    // 3c. An example spends no project: at the cap it still opens, twice, and the count stays at one
+    const example = await openExample(ws, tpl, `${TAG} example`, { id: owner, name: "Owner" });
+    await openExample(ws, tpl, `${TAG} example`, { id: owner, name: "Owner" });
+    assert.equal(await countProjects(ws), 1, "two examples and one project: the plan counts one");
+    const [made] = await db.select({ from: schema.project.fromTemplate }).from(schema.project).where(eq(schema.project.id, example.id));
+    assert.equal(made?.from, tpl, "the example keeps the template it came from");
+    assert.ok(await as402(createProject(ws, `${TAG} three`, owner)), "an example does not free the project either: a second own one is still refused");
+    console.log("✓ two examples open at the cap, the count stays at one, and a second own project is still refused");
 
     // 4. Storage: a file that would pass 1 GB is refused before it is written, one that fits is recorded, a delete frees it
     await db.insert(schema.storedFile).values({ key: `inspo/${ws}/media/${TAG}-big.bin`, organizationId: ws, bytes: free.storageMaxBytes! - 10 });

@@ -51,7 +51,8 @@ export async function duplicateProject(organizationId: string, id: string, name:
   await assertProjectRoom(organizationId);
   const now = new Date();
   const to = newId();
-  const row = { ...src, id: to, name: await freeName(organizationId, name), createdBy: userId, createdAt: now, updatedAt: now };
+  // A copy of an example is the person's own project: it spends the plan's room, as the check above says
+  const row = { ...src, id: to, name: await freeName(organizationId, name), createdBy: userId, fromTemplate: null, createdAt: now, updatedAt: now };
   const [system, areas, links] = await Promise.all([
     db.select().from(S).where(and(eq(S.organizationId, organizationId), eq(S.projectId, id))),
     db.select().from(A).where(and(eq(A.organizationId, organizationId), eq(A.projectId, id))),
@@ -153,8 +154,8 @@ export async function moveProject(from: string, id: string, to: string, user: { 
   const comments = fresh.length ? await db.select().from(C).where(and(eq(C.organizationId, from), inArray(C.itemId, fresh.map((i) => i.id)))).orderBy(C.createdAt) : [];
   const [system] = await db.select().from(S).where(and(eq(S.organizationId, from), eq(S.projectId, id)));
 
-  // Room in the new workspace, before anything is written
-  await assertProjectRoom(to);
+  // Room in the new workspace, before anything is written. An example stays one there and spends no project
+  if (!src.fromTemplate) await assertProjectRoom(to);
   const keys = carrier.keysIn([fresh.map((i) => [i.web, i.thumbnailUrl]), comments.map((c) => c.attachments), system?.brand]);
   const [bytes] = keys.size
     ? await db.select({ n: sql<number>`coalesce(sum(${schema.storedFile.bytes}), 0)::bigint` }).from(schema.storedFile).where(inArray(schema.storedFile.key, [...keys]))

@@ -25,7 +25,8 @@ export interface Plan {
   searches: SearchAllowance;
   /** References the library holds, the sample project's left out (lib/sample-items.ts) */
   itemsMax: number | null;
-  /** Projects in each workspace, templates left out. null = unlimited */
+  /** Projects in each workspace. Templates and the examples opened from one (project.from_template) are left out, so
+   *  opening an example never spends the free plan's project; what is saved into one still counts toward itemsMax. null = unlimited */
   projectsMax: number | null;
   /** Bytes of the workspace's own files (stored_file) */
   storageMaxBytes: number | null;

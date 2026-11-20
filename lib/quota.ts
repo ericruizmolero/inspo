@@ -169,10 +169,11 @@ export async function countItems(organizationId: string): Promise<number> {
   return Number(r?.n ?? 0);
 }
 
-/** Projects the plan counts: the workspace's own, templates left out (they carry `template`) */
+/** Projects the plan counts: the workspace's own. Templates (they carry `template`) and the examples started from
+ *  one (they carry `from_template`, lib/templates.ts useTemplate) are left out */
 export async function countProjects(organizationId: string): Promise<number> {
   const P = schema.project;
-  const [r] = await db.select({ n: sql<number>`count(*)` }).from(P).where(and(eq(P.organizationId, organizationId), isNull(P.template)));
+  const [r] = await db.select({ n: sql<number>`count(*)` }).from(P).where(and(eq(P.organizationId, organizationId), isNull(P.template), isNull(P.fromTemplate)));
   return Number(r?.n ?? 0);
 }
 

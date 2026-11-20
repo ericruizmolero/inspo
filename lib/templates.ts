@@ -12,7 +12,6 @@ import { copySystem, getSystem } from "./system/areas";
 import { saveBrief } from "./brief";
 import { ensureBuiltinTemplates } from "./template-seed";
 import { keyOf } from "./storage";
-import { assertProjectRoom } from "./quota";
 import type { Project } from "@/types/inspo";
 import { RECIPE_MAX, type ProjectTemplate, type TemplateCard } from "@/types/system";
 
@@ -49,18 +48,19 @@ export async function listTemplates(organizationId: string): Promise<TemplateCar
   })));
 }
 
-/** A new project from a template: its system as the template decided it, its recipe, and the sentence it is about */
+/** A new project from a template: its system as the template decided it, its recipe, and the sentence it is about.
+ *  An example spends none of the plan's projects, so no plan refuses it (lib/plans.ts projectsMax) */
 export async function useTemplate(organizationId: string, templateId: string, name: string, author: Author): Promise<Project & { boardIds: string[] }> {
   const [tpl] = await db.select({ id: P.id, template: P.template, recipe: P.recipe }).from(P)
     .where(and(eq(P.organizationId, organizationId), eq(P.id, templateId), isNotNull(P.template))).limit(1);
   if (!tpl) throw new HttpError(404, (await getErrors()).projectNotFound);
-  await assertProjectRoom(organizationId);
   const now = new Date();
   const id = newId();
   const n = await freeName(organizationId, await cleanName(name));
   // It comes with a system, but it opens on its board like any project still gathering: the references it starts
   // from are seen first, and the step to the system ("I have my references") is the team's to take
-  await db.insert(P).values({ id, organizationId, name: n, createdBy: author.id, recipe: tpl.recipe, createdAt: now, updatedAt: now });
+  // It keeps the example it came from: an example does not spend the plan's projects (lib/quota.ts countProjects)
+  await db.insert(P).values({ id, organizationId, name: n, createdBy: author.id, recipe: tpl.recipe, fromTemplate: tpl.id, createdAt: now, updatedAt: now });
   // The template's decisions are finished work: they come as the team's (a whole template starts at 100%), not
   // as proposals the next run may rewrite
   await copySystem(organizationId, templateId, id, "team", author);
