@@ -10,10 +10,16 @@ import LangSwitch from "@/components/LangSwitch";
 import { setUiSounds, useUiSounds } from "@/lib/ui-sounds";
 import { setEmailPreference } from "@/app/actions/notifications";
 import type { EmailKind } from "@/lib/notify";
+import { deleteMyAccount } from "@/app/actions/account";
 import { useT, messageOf } from "@/components/I18nProvider";
 import { Avatar, Button, FieldRow, ReadOnlyField, SettingsWindow, Switch, toneFor } from "@/components/criterio";
+import { useConfirm } from "@/components/useConfirm";
 
-export default function AccountPanel({ user, personal, emails }: { user: SessionUser; personal: Workspace | null; emails: { digest: boolean; replies: boolean; vault?: boolean } }) {
+export default function AccountPanel({ user, personal, emails, blockedBy }: {
+  user: SessionUser; personal: Workspace | null; emails: { digest: boolean; replies: boolean; vault?: boolean };
+  /** The teams of theirs with other people in them, written as a list; null when the account can be deleted */
+  blockedBy: string | null;
+}) {
   const personalId = personal?.id ?? null;
   const { t } = useT();
   const sounds = useUiSounds();
@@ -127,6 +133,42 @@ export default function AccountPanel({ user, personal, emails }: { user: Session
           <span><Button size="s" onClick={signOut}>{t.ws.signOut}</Button></span>
         </FieldRow>
       </SettingsWindow>
+
+      <DeleteAccount email={user.email} personal={personal} blockedBy={blockedBy} />
     </div>
+  );
+}
+
+/**
+ * The last section: the personal space's export first, then the delete, which asks for the email typed. While a team
+ * of theirs has other people the delete waits, and the note says which and what to do (lib/account-delete.ts)
+ */
+function DeleteAccount({ email, personal, blockedBy }: { email: string; personal: Workspace | null; blockedBy: string | null }) {
+  const { t } = useT();
+  const d = t.deleteAccount;
+  const [confirm, confirmDialog] = useConfirm();
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  const remove = async () => {
+    if (!(await confirm({ title: d.confirm, description: d.confirmHint, action: d.confirmAction, danger: true, typed: email }))) return;
+    setBusy(true); setError("");
+    const res = await deleteMyAccount().catch(() => null);
+    if (!res?.ok) { setBusy(false); setError(res?.error ?? d.failed); return; }
+    router.push("/login");
+    router.refresh();
+  };
+
+  const note = error ? <span className="cr-field-hint is-error" role="alert">{error}</span> : blockedBy ? d.blocked(blockedBy) : undefined;
+  return (
+    <SettingsWindow title={d.title} description={d.hint} note={note}
+      actions={<>
+        {personal && <a className="cr-btn cr-btn-secondary cr-btn-s" href={`/api/workspace/export?id=${encodeURIComponent(personal.id)}`} download>{d.download}</a>}
+        {/* Outline at rest; the danger red waits for the confirm step, which also asks for the email typed */}
+        <Button variant="outline" size="s" onClick={remove} disabled={busy || !!blockedBy}>{d.action}</Button>
+      </>}>
+      {confirmDialog}
+    </SettingsWindow>
   );
 }

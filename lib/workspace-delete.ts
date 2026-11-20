@@ -1,5 +1,6 @@
 // Deleting a workspace: every row and every file it left, and nothing else. The one way in: the app's action
-// (app/actions/workspace.ts) and scripts/delete-workspace.ts; Better Auth's own endpoint is off (lib/auth.ts).
+// (app/actions/workspace.ts), deleting an account (lib/account-delete.ts) and scripts/delete-workspace.ts; Better
+// Auth's own endpoint is off (lib/auth.ts).
 //
 // The database goes first, in one transaction: the organization row, whose foreign keys cascade to items,
 // projects, comments, revisions, members, invitations and keys, and set null on failure, activity and
@@ -25,13 +26,16 @@ export interface DeleteResult {
   storageClean: boolean;
 }
 
-/** Deletes the workspace `organizationId`. A personal space is refused (HttpError 403); a missing one is not an error */
-export async function deleteWorkspace(organizationId: string): Promise<DeleteResult> {
+/**
+ * Deletes the workspace `organizationId`. A personal space is refused (HttpError 403) unless its person is going too
+ * (`withItsPerson`, lib/account-delete.ts); a missing one is not an error
+ */
+export async function deleteWorkspace(organizationId: string, opts: { withItsPerson?: boolean } = {}): Promise<DeleteResult> {
   const O = schema.organization;
   await db.transaction(async (tx) => {
     const [org] = await tx.select({ kind: O.kind, billingAccountId: O.billingAccountId }).from(O).where(eq(O.id, organizationId)).for("update");
     // The personal space is where a person lands with no team
-    if (org?.kind === "personal") throw new HttpError(403, (await getErrors()).personalSpaceStays);
+    if (org?.kind === "personal" && !opts.withItsPerson) throw new HttpError(403, (await getErrors()).personalSpaceStays);
     await tx.delete(O).where(eq(O.id, organizationId));
     // Its billing account goes with it when this was its last workspace
     if (org) await dropEmptyAccount(org.billingAccountId, tx);

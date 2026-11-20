@@ -385,6 +385,7 @@ export const actions: Record<string, Surface> = {
   "action:app/actions/mcp.ts#disconnectApp": { exempt: "revokes a grant filtered by the signed-in user's id, no workspace id" },
 
   "action:app/actions/notifications.ts#setEmailPreference": { exempt: "the signed-in user's own email switches, no workspace id" },
+  "action:app/actions/account.ts#deleteMyAccount": { exempt: "deletes the signed-in user's own account and takes no id; what it may delete is in tests/account-delete.test.ts" },
   "action:app/actions/notifications.ts#resubscribe": {
     probe: async (fx) => {
       const { resubscribe } = await import("@/app/actions/notifications");
