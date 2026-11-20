@@ -93,3 +93,19 @@ export function planThatLifts(limit: PlanLimit, from: PlanKey): PlanKey | null {
   if (had === null) return null;
   return plansAbove(from).find((p) => { const room = ROOM[limit](p); return room === null || room > had; })?.key ?? null;
 }
+
+/** The limits that fill with use, which the account's owner hears of as they fill (lib/limit-mail.ts). The monthly ones
+ *  start again on the 1st (UTC); references and storage only free up when something is deleted */
+export const FILLING = { ai: "monthly", searches: "monthly", checks: "monthly", items: "total", storage: "total" } as const satisfies Partial<Record<PlanLimit, "monthly" | "total">>;
+export type FillingLimit = keyof typeof FILLING;
+
+/** How full a limit is where the app counted it: `used` of `max`, and whether the plan just refused for it */
+export interface Fill { limit: FillingLimit; plan: PlanKey; used: number; max: number; refused: boolean }
+
+/** Reached when the plan refused, near from 80% of it, else nothing to tell */
+export const fillStage = (f: Pick<Fill, "used" | "max" | "refused">): "near" | "reached" | null =>
+  f.refused ? "reached" : f.used * 5 >= f.max * 4 ? "near" : null;
+
+/** The quota month `at` is in, "YYYY-MM" in UTC, and the day the next one starts */
+export const quotaMonth = (at = new Date()): string => at.toISOString().slice(0, 7);
+export const nextQuotaMonth = (at = new Date()): Date => new Date(Date.UTC(at.getUTCFullYear(), at.getUTCMonth() + 1, 1));

@@ -23,6 +23,7 @@ import { HttpError } from "@/lib/workspace-core";
 import { eachLimit } from "@/lib/each-limit";
 import { fullMessage, planIn, roomOf } from "@/lib/quota";
 import { planOf } from "@/lib/plans";
+import { tellLimit } from "@/lib/limit-mail";
 import type { InspoItem } from "@/types/inspo";
 import { log, recordFailure } from "./log";
 
@@ -71,7 +72,7 @@ export async function addMany({ workspaceId, user }: Who, items: NewRef[], opts:
   // References left before the cap, taken before the work that makes one: five run at once, and a count
   // per add would let all five through the last free place. The bytes are checked by putFile, file by file
   let slots = (await roomOf({ id: workspaceId, plan: plan.key })).items;
-  let full: string | null = null;
+  let full: string | null = null, ranOut = false;
   const take = () => { if (slots === null) return true; if (slots <= 0) return false; slots--; return true; };
   const giveBack = () => { if (slots !== null) slots++; };
 
@@ -86,7 +87,7 @@ export async function addMany({ workspaceId, user }: Who, items: NewRef[], opts:
     if (seen.has(web)) return { url: raw, status: "existed" };
     seen.add(web);
     let took = false;
-    const leftOut = async (): Promise<AddResult> => { full ??= await fullMessage(plan, "items"); return { url: raw, status: "full" }; };
+    const leftOut = async (): Promise<AddResult> => { ranOut = true; full ??= await fullMessage(plan, "items"); return { url: raw, status: "full" }; };
     try {
       const dateIso = dateOf(it.date);
       const words = it.text === undefined ? "" : cleanText(it.text);
@@ -132,6 +133,8 @@ export async function addMany({ workspaceId, user }: Who, items: NewRef[], opts:
       return { url: raw, status: "error" };
     }
   });
+
+  if (slots !== null && plan.itemsMax !== null) tellLimit(workspaceId, { limit: "items", plan: plan.key, used: plan.itemsMax - slots, max: plan.itemsMax, refused: ranOut });
 
   // What came in goes to the project picked (with what was here already), or to the one this person was working in
   // when none was picked or it went away. The Inbox, picked on purpose, keeps it (Eric, 06-11: it was filed anyway)

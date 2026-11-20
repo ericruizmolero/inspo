@@ -4,7 +4,7 @@
 import "server-only";
 import { and, eq, gt, gte, inArray, isNull, lt, max, ne, not, notLike, or, sql } from "drizzle-orm";
 import { db, schema, type Exec } from "./db";
-import { checksPerMonth, planOf, type Plan, type PlanKey, type PlanLimit } from "./plans";
+import { checksPerMonth, nextQuotaMonth, planOf, quotaMonth, type FillingLimit, type Plan, type PlanKey } from "./plans";
 import { AUTO_REF, FIRST_REF, type UsageAction } from "./usage-core";
 import { accountOf, HttpError, httpErrorResponse, listMembers, QuotaError, type Workspace } from "./workspace-core";
 import type { Locale } from "./i18n/locale";
@@ -12,6 +12,7 @@ import { getT } from "./i18n";
 import { fairUseMail, overCapacityMail, sendMail, localeForEmail } from "./mail";
 import { fixedAdmins } from "./activity";
 import { mailOnce } from "./mail-once";
+import { tellLimit } from "./limit-mail";
 import { letter } from "./mail-templates";
 import { prose } from "./mail-layout";
 import { log } from "./log";
@@ -46,10 +47,6 @@ function monthStart(): Date {
   const d = new Date();
   return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1));
 }
-function nextMonth(): Date {
-  const d = new Date();
-  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1));
-}
 
 // The person reads quota messages, so they're in their language
 
@@ -58,7 +55,7 @@ function nextMonth(): Date {
 // partial calls. The real cost stays in ai_usage row by row.
 /** The monthly actions a plan meters, and the limit each one runs out as */
 type MeteredAction = "ai" | "jev_search" | "landing_check";
-const LIMIT_OF: Record<MeteredAction, PlanLimit> = { ai: "ai", jev_search: "searches", landing_check: "checks" };
+const LIMIT_OF: Record<MeteredAction, FillingLimit> = { ai: "ai", jev_search: "searches", landing_check: "checks" };
 
 async function countAction(accountId: string, action: MeteredAction): Promise<number> {
   if (action === "ai") return countAi(accountId);
@@ -94,7 +91,7 @@ async function countAi(accountId: string): Promise<number> {
  * Landing checks open a browser and call no model, so they are not ai_usage rows (that table is what the model cost):
  * one app_setting row per account and month holds the count. A new month is a new key, so it starts at zero.
  */
-const checksKey = (accountId: string) => `landing_checks:${accountId}:${monthStart().toISOString().slice(0, 7)}`;
+const checksKey = (accountId: string) => `landing_checks:${accountId}:${quotaMonth()}`;
 
 async function countChecks(accountId: string): Promise<number> {
   const [r] = await db.select({ n: schema.appSetting.value }).from(schema.appSetting).where(eq(schema.appSetting.key, checksKey(accountId)));
@@ -176,7 +173,7 @@ export async function quotaStatus(ws: QuotaWorkspace): Promise<QuotaStatus> {
     countAction(ws.billingAccountId, "landing_check"),
   ]);
   return {
-    plan: plan.key, resetsAt: nextMonth().toISOString(),
+    plan: plan.key, resetsAt: nextQuotaMonth().toISOString(),
     ai: { used: ai, limit: plan.aiActionsPerMonth },
     searches: plan.searches.kind === "capped"
       ? { used: searches, limit: plan.searches.perMonth, fairUse: false }
@@ -225,14 +222,18 @@ export async function storageUsed(organizationId: string, except?: string): Prom
   return Number(r?.n ?? 0);
 }
 
-/** What the workspace can still add: references and bytes, null where the plan has no cap */
-export async function roomOf(ws: Pick<Workspace, "id" | "plan">, replacing?: string): Promise<Room> {
+/** What the workspace holds of what its plan caps: references and bytes, 0 where the plan has no cap */
+async function usageOf(ws: Pick<Workspace, "id" | "plan">, replacing?: string): Promise<Usage> {
   const plan = planOf(ws.plan);
-  const used: Usage = {
+  return {
     items: plan.itemsMax === null ? 0 : await countItems(ws.id),
     bytes: plan.storageMaxBytes === null ? 0 : await storageUsed(ws.id, replacing),
   };
-  return roomLeft(plan, used);
+}
+
+/** What the workspace can still add: references and bytes, null where the plan has no cap */
+export async function roomOf(ws: Pick<Workspace, "id" | "plan">, replacing?: string): Promise<Room> {
+  return roomLeft(planOf(ws.plan), await usageOf(ws, replacing));
 }
 
 /**
@@ -244,7 +245,10 @@ export async function assertRoom(ws: Pick<Workspace, "id" | "plan">, need: { ite
   const plan = planOf(ws.plan);
   const counts = (need.items && plan.itemsMax !== null) || (need.bytes && plan.storageMaxBytes !== null);
   if (!counts) return;
-  const full = whatIsFull(await roomOf(ws, replacing), need);
+  const used = await usageOf(ws, replacing);
+  const full = whatIsFull(roomLeft(plan, used), need);
+  if (need.items && plan.itemsMax !== null) tellLimit(ws.id, { limit: "items", plan: plan.key, used: used.items, max: plan.itemsMax, refused: full === "items" });
+  if (need.bytes && plan.storageMaxBytes !== null) tellLimit(ws.id, { limit: "storage", plan: plan.key, used: used.bytes, max: plan.storageMaxBytes, refused: full === "storage" });
   if (full) throw new QuotaError(full, plan.key, await fullMessage(plan, full));
 }
 
@@ -310,7 +314,7 @@ export async function quotaBlock(check: Promise<void>): Promise<Response | null>
 /** The first search past the ceiling each month emails the team and the account's owner. Nobody is cut off */
 async function fairUsePassed(accountId: string, plan: Plan, used: number, ceiling: number): Promise<void> {
   log.warn("quota.fair_use_passed", { billingAccountId: accountId, plan: plan.key, used, ceiling });
-  const key = `fair_use:${accountId}:${monthStart().toISOString().slice(0, 7)}`;
+  const key = `fair_use:${accountId}:${quotaMonth()}`;
   const B = schema.billingAccount;
   const [a] = await db.select({ name: B.name, owner: schema.user.email }).from(B)
     .leftJoin(schema.user, eq(schema.user.id, B.ownerUserId)).where(eq(B.id, accountId)).limit(1);
@@ -332,6 +336,7 @@ export async function assertQuota(ws: QuotaWorkspace, action: MeteredAction): Pr
   const limit = action === "ai" ? plan.aiActionsPerMonth : action === "landing_check" ? checksPerMonth(plan) : searches.kind === "capped" ? searches.perMonth : null;
   if (limit === null) return;
   const used = await countAction(ws.billingAccountId, action);
+  tellLimit(ws.id, { limit: LIMIT_OF[action], plan: plan.key, used, max: limit, refused: used >= limit });
   if (used >= limit) {
     const { t } = await getT();
     throw new QuotaError(LIMIT_OF[action], plan.key, t.quota.spent(used, limit, t.quota.actions[action], t.plans.items[plan.key].name));

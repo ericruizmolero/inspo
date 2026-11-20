@@ -29,6 +29,9 @@ export const mail = {
     setPlan: "Set the plan",
   },
 
+  /** What each plan limit is called in the emails that say it is near or reached (lib/limit-mail.ts): RESOURCE */
+  limits: { ai: "AI actions", searches: "AI searches", checks: "landing checks", items: "references", storage: "storage" },
+
   feedback: {
     notes: (n: number): string => (n === 1 ? "1 note" : `${n} notes`),
     subject: (who: string, notes: string, path: string): string => `Feedback from ${who}: ${notes} on ${path}`,

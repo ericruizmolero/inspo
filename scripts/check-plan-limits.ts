@@ -184,6 +184,7 @@ async function main() {
       for (const a of new Set([...accounts, ...made.map((m) => m.a)])) {
         await dropEmptyAccount(a);
         await db.delete(schema.appSetting).where(like(schema.appSetting.key, `fair_use:${a}:%`));
+        await db.delete(schema.appSetting).where(like(schema.appSetting.key, `limit-%:${a}:%`));
       }
     }
     if (users.length) await db.delete(schema.user).where(inArray(schema.user.id, users));

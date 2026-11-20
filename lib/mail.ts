@@ -16,7 +16,8 @@ import { toLocale, INTL_LOCALE, DEFAULT_LOCALE, type Locale } from "./i18n/local
 import { fmtGiftDay } from "./i18n/format";
 import en from "./i18n/en";
 import es from "./i18n/es";
-import type { PlanKey } from "./plans";
+import { FILLING, nextQuotaMonth, type Fill, type PlanKey } from "./plans";
+import { fmtGb } from "./room";
 import type { PlanPeriod } from "./db/schema";
 import { REFS_GOAL, type StepKey } from "./first-steps-core";
 import { aliasOf, letter, mail, preview, resendVariables, type Mail } from "./mail-templates";
@@ -124,6 +125,16 @@ export const overCapacityMail = (url: string, teamName: string, plan: PlanKey, m
 export function fairUseMail(account: string, plan: PlanKey, used: number, ceiling: number, locale: Locale): Mail {
   const n = (x: number) => x.toLocaleString(INTL_LOCALE[locale]);
   return mail("fair-use", locale, { ACCOUNT: account, PLAN: planName(plan, locale), USED: n(used), CEILING: n(ceiling) });
+}
+
+/** A plan limit near or reached (lib/limit-mail.ts): how much is used, the day a monthly one starts again, and the plan
+ *  that lifts it. Storage goes in GB */
+export function limitMail(stage: "near" | "reached", f: Omit<Fill, "refused"> & { upgrade: PlanKey; url: string }, locale: Locale, now = new Date()): Mail {
+  const amount = (n: number) => (f.limit === "storage" ? `${fmtGb(n, locale)} GB` : n.toLocaleString(INTL_LOCALE[locale]));
+  const vars = { RESOURCE: mailDict(locale).limits[f.limit], USED: amount(f.used), LIMIT: amount(f.max), PLAN: planName(f.plan, locale), UPGRADE: planName(f.upgrade, locale), URL: f.url };
+  if (FILLING[f.limit] === "total") return mail(stage === "near" ? "limit-near" : "limit-reached", locale, vars);
+  const monthly = { ...vars, RESETS: fmtGiftDay(nextQuotaMonth(now), locale) };
+  return stage === "near" ? mail("limit-near-monthly", locale, monthly) : mail("limit-reached-monthly", locale, monthly);
 }
 
 /** To the partners: an account asks for a plan. `price` is already written out, in the period asked for */

@@ -59,6 +59,10 @@ export const TEMPLATES = {
   "win-back": { vars: { PROJECT: "text", URL: "text" }, stop: "account" },
 
   "fair-use": { vars: { ACCOUNT: "text", PLAN: "text", USED: "text", CEILING: "text" } },
+  "limit-near": { vars: { RESOURCE: "text", USED: "text", LIMIT: "text", PLAN: "text", UPGRADE: "text", URL: "text" } },
+  "limit-near-monthly": { vars: { RESOURCE: "text", USED: "text", LIMIT: "text", PLAN: "text", UPGRADE: "text", RESETS: "text", URL: "text" } },
+  "limit-reached": { vars: { RESOURCE: "text", USED: "text", LIMIT: "text", PLAN: "text", UPGRADE: "text", URL: "text" } },
+  "limit-reached-monthly": { vars: { RESOURCE: "text", USED: "text", LIMIT: "text", PLAN: "text", UPGRADE: "text", RESETS: "text", URL: "text" } },
   "plan-requested": { vars: { PLAN: "text", PERIOD: "text", ACCOUNT: "text" } },
   "plan-on": { vars: { PLAN: "text", ACCOUNT: "text", URL: "text" } },
   "plan-on-until": { vars: { PLAN: "text", ACCOUNT: "text", UNTIL: "text", URL: "text" } },

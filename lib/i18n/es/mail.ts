@@ -21,6 +21,8 @@ export const mail: typeof EnMail = {
     setPlan: "Activar el plan",
   },
 
+  limits: { ai: "acciones de IA", searches: "búsquedas IA", checks: "revisiones de landing", items: "referencias", storage: "almacenamiento" },
+
   feedback: {
     notes: (n: number): string => (n === 1 ? "1 nota" : `${n} notas`),
     subject: (who: string, notes: string, path: string): string => `Feedback de ${who}: ${notes} en ${path}`,
