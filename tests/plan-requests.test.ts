@@ -6,8 +6,8 @@ import { afterAll, beforeAll, beforeEach, expect, test, vi } from "vitest";
 import { db, schema } from "@/lib/db";
 import { accountOf, ensurePersonalWorkspace, newId } from "@/lib/workspace-core";
 import { requestPlan } from "@/app/actions/billing";
-import { declinePlanRequest, setRequestedPlan } from "@/app/actions/plans-admin";
-import { listOpenPlanRequests } from "@/lib/plan-requests";
+import { declinePlanRequest, setAccountPlan, setRequestedPlan } from "@/app/actions/plans-admin";
+import { listAccountPlans, listOpenPlanRequests } from "@/lib/plan-requests";
 import { listAdmins } from "@/lib/activity";
 import { localeForEmail, mailDict } from "@/lib/mail";
 import { actAs, reached, type Actor } from "./harness";
@@ -115,4 +115,34 @@ test("declining closes the request and leaves the plan as it was, with no email"
   const [closed] = await db.select().from(schema.planRequest).where(eq(schema.planRequest.id, open.id));
   expect(closed.status).toBe("declined");
   expect(mails()).toEqual([]);
+});
+
+test("/admin/plans lists every account; only a partner changes one's plan, with or without an end, through changePlan", async () => {
+  const B = schema.billingAccount;
+  const plan = async () => (await db.select({ plan: B.plan, until: B.planUntil }).from(B).where(eq(B.id, accountId)))[0];
+  const listed = (await listAccountPlans()).find((a) => a.id === accountId);
+  expect(listed).toEqual({ id: accountId, name: owner.name, ownerEmail: owner.email, workspaces: [owner.name], plan: "studio", until: null });
+
+  for (const who of [owner, teammate]) {
+    actAs(who);
+    expect((await setAccountPlan(accountId, "agency", null)).ok, `${who.name} is not a partner`).toBe(false);
+  }
+  expect(await plan()).toEqual({ plan: "studio", until: null });
+
+  actAs(partner);
+  expect((await setAccountPlan(accountId, "gold", null)).ok, "a plan that does not exist").toBe(false);
+  expect((await setAccountPlan(accountId, "duo", "2020-01-01")).ok, "an end in the past").toBe(false);
+  expect((await setAccountPlan(accountId, "free", "2099-01-01")).ok, "the free plan has no end to give").toBe(false);
+  expect(await plan()).toEqual({ plan: "studio", until: null });
+  expect(mails()).toEqual([]);
+
+  expect(await setAccountPlan(accountId, "agency", "2099-06-30")).toEqual({ ok: true, data: { from: "studio", to: "agency" } });
+  expect(await plan(), "an end date is the last moment of that day").toEqual({ plan: "agency", until: new Date("2099-06-30T23:59:59Z") });
+  expect((await listAccountPlans()).find((a) => a.id === accountId)?.until).toBe("2099-06-30T23:59:59.000Z");
+  expect(mails().filter((m) => m.to.includes(owner.email)).map((m) => m.subject), "changePlan tells the owner").toEqual(["Your plan is on: Agency"]);
+
+  reached.length = 0;
+  expect(await setAccountPlan(accountId, "duo", null)).toEqual({ ok: true, data: { from: "agency", to: "duo" } });
+  expect(await plan(), "with no end date the plan has none").toEqual({ plan: "duo", until: null });
+  expect(mails().filter((m) => m.to.includes(owner.email)).map((m) => m.subject)).toEqual(["Your plan is now Duo"]);
 });

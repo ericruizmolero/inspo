@@ -664,6 +664,17 @@ export const actions: Record<string, Surface> = {
   "action:app/actions/billing.ts#requestPlan": { exempt: "asks for a plan for the caller's own billing account, only if they pay it (tests/plan-requests.test.ts): takes no workspace or account id" },
   "action:app/actions/plans-admin.ts#setRequestedPlan": notPlansAdmin((m) => m.setRequestedPlan("x")),
   "action:app/actions/plans-admin.ts#declinePlanRequest": notPlansAdmin((m) => m.declinePlanRequest("x")),
+  "action:app/actions/plans-admin.ts#setAccountPlan": {
+    probe: async (fx) => {
+      const { setAccountPlan } = await import("@/app/actions/plans-admin");
+      const accountOfA = (await db.select({ id: schema.organization.billingAccountId }).from(schema.organization).where(eq(schema.organization.id, fx.a.team)))[0].id;
+      const account = () => db.select().from(schema.billingAccount).where(eq(schema.billingAccount.id, accountOfA));
+      const before = await account();
+      asB(fx);
+      expectRefused(fx, await setAccountPlan(accountOfA, "agency", null), "B is not an app admin");
+      expect(await account(), "A's plan unchanged").toEqual(before);
+    },
+  },
   "action:app/actions/vault-admin.ts#sendVaultRelease": notVaultAdmin((m) => m.sendVaultRelease()),
   "action:app/actions/billing.ts#moveWorkspaceToAccount": {
     probe: async (fx) => {

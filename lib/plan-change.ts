@@ -1,7 +1,8 @@
 // The one way an account's plan changes after it is made: a partner sets it (/admin/plans through
-// lib/plan-requests.ts, or scripts/set-plan.ts), or a gifted plan runs out (the morning's "mail" job, lib/job-run.ts).
-// A gift is written when the account is made (lib/auth.ts, from the access invite's grantsPlan and grantsUntil) and
-// lives in billing_account.plan_until; any change made here clears it, so a plan a partner sets has no end.
+// lib/plan-requests.ts or its Accounts list, or scripts/set-plan.ts), or a gifted plan runs out (the morning's "mail"
+// job, lib/job-run.ts). A gift is written when the account is made (lib/auth.ts, from the access invite's grantsPlan
+// and grantsUntil) and lives in billing_account.plan_until; any change made here replaces it, with no end unless the
+// partner gives one, and a plan with an end runs out as a gift does.
 // The account's owner hears of every move up or down; a move down also tells each team left over its seats.
 import "server-only";
 import { and, eq, isNotNull, lte } from "drizzle-orm";
@@ -32,6 +33,8 @@ export interface PlanChange {
   accountId: string;
   plan: PlanKey;
   cause: PlanChangeCause;
+  /** The plan's last day; null or left out, it has no end */
+  until?: Date | null;
   appUrl: string;
   /** Written in the same transaction, before the plan: the request a partner closes with it (lib/plan-requests.ts) */
   alongside?: (tx: Exec) => Promise<void>;
@@ -53,7 +56,7 @@ const MAILS: Record<Move, (c: { cause: PlanChangeCause; from: Plan; to: Plan; ac
 };
 
 /**
- * Sets an account's plan, and so the plan of every workspace in it, and clears plan_until. The row is locked while it
+ * Sets an account's plan, and so the plan of every workspace in it, and its plan_until. The row is locked while it
  * is written, so of two mornings that end the same gift only one does, and a gift that a partner replaced since
  * is not ended. Returns the move, or null when nothing changed (a gift that has not ended).
  */
@@ -64,7 +67,7 @@ export async function changePlan(c: PlanChange): Promise<{ from: PlanKey; to: Pl
     if (!a) throw new Error("Billing account not found");
     if (c.cause === "giftEnded" && !(a.planUntil && a.planUntil <= new Date())) return null;
     await c.alongside?.(tx);
-    await tx.update(B).set({ plan: c.plan, planUntil: null }).where(eq(B.id, c.accountId));
+    await tx.update(B).set({ plan: c.plan, planUntil: c.until ?? null }).where(eq(B.id, c.accountId));
     return { from: planOf(a.plan), to: planOf(c.plan), account: a.name, ownerUserId: a.ownerUserId };
   });
   if (!changed) return null;

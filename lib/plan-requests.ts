@@ -1,11 +1,12 @@
 // Asking for a plan while there is no payment on the site. The account's owner asks from Settings, Plan
 // (app/actions/billing.ts requestPlan); a partner charges by hand and sets it, or declines it, from /admin/plans
-// (app/actions/plans-admin.ts). One open request per account: asking again replaces it.
+// (app/actions/plans-admin.ts). One open request per account: asking again replaces it. /admin/plans also lists
+// every account with its plan, for a partner to change it with no request.
 import "server-only";
-import { and, asc, eq, inArray } from "drizzle-orm";
+import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import { db, schema, type Exec } from "./db";
 import type { PlanPeriod } from "./db/schema";
-import { planOf, plansAbove, type PlanKey } from "./plans";
+import { isPaid, planOf, plansAbove, type PlanKey } from "./plans";
 import { accountWorkspaces, HttpError, newId } from "./workspace-core";
 import { listAdmins } from "./activity";
 import { localeForEmail, planRequestedMail, planRequestMail } from "./mail";
@@ -85,13 +86,39 @@ export async function listOpenPlanRequests(): Promise<OpenPlanRequest[]> {
   }).from(R).innerJoin(B, eq(B.id, R.billingAccountId)).leftJoin(schema.user, eq(schema.user.id, B.ownerUserId))
     .where(eq(R.status, "open")).orderBy(asc(R.createdAt));
   if (!rows.length) return [];
-  const O = schema.organization;
-  const spaces = await db.select({ accountId: O.billingAccountId, name: O.name }).from(O)
-    .where(inArray(O.billingAccountId, rows.map((r) => r.accountId))).orderBy(asc(O.createdAt));
+  const spaces = await workspaceNames(rows.map((r) => r.accountId));
   return rows.map(({ accountId, now, createdAt, ...r }) => ({
-    ...r, now: planOf(now).key, createdAt: createdAt.toISOString(),
-    workspaces: spaces.filter((s) => s.accountId === accountId).map((s) => s.name),
+    ...r, now: planOf(now).key, createdAt: createdAt.toISOString(), workspaces: spaces.get(accountId) ?? [],
   }));
+}
+
+/** The names of each account's workspaces, oldest first */
+async function workspaceNames(accountIds: string[]): Promise<Map<string, string[]>> {
+  const O = schema.organization;
+  const rows = accountIds.length ? await db.select({ accountId: O.billingAccountId, name: O.name }).from(O)
+    .where(inArray(O.billingAccountId, accountIds)).orderBy(asc(O.createdAt)) : [];
+  const names = new Map<string, string[]>();
+  for (const r of rows) names.set(r.accountId, [...(names.get(r.accountId) ?? []), r.name]);
+  return names;
+}
+
+/** A row of /admin/plans' Accounts */
+export interface AccountPlan {
+  id: string; name: string; ownerEmail: string | null; workspaces: string[];
+  plan: PlanKey;
+  /** The plan's last day, for a gift or a plan a partner gave an end; null when it has none */
+  until: string | null;
+}
+
+/** Every account: the paid ones first, then the newest */
+export async function listAccountPlans(): Promise<AccountPlan[]> {
+  const rows = await db.select({ id: B.id, name: B.name, plan: B.plan, until: B.planUntil, ownerEmail: schema.user.email })
+    .from(B).leftJoin(schema.user, eq(schema.user.id, B.ownerUserId)).orderBy(desc(B.createdAt));
+  const spaces = await workspaceNames(rows.map((r) => r.id));
+  const accounts = rows.map(({ until, plan, ...r }) => ({
+    ...r, plan: planOf(plan).key, until: until?.toISOString() ?? null, workspaces: spaces.get(r.id) ?? [],
+  }));
+  return accounts.toSorted((a, b) => Number(isPaid(planOf(b.plan))) - Number(isPaid(planOf(a.plan))));
 }
 
 export type PlanDecision = "done" | "declined";
