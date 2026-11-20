@@ -25,7 +25,7 @@ const READ = `(() => {
 
 export interface LandingCheck { desktop: Omit<PageFacts, "text">; phone: Omit<PageFacts, "text">; findings: Finding[]; shots: { desktop: Buffer; phone: Buffer } }
 
-export async function checkLanding(url: string, signal?: AbortSignal): Promise<LandingCheck> {
+async function checkLanding(url: string, signal?: AbortSignal): Promise<LandingCheck> {
   return withPage("extract", async (page) => {
     const look = async (width: number, height: number) => {
       await page.setViewport({ width, height, deviceScaleFactor: 1 });
