@@ -8,6 +8,8 @@
 //     activity_segment says so), and after a month without opening the app it stops on its own.
 //   - The instant emails (notifyReply, notifyProposalResolved): someone answered your comment or settled your
 //     proposal. The only thing people expect right away. The email replies to whoever wrote it.
+//     A client's comments on a share link go out soon too, gathered (lib/client-comments.ts), to clientReaders; the
+//     digest leaves them out for those people, so nobody hears of one comment twice.
 //
 // Each kind of email is a switch on the account (user.digest_emails, user.reply_emails, and user.vault_emails for
 // "New in the Vault", lib/vault-release.ts) and a one-click link at the foot of every email. The language is the recipient's (user.language), never the writer's; the
@@ -59,7 +61,7 @@ const DICTS = { en, es } as const;
 export const baseUrl = (): string => APP_URL || `http://localhost:${process.env.PORT || 3000}`;
 
 const itemPath = (id: string) => `/i/${encodeURIComponent(id)}`;
-const projectPath = (id: string) => `/?in=${encodeURIComponent(id)}`;
+export const projectPath = (id: string) => `/?in=${encodeURIComponent(id)}`;
 const systemPath = (id: string) => `/?in=${encodeURIComponent(id)}&view=system`;
 const libraryPath = "/?in=library";
 /** An address for an email: it opens away from the app, maybe in another workspace, so a project's goes through /p/ */
@@ -105,7 +107,7 @@ const footOf = (userId: string, kind: EmailKind, team: string): TeamMailFoot =>
   ({ team, stopUrl: unsubscribeUrl(userId, kind) });
 
 const areaName = (locale: Locale, area: string) => (DICTS[locale].system.areas as Record<string, string>)[area] ?? area;
-const clip = (s: string, n = QUOTE_MAX) => { const one = s.replace(/\s+/g, " ").trim(); return one.length > n ? `${one.slice(0, n - 1)}…` : one; };
+export const clip = (s: string, n = QUOTE_MAX) => { const one = s.replace(/\s+/g, " ").trim(); return one.length > n ? `${one.slice(0, n - 1)}…` : one; };
 
 /** Runs something once the response has gone out (Next's after); outside a request, right away */
 export function inBackground(job: () => Promise<void>): void {
@@ -153,6 +155,13 @@ export async function notifyProposalResolved(organizationId: string, input: { to
   return true;
 }
 
+/** Who hears what a client wrote through a share link (lib/client-comments.ts): whoever made the link while they are
+ *  in the workspace, everyone in it once they are gone. Only people with replies on */
+export function clientReaders<T extends { userId: string; replies: boolean }>(makerId: string | null, members: T[]): T[] {
+  const maker = members.find((m) => m.userId === makerId);
+  return (maker ? [maker] : members).filter((m) => m.replies);
+}
+
 // ─── What happened ───────────────────────────────────────────────────────────
 
 /** One thing someone did in a workspace. `by` is who did it (null when that account is gone) */
@@ -174,6 +183,8 @@ export interface TeamEvent {
   quote?: string;
   /** A reaction's emoji */
   emoji?: string;
+  /** A client's comment: the share link it came through */
+  shareId?: string;
 }
 
 /** The emoji others gave, after `since`, to what this person wrote in a workspace: their comments and the notes they
@@ -209,7 +220,7 @@ export async function teamEvents(organizationId: string, since: Date): Promise<T
     db.select({ id: I.id, name: I.name, at: I.createdAt, by: I.createdBy, byName: I.author }).from(I).where(and(eq(I.organizationId, organizationId), gt(I.createdAt, since))),
     db.select({ id: P.id, name: P.name, at: P.createdAt, by: P.createdBy, template: P.template }).from(P).where(and(eq(P.organizationId, organizationId), gt(P.createdAt, since))),
     db.select({ itemId: PI.itemId, projectId: PI.projectId }).from(PI).where(and(eq(PI.organizationId, organizationId), gt(PI.createdAt, since))),
-    db.select({ itemId: C.itemId, at: C.createdAt, by: C.authorId, byName: C.authorName, body: C.body, name: I.name }).from(C).innerJoin(I, eq(I.id, C.itemId)).where(and(eq(C.organizationId, organizationId), gt(C.createdAt, since))),
+    db.select({ itemId: C.itemId, at: C.createdAt, by: C.authorId, byName: C.authorName, body: C.body, name: I.name, shareId: C.shareId, guestKey: C.guestKey }).from(C).innerJoin(I, eq(I.id, C.itemId)).where(and(eq(C.organizationId, organizationId), gt(C.createdAt, since))),
     db.select({ projectId: A.projectId, area: A.area, at: A.createdAt, by: A.authorId, byName: A.authorName, body: A.body, about: A.about }).from(A).where(and(eq(A.organizationId, organizationId), gt(A.createdAt, since))),
     db.select({ projectId: R.projectId, area: R.area, at: R.createdAt, by: R.authorId, byName: R.authorName, decision: R.decision }).from(R).where(and(eq(R.organizationId, organizationId), eq(R.source, "team"), gt(R.createdAt, since))),
     db.select({ projectId: V.projectId, by: V.userId, at: V.updatedAt, closedAt: V.closedAt, closedBy: V.closedBy }).from(V).where(and(eq(V.organizationId, organizationId), sql`greatest(${V.updatedAt}, coalesce(${V.closedAt}, ${V.updatedAt})) > ${since}`)),
@@ -229,7 +240,7 @@ export async function teamEvents(organizationId: string, since: Date): Promise<T
   const out: TeamEvent[] = [];
   for (const i of items) out.push({ at: i.at, by: i.by, byName: nameOf(i.by) || i.byName, byImage: imageOf(i.by), projectId: projectOf.get(i.id) ?? null, kind: "ref", path: itemPath(i.id), what: i.name });
   for (const p of projects) if (!p.template) out.push({ at: p.at, by: p.by, byName: nameOf(p.by), byImage: imageOf(p.by), projectId: p.id, kind: "project", path: projectPath(p.id), what: p.name });
-  for (const c of comments) if (c.body.trim()) out.push({ at: c.at, by: c.by, byName: c.byName, byImage: imageOf(c.by), projectId: projectOf.get(c.itemId) ?? null, kind: "comment", path: itemPath(c.itemId), what: c.name, quote: c.body });
+  for (const c of comments) if (c.body.trim()) out.push({ at: c.at, by: c.by, byName: c.byName, byImage: imageOf(c.by), projectId: projectOf.get(c.itemId) ?? null, kind: "comment", path: itemPath(c.itemId), what: c.name, quote: c.body, ...(c.guestKey && c.shareId ? { shareId: c.shareId } : {}) });
   for (const a of talk) {
     const about = a.about && typeof a.about === "object" ? (a.about as Record<string, unknown>) : null;
     const area = (SYSTEM_AREAS as readonly string[]).includes(a.area) ? a.area : a.area.replace(/^meta:/, "");
@@ -389,6 +400,15 @@ export function digestGroups(events: TeamEvent[], locale: Locale, projectNames: 
   return groups.sort((a, b) => (a.title === library ? 1 : 0) - (b.title === library ? 1 : 0));
 }
 
+/** For each share link a client's comment in `events` came through, who its email reached */
+async function clientReadersOf(events: TeamEvent[], members: { userId: string; replies: boolean }[]): Promise<Map<string, Set<string>>> {
+  const ids = [...new Set(events.flatMap((e) => (e.shareId ? [e.shareId] : [])))];
+  if (!ids.length) return new Map();
+  const S = schema.systemShare;
+  const links = await db.select({ id: S.id, by: S.createdBy }).from(S).where(inArray(S.id, ids));
+  return new Map(links.map((l) => [l.id, new Set(clientReaders(l.by, members).map((r) => r.userId))]));
+}
+
 export interface DigestRun { teams: number; sent: number; paused: number; skipped: number; /** Held for another day: too soon since their last one for how long they have been away */ spaced: number; mails: (Mail & { to: string })[] }
 
 /**
@@ -404,7 +424,7 @@ export async function sendDigests(now = new Date(), dryRun = false): Promise<Dig
   const pauseBefore = new Date(now.getTime() - PAUSE_DAYS * DAY);
 
   for (const team of teams) {
-    const members = await db.select({ memberId: M.id, userId: U.id, name: U.name, email: U.email, language: U.language, digest: U.digestEmails, joinedAt: M.createdAt, coveredAt: M.digestSentAt, userCreatedAt: U.createdAt })
+    const members = await db.select({ memberId: M.id, userId: U.id, name: U.name, email: U.email, language: U.language, digest: U.digestEmails, replies: U.replyEmails, joinedAt: M.createdAt, coveredAt: M.digestSentAt, userCreatedAt: U.createdAt })
       .from(M).innerJoin(U, eq(U.id, M.userId)).where(eq(M.organizationId, team.id));
     if (members.length < 2) continue;
     run.teams++;
@@ -422,12 +442,14 @@ export async function sendDigests(now = new Date(), dryRun = false): Promise<Dig
 
     const earliest = members.reduce((d, m) => Math.min(d, windowOf(m).getTime()), now.getTime());
     const [events, projectNames] = earliest < now.getTime() ? await Promise.all([teamEvents(team.id, new Date(earliest)), projectNamesOf(team.id)]) : [[], new Map<string, string>()];
+    // A client's comment already reached its link's readers by email (lib/client-comments.ts): their digest leaves it out
+    const toldTo = await clientReadersOf(events, members);
 
     for (const m of members) {
       const cover = async () => { if (!dryRun) await db.update(M).set({ digestSentAt: now }).where(eq(M.id, m.memberId)); };
       if (!m.digest) { await cover(); run.skipped++; continue; }
       const since = windowOf(m);
-      const theirs = events.filter((e) => e.at > since && e.by !== m.userId);
+      const theirs = events.filter((e) => e.at > since && e.by !== m.userId && !(e.shareId && toldTo.get(e.shareId)?.has(m.userId)));
       if (!theirs.length) { await cover(); run.skipped++; continue; }
       const locale = toLocale(m.language);
       const lastOpened = anywhere.get(m.userId) ?? m.userCreatedAt;
@@ -436,9 +458,10 @@ export async function sendDigests(now = new Date(), dryRun = false): Promise<Dig
       if (m.coveredAt && now.getTime() - m.coveredAt.getTime() < gap) { run.spaced++; continue; }
       if (lastOpened < pauseBefore) {
         // A month away: the digest stops on its own, with one email that says so and how to turn it back on
-        const p = pausedMail(`${baseUrl()}/settings/account`, locale);
+        const foot = footOf(m.userId, "digest", team.name);
+        const p = pausedMail(`${baseUrl()}/settings/account`, foot, locale);
         run.mails.push({ to: m.email, ...p });
-        if (!dryRun) { await setEmailPref(m.userId, "digest", false); await sendMail(m.email, p); }
+        if (!dryRun) { await setEmailPref(m.userId, "digest", false); await sendMail(m.email, p, { headers: unsubscribeHeaders(foot.stopUrl) }); }
         await cover(); run.paused++;
         continue;
       }

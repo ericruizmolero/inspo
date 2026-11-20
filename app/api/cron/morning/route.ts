@@ -12,7 +12,7 @@ export const maxDuration = 300;
 // The morning run, 04:00 UTC by Vercel Cron (vercel.json; Hobby fires it somewhere in that hour). It puts the
 // morning's emails on the queue until 08:30 in Spain (digestTime in lib/notify.ts): the team digests, the day 3
 // and day 7 nudges that name a new account's next first step (lib/first-use-mail.ts), the day before a team
-// invitation ends (lib/team-mail.ts) and the gifted plans (a week's warning, then back to free: lib/plan-change.ts),
+// invitation ends (lib/team-mail.ts), two weeks away (lib/win-back.ts) and the gifted plans (a week's warning, then back to free: lib/plan-change.ts),
 // run by the "mail" job (lib/job-run.ts). Then the jobs' sweep, which starts its own five-minute chain again if it ever stopped. The
 // sweep only sends jobs: each runs in its own function, not in these five minutes.
 export async function GET(req: NextRequest) {

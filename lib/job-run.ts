@@ -11,6 +11,8 @@ import { baseUrl, sendDigests } from "./notify";
 import { sendNudges } from "./first-use-mail";
 import { sendInvitationReminders } from "./team-mail";
 import { settleGifts } from "./plan-change";
+import { sendWinBacks } from "./win-back";
+import { tellClientComments } from "./client-comments";
 import { recordFailure } from "./log";
 import { enqueue, enqueueEmbed, scheduleSweep, EMBED_BATCH, type Job } from "./jobs";
 
@@ -52,14 +54,16 @@ const HANDLERS: Handlers = {
   },
   // Each runs even if another fails. Delivered again, nobody gets one twice: a digest moves its marker as it goes,
   // and the nudge, the invitation's last day and a gift's warning go once per person, invitation or key
-  // (lib/mail-once.ts), and an ended gift has no end date left
+  // (lib/mail-once.ts), the win-back once in 60 days, and an ended gift has no end date left
   async mail() {
     const digests = await sendDigests().catch((err) => { void recordFailure("job", "digest", err); return null; });
     const nudges = await sendNudges().catch((err) => { void recordFailure("job", "nudge", err); return null; });
     const endings = await sendInvitationReminders().catch((err) => { void recordFailure("job", "invitation ending", err); return null; });
     const gifts = await settleGifts(baseUrl()).catch((err) => { void recordFailure("job", "gifts", err); return null; });
-    if (!digests || !nudges || !endings || !gifts) throw new RetryLater(15 * 60);
+    const winBacks = await sendWinBacks().catch((err) => { void recordFailure("job", "win-back", err); return null; });
+    if (!digests || !nudges || !endings || !gifts || !winBacks) throw new RetryLater(15 * 60);
   },
+  async clientComments(job) { await tellClientComments(job.shareId); },
 };
 
 export function runJob(job: Job): Promise<void> {

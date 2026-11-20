@@ -24,7 +24,9 @@ export type Job =
   /** Every job left behind, sent again; then the next sweep */
   | { kind: "sweep" }
   /** The morning's emails (the team digests, the day-3 nudge), held by the cron until lib/notify.ts digestTime */
-  | { kind: "mail" };
+  | { kind: "mail" }
+  /** What clients wrote through this share link since its last email (lib/client-comments.ts) */
+  | { kind: "clientComments"; shareId: string };
 
 /** The safety net's period: what no job carries any more is sent again within this */
 export const SWEEP_EVERY_S = 5 * 60;

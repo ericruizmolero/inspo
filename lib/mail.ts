@@ -225,6 +225,16 @@ export function proposalMail(p: { who: string; accepted: boolean; area: string; 
   };
 }
 
+/** One comment a client left through a share link: their name, the reference, their words */
+export interface ClientComment { who: string; reference: string; body: string }
+
+/** What clients wrote through a share link since its last email (lib/client-comments.ts), with the link's label if it has one */
+export function clientCommentsMail(c: { project: string; link: string; comments: ClientComment[]; url: string }, foot: TeamMailFoot, locale: Locale): Mail {
+  const t = mailDict(locale).clientComments;
+  const lines = c.comments.map((x) => t.line(x.who, x.reference, x.body)).join("\n\n");
+  return { subject: t.subject(c.project), text: signed(locale, `${t.intro(c.project, c.link)}\n\n${lines}\n\n${t.open(c.url)}\n\n${footerText(locale, foot)}`) };
+}
+
 /** The client answered through the link (lib/client-ask.ts): one email to whoever sent it */
 export function clientAnswersMail(a: { project: string; n: number; url: string }, locale: Locale): Mail {
   const t = mailDict(locale);
@@ -272,10 +282,17 @@ export function nudgeMail(step: StepKey, at: NudgeAt, stopUrl: string, locale: L
   return { subject: copy[step].subject(at), text: signed(locale, `${copy[step].text(at)}\n\n${t.nudge.stuck}\n\n${t.nudge.why}\n${t.team.stopText(stopUrl)}`) };
 }
 
-/** A month without opening the app: the digest stops on its own, and this says so once */
-export function pausedMail(url: string, locale: Locale): Mail {
+/** A month without opening the app: the digest stops on its own, and this says so once. Its foot is the digest's: the
+ *  signed link opens the page that turns it back on with one click */
+export function pausedMail(url: string, foot: TeamMailFoot, locale: Locale): Mail {
   const t = mailDict(locale);
-  return { subject: t.paused.subject, text: signed(locale, t.paused.text(url)) };
+  return { subject: t.paused.subject, text: signed(locale, `${t.paused.text(url)}\n\n${footerText(locale, foot)}`) };
+}
+
+/** Two weeks away (lib/win-back.ts): their latest project, where they left it. It stops with the digest's switch */
+export function winBackMail(w: { project: string; url: string }, stopUrl: string, locale: Locale): Mail {
+  const t = mailDict(locale);
+  return { subject: t.winBack.subject, text: signed(locale, `${t.winBack.text(w.project, w.url)}\n\n${t.winBack.why}\n${t.team.stopText(stopUrl)}`) };
 }
 
 // ─── The plan's lifecycle (lib/plan-change.ts) and deleting an account (lib/account-delete.ts) ───────────────

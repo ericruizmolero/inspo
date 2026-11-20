@@ -143,6 +143,20 @@ export const mail = {
     text: (project: string, n: number, url: string): string => `Your client answered ${n === 1 ? "1 question" : `${n} questions`} about ${project}. The file has not changed: run a new pass when you want it to read them.\n\nOpen it here:\n${url}`,
   },
 
+  // ─── A client's comments, and two weeks away (lib/client-comments.ts, lib/win-back.ts) ───────────────────
+  clientComments: {
+    subject: (project: string): string => `Your client commented on ${project}`,
+    intro: (project: string, link: string): string => `Your client commented on ${project}${link ? ` through the link "${link}"` : ""}:`,
+    line: (who: string, reference: string, body: string): string => `${who} on ${reference}: ${body}`,
+    open: (url: string): string => `Answer them in the project:\n${url}`,
+  },
+
+  winBack: {
+    subject: "Your criterio is where you left it",
+    text: (project: string, url: string): string => `You have not opened criterio.design in two weeks. ${project} is where you left it:\n${url}\n\nIf something got in the way, reply and tell us.`,
+    why: "You get this because you have an account on criterio.design.",
+  },
+
   // ─── First use (lib/first-use-mail.ts) ─────────────────────────────────────
   // One line per first step (lib/first-steps-core.ts STEPS): the welcome lists them in the app's order, and a nudge
   // names the first one not done

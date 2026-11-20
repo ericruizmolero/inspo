@@ -3,8 +3,8 @@
 // variantes"). Someone with the general address is a browser holding a random secret (its key is the secret's hash,
 // so the key can be shown and the secret never is); an invited person is their own address (share_guest).
 // What they write goes in the reference's own thread (inspo_comment, with guest_key and share_id), so the team reads
-// it where it reads its own. On the link a guest sees what was written through that link and the team's answers to
-// it, never the team's own conversation.
+// it where it reads its own, and an email tells them soon (lib/client-comments.ts). On the link a guest sees what was
+// written through that link and the team's answers to it, never the team's own conversation.
 import "server-only";
 import { createHash } from "crypto";
 import { and, asc, eq, inArray, isNull } from "drizzle-orm";
@@ -13,6 +13,8 @@ import { HttpError, newId } from "./workspace-core";
 import { getErrors } from "./i18n";
 import { allow } from "./rate-limit";
 import { groupReactions } from "./reactions";
+import { clientCommented } from "./client-comments";
+import { log } from "./log";
 import type { ResolvedShare } from "./share";
 import type { InspoComment } from "@/types/inspo";
 
@@ -98,6 +100,8 @@ export async function postGuestComment(share: ResolvedShare, secret: unknown, in
   }
   const name = share.guest ? share.guest.name : cleanName(input.name, "Guest");
   await db.insert(C).values({ id: newId(), organizationId: share.organizationId, itemId: input.itemId, authorId: null, authorName: name, body, attachments: [], reactions: [], parentId, guestKey: key, shareId: share.id, createdAt: new Date(), editedAt: null });
+  // The team hears of it by email soon; a failure there never loses the comment
+  await clientCommented(share.id).catch((err) => log.warn("client_comments.not_scheduled", { ref: share.id, err }));
 }
 
 /** A guest takes back what they wrote, and the answers under it go with it */

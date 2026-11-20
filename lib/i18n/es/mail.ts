@@ -130,6 +130,20 @@ export const mail: typeof EnMail = {
     text: (project: string, n: number, url: string): string => `Tu cliente ha respondido ${n === 1 ? "1 pregunta" : `${n} preguntas`} sobre ${project}. El archivo no ha cambiado: lanza una pasada cuando quieras que las lea.\n\nÁbrelo aquí:\n${url}`,
   },
 
+  // ─── Los comentarios de un cliente, y dos semanas fuera (lib/client-comments.ts, lib/win-back.ts) ─────────
+  clientComments: {
+    subject: (project: string): string => `Tu cliente ha comentado en ${project}`,
+    intro: (project: string, link: string): string => `Tu cliente ha comentado en ${project}${link ? ` desde el enlace "${link}"` : ""}:`,
+    line: (who: string, reference: string, body: string): string => `${who} en ${reference}: ${body}`,
+    open: (url: string): string => `Respóndele en el proyecto:\n${url}`,
+  },
+
+  winBack: {
+    subject: "Tu criterio sigue donde lo dejaste",
+    text: (project: string, url: string): string => `Llevas dos semanas sin abrir criterio.design. ${project} sigue donde lo dejaste:\n${url}\n\nSi algo te frenó, responde y cuéntanoslo.`,
+    why: "Te llega porque tienes una cuenta en criterio.design.",
+  },
+
   proposal: {
     subject: (who: string, accepted: boolean, area: string): string => `${who} ha ${accepted ? "aceptado" : "descartado"} tu propuesta de ${area}`,
     text: (who: string, accepted: boolean, area: string, project: string, decision: string, url: string): string =>
