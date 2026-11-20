@@ -12,4 +12,4 @@ But it doesn’t start from scratch anymore. It starts from you. Your grid. Your
 
 Criterio. Train your taste.
 
-[cgSgspJ2msm6clMCkdW9 eleven_v4 0.3 0.45]
+[cgSgspJ2msm6clMCkdW9 eleven_v4 0.55 0.25]

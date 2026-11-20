@@ -28,7 +28,7 @@ h = t.replace('%%EARL%%', earl).replace('%%EARR%%', earr).replace('%%BODY%%', bo
 # rutas: la plantilla las escribe relativas; lo propio va a /assets/vault/, lo compartido a lo que ya sirve la web
 h = re.sub(r'''(["'`(])\.\./(fonts|marca)/''', r'\1/assets/\2/', h)
 h = re.sub(r'''(["'`(])(?:\./)?tino-app/''', r'\1/assets/mascota/tino-app/', h)
-h = re.sub(r'''(["'`(])(gsap\.min\.js|mtn\.js|tino-dock\.png|(?:vf|refs|art|equipo|altura|own|vault|video)/)''', r'\1/assets/vault/\2', h)
+h = re.sub(r'''(["'`(])(gsap\.min\.js|mtn\.js|tino-dock\.png|(?:vf|refs|art|equipo|altura|plomo|own|vault|video)/)''', r'\1/assets/vault/\2', h)
 # scripts/check-dist.mjs lee cualquier src="…" o href="…" del HTML, también los de las plantillas del JS:
 # donde la ruta lleva ${…}, el espacio de delante va escrito \x20 (vale igual dentro de una plantilla)
 h = re.sub(r' (src|href|poster)="([^"]*\$\{)', r'\\x20\1="\2', h)

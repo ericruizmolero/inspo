@@ -111,13 +111,15 @@ node marketing-site/video/voz-eleven.cjs es ZCh4e9eZSUf41K4cmCEL eleven_v4 0.6 0
 ```
 
 ```bash
-node marketing-site/video/voz-eleven.cjs en cgSgspJ2msm6clMCkdW9 eleven_v4 0.3 0.45
+node marketing-site/video/voz-eleven.cjs en cgSgspJ2msm6clMCkdW9 eleven_v4 0.55 0.25
 ```
+
+(20/11) En inglés, con stability 0.3 la voz se quedaba «trabada»: estiraba y congelaba sílabas a mitad de frase («a post **you** saw», «a **button**»). Con 0.55 / 0.25 desaparecen. No bajar de 0.5.
 
 3. Comprobar que dice el texto, **bloque a bloque** (`voz/<idioma>/b1.mp3` … `b6b.mp3`) y no sobre la toma entera.
 4. Regenerar el vídeo (apartado 2).
 
-Voces: castellano, Emilio (`ZCh4e9eZSUf41K4cmCEL`), con estabilidad 0,6 y estilo 0,08; inglés, Jessica (`cgSgspJ2msm6clMCkdW9`), con 0,3 y 0,45. Modelo `eleven_v4`, una sola toma por idioma.
+Voces: castellano, Emilio (`ZCh4e9eZSUf41K4cmCEL`), con estabilidad 0,6 y estilo 0,08; inglés, Jessica (`cgSgspJ2msm6clMCkdW9`), con 0,55 y 0,25. Modelo `eleven_v4`, una sola toma por idioma.
 
 Al escribir guion: frases cortas, segunda persona, como contado a alguien. Nada de siglas («inteligencia artificial», no «IA»: se pronuncia mal).
 
