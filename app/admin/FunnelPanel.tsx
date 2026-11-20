@@ -9,10 +9,10 @@ import { Kpis } from "./AdminPanel";
 
 const pct = (share: number) => Math.round(share * 100);
 
-/** A step's count, with the share of the step before in muted text when there is one */
+/** A step's count, with the share of the step before in muted text when anybody reached it, as in Waves */
 function Count({ counts, step }: { counts: FunnelCounts; step: FunnelStep }) {
   const share = conversion(counts, step);
-  return <>{counts[step]}{share !== null && <span className="ad-muted"> {pct(share)}%</span>}</>;
+  return <>{counts[step]}{share !== null && counts[step] > 0 && <span className="ad-muted"> {pct(share)}%</span>}</>;
 }
 
 /** /admin/funnel: the period's sign-ups step by step, each week's cohort, and the waitlist since it opened */
