@@ -15,6 +15,7 @@ import en from "./i18n/en";
 import es from "./i18n/es";
 import { DEFAULT_PLAN, type PlanKey } from "./plans";
 import type { PlanPeriod } from "./db/schema";
+import { REFS_GOAL, STEPS, type StepKey } from "./first-steps-core";
 
 const DICTS = { en, es } as const;
 export const mailDict = (locale: Locale) => DICTS[locale].mail;
@@ -252,16 +253,22 @@ export function vaultReleaseMail(pieces: ReleasePiece[], stopUrl: string, locale
 
 // ─── First use (lib/first-use-mail.ts) ───────────────────────────────────────
 
-/** Once, when the account is made: the five steps to a first criterio.md, in order */
+/** Once, when the account is made: the first steps, numbered in the order the app asks for them */
 export function welcomeMail(url: string, locale: Locale): Mail {
   const t = mailDict(locale).welcome;
-  return { subject: t.subject, text: signed(locale, t.text(url)) };
+  const lines: Record<StepKey, (goal: number) => string> = t.steps;
+  const list = STEPS.map((s, i) => `${i + 1}. ${lines[s.key](REFS_GOAL)}`).join("\n");
+  return { subject: t.subject, text: signed(locale, `${t.intro(url)}\n\n${list}\n\n${t.example}\n\n${t.outro}`) };
 }
 
-/** Once, three days in, if no project has a reference yet. It stops with the digest's switch */
-export function nudgeMail(url: string, stopUrl: string, locale: Locale): Mail {
+/** What a nudge says of the step it names: where it is done, and how many references the project has of the goal */
+export interface NudgeAt { url: string; refs: number; goal: number }
+
+/** A nudge on day 3 or 7: the first step not done, with its link. It stops with the digest's switch */
+export function nudgeMail(step: StepKey, at: NudgeAt, stopUrl: string, locale: Locale): Mail {
   const t = mailDict(locale);
-  return { subject: t.nudge.subject, text: signed(locale, `${t.nudge.text(url)}\n\n${t.nudge.why}\n${t.team.stopText(stopUrl)}`) };
+  const copy: Record<StepKey, { subject: (at: NudgeAt) => string; text: (at: NudgeAt) => string }> = t.nudge.steps;
+  return { subject: copy[step].subject(at), text: signed(locale, `${copy[step].text(at)}\n\n${t.nudge.stuck}\n\n${t.nudge.why}\n${t.team.stopText(stopUrl)}`) };
 }
 
 /** A month without opening the app: the digest stops on its own, and this says so once */

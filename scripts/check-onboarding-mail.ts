@@ -1,6 +1,7 @@
-// The welcome and the day-3 nudge (lib/first-use-mail.ts) against the LOCAL database, with mail going to the
-// console and .data/last-mail.txt. It makes its own people, runs the nudge twice and the welcome once, and
-// removes what it made. The run is set on a morning years ahead, so no real account falls in its window.
+// The welcome and the day 3 and day 7 nudges (lib/first-use-mail.ts) against the LOCAL database, with mail going to
+// the console and .data/last-mail.txt. It makes its own people, runs the nudges twice and the welcome once, and
+// removes what it made. The run is set on a morning years ahead, so no real account falls in its windows.
+// tests/first-use-mail.test.ts checks which step each nudge names.
 //   npm run check:onboarding-mail
 import { config as loadEnv } from "dotenv";
 loadEnv({ path: ".env.local" }); loadEnv();
@@ -12,7 +13,7 @@ import { db, pool, schema } from "../lib/db";
 import { runMigrations } from "../lib/db/migrate";
 import { ensurePersonalWorkspace, newId } from "../lib/workspace-core";
 import { ensureBuiltinTemplates } from "../lib/template-seed";
-import { nudgeKey, nudgeWindow, sendNudges, sendWelcome, welcomeKey } from "../lib/first-use-mail";
+import { NUDGE_DAYS, nudgeKey, nudgeWindow, sendNudges, sendWelcome, welcomeKey } from "../lib/first-use-mail";
 
 const DAY = 24 * 60 * 60 * 1000;
 const LAST_MAIL = path.join(process.cwd(), ".data", "last-mail.txt");
@@ -29,11 +30,11 @@ async function main() {
 
   const tag = newId().slice(0, 8);
   const made = { users: [] as string[], orgs: [] as string[] };
-  const person = async (name: string, opts: { daysAgo: number; language?: string; digest?: boolean }) => {
+  const person = async (name: string, opts: { daysAgo: number; language?: string; digest?: boolean; hidden?: boolean }) => {
     const id = newId();
     const email = `check-onboarding-${name}-${tag}@example.invalid`;
     const at = new Date(NOW.getTime() - opts.daysAgo * DAY);
-    await db.insert(schema.user).values({ id, name, email, language: opts.language ?? "en", digestEmails: opts.digest ?? true, createdAt: at, updatedAt: at });
+    await db.insert(schema.user).values({ id, name, email, language: opts.language ?? "en", digestEmails: opts.digest ?? true, firstStepsDoneAt: opts.hidden ? at : null, createdAt: at, updatedAt: at });
     made.users.push(id);
     const orgId = await ensurePersonalWorkspace(id, name, email, opts.language);
     made.orgs.push(orgId);
@@ -43,16 +44,20 @@ async function main() {
   };
 
   try {
-    const { from, to } = nudgeWindow(NOW);
-    assert.equal(to.getTime() - from.getTime(), DAY, "the window is one whole day");
-    assert.deepEqual(nudgeWindow(new Date(NOW.getTime() + DAY)).from, to, "the next morning starts where this one ended");
-    assert.deepEqual(nudgeWindow(new Date(NOW.getTime() + 19 * 60 * 60 * 1000)), { from, to }, "a late run the same day takes the same window");
+    for (const day of NUDGE_DAYS) {
+      const { from, to } = nudgeWindow(NOW, day);
+      assert.equal(to.getTime() - from.getTime(), DAY, `day ${day}: the window is one whole day`);
+      assert.deepEqual(nudgeWindow(new Date(NOW.getTime() + DAY), day).from, to, `day ${day}: the next morning starts where this one ended`);
+      assert.deepEqual(nudgeWindow(new Date(NOW.getTime() + 19 * 60 * 60 * 1000), day), { from, to }, `day ${day}: a late run the same day takes the same window`);
+    }
 
     const empty = await person("ana", { daysAgo: 3.5 });
-    const emptyEs = await person("lucia", { daysAgo: 3.2, language: "es" });
+    const emptyEs = await person("lucia", { daysAgo: 7.2, language: "es" });
     const filed = await person("bea", { daysAgo: 3.5 });
     const early = await person("carla", { daysAgo: 2 });
     const quiet = await person("dani", { daysAgo: 3.5, digest: false });
+    const hidden = await person("eva", { daysAgo: 7.5, hidden: true });
+    const everyone = [empty, emptyEs, filed, early, quiet, hidden];
 
     // The built-in templates bring sample references: they must not count as the person's own
     await ensureBuiltinTemplates(empty.orgId).catch((err) => console.log(`(templates not loaded: ${err instanceof Error ? err.message : err})`));
@@ -67,25 +72,26 @@ async function main() {
 
     await fs.rm(LAST_MAIL, { force: true });
     const first = await sendNudges(NOW);
-    assert.deepEqual(first, { empty: 2, sent: 2 }, "two empty-handed people in the window, two mails");
+    assert.deepEqual(first, { due: 3, sent: 3 }, "ana and bea on day 3, lucia on day 7: three mails");
     const mail = await lastMail();
-    assert.ok(mail && [empty.email, emptyEs.email].some((e) => mail.startsWith(e)), "the last mail went to one of them");
+    assert.ok(mail && [empty.email, emptyEs.email, filed.email].some((e) => mail.startsWith(e)), "the last mail went to one of them");
     const keys = (await db.select({ key: schema.appSetting.key }).from(schema.appSetting)
-      .where(inArray(schema.appSetting.key, [empty, emptyEs, filed, early, quiet].map((p) => nudgeKey(p.id))))).map((r) => r.key).sort();
-    assert.deepEqual(keys, [nudgeKey(empty.id), nudgeKey(emptyEs.id)].sort(), "no nudge for a filed reference, an account too new, or the digest off");
+      .where(inArray(schema.appSetting.key, everyone.flatMap((p) => NUDGE_DAYS.map((d) => nudgeKey(d, p.id)))))).map((r) => r.key).sort();
+    assert.deepEqual(keys, [nudgeKey(3, empty.id), nudgeKey(3, filed.id), nudgeKey(7, emptyEs.id)].sort(), "no nudge for an account too new, the digest off, or the list hidden");
 
     await fs.rm(LAST_MAIL, { force: true });
     const second = await sendNudges(NOW);
-    assert.deepEqual(second, { empty: 2, sent: 0 }, "the second run sends nothing");
+    assert.deepEqual(second, { due: 3, sent: 0 }, "the second run sends nothing");
     assert.equal(await lastMail(), null, "no mail written on the second run");
 
     await fs.rm(LAST_MAIL, { force: true });
     assert.equal(await sendWelcome(empty), true, "the welcome goes out");
     assert.equal(await sendWelcome(emptyEs), true, "the welcome goes out in Spanish");
     assert.equal(await sendWelcome(empty), false, "and only once");
-    assert.ok((await lastMail())?.startsWith(emptyEs.email), "the last welcome went to lucia");
+    const welcome = await lastMail();
+    assert.ok(welcome?.startsWith(emptyEs.email), "the last welcome went to lucia");
   } finally {
-    const keys = made.users.flatMap((id) => [welcomeKey(id), nudgeKey(id)]);
+    const keys = made.users.flatMap((id) => [welcomeKey(id), ...NUDGE_DAYS.map((d) => nudgeKey(d, id))]);
     if (keys.length) await db.delete(schema.appSetting).where(inArray(schema.appSetting.key, keys));
     if (made.orgs.length) await db.delete(schema.organization).where(inArray(schema.organization.id, made.orgs));
     if (made.users.length) {

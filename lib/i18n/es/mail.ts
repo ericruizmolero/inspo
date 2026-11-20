@@ -138,23 +138,45 @@ export const mail: typeof EnMail = {
 
   welcome: {
     subject: "Por dónde empezar en Criterio",
-    text: (url: string): string =>
+    intro: (url: string): string =>
       `Ya tienes tu espacio:\n${url}\n\n` +
-      `Este es el orden que seguiríamos nosotros el primer día.\n\n` +
-      `1. Crea un proyecto.\n` +
-      `2. Escribe una línea de qué es. Con "La web de un estudio de cerámica en Lisboa" basta.\n` +
-      `3. Guarda 10 referencias. Con la extensión del navegador, pegando un enlace o importando un tablero que ya tengas en Are.na, Pinterest o Cosmos.\n` +
-      `4. Pide a Criterio el Sistema. Lee tus referencias y propone la tipografía, el color, el layout y la voz hacia los que apuntan, una decisión por área. La primera pasada no cuenta para las 30 acciones de IA del plan gratis.\n` +
-      `5. Exporta el criterio.md o conecta el MCP, y tu agente lo leerá mientras programa.\n\n` +
-      `Si algo se atasca, responde a este correo.`,
+      `Estos son los primeros pasos, en el orden que seguiríamos nosotros. La app tiene la misma lista junto a tu plan y marca cada uno según lo haces.`,
+    steps: {
+      project: (): string => "Crea un proyecto. Uno por cada marca o producto en el que trabajas.",
+      refs: (goal: number): string => `Guarda ${goal} referencias en él. Con la extensión del navegador, pegando un enlace o importando un tablero que ya tengas en Are.na, Pinterest o Cosmos.`,
+      polish: (): string => "Pule el tablón. Tino te pregunta por cada referencia y tú eliges. Lo que olvidas vuelve al Cajón.",
+      out: (): string => "Conecta tu IA. Claude, ChatGPT, Cursor o Claude Code leen tus referencias antes de construir. Está en Conectores, en la barra de arriba.",
+    },
+    example: "¿Prefieres ver uno terminado antes? Abre uno de los Ejemplos en Descubrir. Un ejemplo no gasta el proyecto del plan gratis.",
+    outro: "Si algo se atasca, responde a este correo.",
   },
 
   nudge: {
-    subject: "Tu proyecto sigue vacío",
-    text: (url: string): string =>
-      `Han pasado tres días y tu proyecto en Criterio sigue sin referencias. Lo tienes aquí:\n${url}\n\n` +
-      `Lo más rápido es traer un tablero que ya tengas. Pega el enlace de un tablero de Are.na, Pinterest o Cosmos donde Criterio te pide un enlace, y el tablero entra como proyecto con todo lo que guardaste. Son dos minutos.\n\n` +
-      `Si te has atascado en algún punto, responde y cuéntanos dónde. Te echamos una mano hasta tu primer Sistema.`,
+    steps: {
+      project: {
+        subject: (): string => "Tu cuenta de Criterio aún no tiene proyecto",
+        text: ({ url }: { url: string }): string =>
+          `Tu cuenta en Criterio aún no tiene ningún proyecto. Empieza uno aquí, uno por cada marca o producto en el que trabajas:\n${url}\n\n` +
+          `O abre uno de los Ejemplos en Descubrir para ver uno terminado antes. Un ejemplo no gasta el proyecto del plan gratis.`,
+      },
+      refs: {
+        subject: ({ refs, goal }: { refs: number; goal: number }): string => refs ? `Tu proyecto tiene ${refs} de sus primeras ${goal} referencias` : "Tu proyecto sigue vacío",
+        text: ({ url, refs, goal }: { url: string; refs: number; goal: number }): string =>
+          `${refs ? `Tu proyecto en Criterio tiene ${refs} de las ${goal} referencias con las que arranca. Guarda las que faltan aquí` : `Tu proyecto en Criterio aún no tiene referencias. Guarda las ${goal} primeras aquí`}:\n${url}\n\n` +
+          `Lo más rápido es traer un tablero que ya tengas. Pega el enlace de un tablero de Are.na, Pinterest o Cosmos donde Criterio te pide un enlace, y entra todo lo que guardaste.`,
+      },
+      polish: {
+        subject: (): string => "Tu tablón está listo para pulir",
+        text: ({ url }: { url: string }): string =>
+          `Tu proyecto en Criterio ya tiene sus referencias. El siguiente paso es pulir el tablón. Tino te pregunta por cada referencia y tú eliges cuál se queda:\n${url}`,
+      },
+      out: {
+        subject: (): string => "Conecta tu IA a tus referencias",
+        text: ({ url }: { url: string }): string =>
+          `Tu tablón en Criterio ya está pulido. El último paso es conectar tu IA, para que Claude, ChatGPT, Cursor o Claude Code lean tus referencias antes de construir. Abre tu proyecto y pulsa Conectores en la barra de arriba:\n${url}`,
+      },
+    },
+    stuck: "Si te has atascado en algún punto, responde y cuéntanos dónde.",
     why: "Te llega porque abriste una cuenta en criterio.design.",
   },
 

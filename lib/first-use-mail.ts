@@ -1,23 +1,29 @@
-// The two emails of a person's first days (#103). Each goes out once per person (mailOnce, lib/mail-once.ts):
-//   - The welcome, when the account is made (lib/auth.ts, after the response): the five steps to a first criterio.md.
-//   - The day-3 nudge, from the morning cron: only if none of their projects has a reference yet. A template's
-//     sample references and the templates themselves do not count. It carries the digest's stop link, so turning
-//     the digest off also turns this off.
+// The emails of a person's first days (#103), each one once per person (mailOnce, lib/mail-once.ts). Both follow the
+// first steps (lib/first-steps-core.ts STEPS), the same list the app ticks off:
+//   - The welcome, when the account is made (lib/auth.ts, after the response): the steps in order.
+//   - A nudge on day 3 and another on day 7, from the morning cron: the first step not done, with its link. Nothing
+//     once the steps are walked or the list was hidden (user.first_steps_done_at). It carries the digest's stop link,
+//     so turning the digest off also turns these off.
 import "server-only";
-import { and, eq, gte, isNull, lt, not, notExists, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, isNull, lt, sql } from "drizzle-orm";
 import { db, schema } from "./db";
 import { welcomeMail, nudgeMail, unsubscribeHeaders } from "./mail";
 import { mailOnce } from "./mail-once";
 import { baseUrl, inBackground, unsubscribeUrl } from "./notify";
-import { isSampleItem } from "./sample-items";
+import { firstSteps } from "./first-steps";
+import { REFS_GOAL, STEPS, nextStep } from "./first-steps-core";
 import { toLocale } from "./i18n/locale";
 
 const DAY = 24 * 60 * 60 * 1000;
 
 interface Person { id: string; email: string; language?: string | null }
 
+/** The days after signing up a nudge goes out on */
+export const NUDGE_DAYS = [3, 7] as const;
+export type NudgeDay = (typeof NUDGE_DAYS)[number];
+
 export const welcomeKey = (userId: string) => `welcome:${userId}`;
-export const nudgeKey = (userId: string) => `nudge3:${userId}`;
+export const nudgeKey = (day: NudgeDay, userId: string) => `nudge${day}:${userId}`;
 
 export function sendWelcome(p: Person): Promise<boolean> {
   return mailOnce(welcomeKey(p.id), [p.email], welcomeMail(baseUrl(), toLocale(p.language)));
@@ -29,34 +35,43 @@ export function welcomeLater(p: Person): void {
 }
 
 /**
- * Who the nudge looks at on the morning of `now`: the accounts made on the UTC day four days back. The cron runs
- * once a day, always on the same UTC day as its date, so each day's run takes the next whole day and nobody is
- * skipped or seen twice. Whoever it reaches has had at least three days.
+ * Who the day's nudge looks at on the morning of `now`: the accounts made on the UTC day `day + 1` days back. The cron
+ * runs once a day, always on the same UTC day as its date, so each day's run takes the next whole day and nobody is
+ * skipped or seen twice. Whoever it reaches has had at least `day` days.
  */
-export function nudgeWindow(now: Date): { from: Date; to: Date } {
+export function nudgeWindow(now: Date, day: NudgeDay): { from: Date; to: Date } {
   const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
-  return { from: new Date(today - 4 * DAY), to: new Date(today - 3 * DAY) };
+  return { from: new Date(today - (day + 1) * DAY), to: new Date(today - day * DAY) };
 }
 
-/** The people in the window with the digest on and no reference of their own in any project of any of their workspaces */
-async function emptyHanded(now: Date): Promise<Person[]> {
-  const U = schema.user, M = schema.member, PI = schema.projectItem, P = schema.project, T = schema.inspoItem;
-  const { from, to } = nudgeWindow(now);
-  const filed = db.select({ one: sql`1` }).from(M)
-    .innerJoin(PI, eq(PI.organizationId, M.organizationId))
-    .innerJoin(P, and(eq(P.id, PI.projectId), isNull(P.template)))
-    .innerJoin(T, eq(T.id, PI.itemId))
-    .where(and(eq(M.userId, U.id), not(isSampleItem())));
-  return db.select({ id: U.id, email: U.email, language: U.language }).from(U)
-    .where(and(gte(U.createdAt, from), lt(U.createdAt, to), eq(U.digestEmails, true), notExists(filed)));
+/** The workspace a person's first steps are read in: their own, or the first one they joined */
+async function homeOf(userId: string): Promise<string | null> {
+  const M = schema.member, O = schema.organization;
+  const [m] = await db.select({ id: M.organizationId }).from(M).innerJoin(O, eq(O.id, M.organizationId))
+    .where(eq(M.userId, userId)).orderBy(desc(sql`${O.kind} = 'personal'`), asc(M.createdAt)).limit(1);
+  return m?.id ?? null;
 }
 
-export async function sendNudges(now = new Date()): Promise<{ empty: number; sent: number }> {
-  const people = await emptyHanded(now);
-  let sent = 0;
-  for (const p of people) {
-    const stopUrl = unsubscribeUrl(p.id, "digest");
-    if (await mailOnce(nudgeKey(p.id), [p.email], nudgeMail(baseUrl(), stopUrl, toLocale(p.language)), { headers: unsubscribeHeaders(stopUrl) })) sent++;
+/** Sends the day 3 and day 7 nudges due on the morning of `now`. `due` counts the people with a step to name */
+export async function sendNudges(now = new Date()): Promise<{ due: number; sent: number }> {
+  const U = schema.user;
+  let due = 0, sent = 0;
+  for (const day of NUDGE_DAYS) {
+    const { from, to } = nudgeWindow(now, day);
+    const people = await db.select({ id: U.id, email: U.email, language: U.language }).from(U)
+      .where(and(gte(U.createdAt, from), lt(U.createdAt, to), eq(U.digestEmails, true), isNull(U.firstStepsDoneAt)));
+    for (const p of people) {
+      const ws = await homeOf(p.id);
+      // Null once walked: firstSteps hides the list for good then, and no nudge names a step
+      const steps = ws ? await firstSteps(p.id, ws) : null;
+      const step = steps && nextStep(steps);
+      if (!steps || !step) continue;
+      due++;
+      const url = baseUrl() + STEPS.find((s) => s.key === step)!.href(steps);
+      const stopUrl = unsubscribeUrl(p.id, "digest");
+      const mail = nudgeMail(step, { url, refs: steps.refs, goal: REFS_GOAL }, stopUrl, toLocale(p.language));
+      if (await mailOnce(nudgeKey(day, p.id), [p.email], mail, { headers: unsubscribeHeaders(stopUrl) })) sent++;
+    }
   }
-  return { empty: people.length, sent };
+  return { due, sent };
 }

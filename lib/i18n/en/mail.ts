@@ -144,25 +144,49 @@ export const mail = {
   },
 
   // ─── First use (lib/first-use-mail.ts) ─────────────────────────────────────
+  // One line per first step (lib/first-steps-core.ts STEPS): the welcome lists them in the app's order, and a nudge
+  // names the first one not done
   welcome: {
     subject: "Where to start on Criterio",
-    text: (url: string): string =>
+    intro: (url: string): string =>
       `Your workspace is ready:\n${url}\n\n` +
-      `This is the order we would follow on the first day.\n\n` +
-      `1. Create a project.\n` +
-      `2. Write one line about what it is. "A site for a ceramics studio in Lisbon" is enough.\n` +
-      `3. Save 10 references to it. Use the browser extension, paste a link, or import a board you already keep on Are.na, Pinterest or Cosmos.\n` +
-      `4. Ask Criterio for the System. It reads your references and proposes the typography, color, layout and voice they point to, one decision per area. The first pass does not count toward the 30 AI actions of the free plan.\n` +
-      `5. Export criterio.md, or connect the MCP so your coding agent reads it while it builds.\n\n` +
-      `If something gets in the way, reply to this email.`,
+      `These are the first steps, in the order we would take them. The app keeps the same list beside your plan and ticks each one off as you go.`,
+    steps: {
+      project: (): string => "Create a project. One for each brand or product you work on.",
+      refs: (goal: number): string => `Save ${goal} references to it. Use the browser extension, paste a link, or import a board you keep on Are.na, Pinterest or Cosmos.`,
+      polish: (): string => "Polish the board. Tino asks about each reference and you choose. What you let go goes back to the Inbox.",
+      out: (): string => "Connect your AI. Claude, ChatGPT, Cursor or Claude Code read your references before they build. It is in Connectors, on the top bar.",
+    },
+    example: "Would you rather see a finished one first? Open one of the Examples in Discover. An example does not use up the free plan's project.",
+    outro: "If something gets in the way, reply to this email.",
   },
 
   nudge: {
-    subject: "Your project is still empty",
-    text: (url: string): string =>
-      `Three days in, your project on Criterio still has no references. Here it is:\n${url}\n\n` +
-      `The quickest way to fill it is a board you already have. Paste the link of a board you keep on Are.na, Pinterest or Cosmos where Criterio asks for a link, and the board comes in as a project with everything on it. It takes two minutes.\n\n` +
-      `If you got stuck somewhere, reply and tell us where. We'll help you get to your first System.`,
+    steps: {
+      project: {
+        subject: (): string => "Your Criterio account has no project yet",
+        text: ({ url }: { url: string }): string =>
+          `Your account on Criterio has no project yet. Start one here, one for each brand or product you work on:\n${url}\n\n` +
+          `Or open one of the Examples in Discover to see a finished one first. An example does not use up the free plan's project.`,
+      },
+      refs: {
+        subject: ({ refs, goal }: { refs: number; goal: number }): string => refs ? `Your project has ${refs} of its first ${goal} references` : "Your project is still empty",
+        text: ({ url, refs, goal }: { url: string; refs: number; goal: number }): string =>
+          `${refs ? `Your project on Criterio has ${refs} of the ${goal} references it takes to get going. Save the rest here` : `Your project on Criterio has no references yet. Save the first ${goal} here`}:\n${url}\n\n` +
+          `The quickest way is a board you already keep. Paste the link of an Are.na, Pinterest or Cosmos board where Criterio asks for a link, and everything on it comes in.`,
+      },
+      polish: {
+        subject: (): string => "Your board is ready to polish",
+        text: ({ url }: { url: string }): string =>
+          `Your project on Criterio has its references. The next step is to polish the board. Tino asks about each reference and you choose what stays:\n${url}`,
+      },
+      out: {
+        subject: (): string => "Connect your AI to your references",
+        text: ({ url }: { url: string }): string =>
+          `Your board on Criterio is polished. The last step is to connect your AI, so Claude, ChatGPT, Cursor or Claude Code read your references before they build. Open your project and pick Connectors on the top bar:\n${url}`,
+      },
+    },
+    stuck: "If you got stuck somewhere, reply and tell us where.",
     why: "You get this because you opened an account on criterio.design.",
   },
 

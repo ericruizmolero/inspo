@@ -1,4 +1,4 @@
-// Emails that go out once per key: the spend and fair-use alerts, the welcome and the day-3 nudge. The key is a
+// Emails that go out once per key: the spend and fair-use alerts, the welcome and the day 3 and day 7 nudges. The key is a
 // row in app_setting, so of two instances that send at once, only one does. Its own module, not lib/mail.ts, so a
 // test that mocks sendMail also catches the sends made here.
 import "server-only";
