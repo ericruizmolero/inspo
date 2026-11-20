@@ -310,7 +310,7 @@ function VaultTile({ entry: e, mark, kind, blank, projects, used, onPicks, onSha
         {/* Over the picture on hover, bottom left: the action row a board card has, with its keys. The folder chooses the piece for a
             project, as a card is filed (ember once it is in one); the eye opens it alone in a tab. A press here is never the card's */}
         <span className="vault-card__tools" onClick={(ev) => { ev.preventDefault(); ev.stopPropagation(); }}>
-          <UseInProject slug={e.slug} projects={projects} used={used} onChange={onPicks} compact />
+          {mark !== "locked" && <UseInProject slug={e.slug} projects={projects} used={used} onChange={onPicks} compact />}
           {e.preview && <IconButton icon="eye" variant="strong" size="s" label={t.vault.live} onClick={() => window.open(`/api/vault/${encodeURIComponent(e.slug)}/preview`, "_blank", "noopener,noreferrer")} />}
         </span>
       </span>
@@ -510,10 +510,11 @@ function VaultSheet({ slug, near, card, partner, mark, projects, used, onPicks, 
                 {/* The piece by itself, in a tab of its own: the same sandboxed page the stage shows. A quiet paper key: the ember is only in its eye, the same one a card shows */}
                 {e.preview && <a className="cr-btn cr-btn-secondary cr-btn-s vault-sheet__go" href={previewUrl} target="_blank" rel="noopener noreferrer"><Icon name="eye" size={16} className="vault-sheet__eye" />{t.vault.live}<Icon name="arrow-up-right" size={16} /></a>}
                 {e.liveUrl && <a className="cr-btn cr-btn-quiet cr-btn-s vault-sheet__go" href={e.liveUrl} target="_blank" rel="noopener noreferrer">{t.vault.site}<Icon name="arrow-up-right" size={18} /></a>}
-                {/* For everyone: ask for this piece without ever holding its code. Choose it for a project (the project's
-                    criterio.md then names it to the agent), or copy a line that names it for an agent with Criterio connected */}
-                <UseInProject slug={slug} projects={projects} used={used} onChange={onPicks} />
-                <CopyForAgent text={t.vault.prompt(e.title, e.slug, labelOf(e.category))} />
+                {/* Ask for this piece without ever holding its code: choose it for a project (the project's criterio.md then
+                    names it to the agent), or copy a line that names it for an agent with Criterio connected. Not for a
+                    locked piece: the agent could not read it, so the sheet offers the plans instead */}
+                {mark !== "locked" && <UseInProject slug={slug} projects={projects} used={used} onChange={onPicks} />}
+                {mark !== "locked" && <CopyForAgent text={t.vault.prompt(e.title, e.slug, labelOf(e.category))} />}
               </div>
               <dl className="vault-facts">
                 <div><dt>{t.vault.category}</dt><dd><button type="button" className="vault-facts__link" onClick={() => onCategory(e.category)}>{labelOf(e.category)}</button></dd></div>

@@ -8,7 +8,7 @@ import { PLAN_PERIODS, type PlanPeriod } from "@/lib/db/schema";
 import type { PendingPlan } from "@/lib/plan-requests";
 import { fmtPrice } from "@/lib/i18n/format";
 import { useT } from "@/components/I18nProvider";
-import { Button, SegmentedControl, SettingsWindow } from "@/components/criterio";
+import { Button, Icon, SegmentedControl, SettingsWindow } from "@/components/criterio";
 
 /**
  * Settings, Plan: the four plans side by side, the account's marked. Its owner asks for any plan above, monthly or
@@ -66,7 +66,7 @@ export default function PlanChoice({ current, owner, payer, pending }: {
               </p>
               <p className="pl-plan__year t-small">{plan.price.year ? p.orYearly(fmtPrice(plan.price.year, locale)) : " "}</p>
               <ul className="pl-plan__features t-small">
-                {text.features.map((f) => <li key={f}>{f}</li>)}
+                {text.features.map((f) => <li key={f}><Icon name="check" size={14} />{f}</li>)}
               </ul>
               {owner && i > rank && (
                 <Button size="s" className="pl-plan__ask" pressed={asked && pending?.period === period} disabled={!!busy}

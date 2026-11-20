@@ -1559,7 +1559,8 @@ video.vp__media { object-fit: contain; }
   position: fixed; right: 20px; bottom: 20px; z-index: 150;
   display: flex; flex-direction: column; gap: 8px; width: 320px; max-width: calc(100vw - 32px);
 }
-.toasts--top { top: 20px; bottom: auto; right: auto; left: 50%; transform: translateX(-50%); }
+/* Below the top bar (12px over a 44px Island, and 8 of air), never on top of its tabs */
+.toasts--top { top: 64px; bottom: auto; right: auto; left: 50%; transform: translateX(-50%); }
 .toast.cr-window {
   display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 8px 10px 12px;
   box-shadow: var(--bevel), var(--shadow-popover);
@@ -1953,7 +1954,10 @@ video.vp__media { object-fit: contain; }
 .pl-plan__tagline, .pl-plan__year { margin: 0; color: var(--text-muted); }
 .pl-plan__price { margin: 8px 0 0; font-variant-numeric: tabular-nums; }
 .pl-plan__price .t-small { color: var(--text-muted); }
-.pl-plan__features { margin: 8px 0 0; padding: 0 0 0 16px; display: flex; flex-direction: column; gap: 4px; flex: 1; }
+.pl-plan__features { margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; flex: 1; }
+/* A check before each line, as on the marketing site's plans: a list nobody has to read as bullets */
+.pl-plan__features li { display: grid; grid-template-columns: 14px minmax(0, 1fr); gap: 8px; align-items: baseline; }
+.pl-plan__features svg { color: var(--text-2); transform: translateY(2px); }
 .pl-plan__ask { margin-top: 12px; align-self: flex-start; }
 @media (max-width: 1087px) { .pl-plans { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 859px) { .pl-plans { grid-template-columns: 1fr; } }
