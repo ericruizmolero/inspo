@@ -16,6 +16,10 @@ import { VAULT_ACCESS, type VaultAccess } from "../../types/vault";
 /** CHECK that a text column holds one of these values */
 const oneOf = (name: string, col: Parameters<typeof sql>[1], values: readonly string[]) =>
   check(name, sql`${col} in (${sql.join(values.map((v) => sql.raw(`'${v}'`)), sql`, `)})`);
+/** Welcome's steps (components/Welcome.tsx), in order; user.welcome_step keeps the one reached */
+export const WELCOME_STEPS = ["name", "first", "extension", "agent"] as const;
+export type WelcomeStep = (typeof WELCOME_STEPS)[number];
+
 // Better Auth stores several roles comma-separated ("owner,admin")
 const ROLE_LIST = sql.raw(`'^(owner|admin|member)(,(owner|admin|member))*$'`);
 
@@ -33,14 +37,20 @@ export const user = pgTable("user", {
    *  their comments the moment it is written. Each is a switch in Account and a link at the foot of every email */
   digestEmails: boolean("digest_emails").notNull().default(true),
   replyEmails: boolean("reply_emails").notNull().default(true),
+  /** "New in the Vault" (lib/vault-release.ts), only for whoever reads the whole Vault: a switch in Account and a link at its foot */
+  vaultEmails: boolean("vault_emails").notNull().default(true),
   /** The invite the account was created with (lib/access.ts). Null for accounts from before the waitlist */
   accessInviteId: text("access_invite_id").references((): AnyPgColumn => accessInvite.id, { onDelete: "set null" }),
   invitesLeft: integer("invites_left").notNull().default(0),
   /** When the first steps (lib/first-steps.ts) stopped showing: the person hid them, or every step was done */
   firstStepsDoneAt: timestamp("first_steps_done_at", { withTimezone: true, mode: "date" }),
+  /** The Welcome step the person reached (components/Welcome.tsx), so a reload carries on from there; null before it starts */
+  welcomeStep: text("welcome_step").$type<WelcomeStep>(),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull(),
-});
+}, (t) => [
+  oneOf("user_welcome_step_check", t.welcomeStep, WELCOME_STEPS),
+]);
 
 export const session = pgTable("session", {
   id: text("id").primaryKey(),
@@ -102,6 +112,9 @@ export const billingAccount = pgTable("billing_account", {
   ownerUserId: text("owner_user_id").references(() => user.id, { onDelete: "set null" }),
   /** Stripe's customer (#90), unused until then */
   stripeCustomerId: text("stripe_customer_id"),
+  /** A gifted plan's last day (access_invite.grants_until, lib/waves.ts): the morning job warns a week before and moves the
+   *  account back to free once it passes. Null for a plan with no end */
+  planUntil: timestamp("plan_until", { withTimezone: true, mode: "date" }),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
 }, (t) => [
   oneOf("billing_account_plan_check", t.plan, PLANS.map((p) => p.key)),
@@ -245,6 +258,14 @@ export const planRequest = pgTable("plan_request", {
   oneOf("plan_request_status_check", t.status, PLAN_REQUEST_STATUSES),
 ]);
 
+/** A "New in the Vault" email: the entries it announced, sent to whoever reads the whole Vault (lib/vault-release.ts) */
+export const vaultRelease = pgTable("vault_release", {
+  id: text("id").primaryKey(),
+  entryIds: text("entry_ids").array().notNull(),
+  sentBy: text("sent_by").references(() => user.id, { onDelete: "set null" }),
+  sentAt: timestamp("sent_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
+}, (t) => [index("vault_release_sent_idx").on(t.sentAt)]);
+
 export const SIGNUP_MODES = ["invite", "open"] as const;
 export type SignupMode = (typeof SIGNUP_MODES)[number];
 
@@ -341,6 +362,8 @@ export const project = pgTable("project", {
   recipe: text("recipe").notNull().default(""),
   /** When the team said it had its references: until then the project opens on its board, gathering; after, on its system */
   startedAt: timestamp("started_at", { withTimezone: true, mode: "date" }),
+  /** The example it was started from (lib/templates.ts useTemplate). Such a project does not count toward the plan's projects */
+  fromTemplate: text("from_template").references((): AnyPgColumn => project.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull(),
 }, (t) => [
