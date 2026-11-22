@@ -1,7 +1,7 @@
 ---
 title: La app sin sesión lleva a la landing nueva
 date: 2026-11-06
-status: vigente
+status: sustituida
 kind: producto
 ---
 **Contexto.** Con la landing nueva publicada en `criterio.design/es/` (PR #149), `app.criterio.design` sin sesión seguía enseñando la portada de invitado (`GuestStart`): caja para pegar una URL, precio y un criterio.md de ejemplo. Era provisional, "ahí irá la landing que hace Andoni".

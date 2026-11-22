@@ -387,11 +387,6 @@ export const ui: typeof EnUi = {
       out: { label: "Conecta tu IA", hint: "Claude, ChatGPT, Cursor o Claude Code leen tus referencias antes de construir." },
     },
   },
-  guest: {
-    what: "Guarda las referencias de un proyecto. Criterio las lee y escribe las decisiones de diseño en criterio.md, un fichero que tu agente o tu equipo lee antes de construir.",
-    example: "Aquí tienes uno, de un proyecto real.",
-    cost: (free: string, actions: string, refs: string, from: string) => `${free}: ${actions} acciones de IA al mes y hasta ${refs} referencias. Los planes de pago empiezan en ${from} al mes.`,
-  },
   imports: {
     open: "Importar",
     title: "Trae lo que ya tenías guardado",
@@ -1563,7 +1558,6 @@ export const ui: typeof EnUi = {
     joining: "Apuntando",
     joined: "Ya estás en la lista. Te escribimos cuando te toque.",
     joinFailed: "No se pudo apuntar. Prueba otra vez.",
-    inviteOnlyShort: "Solo con invitación, por ahora",
     signInWithOther: "Entrar con otra cuenta",
     continueWith: (provider: string) => `Continuar con ${provider}`,
     orWithEmail: "o con tu correo",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, type ReactNode } from "react";
+import { useState, useRef, useEffect } from "react";
 import Clouds from "@/components/Clouds";
 import { normalizeWebUrl } from "@/lib/url";
 import { marketingHref } from "@/lib/site";
@@ -18,10 +18,6 @@ interface EmptyStartProps {
   onImportBoard: ImportBoard;
   /** A board imported on its own (pasted before signing in): its progress shows here */
   arriving?: BoardStep | null;
-  /** In place of the lead: the signed-out home says what the product is instead */
-  lead?: ReactNode;
-  /** Under the paste field: the signed-out home's price and example file */
-  children?: ReactNode;
   /** Signed in: the way to Discover's examples, which only shows where a space is still empty (meeting of 13-10) */
   onExamples?: () => void;
 }
@@ -29,7 +25,7 @@ interface EmptyStartProps {
 /**
  * Workspace with no inspos yet: one prompt box to paste a URL, and under it the way to the places we look.
  */
-export default function EmptyStart({ onAddUrl, isDuplicate, onImportBoard, arriving, lead, children, onExamples }: EmptyStartProps) {
+export default function EmptyStart({ onAddUrl, isDuplicate, onImportBoard, arriving, onExamples }: EmptyStartProps) {
   const { t, locale } = useT();
   const [raw, setRaw] = useState("");
   const [error, setError] = useState("");
@@ -65,7 +61,7 @@ export default function EmptyStart({ onAddUrl, isDuplicate, onImportBoard, arriv
     <section className={s.wrap}>
       <div className={s.head} data-flip>
         <h1 className={s.title}>{t.start.title}</h1>
-        <p className={s.lead}>{lead ?? t.start.lead}</p>
+        <p className={s.lead}>{t.start.lead}</p>
         <PromptInput className={s.prompt} id="start-url" inputRef={inputRef} value={raw} placeholder={t.start.pasteUrl}
           label={t.start.firstUrlLabel} sendLabel={board ? (busy ? t.board.importing : t.board.import) : busy ? t.start.saving : t.start.save} disabled={busy || !!arriving} busy={busy || !!arriving}
           onChange={(v) => { setRaw(v); setError(""); }} onSubmit={submit}
@@ -74,8 +70,6 @@ export default function EmptyStart({ onAddUrl, isDuplicate, onImportBoard, arriv
         {step ? <BoardProgress step={step} className={`board-progress ${s.board}`} />
           : board && !error && <p className={s.boardHint}>{t.board.hint(PLATFORM_NAME[board.platform])}</p>}
       </div>
-
-      {children}
 
       {/* Nothing to paste yet: an example to start from (Discover, in the app) and the places we look, on the marketing
           site. Each one there saves back here (?add=) */}

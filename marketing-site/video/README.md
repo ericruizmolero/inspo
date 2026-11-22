@@ -31,10 +31,11 @@ Las páginas que sirve la web, **generadas** por `construir.py` y que no se edit
 
 Lo que no puede escribirse en la plantilla sin desincronizarse de la app va como marca `%%…%%`, y `construir.py` la cambia por código de la web:
 - `%%WAITLIST%%`, el `action` de los dos formularios: `POST /api/waitlist` de la app (`WAITLIST_URL` en `src/i18n.ts`). El formulario manda el correo con el consentimiento y el campo trampa, y dice «Ya estás en la lista» sin salir de la página.
-- `%%LOGIN%%`, la tecla «Empieza gratis» de cada formulario: el login de la app (`copy.<idioma>.login.href`).
+- `%%LOGIN%%`, la tecla «Empieza gratis» de cada formulario y el enlace «Entrar» de la cabecera: el login de la app (`copy.<idioma>.login.href`).
 - `%%SIGNUP_MODE%%`, antes de `</body>`: `src/scripts/signup-mode.ts`, empaquetado por Astro. Si `GET /api/access/mode` de la app dice `open`, pone `.signup-open` en `<html>` y cada formulario es solo su «Empieza gratis».
 - `%%PRICING%%`, entre la ventana del producto y criterio.md: los planes, `src/components/HomePlans.astro`, que lee `src/plans.ts` (los mismos de `/pricing/` y de la app; un test avisa si se separan). Los precios y lo que incluye cada plan no se escriben en la plantilla. Sus estilos están en el componente y usan los tokens de la plantilla (`--paper-l`, `--ink`, `--display`, `--r`…): si cambian ahí, cambian también en los planes. Sus clases son `pricing*` y `plan-*`; la plantilla no debe usar esos nombres (ya tiene un `.plans` en la demo).
 - `%%PRICING_NAV%%`, el enlace «Precios» de la cabecera (`#pricing`): el nombre de la página en `PAGES` de `src/i18n.ts`.
+- `%%LOGIN_NAV%%`, el texto del enlace «Entrar» de la cabecera, en cada idioma: `copy.<idioma>.login.label` de `src/i18n.ts`.
 - Los planes y el enlace «Precios» van en la página **en los dos idiomas**, cada uno con su `data-locale` y el que no es el de la página con `hidden`. Como `?lang=` cambia los textos al cargar, el script de la plantilla enseña también el `data-locale` de ese idioma y oculta el resto (en la misma línea que rellena los `data-t`). Algo nuevo que venga de la web y dependa del idioma se pinta igual, con `data-locale`.
 
 Lo que la portada usa y ya está en `marketing-site/public/`:

@@ -258,7 +258,7 @@ El `SegmentedControl` de papel con `choice`, Sistema / Claro / Oscuro. Aplica `d
 
 ### Botón de tema
 `ThemeToggle` · `components/ThemeToggle.tsx` · `.theme-float` · `.theme-toggle`
-Un clic entre claro y oscuro. En escritorio, un botón de cromo de 36 px (`--chrome`, línea `--chrome-border`) que flota en la esquina inferior derecha, a 16 px de cada pared (el mismo margen que la pastilla de la esquina izquierda) y apagado hasta que se acerca el puntero; en móvil, la fila "Cambiar tema" al pie de la barra lateral. Está en toda la app, también antes de entrar: portada de invitado (`GuestStart`) y login. → [decisión](decisiones/2026-10-06-boton-de-tema-flotante-en-la-esquina.md) Enseña el tema al que lleva (sol en oscuro, luna en claro). El cambio funde la página entera en 600 ms (`switchTheme`). No ofrece "Sistema": eso sigue en el selector de Ajustes. → [decisión](decisiones/2026-10-06-boton-de-tema-flotante-en-la-esquina.md)
+Un clic entre claro y oscuro. En escritorio, un botón de cromo de 36 px (`--chrome`, línea `--chrome-border`) que flota en la esquina inferior derecha, a 16 px de cada pared (el mismo margen que la pastilla de la esquina izquierda) y apagado hasta que se acerca el puntero; en móvil, la fila "Cambiar tema" al pie de la barra lateral. Está en toda la app, también antes de entrar, en el login. → [decisión](decisiones/2026-10-06-boton-de-tema-flotante-en-la-esquina.md) Enseña el tema al que lleva (sol en oscuro, luna en claro). El cambio funde la página entera en 600 ms (`switchTheme`). No ofrece "Sistema": eso sigue en el selector de Ajustes. → [decisión](decisiones/2026-10-06-boton-de-tema-flotante-en-la-esquina.md)
 
 ### Selector de idioma
 `LangSwitch` · `components/LangSwitch.tsx` · `.select`
@@ -414,7 +414,7 @@ La primera vez de una cuenta nueva (sin referencias ni proyectos), en lugar de `
 
 ### Primer arranque
 `EmptyStart` · `components/EmptyStart.tsx`
-Lo que queda vacío después de la primera entrada (`Welcome`) y la portada sin sesión (`GuestStart`).
+Lo que queda vacío después de la primera entrada (`Welcome`).
 Caja de prompt para pegar una URL y, debajo, un botón secundario ("Mira dónde buscamos referencias") a `/resources/` de la web de marketing, en el idioma de quien lee (`marketingHref` en `lib/site.ts`); desde allí cada web vuelve a la app con `?add=`. → [decisión](decisiones/2026-10-11-las-paginas-legales-y-los-recursos-viven-en-la-web-de-marketing.md)
 - La caja también acepta un tablero de Are.na, Pinterest o Cosmos: la pista de debajo (`.boardHint`) dice que trae webs, imágenes, vídeos y textos a un proyecto propio, y al importar sale `BoardProgress` del ancho de la caja (`.board`). Lo importado se pinta de una vez al terminar: si entrara lote a lote, la primera referencia se llevaría el primer arranque y su progreso. Al acabar, el aviso de arriba (`.toast`, sin `--error`, con título y detalle que saltan de línea) dice qué entró por tipo y qué se quedó fuera y por qué. Un tablero pegado sin sesión vuelve del login por `?add=` y se importa igual. → [decisión](decisiones/2026-10-08-importar-un-tablero-trae-todo-lo-que-criterio-sabe-guardar.md)
 
@@ -636,17 +636,9 @@ Cifras, gráficos de columnas en SVG, personas (con quién las invitó), feedbac
 
 ## Públicas
 
-### Portada de invitado
-`GuestStart` · `components/GuestStart.tsx` · `.guest__bar`
-Ya no es la portada: sin sesión, `/` redirige a la landing de criterio.design y esto solo lo ve quien trae una cookie de sesión caducada. → [decisión](decisiones/2026-11-06-la-app-sin-sesion-lleva-a-la-landing-nueva.md)
-Barra con logo y Entrar, y el primer arranque debajo. Pegar una URL lleva a login con la URL como destino. La barra lleva solo el logo, sin nombre.
-- La entradilla de `EmptyStart` (`lead`) dice qué hace el producto y en qué acaba: un criterio.md que lee tu agente o tu equipo.
-- Bajo la caja, una línea pequeña con lo que cuesta (`.guest__cost`): el plan Gratis con sus acciones de IA y su tope de referencias, y el plan de pago más barato. Las cifras salen de `lib/plans.ts` y el nombre del plan de `lib/i18n/<idioma>/plans.ts`; la frase no repite ningún número. Al final, "Ver planes" enlaza a `/pricing/` de la web de marketing en el idioma de quien lee (`marketingHref`), subrayado fino como los enlaces del pie del login. → [decisión](decisiones/2026-10-11-las-skills-los-precios-y-la-extension-tienen-pagina-en-la-web-de-marketing.md)
-- Debajo, un criterio.md de verdad (`.guest__example`): el de la plantilla `docs/templates/multiverse`, escrito en el servidor por el mismo generador que el export (`lib/example-md.ts`, modo `clean`, solo sus referencias con enlace), en el mismo panel que el fichero de un proyecto (`.mdv` de `SystemMarkdown.css`: su barra de 44 con "criterio.md" apagado y los títulos `#` en `--md-head`), sin barra moss, a 600 px como la caja. El fichero va en mono (es el dato literal) y hace scroll por dentro a 360 px. Es provisional: ahí irá la landing que hace Andoni. → [sin barra moss](decisiones/2026-11-06-las-ventanas-de-dialogo-no-llevan-barra-moss.md)
-
 ### Acceso
 `LoginForm` · `components/LoginForm.tsx` · `.auth`
-Enlace mágico, Google, Apple y X, recordando el último método. Al lado, el collage fijo de `public/showcase/`, curado a mano. La página mide lo que la ventana (`.auth:not(.auth--solo)`, `100dvh`): el pie (`.auth__foot`), con la aceptación de Términos y Privacidad (enlaces a la web de marketing, en el idioma de quien lee: `marketingHref`), se lee sin scroll; si la ventana es más baja que el formulario, hace scroll el panel. → [decisión](decisiones/2026-10-06-el-login-mide-la-ventana-y-su-pie-se-ve-sin-scroll.md)
+Enlace mágico, Google, Apple y X, recordando el último método. Arriba, el logo y Volver, que lleva a la landing de criterio.design en el idioma de quien lee (`marketingHref("/?landing")`): sin sesión, `/` de la app es este mismo login. → [decisión](decisiones/2026-11-22-sin-sesion-la-app-es-el-login-y-la-portada-lleva-entrar.md) Al lado, el collage fijo de `public/showcase/`, curado a mano. La página mide lo que la ventana (`.auth:not(.auth--solo)`, `100dvh`): el pie (`.auth__foot`), con la aceptación de Términos y Privacidad (enlaces a la web de marketing, en el idioma de quien lee: `marketingHref`), se lee sin scroll; si la ventana es más baja que el formulario, hace scroll el panel. → [decisión](decisiones/2026-10-06-el-login-mide-la-ventana-y-su-pie-se-ve-sin-scroll.md)
 - El panel sigue el tema (oscuro en Board, papel en Paper), ya no fuerza Paper. El formulario es plano, como antes del sistema: campo y botones sociales de 46 sobre la superficie con línea de 1 px, sin pozo negro ni bisel (`.auth__panel` redefine los tokens de campo y los botones sociales, `.auth__social-btn`); el único bisel es el CTA ember. "Último usado" es una pastilla pequeña de 12 px en `--surface-2`, pegada al final del botón, que no alcanza el texto. Pista a 15, etiqueta y pie a 12. → [decisión](decisiones/2026-10-07-el-login-es-plano-y-enlaza-siempre-a-terminos-y-privacidad.md)
 
 ### Documento legal

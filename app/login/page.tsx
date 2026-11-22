@@ -69,7 +69,9 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
       <section className="auth__panel">
         <header className="auth__top">
           <Logo size={36} />
-          <Button size="s" icon="chevron-left" href="/">{t.common.back}</Button>
+          {/* Back to the landing on criterio.design: the app's / is this page when signed out. ?landing shows it even when
+              a stale session left the "signed in" hint, which would send the browser straight back here (marketing-site/worker) */}
+          <Button size="s" icon="chevron-left" href={marketingHref("/?landing", locale)}>{t.common.back}</Button>
         </header>
 
         <div className="auth__card">
