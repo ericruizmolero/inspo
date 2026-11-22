@@ -1461,6 +1461,8 @@ video.vp__media { object-fit: contain; }
 /* Focus like the dashboard's: the border rises to the text colour, no ember ring when the dialog opens on the field (Eric, 07-10) */
 .add .cr-input:focus-visible { outline: none; border-color: var(--text); }
 .add .modal__hint { font-size: var(--fs-label); color: var(--add-quiet); }
+/* The note: one line like the field above it, growing with what is written up to a few lines, then it scrolls */
+.add__note.cr-textarea { min-height: 44px; max-height: min(200px, 30dvh); field-sizing: content; resize: none; }
 .add .modal__footer { padding-top: var(--space-2); }
 /* The six ways in, above the field, as the extension lists its sources (.source-row in extension/chrome/popup.css):
  * glyph, name, what it takes, no line; the whole row is the button and rises on hover. Two columns so every line fits

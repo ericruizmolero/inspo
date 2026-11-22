@@ -73,7 +73,7 @@ export default function AddInspoModal({ onClose, onSubmit, isDuplicate, project,
   const [text, setText] = useState<string | null>(initial?.text ?? null);
   const [title, setTitle] = useState("");
   const titleRef = useRef<HTMLInputElement>(null);
-  const noteRef = useRef<HTMLInputElement>(null);
+  const noteRef = useRef<HTMLTextAreaElement>(null);
   const writing = text !== null;
   const startText = (body = "") => { setText(body); setRaw(""); setError(""); setTimeout(() => titleRef.current?.focus(), 0); };
   const clearText = () => { setText(null); setTitle(""); setTimeout(() => urlRef.current?.focus(), 0); };
@@ -203,11 +203,19 @@ export default function AddInspoModal({ onClose, onSubmit, isDuplicate, project,
           <input ref={fileRef} type="file" accept={MEDIA_ACCEPT} hidden onChange={(e) => pick(e.target.files?.[0] ?? null)} />
 
           {!board && <div className="field">
-            <Input
+            {/* The note becomes the card's first comment, so it writes like the composer: it grows with the words,
+                Enter saves and Shift+Enter breaks the line */}
+            <TextArea
               ref={noteRef}
+              className="add__note"
+              rows={1}
               value={note}
               onChange={(e) => setNote(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); e.currentTarget.form?.requestSubmit(); }
+              }}
               placeholder={writing ? t.add.textNote : t.add.whatYouLiked}
+              aria-label={writing ? t.add.textNote : t.add.whatYouLiked}
             />
           </div>}
 
