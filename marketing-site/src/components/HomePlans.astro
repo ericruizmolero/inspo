@@ -1,5 +1,5 @@
 ---
-// The plans on the home (/, /es/), between the product's window and criterio.md. Same source as /pricing/ and the app
+// The plans on the home (/, /es/), between criterio.md and the closing sign-up. Same source as /pricing/ and the app
 // (plans.ts), so the home cannot drift from either. Drawn in the home's own language (its tokens, the display serif,
 // the ink-bordered cream of its email field and its key), which the generated page defines on :root. While signup is
 // invite-only the key goes to the waitlist form; once it is open, signup-mode.ts turns it into "Start free".
@@ -39,7 +39,7 @@ const { locale: shown } = Astro.props;
 </div>
 
 <style>
-  .pricing { max-width: 1180px; margin: clamp(104px, 18svh, 176px) 0 0; }
+  .pricing { max-width: 1180px; margin: clamp(104px, 18svh, 176px) 0 clamp(120px, 22svh, 210px); }
   h2 { margin: 0; font: var(--h-w) clamp(31px, 3.4vw, 48px)/1.05 var(--display); letter-spacing: var(--h-ls); text-wrap: balance; }
   .pricing-sub { max-width: 35em; margin: clamp(10px, 1.8svh, 16px) 0 0; color: var(--text-2); text-wrap: pretty; }
 
@@ -53,7 +53,7 @@ const { locale: shown } = Astro.props;
   .plan-price b { font: 400 clamp(40px, 3.4vw, 48px)/1 var(--display); letter-spacing: var(--h-ls); font-variant-numeric: tabular-nums; }
   .plan-price span, .plan-year { color: var(--text-2); font-size: 15px; }
   .plan-year { margin: 6px 0 0; line-height: 1.4; text-wrap: pretty; }
-  .plan-has { display: grid; align-content: start; gap: 9px; margin-top: 20px; padding-top: 18px; border-top: 1.5px dashed rgb(27 27 24 / .18); font-size: 15px; line-height: 1.4; }
+  .plan-has { display: grid; align-content: start; gap: 9px; margin-top: 20px; padding-top: 18px; border-top: 1.5px dashed color-mix(in srgb, var(--ink) 18%, transparent); font-size: 15px; line-height: 1.4; }
   .plan-has li { position: relative; padding-left: 22px; text-wrap: pretty; }
   .plan-has li::before { content: ""; position: absolute; left: 2px; top: .42em; width: 9px; height: 5px; border-left: 1.5px solid var(--ink); border-bottom: 1.5px solid var(--ink); rotate: -45deg; }
 
@@ -61,6 +61,14 @@ const { locale: shown } = Astro.props;
   .pricing-foot .btn { text-decoration: none; }
   .pricing-foot p { flex: 1 1 360px; max-width: 64ch; margin: 0; color: var(--text-2); font-size: 14px; line-height: 1.5; text-wrap: pretty; }
   .pricing-foot p a { color: var(--ink); font-weight: 600; text-underline-offset: 3px; }
+
+  /* The home turns dark while criterio.md fills the screen and from the closing section on (html.dark): the plans follow, ink and cream swapped.
+     --ink, --paper-l and --text-2 are registered with @property on the home and only .pricing transitions them (the page's --ts for the cream, --ti for ink and grey text), so every
+     colour below reads the same animated value: nothing has a transition of its own that could lag or jump. The key keeps a fixed ink. */
+  .pricing { color: var(--ink); transition: --ink var(--ti), --paper-l var(--ts), --text-2 var(--ti); }
+  .pricing a:not(.btn) { transition: none; }
+  .pricing-foot .btn { --ink: #1B1B18; }
+  :global(html.dark) .pricing { --ink: #F1EEE5; --paper-l: #161512; --text-2: #A29E93; }
 
   @media (max-width: 1080px) { section > ul { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   @media (max-width: 760px) {

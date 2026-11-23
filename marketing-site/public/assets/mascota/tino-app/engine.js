@@ -682,6 +682,9 @@ function create(canvas, opts = {}) {
   let gaze = 0, gazeTo = 0, gazeY = 0, gazeYTo = 0;
   // (landing, 26-10) api.track(false): deja de seguir al puntero (cabeza y ojos) y mira solo a donde le diga look()
   let tracking = true; api.track = (on) => { tracking = !!on; if (!tracking) { gazeTo = 0; gazeYTo = 0; } wake(); };
+  // (landing, 23-11) api.hold(yaw, pitch, vYaw): lo coloca en ese giro al instante, sin muelle (cuando lo arrastras va pegado al ratón);
+  // vYaw, en grados por segundo, es lo que arrastra a las orejas. Después, look() lo deja donde esté
+  api.hold = (yaw, pitch = S.pitch, vYaw = 0) => { gaze = gazeTo = 0; gazeY = gazeYTo = 0; lookAt = [yaw, pitch]; S.yaw = yaw; S.vYaw = vYaw; S.pitch = pitch; S.vPitch = 0; wake(); };
   const onMove = (event) => { if (!tracking) return; const r = canvas.getBoundingClientRect(); gazeTo = Math.max(-1, Math.min(1, (event.clientX - (r.left + r.width / 2)) / (innerWidth * 0.35))) * (faceLeft ? -1 : 1);
     gazeYTo = Math.max(-1, Math.min(1, (event.clientY - (r.top + r.height / 2)) / (innerHeight * 0.4))); wake(); };
   addEventListener("pointermove", onMove, { passive: true });
