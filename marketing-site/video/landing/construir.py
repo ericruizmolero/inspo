@@ -36,8 +36,8 @@ h = re.sub(r' (src|href|poster)="([^"]*\$\{)', r'\\x20\1="\2', h)
 h = re.sub(r'<(script|style)(?=[\s>])', r'<\1 is:inline', h)
 
 T = {
-    'en': dict(at='/', title='Criterio: your team decides the look, your agent builds the landing', desc='Gather references, vote on what stays and get a criterio.md your agent reads before it builds the landing. Join the waitlist and we’ll email you when your invite is ready.', alt='Your references, written down as decisions. Tino reads a row of references.', loc='en_US'),
-    'es': dict(at='/es/', title='Criterio: tu equipo decide el estilo, tu agente construye la landing', desc='Reúne referencias, votad qué se queda y obtén un criterio.md que tu agente lee antes de construir la landing. Apúntate a la lista y te invitamos cuando llegue tu turno.', alt='Tus referencias, escritas como decisiones. Tino lee una fila de referencias.', loc='es_ES'),
+    'en': dict(at='/', title='Criterio: give your landing some taste', desc='Gather references from everywhere, vote with your team and connect your agent with criterio MCP. Join the waitlist and we’ll email you when your invite is ready.', alt='Give your landing some taste. AI slop, struck through, above the Criterio board.', loc='en_US'),
+    'es': dict(at='/es/', title='Criterio: ponle criterio a tu landing', desc='Reúne referencias de todas partes, vota con tu equipo y conecta tu agente con criterio MCP. Apúntate a la lista y te invitamos cuando llegue tu turno.', alt='Ponle criterio a tu landing. AI slop, tachado, sobre el tablón de Criterio.', loc='es_ES'),
 }
 for l, x in T.items():
     p = re.sub(r'<html lang="[a-z]+">', f'<html lang="{l}" data-lang="{l}" data-es="/es/" data-en="/">', h, count=1)
@@ -54,7 +54,7 @@ for l, x in T.items():
 <meta property="og:url" content="{SITE}{x["at"]}">
 <meta property="og:title" content="{x["title"]}">
 <meta property="og:description" content="{x["desc"]}">
-<meta property="og:image" content="{SITE}/og.jpg">
+<meta property="og:image" content="{SITE}/og-home-{l}.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="{x["alt"]}">
