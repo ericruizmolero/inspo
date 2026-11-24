@@ -3,20 +3,18 @@
 // (plans.ts), so the home cannot drift from it. Drawn in the home's own language (its tokens, the display serif,
 // the ink-bordered cream of its email field and its key), which the generated page defines on :root. While signup is
 // invite-only the key goes to the waitlist form; once it is open, signup-mode.ts turns it into "Start free".
-// Every language is in the page and only the page's own is shown. The home's script switches its text with ?lang=
-// after load, and with it which data-locale is shown
 import PlanYear from "./PlanYear.astro";
-import { LOCALES, copy, type Locale } from "../i18n";
+import { copy, type Locale } from "../i18n";
 import { PLANS, PLAN_LINES, PLAN_TEXT, RECOMMENDED, fmtPrice } from "../plans";
 
 interface Props { locale: Locale }
-const { locale: shown } = Astro.props;
+const { locale } = Astro.props;
 ---
 <div class="pricing" id="pricing">
-  {LOCALES.map((locale) => {
+  {[locale].map((locale) => {
     const t = copy[locale], lines = PLAN_LINES[locale], text = PLAN_TEXT[locale];
     return (
-      <section lang={locale} data-locale={locale} hidden={locale !== shown} aria-labelledby={`pricing-h-${locale}`}>
+      <section aria-labelledby={`pricing-h-${locale}`}>
         <h2 id={`pricing-h-${locale}`}><span>{t.pricing.section.headline}</span> <span>{t.pricing.section.headline2}</span></h2>
         <p class="pricing-sub"><span data-open-text={t.pricing.section.sub}>{t.pricing.section.subWaitlist}</span> {t.pricing.section.vault}</p>
         <ul>

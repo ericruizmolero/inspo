@@ -1,7 +1,7 @@
 ---
 // The site's header: the mark, and the key the menu opens from (brought from /landing/). On the home the key stays while
-// the mark scrolls away, the menu plays the video, and every language is in the page with only its own shown (its script
-// switches them, ?lang=); the 404 page also carries both. Elsewhere both scroll away and the sections are the home's.
+// the mark scrolls away and the menu plays the video. Elsewhere both scroll away and the sections are the home's. The 404
+// page carries both languages, with only its own shown.
 // Logging in shows once signup is open (signup-mode.ts, on the home): until then nobody new can come in
 import { LOCALES, PAGES, copy, type Locale, type PageKey } from "../i18n";
 import { SECTIONS, homeCopy } from "../home-copy";
@@ -13,7 +13,7 @@ interface Props {
 }
 const { locale: shown, page } = Astro.props;
 const home = page === "home";
-const locales = home || !page ? LOCALES : [shown];
+const locales = page ? [shown] : LOCALES;
 ---
 {locales.map((locale) => {
   const t = homeCopy[locale], m = t.menu, other = copy[locale].other, start = home ? "" : PAGES.home.path[locale];

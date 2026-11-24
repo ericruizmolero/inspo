@@ -13,7 +13,7 @@ const ZIP = `${APP_URL}/extension/download`;
 // Web pages cannot link to chrome:// addresses, so it is shown to be copied. Arc, Edge and Brave take it too
 const EXTENSIONS_URL = "chrome://extensions";
 ---
-<Base lang={locale} page="extension" title={`${t.title} | criterio.design`} description={t.lead}>
+<Base lang={locale} page="extension" title={`${t.title} | criterio.design`} description={t.lead.split(". ").slice(0, 2).join(". ") + "."}>
   <SiteHeader locale={locale} page="extension" />
 
   <main class="ext">

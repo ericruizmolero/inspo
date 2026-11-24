@@ -1,0 +1,12 @@
+# Fonts never change under the same name; pictures, video and the 3D may, so they are checked again after a day
+/assets/fonts/*
+  Cache-Control: public, max-age=31536000, immutable
+/assets/vault/*
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+/assets/mascota/*
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+/_astro/*
+  Cache-Control: public, max-age=31536000, immutable
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin

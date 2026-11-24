@@ -1,21 +1,21 @@
 ---
 // The same brief with and without Criterio, one page over the other: drag anywhere on it, or move the slider with the keyboard
-import { LOCALES, type Locale } from "../i18n";
+import type { Locale } from "../i18n";
 import { homeCopy } from "../home-copy";
 
 interface Props { locale: Locale }
-const { locale: shown } = Astro.props;
+const { locale } = Astro.props;
 ---
 <section id="encargo">
-  {LOCALES.map((locale) => {
+  {[locale].map((locale) => {
     const t = homeCopy[locale].compare;
     return (
-      <div lang={locale} data-locale={locale} hidden={locale !== shown}>
+      <div>
         <h2><span>{t.headline[0]}</span> <span>{t.headline[1]}</span></h2>
         <p class="hc-sub">{t.brief}</p>
         <div class="hc-compare">
-          <img src={`/assets/vault/ba/con-${locale}.webp`} alt={t.with.alt} width="2080" height="1300" loading="lazy" decoding="async" draggable="false" />
-          <img class="hc-over" src={`/assets/vault/ba/sin-${locale}.webp`} alt={t.without.alt} width="2080" height="1300" loading="lazy" decoding="async" draggable="false" />
+          <img src={`/assets/vault/ba/con-${locale}.webp`} srcset={`/assets/vault/ba/con-${locale}-1040.webp 1040w, /assets/vault/ba/con-${locale}.webp 2080w`} sizes="(max-width: 1100px) 100vw, 1040px" alt={t.with.alt} width="2080" height="1300" loading="lazy" decoding="async" draggable="false" />
+          <img class="hc-over" src={`/assets/vault/ba/sin-${locale}.webp`} srcset={`/assets/vault/ba/sin-${locale}-1040.webp 1040w, /assets/vault/ba/sin-${locale}.webp 2080w`} sizes="(max-width: 1100px) 100vw, 1040px" alt={t.without.alt} width="2080" height="1300" loading="lazy" decoding="async" draggable="false" />
           <input type="range" min="0" max="100" value="50" step="1" aria-label={t.slider} />
           <i class="hc-bar" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 7l-5 5 5 5M15 7l5 5-5 5" /></svg></i>
         </div>

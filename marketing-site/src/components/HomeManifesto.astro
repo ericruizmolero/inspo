@@ -2,11 +2,11 @@
 // Why Criterio exists, in a few lines that light up word by word as you scroll, with the things they talk about set among
 // the words. Its window (.mf-w, .mfz), the change to dark and what Tino says about each face are the template's
 // (video/landing/plantilla.html); here nothing changes height, or the page would turn dark in the wrong place
-import { LOCALES, type Locale } from "../i18n";
+import type { Locale } from "../i18n";
 import { homeCopy, type Mark } from "../home-copy";
 
 interface Props { locale: Locale }
-const { locale: shown } = Astro.props;
+const { locale } = Astro.props;
 /** What is drawn in each chip: its viewBox and its shapes */
 const ICON: Record<Mark, { box: string; art: string }> = {
   time: { box: "0 0 24 24", art: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2.5"/>' },
@@ -17,14 +17,14 @@ const ICON: Record<Mark, { box: string; art: string }> = {
 const REFS = ["vonder", "casamomo", "wabi"];
 const TEAM = [{ id: "alberto", name: "Alberto", x: "albertogalca" }, { id: "andoni", name: "Andoni", x: "AndoniMartt" }, { id: "eric", name: "Eric", x: "ericruizm" }];
 ---
-<section class="mf" id="mf" aria-labelledby={`mf-t-${shown}`}>
+<section class="mf" id="mf" aria-labelledby={`mf-t-${locale}`}>
   <i class="mfz z3"></i><i class="mfz z2"></i><i class="mfz z1"></i>
-  <div class="mf-w">{LOCALES.map((locale) => <span class="mf-bar" data-locale={locale} hidden={locale !== shown}><i></i><i></i><i></i><b>{homeCopy[locale].manifesto.file}</b></span>)}</div>
+  <div class="mf-w">{[locale].map((locale) => <span class="mf-bar"><i></i><i></i><i></i><b>{homeCopy[locale].manifesto.file}</b></span>)}</div>
   <div class="mf-in all" id="mf-in">
-    {LOCALES.map((locale) => {
+    {[locale].map((locale) => {
       const t = homeCopy[locale].manifesto;
       return (
-        <div class="hm-text" lang={locale} data-locale={locale} hidden={locale !== shown}>
+        <div class="hm-text">
           <h2 class="sr" id={`mf-t-${locale}`}>{homeCopy[locale].sections.mf}</h2>
           {t.lines.map((line) => (
             <p>{line.map((x) => {
@@ -93,7 +93,6 @@ const TEAM = [{ id: "alberto", name: "Alberto", x: "albertogalca" }, { id: "ando
 </script>
 
 <style>
-  .mf-bar[hidden], .hm-text[hidden] { display: none; }
   .hm-text { text-align: center; }
   p { margin: 0; color: var(--t-hi); font: 400 clamp(24px, 3.5vw, 38px)/1.28 var(--display); letter-spacing: var(--h-ls); text-wrap: balance; }
   p + p { margin-top: .74em; }

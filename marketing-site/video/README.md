@@ -38,7 +38,7 @@ Lo que no puede escribirse en la plantilla sin desincronizarse de la app va como
 - `%%PRICING%%`, después de criterio.md: los planes, `src/components/HomePlans.astro`, que lee `src/plans.ts` (los mismos de la app; un test avisa si se separan). Los precios y lo que incluye cada plan no se escriben en la plantilla. Sus estilos están en el componente y usan los tokens de la plantilla (`--paper-l`, `--ink`, `--display`, `--r`…): si cambian ahí, cambian también en los planes. Sus clases son `pricing*` y `plan-*`; la plantilla no debe usar esos nombres (ya tiene un `.plans` en la demo).
 - `%%PRICING_NAV%%`, el enlace «Precios» de la cabecera (`#pricing`): el nombre de la página en `PAGES` de `src/i18n.ts`.
 - `%%LOGIN_NAV%%`, el texto del enlace «Entrar» de la cabecera, en cada idioma: `copy.<idioma>.login.label` de `src/i18n.ts`.
-- Los planes y el enlace «Precios» van en la página **en los dos idiomas**, cada uno con su `data-locale` y el que no es el de la página con `hidden`. Como `?lang=` cambia los textos al cargar, el script de la plantilla enseña también el `data-locale` de ese idioma y oculta el resto (en la misma línea que rellena los `data-t`). Algo nuevo que venga de la web y dependa del idioma se pinta igual, con `data-locale`.
+- Cada portada lleva solo su idioma. `?lang=` lleva a la otra página.
 
 Lo que la portada usa y ya está en `marketing-site/public/`:
 - `assets/vault/`: imágenes, piezas del Vault (`vault/`), la web de ejemplo que construye la IA en la demo (`altura/`) y el vídeo (`video/criterio-es.mp4`, `criterio-en.mp4` y sus pósteres).

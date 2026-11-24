@@ -8,7 +8,8 @@ kind: diseño
 
 **Decisión.**
 - Menú: por debajo de 1241 px la tecla se va al bajar y vuelve al subir 24 px, con `transform` (`.hh-away`). Arriba del todo y con el foco dentro, siempre está. El logo y la tecla van al margen del texto (22 px) en el móvil.
-- Tino: hasta 1240 px va como en el móvil, asomado por el borde (`edge` en `plantilla.html`). En el cierre se agacha mientras pasa el formulario y sale por debajo.
+- Tino en el móvil (hasta 760 px): solo está en las preguntas, quieto en su sitio bajo el globo (`#t3` se mueve a `.hq-tino`), y en el cierre, ya en su sitio. En el resto no sale, ni en el vídeo (Alberto, 24-11: "dejaría a tino solo en dos momentos… el resto molesta más que ayuda (en móvil solo)").
+- Tino en tablet, de 761 a 1240 px: asomado por el borde (`edge` en `plantilla.html`). En el cierre de tablet se agacha mientras pasa el formulario y sale por debajo.
 - Con el dedo (`pointer: coarse`): casilla, correo, botones, preguntas, enlaces del cierre, del pie y del menú a 44 px.
 - Preguntas: al pulsar, la página baja lo justo para que se vea la respuesta entera.
 - Tipografía: titular `clamp(min(36px, 10.6vw), 5.6vw, 66px)`, titulares de sección `clamp(31px, 4.4vw, 48px)` y manifiesto `clamp(24px, 3.5vw, 38px)`, con la ventana más ancha en tablet (`--gmax: 8vw`).

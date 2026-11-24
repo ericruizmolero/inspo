@@ -1,4 +1,4 @@
-// www.criterio.design redirects to criterio.design, path and query kept. Someone already signed in to the app who opens
+// http (only behind Cloudflare: `wrangler dev` serves plain http and must not leave) and www.criterio.design redirect to https://criterio.design, path and query kept. Someone already signed in to the app who opens
 // the home page goes straight into the app (meeting 13/10). English is the default for everyone: / is never redirected
 // to /es/ by country or browser language (Alberto, 10-11); Spanish is only for whoever opens /es/. Everything else is the static site.
 const APP_URL = "https://app.criterio.design";
@@ -11,8 +11,9 @@ const HOMES = new Set(["/", "/es", "/es/"]);
 export default {
   async fetch(request: Request, env: { ASSETS: { fetch(request: Request): Promise<Response> } }): Promise<Response> {
     const url = new URL(request.url);
-    if (url.hostname.startsWith("www.")) {
-      url.hostname = url.hostname.slice(4);
+    if (url.hostname.startsWith("www.") || (url.protocol === "http:" && request.headers.has("cf-ray"))) {
+      url.hostname = url.hostname.replace(/^www\./, "");
+      url.protocol = "https:";
       return Response.redirect(url.toString(), 301);
     }
     const plans = PLANS[url.pathname.replace(/\/$/, "")];

@@ -1,0 +1,31 @@
+---
+// What the home is, for search engines: who makes Criterio, the product with its plans and the questions the page answers.
+// Only what the page shows: no ratings, no reviews, no customers
+import { PAGES, type Locale } from "../i18n";
+import { homeCopy } from "../home-copy";
+import { PLANS, PLAN_TEXT, isPaid } from "../plans";
+
+interface Props { locale: Locale }
+const { locale } = Astro.props;
+const at = (path: string) => new URL(path, Astro.site).href;
+const url = at(PAGES.home.path[locale]), org = at("/#organization"), site = at("/#website");
+const priceCurrency = locale === "es" ? "EUR" : "USD";
+const graph = [
+  { "@type": "Organization", "@id": org, name: "Criterio", url: at("/"), logo: at("/icon-512.png"), email: "hola@criterio.design" },
+  { "@type": "WebSite", "@id": site, name: "Criterio", url: at("/"), inLanguage: ["en", "es"], publisher: { "@id": org } },
+  {
+    "@type": "SoftwareApplication", name: "Criterio", url, applicationCategory: "DesignApplication", operatingSystem: "Web",
+    inLanguage: locale, image: at(`/og-home-${locale}.jpg`), publisher: { "@id": org },
+    offers: PLANS.map((p) => ({
+      "@type": "Offer", name: PLAN_TEXT[locale][p.key].name, description: PLAN_TEXT[locale][p.key].tagline, price: p.price.month, priceCurrency, url: `${url}#pricing`,
+      ...(isPaid(p) && { priceSpecification: { "@type": "UnitPriceSpecification", price: p.price.month, priceCurrency, billingDuration: "P1M", valueAddedTaxIncluded: false } }),
+    })),
+  },
+  {
+    "@type": "FAQPage", "@id": `${url}#preguntas`, inLanguage: locale, isPartOf: { "@id": site },
+    mainEntity: homeCopy[locale].ask.list.map((x) => ({ "@type": "Question", name: x.q, acceptedAnswer: { "@type": "Answer", text: x.a } })),
+  },
+];
+const json = JSON.stringify({ "@context": "https://schema.org", "@graph": graph }).replace(/</g, "\\u003c");
+---
+<script is:inline type="application/ld+json" set:html={json} />

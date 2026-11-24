@@ -31,6 +31,11 @@ const canonical = page ? at(PAGES[page].path[lang]) : undefined;
     <meta property="og:description" content={description} />
     {page && <meta property="og:url" content={canonical} />}
     <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Criterio" />
+    <meta property="og:image" content={at(`/og-home-${lang}.jpg`)} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
     <meta name="theme-color" content="#E7E5DF" />
     <link rel="preload" href="/assets/fonts/geist-serif/GeistSerifVF.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/assets/fonts/satoshi/Satoshi-Variable.woff2" as="font" type="font/woff2" crossorigin />
@@ -60,7 +65,7 @@ const canonical = page ? at(PAGES[page].path[lang]) : undefined;
     /* A heading in the display serif: its weight and tracking, as on the home */
     --h-w: 400;
     --h-ls: -0.015em;
-    --h-2: #8c887e;
+    --h-2: #7f7b71;
     /* The home's names for the same things: the header is the same one (SiteHeader.astro) */
     --page: #e7e5df;
     --sans: var(--font-sans);

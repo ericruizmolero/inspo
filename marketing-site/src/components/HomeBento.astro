@@ -1,19 +1,19 @@
 ---
 // What the window does not show: searching the way you talk, the agent reading the file, sharing with a client and going
 // back to a version. Brought from /landing/ (its #porque), with the references the home's board shows
-import { LOCALES, type Locale } from "../i18n";
+import type { Locale } from "../i18n";
 import { homeCopy } from "../home-copy";
 
 interface Props { locale: Locale }
-const { locale: shown } = Astro.props;
+const { locale } = Astro.props;
 const ref = (name: string) => `/assets/vault/refs/i-${name}.jpg`;
 const FOUND = [{ name: "maisa", hit: true }, { name: "fal", hit: false }, { name: "handhold", hit: true }, { name: "refactory", hit: false }];
 ---
 <section id="archivo">
-  {LOCALES.map((locale) => {
+  {[locale].map((locale) => {
     const t = homeCopy[locale].bento;
     return (
-      <div lang={locale} data-locale={locale} hidden={locale !== shown}>
+      <div>
         <h2><span>{t.headline[0]}</span> <span>{t.headline[1]}</span></h2>
         <div class="hb-grid">
           <article class="hb-search">

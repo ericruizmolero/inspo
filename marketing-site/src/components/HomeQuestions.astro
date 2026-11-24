@@ -1,19 +1,20 @@
 ---
 // The questions, after the plans, as in /landing/: you ask Tino and he answers with the face that suits it. Tino himself
-// is the page's (video/landing/plantilla.html): he comes to .hq-tino while it shows and grows from there into the close.
+// is the page's (video/landing/plantilla.html): he comes to .hq-tino while it shows and goes back to his
+// corner when the close comes up; on a phone he lives there.
 // Without JavaScript every answer reads under its question. With it, every answer keeps its place in the balloon, so
 // choosing one never changes the height (nothing from criterio.md down may: it would move the light and dark change)
-import { LOCALES, type Locale } from "../i18n";
+import type { Locale } from "../i18n";
 import { homeCopy } from "../home-copy";
 
 interface Props { locale: Locale }
-const { locale: shown } = Astro.props;
+const { locale } = Astro.props;
 ---
 <section id="preguntas">
-  {LOCALES.map((locale) => {
+  {[locale].map((locale) => {
     const t = homeCopy[locale].ask;
     return (
-      <div class="hq-ask" lang={locale} data-locale={locale} hidden={locale !== shown}>
+      <div class="hq-ask">
         <div>
           <h2><span>{t.headline}</span> <span>{t.sub}</span></h2>
           <div class="hq-keys" role="group" aria-label={t.label}><p>{t.label}</p>{t.list.map((x) => <button type="button" aria-pressed="false" data-face={x.face}>{x.q}</button>)}</div>
@@ -65,7 +66,6 @@ const { locale: shown } = Astro.props;
   section { margin: 0 0 clamp(170px, 27svh, 300px); scroll-margin-top: 72px; color: var(--ink); transition: --ink var(--ti), --paper-l var(--ts), --text-2 var(--ti); }
   :global(html.dark) section { --ink: #F1EEE5; --paper-l: #161512; --text-2: #A29E93; }
   .hq-ask { display: grid; gap: 32px; }
-  .hq-ask[hidden] { display: none; }
   h2 { margin: 0; font: var(--h-w) clamp(31px, 4.4vw, 48px)/1.08 var(--display); letter-spacing: var(--h-ls); }
   h2 span { display: block; }
   h2 span + span { color: var(--h-2); }
@@ -87,6 +87,6 @@ const { locale: shown } = Astro.props;
   .hq-live .hq-say > div { grid-area: 1 / 1; visibility: hidden; }
   .hq-live .hq-say > .hq-on { visibility: visible; }
   /* where Tino stands: his picture leaves air above the ears, so the place goes up under the balloon */
-  .hq-live .hq-tino { --s: clamp(190px, 20vw, 250px); display: block; width: var(--s); margin: calc(var(--s) * -.2) auto calc(var(--s) * -.06); aspect-ratio: 1; }
+  .hq-live .hq-tino { --s: clamp(190px, 20vw, 250px); position: relative; display: block; width: var(--s); margin: calc(var(--s) * -.2) auto calc(var(--s) * -.06); aspect-ratio: 1; }
   @media (min-width: 900px) { .hq-ask { grid-template-columns: minmax(0, 6fr) minmax(0, 5fr); align-items: center; gap: clamp(48px, 7vw, 96px); } }
 </style>
