@@ -27,8 +27,8 @@ export async function tell(to: string[], m: Mail, what: string): Promise<void> {
   try { await sendMail(to, m); } catch (err) { log.warn(`plans.${what}_not_mailed`, { err }); }
 }
 
-/** Why the plan changes. A gift that ended applies only to an account whose plan_until has passed */
-export type PlanChangeCause = "partner" | "giftEnded";
+/** Why the plan changes: a partner, a gift that ended (only an account whose plan_until has passed) or Stripe's webhook (lib/stripe.ts) */
+export type PlanChangeCause = "partner" | "giftEnded" | "stripe";
 
 export interface PlanChange {
   accountId: string;

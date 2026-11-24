@@ -9,8 +9,10 @@ import { newId } from "./workspace-core";
 import type { Locale } from "./i18n/locale";
 import type { PlanKey } from "./plans";
 import { SIGNUP_MODES, type SignupMode, type WaitlistSource } from "./db/schema";
-import { isAdmin } from "./activity";
-import { onTheListMail } from "./mail";
+import { isAdmin, listAdmins } from "./activity";
+import { localeForEmail, onTheListMail, waitlistJoinedMail } from "./mail";
+import { log } from "./log";
+import { SITE } from "./site";
 import { mailOnce } from "./mail-once";
 import { allow, ipOf } from "./rate-limit";
 
@@ -55,8 +57,8 @@ export const mayEnlist = (h: Headers) => allow(`waitlist:${ipOf(h)}`, 10, 60 * 6
 
 /**
  * Every way onto the waitlist (/login's button, the marketing site's form) goes through here: the entry, then the
- * "you're on the list" mail, once per entry. Someone who already has an account is left as they are. The caller
- * answers the same in every case, so the answer never says whether an address is signed up.
+ * "you're on the list" mail and the partners' notice, once per entry. Someone who already has an account is left as
+ * they are. The caller answers the same in every case, so the answer never says whether an address is signed up.
  */
 export async function enlist(a: WaitlistAnswers): Promise<void> {
   if (await hasAccess(a.email)) return;
@@ -64,6 +66,21 @@ export async function enlist(a: WaitlistAnswers): Promise<void> {
   if (entry.status !== "pending") return;
   const email = normalEmail(a.email);
   await mailOnce(`waitlist-mail:${entry.id}`, [email], onTheListMail(email, a.locale));
+  await tellPartners(entry.id, email, a.source);
+}
+
+/** The partners hear of each new entry once, in the language of the first on the list, as with plan requests and
+ *  feedback. Never fails the signup: the person is already on the list. */
+async function tellPartners(entryId: string, email: string, source: string): Promise<void> {
+  try {
+    const to = (await listAdmins()).map((p) => p.email);
+    if (!to.length) return;
+    const [{ n }] = await db.select({ n: sql<number>`count(*)::int` }).from(W).where(eq(W.status, "pending"));
+    const mail = waitlistJoinedMail({ email, source, pending: n, url: `${SITE}/admin/waitlist` }, await localeForEmail(to[0]));
+    await mailOnce(`waitlist-partners:${entryId}`, to, mail);
+  } catch (err) {
+    log.warn("waitlist.partners_not_told", { err });
+  }
 }
 
 export interface InviteOptions {

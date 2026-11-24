@@ -161,6 +161,13 @@ export const adminAccessMail = (url: string, granterName: string, locale: Locale
 /** Once, when someone joins the waitlist (lib/access.ts enlist): no link, only that they are on it and what comes next */
 export const onTheListMail = (email: string, locale: Locale): Mail => mail("on-the-list", locale, { YOUR_EMAIL: email });
 
+/** To the partners: someone new joined the waitlist, from where, and how many wait now */
+export function waitlistJoinedMail(w: { email: string; source: string; pending: number; url: string }, locale: Locale): Mail {
+  const t = mailDict(locale).waitlist;
+  const from = w.source === "landing" || w.source === "login" ? t.sources[w.source] : t.sources.other;
+  return letter(locale, t.subject(w.email), join(para(t.text(w.email, from, w.pending)), button(t.open, w.url)));
+}
+
 /** A place opened from the waitlist, or a loose invite made out to someone: the link carries the code. */
 export const accessInviteMail = (url: string, email: string, locale: Locale): Mail => mail("access-invite", locale, { YOUR_EMAIL: email, URL: url });
 

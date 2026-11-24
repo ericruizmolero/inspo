@@ -21,6 +21,14 @@ export const mail: typeof EnMail = {
     setPlan: "Activar el plan",
   },
 
+  waitlist: {
+    subject: (email: string): string => `Nuevo en la lista de espera: ${email}`,
+    text: (email: string, source: string, pending: number): string =>
+      `${email} se ha apuntado a la lista de espera desde ${source}. Ahora ${pending === 1 ? "espera 1 persona" : `esperan ${pending} personas`}.`,
+    sources: { landing: "la web", login: "la página de entrada", other: "un enlace" },
+    open: "Abrir la lista de espera",
+  },
+
   limits: { ai: "acciones de IA", searches: "búsquedas IA", checks: "revisiones de landing", items: "referencias", storage: "almacenamiento" },
 
   feedback: {

@@ -29,6 +29,15 @@ export const mail = {
     setPlan: "Set the plan",
   },
 
+  /** To the partners: someone new joined the waitlist (lib/access.ts enlist) */
+  waitlist: {
+    subject: (email: string): string => `New on the waitlist: ${email}`,
+    text: (email: string, source: string, pending: number): string =>
+      `${email} joined the waitlist from ${source}. ${pending === 1 ? "1 person is" : `${pending} people are`} waiting now.`,
+    sources: { landing: "the website", login: "the login page", other: "a link" },
+    open: "Open the waitlist",
+  },
+
   /** What each plan limit is called in the emails that say it is near or reached (lib/limit-mail.ts): RESOURCE */
   limits: { ai: "AI actions", searches: "AI searches", checks: "landing checks", items: "references", storage: "storage" },
 

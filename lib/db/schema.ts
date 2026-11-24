@@ -258,6 +258,35 @@ export const planRequest = pgTable("plan_request", {
   oneOf("plan_request_status_check", t.status, PLAN_REQUEST_STATUSES),
 ]);
 
+// An account's Stripe subscription (lib/stripe.ts), as the webhook last saw it. One per account: a new checkout
+// replaces the row. The plan itself stays in billing_account.plan, which the webhook sets through changePlan.
+export const subscription = pgTable("subscription", {
+  /** Stripe's sub_… */
+  id: text("id").primaryKey(),
+  billingAccountId: text("billing_account_id").notNull().unique().references(() => billingAccount.id, { onDelete: "cascade" }),
+  /** The price's lookup key, e.g. studio_year (lib/stripe.ts priceKey) */
+  priceKey: text("price_key").notNull(),
+  plan: text("plan").$type<PlanKey>().notNull(),
+  period: text("period").$type<PlanPeriod>().notNull(),
+  /** Stripe's status: active, past_due, canceled, incomplete, unpaid… */
+  status: text("status").notNull(),
+  currentPeriodStart: timestamp("current_period_start", { withTimezone: true, mode: "date" }),
+  currentPeriodEnd: timestamp("current_period_end", { withTimezone: true, mode: "date" }),
+  cancelAtPeriodEnd: boolean("cancel_at_period_end").notNull().default(false),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
+}, (t) => [
+  oneOf("subscription_plan_check", t.plan, PLANS.map((p) => p.key)),
+  oneOf("subscription_period_check", t.period, PLAN_PERIODS),
+]);
+
+/** Each Stripe event the webhook handled, so a retried one is not handled twice */
+export const stripeEvent = pgTable("stripe_event", {
+  /** Stripe's evt_… */
+  id: text("id").primaryKey(),
+  type: text("type").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
+});
+
 /** A "New in the Vault" email: the entries it announced, sent to whoever reads the whole Vault (lib/vault-release.ts) */
 export const vaultRelease = pgTable("vault_release", {
   id: text("id").primaryKey(),

@@ -11,6 +11,7 @@ import { SIGNED_IN_COOKIE, SIGNED_IN_COOKIE_MAX_AGE, signedInCookieDomain } from
 // Everything else needs a session, the home page (/) too: signed out, app.criterio.design is the sign-in.
 // /api/ext/: the browser extension gets in with its key (lib/ext-keys.ts), not a cookie
 // /api/cron/: the scheduler has no session; each route checks CRON_SECRET itself
+// /api/stripe/webhook: Stripe has no session; the route checks Stripe's signature
 // /api/queue/: Vercel Queues delivering a job (lib/jobs.ts); those routes have no public URL at all
 // /api/access/mode: whether signup is invite-only, asked by the landing page and the extension
 // /api/waitlist: the marketing site's waitlist form; the route lets in only the marketing site's origin
@@ -25,7 +26,7 @@ import { SIGNED_IN_COOKIE, SIGNED_IN_COOKIE_MAX_AGE, signedInCookieDomain } from
 // token (lib/mcp/auth.ts), never a cookie. /mcp/authorize is not here: approving an app takes a session
 // /api/vault/<entry>/preview: a Vault piece running by itself, a link that is passed around (Eric, 19-11: "se tiene que
 // hacer públicas las previews"), and /og, the card that link shows where it is pasted. Sandboxed with no origin and the same for everyone; the entry's sheet and its documentation still take a session
-const PUBLIC = [/^\/api\/access\/mode$/, /^\/api\/waitlist$/, /^\/login(\/|$)/, /^\/api\/auth(\/|$)/, /^\/api\/ext\//, /^\/api\/cron\//, /^\/api\/queue\//, /^\/api\/health(\/|$)/, /^\/api\/dev-login(\/|$)/, /^\/invite\//, /^\/unsubscribe(\/|$)/, /^\/api\/unsubscribe(\/|$)/, /^\/s\//, /^\/a\//, /^\/extension\/download$/, /^\/mcp$/, /^\/api\/mcp\//, /^\/api\/vault\/[^/]+\/(preview|og)$/, /^\/\.well-known\//];
+const PUBLIC = [/^\/api\/access\/mode$/, /^\/api\/waitlist$/, /^\/login(\/|$)/, /^\/api\/auth(\/|$)/, /^\/api\/ext\//, /^\/api\/cron\//, /^\/api\/stripe\/webhook$/, /^\/api\/queue\//, /^\/api\/health(\/|$)/, /^\/api\/dev-login(\/|$)/, /^\/invite\//, /^\/unsubscribe(\/|$)/, /^\/api\/unsubscribe(\/|$)/, /^\/s\//, /^\/a\//, /^\/extension\/download$/, /^\/mcp$/, /^\/api\/mcp\//, /^\/api\/vault\/[^/]+\/(preview|og)$/, /^\/\.well-known\//];
 
 // Auto-login in development (see lib/auth.ts): with no cookie, /api/dev-login is used instead of /login
 const DEV_AUTO_LOGIN = process.env.NODE_ENV !== "production" && !!process.env.DEV_LOGIN_EMAIL;

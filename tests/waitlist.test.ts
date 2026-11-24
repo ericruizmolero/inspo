@@ -1,11 +1,12 @@
 // POST /api/waitlist, the marketing site's form: one entry per address with source "landing", the "you're on the
-// list" mail once, the same 200 for a repeat or an existing account, nothing written for the honeypot, and no
+// list" mail once and the partners' notice once, the same 200 for a repeat or an existing account, nothing written for the honeypot, and no
 // answer at all for another origin.
 import { randomBytes } from "node:crypto";
 import { eq, like, sql } from "drizzle-orm";
 import { afterAll, beforeEach, expect, test, vi } from "vitest";
 import { db, schema } from "@/lib/db";
 import { MARKETING_URL } from "@/lib/site";
+import { listAdmins } from "@/lib/activity";
 import { OPTIONS, POST } from "@/app/api/waitlist/route";
 import type { Mail } from "@/lib/mail-templates";
 import { request } from "./isolation/probe";
@@ -30,7 +31,10 @@ beforeEach(() => { sent.length = 0; });
 
 afterAll(async () => {
   const ids = (await db.select({ id: W.id }).from(W).where(like(W.email, `%${tag}%`))).map((r) => r.id);
-  for (const id of ids) await db.delete(schema.appSetting).where(eq(schema.appSetting.key, `waitlist-mail:${id}`));
+  for (const id of ids) {
+    await db.delete(schema.appSetting).where(eq(schema.appSetting.key, `waitlist-mail:${id}`));
+    await db.delete(schema.appSetting).where(eq(schema.appSetting.key, `waitlist-partners:${id}`));
+  }
   await db.delete(W).where(like(W.email, `%${tag}%`));
   await db.execute(sql`delete from rate_limit where key like ${`app:waitlist:%${tag}`}`);
 });
@@ -44,13 +48,18 @@ test("a new address is stored once with source landing and its locale, and gets 
 
   const [row] = await rows(email);
   expect({ source: row.source, locale: row.locale, status: row.status }).toEqual({ source: "landing", locale: "es", status: "pending" });
-  expect(sent).toEqual([{ to: [email], template: "on-the-list", locale: "es", vars: { YOUR_EMAIL: email } }]);
+  const [person, partners, ...rest] = sent;
+  expect(person).toEqual({ to: [email], template: "on-the-list", locale: "es", vars: { YOUR_EMAIL: email } });
+  const admins = (await listAdmins()).map((a) => a.email);
+  expect(partners.to, "the partners hear of it").toEqual(admins);
+  expect(JSON.stringify(partners), "the notice names the address").toContain(email);
+  expect(rest).toHaveLength(0);
 
   const again = await post({ email, locale: "en", consent: true, website: "" });
   expect(again.status, "a repeat answers the same").toBe(200);
   expect(await again.json()).toEqual({ ok: true });
   expect(await rows(email), "still one entry, with its first locale").toMatchObject([{ locale: "es" }]);
-  expect(sent, "the mail went out once").toHaveLength(1);
+  expect(sent, "each mail went out once").toHaveLength(2);
 });
 
 test("an address that already has an account answers the same and is not put on the list", async () => {

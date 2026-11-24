@@ -14,6 +14,7 @@ import { FieldRow, Progress, SettingsWindow } from "@/components/criterio";
 import { planAsk } from "@/lib/plan-requests";
 import { fmtGiftDay } from "@/lib/i18n/format";
 import PlanChoice from "../_components/PlanChoice";
+import { liveSubscription, stripeConfigured } from "@/lib/stripe";
 
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -63,11 +64,12 @@ async function planWorkspaces(ctx: Ctx) {
   };
 }
 
-export default async function PlanPage() {
+export default async function PlanPage({ searchParams }: { searchParams: Promise<{ paid?: string }> }) {
   const [ctx, { locale, t }] = await Promise.all([getCtxOrLogin("/settings/plan"), getT()]);
   const ws = ctx.workspace;
-  const [q, usage, members, account, ask] = await Promise.all([
+  const [q, usage, members, account, ask, sub, { paid }] = await Promise.all([
     quotaStatus(ws), usageSummary(ws.id, 30), listMembers(ws.id), planWorkspaces(ctx), planAsk(ws.billingAccountId, ctx.user.id),
+    liveSubscription(ws.billingAccountId), searchParams,
   ]);
   const agency = planOf("agency");
   const resets = fmtDate(q.resetsAt, locale, { day: "numeric", month: "long" });
@@ -81,7 +83,7 @@ export default async function PlanPage() {
 
       <div className="page__body">
         <PlanChoice current={q.plan} owner={ask.owner} payer={ask.payer} pending={ask.pending}
-          giftUntil={ask.until && fmtGiftDay(ask.until, locale)} />
+          giftUntil={ask.until && fmtGiftDay(ask.until, locale)} payments={stripeConfigured()} billing={!!sub} paid={paid === "1"} />
 
         <SettingsWindow title={t.plans.usageTitle}
           description={q.workspaces.used > 1 ? <>{t.plans.resets(planName, resets)}. {t.plans.aiShared(q.workspaces.used)}</> : t.plans.resets(planName, resets)}

@@ -13,6 +13,7 @@ import { PLAN_PERIODS, type PlanPeriod } from "@/lib/db/schema";
 import { requestPlanFor } from "@/lib/plan-requests";
 import { appBase } from "@/lib/admin-action";
 import { letWorkspaceGo as letGo, lockAccounts, openTeamInAccount, tellLetGo } from "@/lib/account-workspaces";
+import { checkoutUrl, portalUrl } from "@/lib/stripe";
 
 /** The current workspace's account, if the person signed in owns it */
 async function ownedAccount(ctx: Ctx): Promise<string> {
@@ -37,6 +38,20 @@ export async function requestPlan(plan: string, period: string) {
     if (!isPlanKey(plan) || !(PLAN_PERIODS as readonly string[]).includes(period)) throw new HttpError(400, (await getErrors()).badBody);
     return requestPlanFor({ accountId: ctx.workspace.billingAccountId, user: ctx.user, plan, period: period as PlanPeriod, appUrl: await appBase() });
   });
+}
+
+/** The owner pays for a plan: the URL of Stripe's Checkout, or of the portal when the account already pays */
+export async function startCheckout(plan: string, period: string) {
+  return withCtx(async (ctx) => {
+    if (!isPlanKey(plan) || !(PLAN_PERIODS as readonly string[]).includes(period)) throw new HttpError(400, (await getErrors()).badBody);
+    const accountId = await ownedAccount(ctx);
+    return { url: await checkoutUrl({ accountId, user: ctx.user, plan, period: period as PlanPeriod, appUrl: await appBase(), locale: ctx.user.language }) };
+  });
+}
+
+/** The owner manages the payment (card, invoices, plan, cancelling) in Stripe's portal: its URL */
+export async function openBillingPortal() {
+  return withCtx(async (ctx) => ({ url: await portalUrl(await ownedAccount(ctx), await appBase()) }));
 }
 
 /**
