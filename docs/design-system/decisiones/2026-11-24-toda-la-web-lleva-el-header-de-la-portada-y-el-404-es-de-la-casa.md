@@ -7,7 +7,7 @@ kind: diseño
 **Contexto.** Las legales, Recursos, Skills y la extensión tenían otro header (icono, idioma y la tecla Log in), otro fondo (`#FCFAF6`) y un pie con línea. La 404 era un título suelto, solo en inglés.
 
 **Decisión.**
-- `SiteHeader.astro` (antes `HomeHeader`) es el header de toda la web. En la portada la tecla se queda fija y el menú lleva el vídeo; en las demás el header se va con el scroll y las secciones son las de la portada (`/#pricing`). Sin Entrar hasta que se abra el registro. `Header.astro` y `Home.astro`, que ya no usaba nadie, se borran.
+- (El menú, oculto desde el mismo día, [decisión](2026-11-24-el-menu-de-la-web-se-oculta-por-ahora.md).) `SiteHeader.astro` (antes `HomeHeader`) es el header de toda la web. En la portada la tecla se queda fija y el menú lleva el vídeo; en las demás el header se va con el scroll y las secciones son las de la portada (`/#pricing`). Sin Entrar hasta que se abra el registro. `Header.astro` y `Home.astro`, que ya no usaba nadie, se borran.
 - `Base.astro` pasa al papel de la portada (`--page`, `#E7E5DF`) y da los nombres que usa el header (`--r`, `--rb`, `--out`, `--display`…).
 - `Footer.astro`: Privacidad, Términos y la página en el otro idioma, centrados y sin línea, como el cierre.
 - Legales (`LegalPage.astro`): título de hasta 66 px, entradilla en tinta a 20 px y texto a 17 px sobre 728 px.

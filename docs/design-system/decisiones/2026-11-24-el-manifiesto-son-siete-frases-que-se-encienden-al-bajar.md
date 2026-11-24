@@ -13,7 +13,7 @@ supersedes: En el manifiesto Tino escribe con guion y deja detalles escondidos (
 - Se quita el motor de escritura (guion de pasos, `.mf-cur`, `.tc`, `.ty`) de `plantilla.html`. La ventana que crece, el paso a oscuro y lo que dice Tino de cada cara siguen allí. La barra dice `why-it-exists.md` / `por-que-existe.md`.
 - La altura es fija desde el principio: solo cambian opacidades.
 - El Tino grande del cierre ya no habla: ni al pasar por encima, ni al pulsarlo, ni al arrastrarlo.
-- El héroe respira: `padding-top: clamp(44px, 8.6svh, 92px)` bajo la cabecera y más aire hasta el formulario y la ventana. La casilla de Acepto va centrada en escritorio, como en el cierre.
+- (El aire de arriba se quitó el mismo día con la cabecera, [decisión](2026-11-24-el-logo-de-la-portada-va-dentro-del-titular.md).) El héroe respira: `padding-top: clamp(44px, 8.6svh, 92px)` bajo la cabecera y más aire hasta el formulario y la ventana. La casilla de Acepto va centrada en escritorio, como en el cierre.
 
 **Por qué.** Alberto, 24-11: "make the manifiesto something more compact like this and the previous manifesto in /landing" (con una referencia de frases grandes con palabras en pastillas), "signature it's a bit shitty", "we are missing some good parts of the manifesto we had", "remove the message of tino in the footer", "give some space between header and hero" y "do the same as in the footer to center the check".
 

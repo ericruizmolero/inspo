@@ -14,6 +14,7 @@ Tino plano, el mismo dibujo que el favicon, es `Logo` (`components/Logo.tsx`, qu
 | Invitación y autorización del conector | 48 |
 | Héroe del login | 88 |
 | Página perdida (404) | 128 |
+| Titular de la portada de la web, delante de "criterio" | 0,88 em ([decisión](decisiones/2026-11-24-el-logo-de-la-portada-va-dentro-del-titular.md)) |
 
 ## Favicon e iconos
 
