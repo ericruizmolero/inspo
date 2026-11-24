@@ -7,7 +7,7 @@ export const WAITLIST_URL = `${APP_URL}/api/waitlist`;
 export const LOCALES = ["en", "es"] as const;
 export type Locale = (typeof LOCALES)[number];
 
-// Every page: its path in each language and, for the ones the footer lists, its name there. The header's language
+// Every page: its path in each language and, for the ones that are linked by name, that name. The header's language
 // switch, canonical, hreflang, the footer and the sitemap all read this table, in this order.
 export const PAGES = {
   home: { path: { en: "/", es: "/es/" } },

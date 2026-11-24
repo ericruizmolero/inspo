@@ -83,19 +83,20 @@ const rows: { label: string; value: (p: Plan) => string }[] = [
   .pricing { display: flex; flex-direction: column; gap: 40px; max-width: 1080px; margin: 0 auto; padding: 56px 24px 80px; }
 
   .plans { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 0; padding: 0; list-style: none; }
-  .plan { display: flex; flex-direction: column; gap: 4px; padding: 20px; border: 1px solid var(--border); border-radius: 16px; background: var(--paper-light); }
-  h2 { font-size: 20px; font-weight: 700; letter-spacing: -0.01em; }
-  .plan__tagline { min-height: 2.8em; color: var(--text-2); font-size: 14px; font-weight: 400; line-height: 1.4; text-wrap: pretty; }
-  .plan__price { display: flex; align-items: baseline; gap: 6px; margin-top: 12px; }
-  .plan__amount { font-size: 32px; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
-  .plan__per { color: var(--text-2); font-size: 14px; }
-  .plan__year { color: var(--text-2); font-size: 13px; }
-  .plan__features { display: flex; flex-direction: column; gap: 8px; margin: 16px 0 0; padding: 16px 0 0; border-top: 1px solid var(--border); list-style: none; font-size: 14px; line-height: 1.4; }
-  .plan__features li { position: relative; padding-left: 20px; text-wrap: pretty; }
-  .plan__features li::before { content: ""; position: absolute; left: 2px; top: 0.3em; width: 9px; height: 5px; border-left: 2px solid var(--ink); border-bottom: 2px solid var(--ink); transform: rotate(-45deg); }
+  /* The home's plan cards (HomePlans.astro): ink line, cream, the name and the price in the display serif */
+  .plan { display: flex; flex-direction: column; gap: 4px; padding: 24px 22px 26px; border: 1.5px solid var(--ink); border-radius: 14px; background: var(--paper-light); }
+  h2 { font: 400 clamp(26px, 2.2vw, 32px)/1.1 var(--font-display); letter-spacing: -0.02em; }
+  .plan__tagline { min-height: 2.8em; color: var(--text-2); font-size: 15px; line-height: 1.4; text-wrap: pretty; }
+  .plan__price { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px; margin-top: 18px; }
+  .plan__amount { font: 400 clamp(40px, 3.4vw, 48px)/1 var(--font-display); letter-spacing: var(--h-ls); font-variant-numeric: tabular-nums; }
+  .plan__per { color: var(--text-2); font-size: 15px; }
+  .plan__year { color: var(--text-2); font-size: 15px; line-height: 1.4; }
+  .plan__features { display: flex; flex-direction: column; gap: 8px; margin: 20px 0 0; padding: 18px 0 0; border-top: 1.5px dashed color-mix(in srgb, var(--ink) 18%, transparent); list-style: none; font-size: 15px; line-height: 1.4; }
+  .plan__features li { position: relative; padding-left: 22px; text-wrap: pretty; }
+  .plan__features li::before { content: ""; position: absolute; left: 2px; top: 0.42em; width: 9px; height: 5px; border-left: 1.5px solid var(--ink); border-bottom: 1.5px solid var(--ink); transform: rotate(-45deg); }
 
   .start { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; }
-  .start p { flex: 1 1 280px; max-width: 34em; color: var(--text-2); font-size: 14px; font-weight: 400; line-height: 1.5; }
+  .start p { flex: 1 1 280px; max-width: 64ch; color: var(--text-2); font-size: 14px; line-height: 1.5; text-wrap: pretty; }
   /* Button primary, size m (docs/design-system/botones.md), the same as the header's */
   .btn {
     display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 18px;
@@ -107,11 +108,12 @@ const rows: { label: string; value: (p: Plan) => string }[] = [
   .btn:active { box-shadow: var(--bevel-pressed); transform: translateY(1px); }
   .btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 
-  .compare { display: flex; flex-direction: column; gap: 12px; }
+  .compare { display: flex; flex-direction: column; gap: 16px; margin-top: 24px; }
+  .compare h2 { font-size: clamp(28px, 3vw, 40px); line-height: 1.05; letter-spacing: var(--h-ls); }
   .compare__scroll { overflow-x: auto; }
-  table { width: 100%; min-width: 560px; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; }
+  table { width: 100%; min-width: 560px; border-collapse: collapse; font-size: 15px; font-variant-numeric: tabular-nums; }
   th, td { padding: 10px 12px; border-bottom: 1px solid var(--border); text-align: left; }
-  thead th { font-weight: 700; }
+  thead th { font: 400 20px/1.1 var(--font-display); letter-spacing: -0.02em; }
   tbody th { color: var(--text-2); font-weight: 500; }
 
   @media (max-width: 960px) { .plans { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

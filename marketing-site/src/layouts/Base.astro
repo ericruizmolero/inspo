@@ -31,7 +31,8 @@ const canonical = page ? at(PAGES[page].path[lang]) : undefined;
     <meta property="og:description" content={description} />
     {page && <meta property="og:url" content={canonical} />}
     <meta property="og:type" content="website" />
-    <link rel="preload" href="/fonts/Geist-Variable.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/assets/fonts/geist-serif/GeistSerifVF.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/assets/fonts/satoshi/Satoshi-Variable.woff2" as="font" type="font/woff2" crossorigin />
   </head>
   <body>
     <slot />
@@ -39,13 +40,10 @@ const canonical = page ? at(PAGES[page].path[lang]) : undefined;
 </html>
 
 <style is:global>
-  /* Same tokens as the app (docs/design-system/fundamentos/color.md), Paper theme only */
-  @font-face {
-    font-family: "Geist";
-    src: url("/fonts/Geist-Variable.woff2") format("woff2");
-    font-weight: 100 900;
-    font-display: swap;
-  }
+  /* Same colour tokens as the app (docs/design-system/fundamentos/color.md), Paper theme only.
+     Type is the home's (pages/index.astro): headings in the display serif, regular and tight; text in Satoshi */
+  @font-face { font-family: "Geist Serif"; src: url("/assets/fonts/geist-serif/GeistSerifVF.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
+  @font-face { font-family: "Satoshi"; src: url("/assets/fonts/satoshi/Satoshi-Variable.woff2") format("woff2"); font-weight: 300 900; font-display: swap; }
   :root {
     --paper: #ede6d6;
     --paper-white: #fcfaf6;
@@ -56,7 +54,11 @@ const canonical = page ? at(PAGES[page].path[lang]) : undefined;
     --ember-glow: #f6a848;
     --text-2: #5a5850;
     --border: #d9d1bf;
-    --font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
+    --font-sans: "Satoshi", ui-sans-serif, system-ui, sans-serif;
+    --font-display: "Geist Serif", Georgia, serif;
+    /* A heading in the display serif: its weight and tracking, as on the home */
+    --h-w: 400;
+    --h-ls: -0.04em;
     --bevel: inset 2px 2px 0 rgba(255, 255, 255, 0.65), inset -2px -3px 0 rgba(27, 27, 24, 0.22);
     --bevel-pressed: inset 2px 3px 0 rgba(27, 27, 24, 0.22);
     color-scheme: light;
@@ -68,9 +70,9 @@ const canonical = page ? at(PAGES[page].path[lang]) : undefined;
     background: var(--paper-white);
     color: var(--ink);
     font-family: var(--font-sans);
-    font-size: 15px;
+    font-size: 16px;
     font-weight: 500;
-    line-height: 1.4;
+    line-height: 1.45;
     -webkit-font-smoothing: antialiased;
     display: flex;
     flex-direction: column;

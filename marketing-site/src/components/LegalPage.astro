@@ -34,18 +34,18 @@ const updated = new Intl.DateTimeFormat(locale, { day: "numeric", month: "long",
 </Base>
 
 <style>
-  .doc { display: flex; flex-direction: column; gap: 28px; max-width: 688px; margin: 0 auto; padding: 56px 24px 72px; }
-  .doc__head { display: flex; flex-direction: column; gap: 12px; padding-bottom: 8px; }
-  h1 { font-size: 40px; font-weight: 700; line-height: 1.05; letter-spacing: -0.025em; text-wrap: balance; }
-  .doc__lead { max-width: 34em; color: var(--text-2); font-size: 17px; font-weight: 400; line-height: 1.55; }
-  .doc__date { color: var(--text-2); font-size: 13px; }
-  section { display: flex; flex-direction: column; gap: 8px; }
-  h2 { font-size: 17px; font-weight: 700; line-height: 1.3; }
-  p, li { color: var(--text-2); font-size: 16px; font-weight: 400; line-height: 1.6; text-wrap: pretty; }
+  .doc { display: flex; flex-direction: column; gap: 40px; max-width: 688px; margin: 0 auto; padding: 56px 24px 72px; }
+  .doc__head { display: flex; flex-direction: column; gap: 14px; padding-bottom: 8px; }
+  h1 { font: var(--h-w) clamp(36px, 4.7vw, 60px)/1.05 var(--font-display); letter-spacing: var(--h-ls); text-wrap: balance; }
+  .doc__lead { max-width: 34em; color: var(--text-2); font-size: 18px; line-height: 1.45; text-wrap: pretty; }
+  .doc__date { color: var(--text-2); font-size: 14px; }
+  section { display: flex; flex-direction: column; gap: 10px; }
+  h2 { margin-bottom: 2px; font: var(--h-w) 28px/1.1 var(--font-display); letter-spacing: -0.02em; text-wrap: balance; }
+  p, li { color: var(--text-2); font-size: 17px; line-height: 1.55; text-wrap: pretty; }
   ul { display: flex; flex-direction: column; gap: 8px; margin: 0; padding-left: 20px; list-style: disc; }
   li::marker { color: var(--text-2); }
   @media (max-width: 640px) {
     .doc { padding-top: 32px; }
-    h1 { font-size: 32px; }
+    h2 { font-size: 24px; }
   }
 </style>

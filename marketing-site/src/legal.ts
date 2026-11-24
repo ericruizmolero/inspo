@@ -15,14 +15,14 @@ export interface LegalFacts {
 }
 
 export const LEGAL: LegalFacts = {
-  entity: "treseiscero",
+  entity: "Savvia CB",
   taxId: "E75239277",
   address: "Jaitzubia 197 Parcela 310, 20280 Hondarribia (Gipuzkoa), España",
   contact: "hola@criterio.design",
 };
 
 /** The day the texts last changed (YYYY-MM-DD) */
-export const LEGAL_UPDATED = "2026-10-11";
+export const LEGAL_UPDATED = "2026-11-24";
 
 /** The free plan's caps, read from the plans so the Terms cannot drift from them */
 const free = PLANS.find((p) => p.key === "free")!;
