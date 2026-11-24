@@ -65,20 +65,24 @@ const FOUND = [{ name: "maisa", hit: true }, { name: "fal", hit: false }, { name
   section.hb-off :global(*) { animation-play-state: paused !important; }
   /* wider than the page's column, so the four tiles breathe */
   section { --w: min(1240px, 100vw - 2 * var(--gut)); width: max(100%, var(--w)); margin: clamp(104px, 18svh, 176px) 0 0 min(0px, (100% - var(--w)) / 2); scroll-margin-top: 72px; }
+  /* it comes up while criterio.md still holds the page dark, so the headline and the search tile follow (as in HomePlans); the coloured tiles keep their own */
+  @property --hb-well { syntax: '<color>'; inherits: true; initial-value: #FFFFFF; }
+  section { --paper-l: #F3F2EE; color: var(--ink); transition: --ink var(--ti), --paper-l var(--ts), --hb-well var(--ts); }
+  :global(html.dark) section { --ink: #F1EEE5; --paper-l: #161512; --hb-well: #24221E; }
   h2 { margin: 0; font: var(--h-w) clamp(31px, 4.4vw, 48px)/1.08 var(--display); letter-spacing: var(--h-ls); text-wrap: balance; }
   h2 span { display: block; }
   h2 span + span { color: var(--h-2); }
   h3 { margin: 0; font: 400 clamp(23px, 2.2vw, 31px)/1.1 var(--display); letter-spacing: var(--h-ls); text-wrap: balance; }
   .hb-grid { display: grid; grid-template-columns: repeat(24, minmax(0, 1fr)); grid-auto-rows: minmax(300px, auto); gap: 16px; margin-top: clamp(20px, 2.6svh, 28px); }
-  article { position: relative; display: flex; flex-direction: column; min-width: 0; padding: 26px 28px; overflow: hidden; border-radius: 14px; background: #F3F2EE; color: #1B1B18; }
+  article { position: relative; display: flex; flex-direction: column; min-width: 0; padding: 26px 28px; overflow: hidden; border-radius: 14px; background: var(--paper-l); }
   article > p { margin: 4px 0 0; font-size: 15px; }
   .hb-search { grid-column: span 14; }
   .hb-agent { grid-column: span 10; grid-row: span 2; background: #191B28; color: #E9EAFB; }
   .hb-agent h3 { color: #F4F4FE; font-size: clamp(25px, 2.75vw, 40px); }
-  .hb-share { grid-column: span 7; background: #FBF1C7; }
-  .hb-versions { grid-column: span 7; background: #E8892B; }
+  .hb-share { grid-column: span 7; background: #FBF1C7; color: #1B1B18; }
+  .hb-versions { grid-column: span 7; background: #E8892B; color: #1B1B18; }
 
-  .hb-q { display: flex; flex: none; align-items: center; gap: 8px; height: 42px; margin-top: 20px; padding: 0 14px; border-radius: 10px; background: #FFF; font-size: 15px; }
+  .hb-q { display: flex; flex: none; align-items: center; gap: 8px; height: 42px; margin-top: 20px; padding: 0 14px; border-radius: 10px; background: var(--hb-well); font-size: 15px; }
   .hb-q svg { flex: none; width: 18px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; }
   .hb-q span { overflow: hidden; padding-right: 1px; border-right: 2px solid #E8892B; white-space: nowrap; animation: hb-type 13s infinite; }
   @keyframes hb-type { 0% { clip-path: inset(0 100% 0 0); animation-timing-function: steps(26); } 18%, 92% { clip-path: inset(0); } 97%, 100% { clip-path: inset(0 100% 0 0); } }

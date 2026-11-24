@@ -1,0 +1,107 @@
+---
+// The menu: the key in the header and the panel it opens (brought from /landing/). On the home the key stays while the mark
+// scrolls away and the menu plays the video. Elsewhere both scroll away and the sections are the home's.
+// Logging in shows once signup is open (signup-mode.ts, on the home): until then nobody new can come in.
+// Hidden for now: neither SiteHeader.astro nor the home places it
+import { PAGES, copy, type Locale, type PageKey } from "../i18n";
+import { SECTIONS, homeCopy } from "../home-copy";
+
+interface Props { locale: Locale; page?: PageKey }
+const { locale, page } = Astro.props;
+const home = page === "home";
+const t = homeCopy[locale], m = t.menu, other = copy[locale].other, start = home ? "" : PAGES.home.path[locale];
+---
+<div class:list={["hh-menu", { "hh-stays": home }]} data-open={m.open} data-close={m.close}>
+  <button class="hh-key" type="button" aria-expanded="false" aria-controls={`menu-${locale}`}><i aria-hidden="true"></i><span>{m.open}</span></button>
+  <div class="hh-panel">
+  <div class="hh-body" id={`menu-${locale}`} inert>
+    <nav aria-label={home ? m.page : m.start}><p>{home ? m.page : m.start}</p>{SECTIONS.map((id) => <a class="hh-big" href={`${start}#${id}`}>{t.sections[id]}</a>)}</nav>
+    {home && <button class="hh-film" type="button" aria-label={m.watch}><img src={`/assets/vault/video/poster-${locale}.jpg`} alt="" width="640" height="360" loading="lazy" decoding="async" /><span><i aria-hidden="true"></i>{m.watch}</span></button>}
+    <div class="hh-foot">
+      <nav aria-label={m.more}><a href={PAGES.privacy.path[locale]}>{PAGES.privacy.nav[locale]}</a><a href={PAGES.terms.path[locale]}>{PAGES.terms.nav[locale]}</a><a href={PAGES[page ?? "home"].path[other.lang]} hreflang={other.lang} lang={other.lang}>{other.label}</a></nav>
+      <div><a class="btn" href={`${start}#mail`} data-open-href={copy[locale].login.href} data-open-label={copy[locale].pricing.start}>{copy[locale].waitlist.join}</a><a class="hh-login" href={copy[locale].login.href}>{copy[locale].login.label}</a></div>
+    </div>
+  </div>
+</div></div>
+
+<script>
+  document.querySelectorAll<HTMLElement>(".hh-menu").forEach((menu) => {
+    const panel = menu.querySelector<HTMLElement>(".hh-panel")!, key = menu.querySelector<HTMLButtonElement>(".hh-key")!, body = menu.querySelector<HTMLElement>(".hh-body")!, film = menu.querySelector(".hh-film"), label = key.querySelector("span")!;
+    let open = false;
+    // as wide as the window allows; the height is its content's
+    const size = () => {
+      panel.style.width = `${Math.min(film && innerWidth >= 900 ? 760 : 420, document.documentElement.clientWidth - 24)}px`;
+    };
+    const set = (on: boolean) => {
+      if (on === open) return;
+      open = on;
+      if (on) size();
+      menu.classList.toggle("hh-open", on);
+      body.inert = !on;
+      key.setAttribute("aria-expanded", String(on));
+      label.textContent = on ? menu.dataset.close! : menu.dataset.open!;
+    };
+    key.addEventListener("click", () => set(!open));
+    film?.addEventListener("click", () => { set(false); document.getElementById("open")?.click(); });
+    body.addEventListener("click", (e) => { if ((e.target as Element).closest("a")) set(false); });
+    menu.addEventListener("focusout", (e) => { if (e.relatedTarget && !menu.contains(e.relatedTarget as Node)) set(false); });
+    addEventListener("keydown", (e) => { if (e.key === "Escape" && open) { set(false); key.focus(); } });
+    addEventListener("pointerdown", (e) => { if (open && !menu.contains(e.target as Node)) set(false); });
+    addEventListener("resize", () => { if (open) size(); });
+    // on phones and tablets the key lies over the text: it leaves on the way down and comes back on the way up
+    if (!menu.matches(".hh-stays")) return;
+    let y = scrollY, turn = scrollY;
+    addEventListener("scroll", () => {
+      const now = Math.max(0, scrollY);
+      if ((now > y) !== (y > turn)) turn = y;
+      y = now;
+      const away = now > 120 && now - turn > 24;
+      if (away || turn - now > 24 || now <= 120) menu.classList.toggle("hh-away", away && !open);
+    }, { passive: true });
+  });
+</script>
+
+<style>
+  .hh-menu { position: absolute; top: 0; right: 0; width: 112px; height: 44px; }
+  /* on the home the key stays in the corner while the mark scrolls away */
+  .hh-menu.hh-stays { position: fixed; top: max(14px, env(safe-area-inset-top)); right: clamp(12px, 3vw, 40px); }
+  @media (max-width: 760px) { .hh-menu.hh-stays { right: max(22px, env(safe-area-inset-right)); } }
+  @media (max-width: 1240px) { .hh-menu.hh-stays { transition: transform .25s var(--out), visibility 0s; } .hh-menu.hh-stays.hh-away:not(:focus-within) { visibility: hidden; transform: translateY(-72px); transition: transform .2s var(--out), visibility 0s .2s; } }
+  .hh-key { position: relative; z-index: 1; display: flex; align-items: center; justify-content: center; gap: 9px; width: 112px; height: 41px; padding: 0; border: 1.5px solid #1B1B18; border-radius: var(--rb); background: #F6F1E6; color: #1B1B18; box-shadow: var(--bevel), 0 3px 0 #1B1B18; font: 700 15px/1 var(--sans); cursor: pointer; transition: transform .09s steps(2), box-shadow .09s steps(2), background-color .12s; }
+  @media (hover: hover) and (pointer: fine) { .hh-menu:not(.hh-open) .hh-key:hover { transform: translateY(2px); box-shadow: var(--bevel-in), 0 1px 0 #1B1B18; background: #FBF1C7; } }
+  .hh-menu:not(.hh-open) .hh-key:active { transform: translateY(3px); box-shadow: var(--bevel-in), 0 0 0 #1B1B18; }
+  .hh-open .hh-key { border-color: transparent; background: none; box-shadow: none; }
+  .hh-key:focus-visible { outline: 2px solid #1B1B18; outline-offset: -5px; }
+  .hh-key i { position: relative; width: 14px; height: 7px; }
+  .hh-key i::before, .hh-key i::after { content: ""; position: absolute; left: 0; right: 0; top: 2.5px; height: 2px; background: currentColor; transform: translateY(-2.5px); transition: transform .16s var(--out); }
+  .hh-key i::after { transform: translateY(2.5px); }
+  .hh-open .hh-key i::before { transform: rotate(45deg); }
+  .hh-open .hh-key i::after { transform: rotate(-45deg); }
+  /* the panel is there at its size and is uncovered from the key's own box: nothing is laid out while it opens, and a second
+     press turns it around from where it is. It closes faster than it opens */
+  .hh-panel { position: absolute; top: 0; right: 0; width: 420px; max-height: calc(100dvh - 24px); overflow-y: auto; border: 1.5px solid #1B1B18; border-radius: var(--r); background: #F6F1E6; color: #1B1B18; box-shadow: var(--bevel), 0 5px 0 #1B1B18; clip-path: inset(0 0 calc(100% - 41px) calc(100% - 112px) round 9px); visibility: hidden; transition: clip-path .18s var(--out), visibility 0s .18s; }
+  .hh-open .hh-panel { clip-path: inset(0 0 -8px 0 round 14px); visibility: visible; transition: clip-path .28s var(--out); }
+  .hh-body { display: grid; gap: 20px; padding: 46px 22px 22px; }
+  .hh-body a { color: inherit; text-decoration: underline 1.5px transparent; text-underline-offset: 8px; transition: text-decoration-color .3s var(--out), text-underline-offset .3s var(--out); }
+  .hh-body a:not(.btn):hover, .hh-body a:not(.btn):focus-visible { text-decoration-color: currentColor; text-underline-offset: 4px; }
+  .hh-body > nav { display: grid; justify-items: start; align-content: start; }
+  .hh-body > nav p { margin: 0 0 6px; color: #5A5850; font-size: 15px; }
+  .hh-big { padding: 3px 0; font: 400 26px/1.25 var(--display); letter-spacing: var(--h-ls); }
+  .hh-film { position: relative; display: block; align-self: start; width: 100%; padding: 0; overflow: hidden; border: 1.5px solid #1B1B18; border-radius: var(--rb); background: #161614; cursor: pointer; }
+  .hh-film img { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; }
+  .hh-film span { position: absolute; left: 8px; bottom: 8px; display: inline-flex; align-items: center; gap: 8px; padding: 8px 11px; border: 1.5px solid #1B1B18; border-radius: 8px; background: #E8892B; color: #1B1B18; box-shadow: var(--bevel); font: 700 14px/1 var(--sans); }
+  .hh-film:hover span { background: #F6A848; }
+  .hh-film span i { border: 5px solid transparent; border-left: 8px solid #1B1B18; border-right: 0; }
+  .hh-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px 24px; }
+  .hh-foot nav { display: flex; flex-wrap: wrap; gap: 2px 18px; font-size: 15px; }
+  .hh-foot nav a { padding: 5px 0; }
+  @media (pointer: coarse) { .hh-big { padding: 8px 0; } .hh-foot nav a { padding: 12px 0; } .hh-key { height: 44px; } }
+  .hh-foot > div { display: flex; align-items: center; gap: 16px; }
+  .hh-foot .btn { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; margin: 0 0 4px; padding: 0 18px; border: 1.5px solid #1B1B18; border-radius: var(--rb); background: #E8892B; color: #1B1B18; box-shadow: var(--bevel), 0 4px 0 #1B1B18; font: 700 15px/1 var(--sans); text-decoration: none; white-space: nowrap; transition: transform .09s steps(2), box-shadow .09s steps(2), background-color .12s; }
+  @media (hover: hover) and (pointer: fine) { .hh-foot .btn:hover { transform: translateY(3px); box-shadow: var(--bevel-in), 0 1px 0 #1B1B18; background: #F6A848; } }
+  .hh-foot .btn:active { transform: translateY(4px); box-shadow: var(--bevel-in), 0 0 0 #1B1B18; }
+  .hh-login { display: none; font-weight: 600; }
+  :global(.signup-open) .hh-login { display: inline; }
+  @media (min-width: 900px) { .hh-body:has(.hh-film) { grid-template-columns: 1fr 1fr; } .hh-foot { grid-column: 1 / -1; } }
+  @media (prefers-reduced-motion: reduce) { .hh-menu.hh-stays { transition: none; } .hh-panel, .hh-open .hh-panel { clip-path: none; opacity: 0; transition: opacity .15s, visibility 0s .15s; } .hh-open .hh-panel { opacity: 1; transition: opacity .15s; } .hh-key i::before, .hh-key i::after, .hh-body a { transition: none; } }
+</style>

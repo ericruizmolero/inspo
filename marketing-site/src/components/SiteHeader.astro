@@ -1,10 +1,8 @@
 ---
-// The site's header: the mark, and the key the menu opens from (brought from /landing/). On the home the key stays while
-// the mark scrolls away and the menu plays the video. Elsewhere both scroll away and the sections are the home's. The 404
-// page carries both languages, with only its own shown.
-// Logging in shows once signup is open (signup-mode.ts, on the home): until then nobody new can come in
-import { LOCALES, PAGES, copy, type Locale, type PageKey } from "../i18n";
-import { SECTIONS, homeCopy } from "../home-copy";
+// The header of every page but the home, whose headline carries the mark: the mark, which scrolls away with the page. The 404 page carries both languages, with only its own shown.
+// The menu (SiteMenu.astro) is hidden for now: it goes back as the mark's sibling, with this locale and page
+import { LOCALES, PAGES, type Locale, type PageKey } from "../i18n";
+import { homeCopy } from "../home-copy";
 
 interface Props {
   locale: Locale;
@@ -12,68 +10,15 @@ interface Props {
   page?: PageKey;
 }
 const { locale: shown, page } = Astro.props;
-const home = page === "home";
 const locales = page ? [shown] : LOCALES;
 ---
-{locales.map((locale) => {
-  const t = homeCopy[locale], m = t.menu, other = copy[locale].other, start = home ? "" : PAGES.home.path[locale];
-  return (
-    <header class:list={["hh-nav", { "hh-stays": home }]} lang={locale} data-locale={locale} hidden={locale !== shown}>
-      <a class="hh-logo" href={PAGES.home.path[locale]} aria-label={m.home}>
-        <svg viewBox="0 0 46 42" aria-hidden="true"><g fill="currentColor"><path class="ear ear-l" d="M8 2h4v1h-4zM8 3h4v1h-4zM8 4h6v1h-6zM8 5h6v1h-6zM6 6h10v1h-10zM6 7h10v1h-10zM6 8h12v1h-12zM6 9h12v1h-12zM6 10h12v1h-12zM6 11h12v1h-12zM6 12h12v1h-12zM6 13h12v1h-12zM6 14h12v1h-12z"/><path class="ear ear-r" d="M22 0h4v1h-4zM22 1h4v1h-4zM22 2h6v1h-6zM22 3h6v1h-6zM20 4h8v1h-8zM20 5h8v1h-8zM20 6h10v1h-10zM20 7h10v1h-10zM20 8h10v1h-10zM20 9h10v1h-10zM18 10h12v1h-12zM18 11h12v1h-12zM18 12h12v1h-12zM18 13h12v1h-12zM18 14h16v1h-16z"/><path d="M6 15h28v1h-28zM8 16h30v1h-30zM8 17h30v1h-30zM4 18h38v1h-38zM4 19h38v1h-38zM2 20h42v1h-42zM2 21h42v1h-42zM2 22h22v1h-22zM42 22h2v1h-2zM2 23h22v1h-22zM42 23h2v1h-2zM0 24h24v1h-24zM42 24h4v1h-4zM0 25h24v1h-24zM42 25h4v1h-4zM0 26h24v1h-24zM42 26h4v1h-4zM0 27h24v1h-24zM42 27h4v1h-4zM0 28h46v1h-46zM0 29h46v1h-46zM0 30h46v1h-46zM0 31h46v1h-46zM0 32h46v1h-46zM0 33h46v1h-46zM0 34h46v1h-46zM0 35h46v1h-46zM2 36h42v1h-42zM2 37h42v1h-42zM4 38h38v1h-38zM4 39h38v1h-38zM8 40h32v1h-32zM8 41h32v1h-32z"/></g><rect x="24" y="22" width="18" height="6" fill="var(--paper)" /></svg><span>criterio</span>
-      </a>
-      <div class="hh-menu" data-open={m.open} data-close={m.close}>
-        <button class="hh-key" type="button" aria-expanded="false" aria-controls={`menu-${locale}`}><i aria-hidden="true"></i><span>{m.open}</span></button>
-        <div class="hh-panel">
-        <div class="hh-body" id={`menu-${locale}`} inert>
-          <nav aria-label={home ? m.page : m.start}><p>{home ? m.page : m.start}</p>{SECTIONS.map((id) => <a class="hh-big" href={`${start}#${id}`}>{t.sections[id]}</a>)}</nav>
-          {home && <button class="hh-film" type="button" aria-label={m.watch}><img src={`/assets/vault/video/poster-${locale}.jpg`} alt="" width="640" height="360" loading="lazy" decoding="async" /><span><i aria-hidden="true"></i>{m.watch}</span></button>}
-          <div class="hh-foot">
-            <nav aria-label={m.more}><a href={PAGES.privacy.path[locale]}>{PAGES.privacy.nav[locale]}</a><a href={PAGES.terms.path[locale]}>{PAGES.terms.nav[locale]}</a><a href={PAGES[page ?? "home"].path[other.lang]} hreflang={other.lang} lang={other.lang}>{other.label}</a></nav>
-            <div><a class="btn" href={`${start}#mail`} data-open-href={copy[locale].login.href} data-open-label={copy[locale].pricing.start}>{copy[locale].waitlist.join}</a><a class="hh-login" href={copy[locale].login.href}>{copy[locale].login.label}</a></div>
-          </div>
-        </div>
-      </div></div>
-    </header>
-  );
-})}
-
-<script>
-  document.querySelectorAll<HTMLElement>(".hh-nav .hh-menu").forEach((menu) => {
-    const panel = menu.querySelector<HTMLElement>(".hh-panel")!, key = menu.querySelector<HTMLButtonElement>(".hh-key")!, body = menu.querySelector<HTMLElement>(".hh-body")!, film = menu.querySelector(".hh-film"), label = key.querySelector("span")!;
-    let open = false;
-    // as wide as the window allows; the height is its content's
-    const size = () => {
-      panel.style.width = `${Math.min(film && innerWidth >= 900 ? 760 : 420, document.documentElement.clientWidth - 24)}px`;
-    };
-    const set = (on: boolean) => {
-      if (on === open) return;
-      open = on;
-      if (on) size();
-      menu.classList.toggle("hh-open", on);
-      body.inert = !on;
-      key.setAttribute("aria-expanded", String(on));
-      label.textContent = on ? menu.dataset.close! : menu.dataset.open!;
-    };
-    key.addEventListener("click", () => set(!open));
-    film?.addEventListener("click", () => { set(false); document.getElementById("open")?.click(); });
-    body.addEventListener("click", (e) => { if ((e.target as Element).closest("a")) set(false); });
-    menu.addEventListener("focusout", (e) => { if (e.relatedTarget && !menu.contains(e.relatedTarget as Node)) set(false); });
-    addEventListener("keydown", (e) => { if (e.key === "Escape" && open) { set(false); key.focus(); } });
-    addEventListener("pointerdown", (e) => { if (open && !menu.contains(e.target as Node)) set(false); });
-    addEventListener("resize", () => { if (open) size(); });
-    // on phones and tablets the key lies over the text: it leaves on the way down and comes back on the way up
-    if (!menu.closest(".hh-stays")) return;
-    let y = scrollY, turn = scrollY;
-    addEventListener("scroll", () => {
-      const now = Math.max(0, scrollY);
-      if ((now > y) !== (y > turn)) turn = y;
-      y = now;
-      const away = now > 120 && now - turn > 24;
-      if (away || turn - now > 24 || now <= 120) menu.classList.toggle("hh-away", away && !open);
-    }, { passive: true });
-  });
-</script>
+{locales.map((locale) => (
+  <header class="hh-nav" lang={locale} data-locale={locale} hidden={locale !== shown}>
+    <a class="hh-logo" href={PAGES.home.path[locale]} aria-label={homeCopy[locale].menu.home}>
+      <svg viewBox="0 0 46 42" aria-hidden="true"><g fill="currentColor"><path class="ear ear-l" d="M8 2h4v1h-4zM8 3h4v1h-4zM8 4h6v1h-6zM8 5h6v1h-6zM6 6h10v1h-10zM6 7h10v1h-10zM6 8h12v1h-12zM6 9h12v1h-12zM6 10h12v1h-12zM6 11h12v1h-12zM6 12h12v1h-12zM6 13h12v1h-12zM6 14h12v1h-12z"/><path class="ear ear-r" d="M22 0h4v1h-4zM22 1h4v1h-4zM22 2h6v1h-6zM22 3h6v1h-6zM20 4h8v1h-8zM20 5h8v1h-8zM20 6h10v1h-10zM20 7h10v1h-10zM20 8h10v1h-10zM20 9h10v1h-10zM18 10h12v1h-12zM18 11h12v1h-12zM18 12h12v1h-12zM18 13h12v1h-12zM18 14h16v1h-16z"/><path d="M6 15h28v1h-28zM8 16h30v1h-30zM8 17h30v1h-30zM4 18h38v1h-38zM4 19h38v1h-38zM2 20h42v1h-42zM2 21h42v1h-42zM2 22h22v1h-22zM42 22h2v1h-2zM2 23h22v1h-22zM42 23h2v1h-2zM0 24h24v1h-24zM42 24h4v1h-4zM0 25h24v1h-24zM42 25h4v1h-4zM0 26h24v1h-24zM42 26h4v1h-4zM0 27h24v1h-24zM42 27h4v1h-4zM0 28h46v1h-46zM0 29h46v1h-46zM0 30h46v1h-46zM0 31h46v1h-46zM0 32h46v1h-46zM0 33h46v1h-46zM0 34h46v1h-46zM0 35h46v1h-46zM2 36h42v1h-42zM2 37h42v1h-42zM4 38h38v1h-38zM4 39h38v1h-38zM8 40h32v1h-32zM8 41h32v1h-32z"/></g><rect x="24" y="22" width="18" height="6" fill="var(--paper)" /></svg><span>criterio</span>
+    </a>
+  </header>
+))}
 
 <style>
   .hh-nav { position: absolute; z-index: 40; top: max(14px, env(safe-area-inset-top)); left: clamp(12px, 3vw, 40px); right: clamp(12px, 3vw, 40px); width: auto; height: 44px; }
@@ -81,46 +26,5 @@ const locales = page ? [shown] : LOCALES;
   .hh-logo { position: absolute; left: 0; top: 0; display: flex; align-items: center; gap: 8px; min-height: 44px; color: var(--ink); text-decoration: none; }
   .hh-logo svg { width: 32px; height: 29px; }
   .hh-logo span { margin-bottom: -3px; font: 400 27px/1 var(--display); letter-spacing: -0.045em; }
-  /* on the home the key stays in the corner while the mark scrolls away */
-  .hh-stays .hh-menu { position: fixed; top: max(14px, env(safe-area-inset-top)); right: clamp(12px, 3vw, 40px); }
-  .hh-menu { position: absolute; top: 0; right: 0; width: 112px; height: 44px; }
-  @media (max-width: 1240px) { .hh-stays .hh-menu { transition: transform .25s var(--out), visibility 0s; } .hh-stays .hh-menu.hh-away:not(:focus-within) { visibility: hidden; transform: translateY(-72px); transition: transform .2s var(--out), visibility 0s .2s; } }
-  @media (max-width: 760px) { .hh-nav { left: 22px; right: 22px; } .hh-stays .hh-menu { right: max(22px, env(safe-area-inset-right)); } }
-  .hh-key { position: relative; z-index: 1; display: flex; align-items: center; justify-content: center; gap: 9px; width: 112px; height: 41px; padding: 0; border: 1.5px solid #1B1B18; border-radius: var(--rb); background: #F6F1E6; color: #1B1B18; box-shadow: var(--bevel), 0 3px 0 #1B1B18; font: 700 15px/1 var(--sans); cursor: pointer; transition: transform .09s steps(2), box-shadow .09s steps(2), background-color .12s; }
-  @media (hover: hover) and (pointer: fine) { .hh-menu:not(.hh-open) .hh-key:hover { transform: translateY(2px); box-shadow: var(--bevel-in), 0 1px 0 #1B1B18; background: #FBF1C7; } }
-  .hh-menu:not(.hh-open) .hh-key:active { transform: translateY(3px); box-shadow: var(--bevel-in), 0 0 0 #1B1B18; }
-  .hh-open .hh-key { border-color: transparent; background: none; box-shadow: none; }
-  .hh-key:focus-visible { outline: 2px solid #1B1B18; outline-offset: -5px; }
-  .hh-key i { position: relative; width: 14px; height: 7px; }
-  .hh-key i::before, .hh-key i::after { content: ""; position: absolute; left: 0; right: 0; top: 2.5px; height: 2px; background: currentColor; transform: translateY(-2.5px); transition: transform .16s var(--out); }
-  .hh-key i::after { transform: translateY(2.5px); }
-  .hh-open .hh-key i::before { transform: rotate(45deg); }
-  .hh-open .hh-key i::after { transform: rotate(-45deg); }
-  /* the panel is there at its size and is uncovered from the key's own box: nothing is laid out while it opens, and a second
-     press turns it around from where it is. It closes faster than it opens */
-  .hh-panel { position: absolute; top: 0; right: 0; width: 420px; max-height: calc(100dvh - 24px); overflow-y: auto; border: 1.5px solid #1B1B18; border-radius: var(--r); background: #F6F1E6; color: #1B1B18; box-shadow: var(--bevel), 0 5px 0 #1B1B18; clip-path: inset(0 0 calc(100% - 41px) calc(100% - 112px) round 9px); visibility: hidden; transition: clip-path .18s var(--out), visibility 0s .18s; }
-  .hh-open .hh-panel { clip-path: inset(0 0 -8px 0 round 14px); visibility: visible; transition: clip-path .28s var(--out); }
-  .hh-body { display: grid; gap: 20px; padding: 46px 22px 22px; }
-  .hh-body a { color: inherit; text-decoration: underline 1.5px transparent; text-underline-offset: 8px; transition: text-decoration-color .3s var(--out), text-underline-offset .3s var(--out); }
-  .hh-body a:not(.btn):hover, .hh-body a:not(.btn):focus-visible { text-decoration-color: currentColor; text-underline-offset: 4px; }
-  .hh-body > nav { display: grid; justify-items: start; align-content: start; }
-  .hh-body > nav p { margin: 0 0 6px; color: #5A5850; font-size: 15px; }
-  .hh-big { padding: 3px 0; font: 400 26px/1.25 var(--display); letter-spacing: var(--h-ls); }
-  .hh-film { position: relative; display: block; align-self: start; width: 100%; padding: 0; overflow: hidden; border: 1.5px solid #1B1B18; border-radius: var(--rb); background: #161614; cursor: pointer; }
-  .hh-film img { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; }
-  .hh-film span { position: absolute; left: 8px; bottom: 8px; display: inline-flex; align-items: center; gap: 8px; padding: 8px 11px; border: 1.5px solid #1B1B18; border-radius: 8px; background: #E8892B; color: #1B1B18; box-shadow: var(--bevel); font: 700 14px/1 var(--sans); }
-  .hh-film:hover span { background: #F6A848; }
-  .hh-film span i { border: 5px solid transparent; border-left: 8px solid #1B1B18; border-right: 0; }
-  .hh-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px 24px; }
-  .hh-foot nav { display: flex; flex-wrap: wrap; gap: 2px 18px; font-size: 15px; }
-  .hh-foot nav a { padding: 5px 0; }
-  @media (pointer: coarse) { .hh-big { padding: 8px 0; } .hh-foot nav a { padding: 12px 0; } .hh-key { height: 44px; } }
-  .hh-foot > div { display: flex; align-items: center; gap: 16px; }
-  .hh-foot .btn { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; margin: 0 0 4px; padding: 0 18px; border: 1.5px solid #1B1B18; border-radius: var(--rb); background: #E8892B; color: #1B1B18; box-shadow: var(--bevel), 0 4px 0 #1B1B18; font: 700 15px/1 var(--sans); text-decoration: none; white-space: nowrap; transition: transform .09s steps(2), box-shadow .09s steps(2), background-color .12s; }
-  @media (hover: hover) and (pointer: fine) { .hh-foot .btn:hover { transform: translateY(3px); box-shadow: var(--bevel-in), 0 1px 0 #1B1B18; background: #F6A848; } }
-  .hh-foot .btn:active { transform: translateY(4px); box-shadow: var(--bevel-in), 0 0 0 #1B1B18; }
-  .hh-login { display: none; font-weight: 600; }
-  :global(.signup-open) .hh-login { display: inline; }
-  @media (min-width: 900px) { .hh-body:has(.hh-film) { grid-template-columns: 1fr 1fr; } .hh-foot { grid-column: 1 / -1; } }
-  @media (prefers-reduced-motion: reduce) { .hh-stays .hh-menu { transition: none; } .hh-panel, .hh-open .hh-panel { clip-path: none; opacity: 0; transition: opacity .15s, visibility 0s .15s; } .hh-open .hh-panel { opacity: 1; transition: opacity .15s; } .hh-key i::before, .hh-key i::after, .hh-body a { transition: none; } }
+  @media (max-width: 760px) { .hh-nav { left: 22px; right: 22px; } }
 </style>

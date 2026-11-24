@@ -1,4 +1,4 @@
-// The words of the home's own sections (SiteHeader, HomeCompare, HomeBento, HomeManifesto, HomeQuestions). The hero, the product window
+// The words of the home's own sections (SiteHeader, SiteMenu, HomeCompare, HomeBento, HomeManifesto, HomeQuestions). The hero, the product window
 // and the close have theirs in video/landing/plantilla.html (COPY)
 import type { Locale } from "./i18n";
 
@@ -28,7 +28,7 @@ interface HomeCopy {
   ask: { headline: string; sub: string; label: string; open: { q: string; a: string }; list: { q: string; a: string; face: Face }[] };
 }
 
-export const SECTIONS = ["demo", "encargo", "archivo", "mf", "pricing", "preguntas"] as const;
+export const SECTIONS = ["demo", "mf", "archivo", "pricing", "preguntas"] as const;
 export type SectionId = (typeof SECTIONS)[number];
 
 /** The 404 page */
@@ -40,7 +40,7 @@ export const lostCopy: Record<Locale, { title: string; headline: [string, string
 export const homeCopy: Record<Locale, HomeCopy> = {
   en: {
     menu: { open: "Menu", close: "Close", home: "Criterio, home", page: "On this page", start: "On the home page", more: "More", watch: "Watch the one-minute video" },
-    sections: { demo: "How it works", encargo: "The difference", archivo: "What it does", mf: "Why it exists", pricing: "Pricing", preguntas: "Questions" },
+    sections: { demo: "How it works", mf: "Why it exists", archivo: "What it does", pricing: "Pricing", preguntas: "Questions" },
     compare: {
       headline: ["Same brief.", "Two landings."], brief: "We asked Claude for the site of Plomo, a type foundry we made up.", slider: "Compare the two landings",
       without: { name: "Without Criterio: the first answer.", alt: "Plomo’s landing, made without Criterio" },
@@ -81,7 +81,7 @@ export const homeCopy: Record<Locale, HomeCopy> = {
   },
   es: {
     menu: { open: "Menú", close: "Cerrar", home: "Criterio, inicio", page: "En esta página", start: "En la portada", more: "Más", watch: "Mira el vídeo de un minuto" },
-    sections: { demo: "Cómo funciona", encargo: "La diferencia", archivo: "Qué hace", mf: "Por qué existe", pricing: "Precios", preguntas: "Preguntas" },
+    sections: { demo: "Cómo funciona", mf: "Por qué existe", archivo: "Qué hace", pricing: "Precios", preguntas: "Preguntas" },
     compare: {
       headline: ["El mismo encargo.", "Dos landings."], brief: "Le pedimos a Claude la web de Plomo, una fundición tipográfica inventada.", slider: "Compara las dos landings",
       without: { name: "Sin Criterio: la primera respuesta.", alt: "Landing de Plomo hecha sin Criterio" },
