@@ -87,7 +87,7 @@ BASE=http://localhost:4321/ bash marketing-site/video/probar.sh es
 BASE=http://localhost:4321/ bash marketing-site/video/probar.sh en
 ```
 
-Eso graba, monta, comprueba y saca un borrador en `hf-<idioma>/renders/prueba-<idioma>.mp4`. Debe durar unos 66 s y medir entre −15 y −13 LUFS.
+Eso graba, monta, comprueba y saca un borrador en `hf-<idioma>/renders/prueba-<idioma>.mp4`. Debe durar unos 59 s y medir entre −15 y −13 LUFS.
 
 Para la versión buena, dentro de `marketing-site/video/hf-<idioma>/`:
 
@@ -109,7 +109,7 @@ Lo mismo con `en`. **Siempre los dos idiomas.**
 
 Cómo funciona por dentro, para no romperlo:
 - `grabar.cjs` deja correr el bucle de la demo una vez y apunta cuándo empieza cada parte (`marks.json`).
-- `montar.cjs` corta la grabación en siete tramos y da a cada uno la duración de su bloque de voz. Si un tramo tendría que ir a menos de 0,8×, se queda en su último fotograma en vez de ralentizarse.
+- `montar.cjs` corta la grabación en seis tramos (hasta el 24/11 eran siete, con la web acabada a pantalla completa) y da a cada uno la duración de su bloque de voz. Si un tramo tendría que ir a menos de 0,8×, se queda en su último fotograma en vez de ralentizarse.
 - La entrada (Tino, «Criterio» y el visor que se abre hasta ser la ventana) dura lo que la primera frase de la voz.
 - Los cortes caen en el compás de la música: la ventana llega en tiempo fuerte y cada cambio de paso en un tiempo.
 
@@ -161,6 +161,8 @@ node marketing-site/video/landing/revisar.cjs https://criterio.design/ publicada
 
 - Tesis: **«Entrena tu gusto»**. Crear ya es fácil; lo difícil es que lo que crees sea tuyo.
 - El vídeo abre con una entrada de marca corta y entra al producto. **No** abre explicando el problema.
+- (24/11) La primera frase de la voz es el titular de la portada: «Ponle criterio a tu landing.» / «Give your landing some taste.». Si cambia el titular, cambia la frase y se regenera la voz. Tino calla solo 0,6 s antes (`PRE`), y 0,6 s después de «Es tuyo» entra el cierre, sin enseñar la web acabada a pantalla completa ([decisión](../../docs/design-system/decisiones/2026-11-24-el-video-de-la-portada-abre-con-el-titular-y-acaba-al-decir-es-tuyo.md)).
+- El chat de la IA se graba con la letra de la interfaz de Claude (Anthropic Sans), una sola también en la respuesta. `grabar.cjs` la sirve solo a la grabación desde `/Applications/Claude.app/Contents/Resources/fonts` (o `CLAUDE_FONTS`). **Nunca** se copia al repositorio ni a `public/`: no es nuestra. Sin la app instalada, la grabación avisa y sale con la letra de reserva.
 - Sin subtítulos. Los pasos llevan título y una frase, sin numeración.
 - El Vault se enseña **solo como rejilla**: no se abre ninguna pieza en detalle, ni en el vídeo ni en la portada.
 - El Pulido es como en la app: la referencia centrada y rodeada por las demás, Tino **pregunta** («¿Te la quedas?») y el pie lleva título y comentario.
@@ -181,6 +183,10 @@ node marketing-site/video/landing/revisar.cjs https://criterio.design/ publicada
 - **Todo va encadenado.** Cambiar una frase cambia la duración de la voz, y con ella los cortes y el compás. No se alarga un tramo suelto: se remonta.
 - **Al grabar, lo que se inyecta en la página corre también dentro de sus `iframe`.** `grabar.cjs` empieza por `if (window !== window.top) return;`. Sin eso, la web de ejemplo del final sale sin menú ni lista.
 - **Se mira la hoja de fotogramas de cada tramo** del vídeo ya renderizado, no solo del tramo que se tocó: `ffmpeg -i video.mp4 -vf "fps=2,scale=320:-2,tile=12x12" -frames:v 1 hoja.jpg`.
+- **La voz pasa por un compresor antes de subirla** (`acompressor` en `montar.cjs`, ganancia `GAIN`, 12 dB en castellano y 13 en inglés). Hasta el 24/11 se subía 7 a 10 dB a pelo y el limitador recortaba hasta 9 dB de picos: Eric lo oía como «interferencias tipo radio». Con el compresor el limitador recorta como mucho 1,5 dB.
+- **El «You» de la toma inglesa salió cortado una vez** (arranque seco, sin la «y»): era de ElevenLabs, no del corte. Se ve midiendo el volumen en ventanas de 5 ms al principio del bloque; se arregla generando la toma otra vez.
+- **La barra de desarrollo de Astro** (la píldora de abajo) salía en el vídeo porque se graba contra `npm run dev:marketing`. `grabar.cjs` la oculta (`astro-dev-toolbar{display:none}`).
+- **Los huecos que avisa `grabar` (`gaps`) que salen iguales en los dos idiomas** no son tirones: son ratos en que la pantalla no cambia y el navegador no manda fotogramas.
 - `hyperframes check` avisa de `nested_structure_needs_subcomposition`: son avisos, no bloquean.
 - `hyperframes check` y `render` dejan procesos de Chrome vivos: `pkill -f chrome-headless-shell; pkill -f warmCheck`.
 - WebKit sin pantalla no pinta la perspectiva CSS: el giro de las tarjetas del Pulido solo se ve bien en Chrome y en un Safari real.
@@ -190,6 +196,10 @@ node marketing-site/video/landing/revisar.cjs https://criterio.design/ publicada
 - iOS no reproduce con sonido un `autoplay` que empieza después del toque. `playFilm` llama a `play()` en el mismo clic que mete el `<video>`; si el navegador lo niega, queda el póster con su botón.
 - `backdrop-filter` va siempre con su `-webkit-backdrop-filter` al lado: Safari anterior a la 18 solo entiende el prefijado.
 - En la plantilla, lo que lleva `%%…%%` lo rellena `construir.py` con código de la web (ver «Lo que la portada toma de la web»). No se escribe a mano ninguna dirección de la app (`app.criterio.design`): con `npm run dev:marketing` la web apunta a la app local y en la publicada a la de producción.
+
+- La web de ejemplo se carga como `plomo/index.html`, no `plomo/`: `npm run dev:marketing` no sirve una carpeta de `public/` como página, y la grabación acababa en «Not found».
+- La voz no se oye en la máquina donde trabaja la IA: se comprueba bloque a bloque transcribiéndola con `whisper-cli` (en este Mac, el modelo de Screen Studio: `~/Library/Application Support/Screen Studio/models/ggml-small.bin`).
+- `playwright-core` no viene en las dependencias: `npm i --no-save playwright-core` en la raíz antes de grabar.
 
 ## Pendiente
 

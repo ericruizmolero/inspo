@@ -9,7 +9,11 @@ const lang = process.argv[2] || 'es', out = process.argv[3]; fs.mkdirSync(out + 
 (async () => {
   const b = await pw.chromium.launch({ headless: true, executablePath: CHROME, args: ['--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist', '--window-size=1920,1080'] });
   const p = await b.newPage({ viewport: { width: 1920, height: 1080 } }); const errs = []; p.on('pageerror', (e) => errs.push(String(e).slice(0, 200)));
-  await p.addInitScript(() => { if (window !== window.top) return; addEventListener('DOMContentLoaded', () => { const s = document.createElement('style'); s.textContent = 'html,body{overflow:hidden!important}.top,.hero,.mf,.end,.cues,.foot{visibility:hidden!important}#demo{position:fixed!important;left:440px!important;top:90px!important;width:1440px!important;max-width:none!important;margin:0!important;z-index:5}#open{display:none!important}'; document.head.append(s); }); });
+  // El chat de la IA lleva la letra de Claude si su app está instalada en este Mac: se sirve solo a esta grabación y no va al repositorio ni a la web
+  const AF = process.env.CLAUDE_FONTS || '/Applications/Claude.app/Contents/Resources/fonts', AFF = { sans: 'AnthropicSans-Romans-Variable-25x258.ttf' }, haveAF = Object.values(AFF).every((x) => fs.existsSync(AF + '/' + x));
+  if (haveAF) await p.route('**/__claude-font/*', (r) => r.fulfill({ path: AF + '/' + AFF[r.request().url().split('/').pop()], contentType: 'font/ttf' })); else console.log('sin la letra de Claude: el chat sale con la de reserva');
+  const FF = haveAF ? '@font-face{font-family:"Anthropic Sans";src:url(/__claude-font/sans);font-weight:100 900}' : '';
+  await p.addInitScript((FF) => { if (window !== window.top) return; addEventListener('DOMContentLoaded', () => { const s = document.createElement('style'); s.textContent = FF + 'astro-dev-toolbar{display:none!important}html,body{overflow:hidden!important}.top,.hero,.mf,.end,.cues,.foot{visibility:hidden!important}#demo{position:fixed!important;left:440px!important;top:90px!important;width:1440px!important;max-width:none!important;margin:0!important;z-index:5}#open{display:none!important}'; document.head.append(s); }); }, FF);
   await p.goto(BASE + (lang === 'es' ? 'es/' : '') + '?landing');   // ?landing: con sesión abierta en la app, la portada no redirige await p.waitForTimeout(2500);
   console.log('frame', await p.evaluate(() => { const r = document.querySelector('#frame').getBoundingClientRect(); return [r.left, r.top, r.width, r.height].map(Math.round); }));
   // marcas de estado con reloj de pared
