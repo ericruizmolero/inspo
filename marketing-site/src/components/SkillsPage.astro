@@ -1,6 +1,6 @@
 ---
 import Base from "../layouts/Base.astro";
-import Header from "./Header.astro";
+import SiteHeader from "./SiteHeader.astro";
 import Footer from "./Footer.astro";
 import PageHead from "./PageHead.astro";
 import { copy, type Locale } from "../i18n";
@@ -15,7 +15,7 @@ const now = Date.now();
 const groups = SKILL_TOPICS.map((topic) => ({ ...topic, skills: SKILLS.filter((s) => s.topic === topic.key) })).filter((g) => g.skills.length);
 ---
 <Base lang={locale} page="skills" title={`${t.title} | criterio.design`} description={t.lead(SKILLS.length)}>
-  <Header locale={locale} page="skills" />
+  <SiteHeader locale={locale} page="skills" />
 
   <main class="skills">
     <PageHead headline={t.headline} lead={t.lead(SKILLS.length)} />

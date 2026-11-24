@@ -1,16 +1,66 @@
 ---
+// Served for any address that is not there, in both languages: the script shows the one of the address (/es/…). Tino
+// sleeps at the bottom, as in the home's close, and wakes when you come near
 import Base from "../layouts/Base.astro";
+import SiteHeader from "../components/SiteHeader.astro";
+import { LOCALES, PAGES } from "../i18n";
+import { lostCopy } from "../home-copy";
 ---
-<Base title="Not found | criterio.design" description="This page does not exist.">
+<Base title={`${lostCopy.en.title} | criterio.design`} description={lostCopy.en.text}>
+  <script is:inline type="importmap">{ "imports": { "three": "/assets/mascota/tino-app/vendor/three/three.module.min.js", "three/addons/": "/assets/mascota/tino-app/vendor/three/jsm/" } }</script>
+  <SiteHeader locale="en" />
   <main>
-    <h1>Not found</h1>
-    <p><a href="/">Back to the start</a></p>
+    {LOCALES.map((locale) => {
+      const t = lostCopy[locale];
+      return (
+        <div lang={locale} data-locale={locale} data-title={t.title} hidden={locale !== "en"}>
+          <h1><span>{t.headline[0]}</span> <span>{t.headline[1]}</span></h1>
+          <p>{t.text}</p>
+          <a class="back" href={PAGES.home.path[locale]}>{t.back}</a>
+        </div>
+      );
+    })}
+    <div class="tino" id="tino" aria-hidden="true"><canvas></canvas></div>
   </main>
 </Base>
 
+<script>
+  if (/^\/es(\/|$)/.test(location.pathname)) {
+    document.documentElement.lang = "es";
+    document.querySelectorAll<HTMLElement>("[data-locale]").forEach((e) => { e.hidden = e.dataset.locale !== "es"; });
+    document.title = `${document.querySelector<HTMLElement>("main [data-locale=es]")!.dataset.title} | criterio.design`;
+  }
+</script>
+<script is:inline type="module">
+  // The words first: the 3D waits for the page to be idle, and without WebGL there is simply no Tino
+  const go = async () => {
+    const box = document.getElementById("tino"), canvas = box.querySelector("canvas");
+    if (!document.createElement("canvas").getContext("webgl2")) return;
+    const { create } = await import("/assets/mascota/tino-app/engine.js");
+    const tino = create(canvas, { base: "/assets/mascota/tino-app/", frame: "center", look: [90, 4] });
+    const still = matchMedia("(prefers-reduced-motion: reduce)");
+    let nap = 0;
+    tino.track(false);
+    tino.set("dormida");
+    box.addEventListener("pointerenter", () => { clearTimeout(nap); tino.show("barrido"); tino.set("curiosa"); tino.track(true); if (!still.matches) tino.jump(16); });
+    box.addEventListener("pointerleave", () => { nap = setTimeout(() => { tino.track(false); tino.set("dormida"); }, 1600); });
+    setTimeout(() => box.classList.add("on"), 700);
+  };
+  (window.requestIdleCallback ?? setTimeout)(() => go().catch(() => {}));
+</script>
+
 <style>
-  main { max-width: 1080px; margin: 0 auto; padding: 96px 24px; }
-  h1 { font: var(--h-w) clamp(36px, 4.7vw, 60px)/1.05 var(--font-display); letter-spacing: var(--h-ls); }
-  p { margin-top: 16px; }
-  a { color: var(--ink); }
+  main { position: relative; display: flex; flex-direction: column; align-items: center; min-height: calc(100svh - clamp(72px, 10svh, 112px)); padding: clamp(24px, 7svh, 72px) 24px 0; overflow: hidden; text-align: center; }
+  main > div[hidden] { display: none; }
+  h1 { font: var(--h-w) clamp(40px, 5.4vw, 76px)/1.06 var(--font-display); letter-spacing: var(--h-ls); }
+  h1 span { display: block; }
+  h1 span + span { color: var(--h-2); }
+  p { margin-top: 18px; color: var(--text-2); font-size: 18px; text-wrap: balance; }
+  .back { display: inline-flex; align-items: center; min-height: 48px; margin: 28px 0 4px; padding: 0 22px; border: 1.5px solid var(--ink); border-radius: var(--rb); background: var(--ember); color: var(--ink); box-shadow: var(--bevel), 0 4px 0 var(--ink); font-size: 17px; font-weight: 700; text-decoration: none; transition: transform .09s steps(2), box-shadow .09s steps(2), background-color .12s; }
+  @media (hover: hover) and (pointer: fine) { .back:hover { transform: translateY(3px); box-shadow: var(--bevel-in), 0 1px 0 var(--ink); background: var(--ember-glow); } }
+  .back:active { transform: translateY(4px); box-shadow: var(--bevel-in), 0 0 0 var(--ink); }
+  .tino { --s: min(78svh, 92vw, 720px); flex: none; width: var(--s); margin: auto 0 calc(var(--s) * -.16); aspect-ratio: 1; opacity: 0; transform: translateY(24px); transition: opacity .5s var(--out), transform .7s var(--out); }
+  .tino.on { opacity: 1; transform: none; }
+  .tino canvas { display: block; width: 100%; height: 100%; }
+  @media (prefers-reduced-motion: reduce) { .tino { transform: none; transition: opacity .3s; } }
 </style>

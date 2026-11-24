@@ -1,6 +1,6 @@
 ---
 import Base from "../layouts/Base.astro";
-import Header from "./Header.astro";
+import SiteHeader from "./SiteHeader.astro";
 import Footer from "./Footer.astro";
 import PageHead from "./PageHead.astro";
 import { APP_URL, copy, type Locale } from "../i18n";
@@ -17,7 +17,7 @@ const now = Date.now();
 const saveHref = (url: string) => `${APP_URL}/?add=${encodeURIComponent(url)}`;
 ---
 <Base lang={locale} page="resources" title={`${t.title} | criterio.design`} description={t.lead(total)}>
-  <Header locale={locale} page="resources" />
+  <SiteHeader locale={locale} page="resources" />
 
   <main class="res">
     <PageHead headline={t.headline} lead={t.lead(total)} />
