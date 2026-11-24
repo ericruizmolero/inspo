@@ -81,7 +81,7 @@ Importar no es una ruta: es un diálogo (`ImportDialog`) que se abre desde el me
 
 ## Web de marketing
 
-`criterio.design`, en `marketing-site/` (Astro estático). Cada página está en inglés en la raíz y en castellano bajo `/es/`, con `hreflang` y su entrada en el sitemap; la lista es `PAGES` en `marketing-site/src/i18n.ts`, que da también el pie (Recursos, Skills, Precios, Extensión, Privacidad, Términos).
+`criterio.design`, en `marketing-site/` (Astro estático). Cada página está en inglés en la raíz y en castellano bajo `/es/`, con `hreflang` y su entrada en el sitemap; la lista es `PAGES` en `marketing-site/src/i18n.ts`, que da también el pie (Precios, Privacidad, Términos; `marketing-site/src/components/Footer.astro`).
 
 | Ruta | Qué es |
 | --- | --- |
@@ -91,7 +91,7 @@ Importar no es una ruta: es un diálogo (`ImportDialog`) que se abre desde el me
 | `/skills/`, `/es/skills/` | Las skills para agentes por tema, con autor, qué hacen y el comando de instalar con Copiar; buscador y tema en la dirección (`?q=`, `?topic=`) |
 | `/pricing/`, `/es/pricing/` | Los cuatro planes (precio al mes y anual, en USD o EUR según el idioma), lo que incluye cada uno, una tabla con las cifras y "Empieza gratis" al login de la app |
 | `/extension/`, `/es/extension/` | Qué hace la extensión y cómo instalarla, con el zip de `app.criterio.design/extension/download` y el enlace a su privacidad |
-| `/privacy/`, `/terms/`, `/extension/privacy/` (y `/es/…`) | Política de privacidad, términos de uso y privacidad de la extensión (esta última enlazada desde `/extension/` y la Chrome Web Store, no desde el pie). El pie de estas páginas enlaza Precios, Extensión, Privacidad y Términos, no Recursos ni Skills, y todas llevan la tipografía de la portada (Geist Serif en titulares, Satoshi en texto) → [decisión](decisiones/2026-11-24-las-paginas-secundarias-de-la-web-llevan-la-tipografia-de-la-portada.md) |
+| `/privacy/`, `/terms/`, `/extension/privacy/` (y `/es/…`) | Política de privacidad, términos de uso y privacidad de la extensión (esta última enlazada desde `/extension/` y la Chrome Web Store, no desde el pie). El pie de estas páginas enlaza Precios, Privacidad y Términos, no Recursos, Skills ni Extensión (Eric, 24-11: "quita la extensión de aquí"), y todas llevan la tipografía de la portada (Geist Serif en titulares, Satoshi en texto) → [decisión](decisiones/2026-11-24-las-paginas-secundarias-de-la-web-llevan-la-tipografia-de-la-portada.md) |
 | `/sitemap.xml`, `/robots.txt` | El sitemap sale de `PAGES`; `robots.txt` lo nombra |
 
 → [legal y recursos](decisiones/2026-10-11-las-paginas-legales-y-los-recursos-viven-en-la-web-de-marketing.md), [skills, precios y extensión](decisiones/2026-10-11-las-skills-los-precios-y-la-extension-tienen-pagina-en-la-web-de-marketing.md)
