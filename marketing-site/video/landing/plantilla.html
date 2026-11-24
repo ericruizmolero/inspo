@@ -45,6 +45,8 @@ main { max-width: 1040px; margin-inline: auto; }
 .tile svg { display: block; width: 100%; height: 100%; overflow: visible; shape-rendering: crispEdges; } .tile path { fill: var(--ink); } .tile rect { fill: #F6A848; }
 
 .hero { display: flex; flex-direction: column; align-items: flex-start; }
+/* en escritorio el inicio va centrado: titular, tachado, entradilla y correo; la casilla, como en el cierre, a la izquierda bajo el campo (Eric, 24-11). En el móvil sigue a la izquierda */
+@media (min-width: 761px) { .hero { align-items: center; text-align: center; } .hero .sub { margin-inline: auto; } .hero .invite { align-items: center; } .hero .consent { align-self: flex-start; } }
 h1 { margin: var(--h1-m) 0 0; font: var(--h-w) calc(clamp(36px, 4.7vw, 66px) * var(--h-s))/1.05 var(--display); letter-spacing: var(--h-ls); text-wrap: balance; }
 h1 > span { display: block; margin-bottom: .14em; } h1 .slop span { display: inline; }
 .sub { max-width: 35em; margin: clamp(12px, 2svh, 18px) 0 0; color: var(--text-2); text-wrap: balance; }
