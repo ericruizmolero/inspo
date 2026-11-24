@@ -1,0 +1,136 @@
+---
+// Why Criterio exists, in a few lines that light up word by word as you scroll, with the things they talk about set among
+// the words. Its window (.mf-w, .mfz), the change to dark and what Tino says about each face are the template's
+// (video/landing/plantilla.html); here nothing changes height, or the page would turn dark in the wrong place
+import { LOCALES, type Locale } from "../i18n";
+import { homeCopy, type Mark } from "../home-copy";
+
+interface Props { locale: Locale }
+const { locale: shown } = Astro.props;
+/** What is drawn in each chip: its viewBox and its shapes */
+const ICON: Record<Mark, { box: string; art: string }> = {
+  time: { box: "0 0 24 24", art: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2.5"/>' },
+  mine: { box: "0 0 46 42", art: '<path class="ear ear-l" d="M8 2h4v1h-4zM8 3h4v1h-4zM8 4h6v1h-6zM8 5h6v1h-6zM6 6h10v1h-10zM6 7h10v1h-10zM6 8h12v1h-12zM6 9h12v1h-12zM6 10h12v1h-12zM6 11h12v1h-12zM6 12h12v1h-12zM6 13h12v1h-12zM6 14h12v1h-12z"/><path class="ear ear-r" d="M22 0h4v1h-4zM22 1h4v1h-4zM22 2h6v1h-6zM22 3h6v1h-6zM20 4h8v1h-8zM20 5h8v1h-8zM20 6h10v1h-10zM20 7h10v1h-10zM20 8h10v1h-10zM20 9h10v1h-10zM18 10h12v1h-12zM18 11h12v1h-12zM18 12h12v1h-12zM18 13h12v1h-12zM18 14h16v1h-16z"/><path d="M6 15h28v1h-28zM8 16h30v1h-30zM8 17h30v1h-30zM4 18h38v1h-38zM4 19h38v1h-38zM2 20h42v1h-42zM2 21h42v1h-42zM2 22h22v1h-22zM42 22h2v1h-2zM2 23h22v1h-22zM42 23h2v1h-2zM0 24h24v1h-24zM42 24h4v1h-4zM0 25h24v1h-24zM42 25h4v1h-4zM0 26h24v1h-24zM42 26h4v1h-4zM0 27h24v1h-24zM42 27h4v1h-4zM0 28h46v1h-46zM0 29h46v1h-46zM0 30h46v1h-46zM0 31h46v1h-46zM0 32h46v1h-46zM0 33h46v1h-46zM0 34h46v1h-46zM0 35h46v1h-46zM2 36h42v1h-42zM2 37h42v1h-42zM4 38h38v1h-38zM4 39h38v1h-38zM8 40h32v1h-32zM8 41h32v1h-32z"/>' },
+  forget: { box: "0 0 24 24", art: '<circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/>' },
+  hands: { box: "0 0 8 12", art: '<path d="M0 0h1v1h1v1h1v1h1v1h1v1h1v1h1v1h1v1H5v1h1v2H4V9H3v1H2v1H1v1H0z"/>' },
+};
+const REFS = ["vonder", "casamomo", "wabi"];
+const TEAM = [{ id: "alberto", name: "Alberto", x: "albertogalca" }, { id: "andoni", name: "Andoni", x: "AndoniMartt" }, { id: "eric", name: "Eric", x: "ericruizm" }];
+---
+<section class="mf" id="mf" aria-labelledby={`mf-t-${shown}`}>
+  <i class="mfz z3"></i><i class="mfz z2"></i><i class="mfz z1"></i>
+  <div class="mf-w">{LOCALES.map((locale) => <span class="mf-bar" data-locale={locale} hidden={locale !== shown}><i></i><i></i><i></i><b>{homeCopy[locale].manifesto.file}</b></span>)}</div>
+  <div class="mf-in all" id="mf-in">
+    {LOCALES.map((locale) => {
+      const t = homeCopy[locale].manifesto;
+      return (
+        <div class="hm-text" lang={locale} data-locale={locale} hidden={locale !== shown}>
+          <h2 class="sr" id={`mf-t-${locale}`}>{homeCopy[locale].sections.mf}</h2>
+          {t.lines.map((line) => (
+            <p>{line.map((x) => {
+              if (typeof x === "string") return x;
+              return <span class="hm-u">{
+                x.mark === "refs" ? <span class="hm-refs" role="img" aria-label={x.word}>{REFS.map((r) => <img src={`/assets/vault/refs/i-${r}.jpg`} alt="" width="320" height="200" loading="lazy" decoding="async" />)}</span>
+                : x.mark === "sign" ? <span class="hm-sign">{x.word}<svg viewBox="0 0 220 26" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="M3 12C52 5 122 2 217 6C168 8 96 12 46 18C92 15 150 15 188 20" /></svg></span>
+                : x.mark === "big" || x.mark === "version" || x.mark === "smile" ? <span class={`hm-${x.mark}`}>{x.word}</span>
+                : x.mark === "hover" ? <span class="hm-hover">{x.word}<svg viewBox={ICON.hands.box} aria-hidden="true" set:html={ICON.hands.art} /></span>
+                : x.mark === "swap" ? <span class="hm-swap" data-from={x.from}><span>{x.word}</span><i aria-hidden="true">Alberto</i></span>
+                : <span class:list={["hm-chip", `hm-${x.mark}`]}><svg viewBox={ICON[x.mark].box} aria-hidden="true" set:html={ICON[x.mark].art} />{x.word}</span>
+              }{x.after}</span>;
+            })}</p>
+          ))}
+        </div>
+      );
+    })}
+    <div class="tm-r">{TEAM.map((p) => (
+      <figure><a class="tm-x" href={`https://x.com/${p.x}`} target="_blank" rel="noopener" aria-label={`${p.name} (X, @${p.x})`}></a><span><i></i></span><div><img class="g" src={`/assets/vault/equipo/${p.id}.jpg`} alt="" loading="lazy" /><img class="c" src={`/assets/vault/equipo/${p.id}.jpg`} alt={p.name} loading="lazy" /><i class="ln"></i></div><figcaption>{p.name}</figcaption></figure>
+    ))}</div>
+  </div>
+</section>
+
+<script>
+  const root = document.getElementById("mf-in")!;
+  const still = matchMedia("(prefers-reduced-motion: reduce)");
+  // every word is a unit, and so is every thing set among them
+  const blocks = [...root.querySelectorAll<HTMLElement>(".hm-text")].map((el) => {
+    el.querySelectorAll("p").forEach((p) => [...p.childNodes].forEach((n) => {
+      if (n.nodeType !== Node.TEXT_NODE) return;
+      n.replaceWith(...n.textContent!.split(/(\s+)/).filter(Boolean).map((w) => {
+        if (!w.trim()) return document.createTextNode(w);
+        const s = document.createElement("span");
+        s.className = "hm-w";
+        s.textContent = w;
+        return s;
+      }));
+    }));
+    return { el, units: [...el.querySelectorAll<HTMLElement>("p > *")] };
+  });
+  root.classList.add("hm-js");
+  const SOFT = 5;
+  let last = -1, raf = 0;
+  const paint = () => {
+    raf = 0;
+    const b = blocks.find((x) => x.el.offsetHeight);
+    if (!b) return;
+    const r = b.el.getBoundingClientRect(), vh = innerHeight;
+    const at = still.matches ? 1 : Math.max(0, Math.min(1, (vh * .82 - r.top) / (r.height + vh * .06)));
+    if (at === last) return;
+    last = at;
+    const n = at * (b.units.length + SOFT);
+    b.units.forEach((u, i) => {
+      const k = Math.max(0, Math.min(1, (n - i) / SOFT)).toFixed(2);
+      if (u.dataset.k === k) return;
+      u.dataset.k = k;
+      u.style.opacity = String(.2 + .8 * Number(k));
+      u.classList.toggle("hm-on", Number(k) > .6);
+    });
+    root.classList.toggle("all", at > .92);
+  };
+  const ask = () => { raf ||= requestAnimationFrame(paint); };
+  addEventListener("scroll", ask, { passive: true });
+  addEventListener("resize", () => { last = -1; ask(); });
+  paint();
+</script>
+
+<style>
+  .mf-bar[hidden], .hm-text[hidden] { display: none; }
+  .hm-text { text-align: center; }
+  p { margin: 0; color: var(--t-hi); font: 400 clamp(24px, 3.5vw, 38px)/1.28 var(--display); letter-spacing: var(--h-ls); text-wrap: balance; }
+  p + p { margin-top: .74em; }
+  .hm-u { white-space: nowrap; }
+  .hm-chip { display: inline-flex; align-items: center; gap: .26em; margin: 0 .04em; padding: .02em .36em .06em .28em; border-radius: .3em; color: #1B1B18; line-height: 1.1; white-space: nowrap; }
+  .hm-chip svg { flex: none; width: auto; height: .62em; overflow: visible; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+  .hm-time { background: #FBF1C7; }
+  .hm-mine { background: #E8892B; }
+  .hm-forget { background: #D3CFC5; text-decoration: line-through .07em; }
+  .hm-hands { background: #B1B9F8; }
+  .hm-mine svg, .hm-hands svg { fill: currentColor; stroke: none; shape-rendering: crispEdges; }
+  .hm-refs { display: inline-flex; vertical-align: -.16em; margin: 0 .1em; }
+  .hm-refs img { width: 1.18em; height: .86em; object-fit: cover; object-position: 50% 0; border-radius: .12em; box-shadow: 0 0 0 1.5px #1B1B18; transition: transform .5s var(--out); }
+  .hm-refs img + img { margin-left: -.42em; }
+  .hm-on .hm-refs img:nth-child(1) { transform: rotate(-7deg); }
+  .hm-on .hm-refs img:nth-child(2) { transform: translateY(-.08em) rotate(3deg); }
+  .hm-on .hm-refs img:nth-child(3) { transform: rotate(9deg); }
+  .hm-big { font-size: 1.36em; line-height: .8; letter-spacing: -.03em; }
+  .hm-hover { border-radius: .16em; padding-inline: .08em; transition: background-color .15s, color .15s; }
+  @media (hover: hover) and (pointer: fine) { .hm-hover:hover { background: #5B8CFF; color: #FFF; } }
+  .hm-hover svg { width: .34em; height: .5em; margin-left: .06em; vertical-align: -.08em; fill: currentColor; shape-rendering: crispEdges; }
+  /* a teammate comes in and changes the number; both words keep the same place, so nothing moves */
+  .hm-swap { position: relative; display: inline-grid; justify-items: center; color: #7DA4FF; }
+  .hm-swap > span, .hm-swap::before { grid-area: 1 / 1; transition: opacity .2s .35s; }
+  .hm-swap::before { content: attr(data-from); color: var(--t-hi); opacity: 0; }
+  .hm-swap i { position: absolute; left: 100%; top: 88%; padding: .16em .4em; border-radius: 0 .3em .3em .3em; background: #5B8CFF; color: #FFF; font: 600 14px/1.25 var(--sans); letter-spacing: 0; opacity: 0; transition: opacity .2s .15s; }
+  :global(.hm-js) .hm-u:not(.hm-on) .hm-swap > span { opacity: 0; }
+  :global(.hm-js) .hm-u:not(.hm-on) .hm-swap::before { opacity: 1; }
+  .hm-on .hm-swap i { opacity: 1; }
+  .hm-version { padding: .06em .34em .1em; border-radius: .3em; background: #D3CFC5; color: #1B1B18; font: 600 .56em/1.2 var(--sans); letter-spacing: 0; vertical-align: .18em; }
+  .hm-smile { display: inline-block; margin: 0 .14em; color: #F6A848; font: 500 .9em/1 var(--sans); letter-spacing: -.06em; transition: rotate .6s var(--out) .25s; }
+  .hm-on .hm-smile { rotate: 90deg; }
+  /* signed with the pen that strikes out AI slop: one quick stroke, back and forth */
+  .hm-sign { position: relative; display: inline-block; }
+  .hm-sign svg { position: absolute; left: -3%; top: 92%; width: 106%; height: .34em; overflow: visible; fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+  .hm-sign path { vector-effect: non-scaling-stroke; stroke-dasharray: 1 1; stroke-dashoffset: 1; transition: stroke-dashoffset .6s var(--out) .1s; }
+  .hm-on .hm-sign path { stroke-dashoffset: 0; }
+  @media (scripting: none) { .hm-sign path { stroke-dashoffset: 0; } }
+  @media (prefers-reduced-motion: reduce) { .hm-refs img, .hm-sign path, .hm-smile, .hm-swap * { transition: none; } }
+</style>

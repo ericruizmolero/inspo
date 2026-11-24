@@ -19,6 +19,7 @@ marketing-site/video/
   landing/
     plantilla.html     LA FUENTE de la portada: marcado, estilos, textos y la demo
     construir.py       plantilla.html → src/pages/index.astro y src/pages/es/index.astro
+    textos.cjs         los textos de COPY sin JavaScript, para que construir.py los escriba en el HTML
     traer-vault.py     trae una pieza del Vault a la portada
     revisar.cjs        revisión completa en Chrome y WebKit, escritorio y móvil
 ```
@@ -33,7 +34,8 @@ Lo que no puede escribirse en la plantilla sin desincronizarse de la app va como
 - `%%WAITLIST%%`, el `action` de los dos formularios: `POST /api/waitlist` de la app (`WAITLIST_URL` en `src/i18n.ts`). El formulario manda el correo con el consentimiento y el campo trampa, y dice «Ya estás en la lista» sin salir de la página.
 - `%%LOGIN%%`, la tecla «Empieza gratis» de cada formulario y el enlace «Entrar» de la cabecera: el login de la app (`copy.<idioma>.login.href`).
 - `%%SIGNUP_MODE%%`, antes de `</body>`: `src/scripts/signup-mode.ts`, empaquetado por Astro. Si `GET /api/access/mode` de la app dice `open`, pone `.signup-open` en `<html>` y cada formulario es solo su «Empieza gratis».
-- `%%PRICING%%`, entre la ventana del producto y criterio.md: los planes, `src/components/HomePlans.astro`, que lee `src/plans.ts` (los mismos de `/pricing/` y de la app; un test avisa si se separan). Los precios y lo que incluye cada plan no se escriben en la plantilla. Sus estilos están en el componente y usan los tokens de la plantilla (`--paper-l`, `--ink`, `--display`, `--r`…): si cambian ahí, cambian también en los planes. Sus clases son `pricing*` y `plan-*`; la plantilla no debe usar esos nombres (ya tiene un `.plans` en la demo).
+- `%%HEADER%%`, `%%AFTER_WINDOW%%`, `%%MANIFESTO%%` y `%%QUESTIONS%%`: las secciones que son componentes (`SiteHeader`, `HomeCompare`, `HomeBento`, `HomeManifesto`, `HomeQuestions`), con su texto en `src/home-copy.ts` y sus clases con prefijo, porque los nombres cortos de la plantilla son globales.
+- `%%PRICING%%`, después de criterio.md: los planes, `src/components/HomePlans.astro`, que lee `src/plans.ts` (los mismos de la app; un test avisa si se separan). Los precios y lo que incluye cada plan no se escriben en la plantilla. Sus estilos están en el componente y usan los tokens de la plantilla (`--paper-l`, `--ink`, `--display`, `--r`…): si cambian ahí, cambian también en los planes. Sus clases son `pricing*` y `plan-*`; la plantilla no debe usar esos nombres (ya tiene un `.plans` en la demo).
 - `%%PRICING_NAV%%`, el enlace «Precios» de la cabecera (`#pricing`): el nombre de la página en `PAGES` de `src/i18n.ts`.
 - `%%LOGIN_NAV%%`, el texto del enlace «Entrar» de la cabecera, en cada idioma: `copy.<idioma>.login.label` de `src/i18n.ts`.
 - Los planes y el enlace «Precios» van en la página **en los dos idiomas**, cada uno con su `data-locale` y el que no es el de la página con `hidden`. Como `?lang=` cambia los textos al cargar, el script de la plantilla enseña también el `data-locale` de ese idioma y oculta el resto (en la misma línea que rellena los `data-t`). Algo nuevo que venga de la web y dependa del idioma se pinta igual, con `data-locale`.
@@ -49,7 +51,7 @@ Lo que la portada usa y ya está en `marketing-site/public/`:
 - Google Chrome. Si no está en `/Applications`, pasar su ruta en `CHROME`.
 - `playwright-core`: `npm i --no-save playwright-core` en la raíz. Para la revisión en WebKit, además `npx playwright-core install webkit`.
 - Hyperframes, que hace el render: se descarga solo con `npx hyperframes@0.9.37`. Usar esa versión.
-- Python 3, sin paquetes, para `construir.py` y `traer-vault.py`. Solo `compas.py` necesita `uv` (`uv run --with numpy --with scipy python compas.py …`).
+- Python 3, sin paquetes, para `construir.py` (que llama a Node para `textos.cjs`) y `traer-vault.py`. Solo `compas.py` necesita `uv` (`uv run --with numpy --with scipy python compas.py …`).
 - **Solo para cambiar la voz:** la clave de ElevenLabs del proyecto (ver «La clave de ElevenLabs», más abajo).
 
 ## La clave de ElevenLabs
@@ -67,7 +69,7 @@ Solo hace falta para generar voz nueva (apartado 3). Regrabar, remontar, cambiar
 
 ## 1. Cambiar la portada
 
-1. Editar `landing/plantilla.html`. Los textos están en el objeto `COPY` (`es` y `en`): cualquier texto se cambia en los dos idiomas.
+1. Editar `landing/plantilla.html`. Los textos están en el objeto `COPY` (`es` y `en`): cualquier texto se cambia en los dos idiomas. Cada uno va en el marcado con `data-t="clave"` (o `data-t-href`, `data-t-placeholder`, `data-t-aria-label`) y sale escrito en el HTML; nunca se pone un texto solo desde el script.
 2. `python3 marketing-site/video/landing/construir.py`
 3. `npm run dev:marketing` y mirar `http://localhost:4321/?landing` y `http://localhost:4321/es/?landing`.
 4. `node marketing-site/video/landing/revisar.cjs http://localhost:4321/ revision largo`. Tiene que acabar en `TODO BIEN`.

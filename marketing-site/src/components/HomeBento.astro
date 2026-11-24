@@ -1,0 +1,137 @@
+---
+// What the window does not show: searching the way you talk, the agent reading the file, sharing with a client and going
+// back to a version. Brought from /landing/ (its #porque), with the references the home's board shows
+import { LOCALES, type Locale } from "../i18n";
+import { homeCopy } from "../home-copy";
+
+interface Props { locale: Locale }
+const { locale: shown } = Astro.props;
+const ref = (name: string) => `/assets/vault/refs/i-${name}.jpg`;
+const FOUND = [{ name: "maisa", hit: true }, { name: "fal", hit: false }, { name: "handhold", hit: true }, { name: "refactory", hit: false }];
+---
+<section id="archivo">
+  {LOCALES.map((locale) => {
+    const t = homeCopy[locale].bento;
+    return (
+      <div lang={locale} data-locale={locale} hidden={locale !== shown}>
+        <h2><span>{t.headline[0]}</span> <span>{t.headline[1]}</span></h2>
+        <div class="hb-grid">
+          <article class="hb-search">
+            <h3>{t.search.title}</h3>
+            <div class="hb-q" aria-hidden="true"><svg viewBox="0 0 20 20"><circle cx="9" cy="9" r="5" /><path d="m13 13 3.5 3.5" /></svg><span>{t.search.query}</span></div>
+            <div class="hb-found" aria-hidden="true">{FOUND.map((f) => <img class:list={{ "hb-hit": f.hit }} src={ref(f.name)} alt="" width="320" height="200" loading="lazy" decoding="async" />)}</div>
+          </article>
+          <article class="hb-agent">
+            <h3>{t.agent.title}</h3>
+            <div class="hb-term" data-ui aria-hidden="true">
+              <p class="hb-u"><span>&gt; /criterio:setup</span></p>
+              <svg class="hb-px" viewBox="0 0 22 20" shape-rendering="crispEdges"><g fill="#B1B9F8"><rect x="11" y="0" width="1" height="1"/><rect x="4" y="1" width="1" height="1"/><rect x="11" y="1" width="2" height="1"/><rect x="4" y="2" width="2" height="1"/><rect x="10" y="2" width="3" height="1"/><rect x="3" y="3" width="4" height="1"/><rect x="10" y="3" width="4" height="1"/><rect x="3" y="4" width="5" height="1"/><rect x="10" y="4" width="4" height="1"/><rect x="3" y="5" width="5" height="1"/><rect x="9" y="5" width="5" height="1"/><rect x="3" y="6" width="5" height="1"/><rect x="9" y="6" width="5" height="1"/><rect x="4" y="7" width="12" height="1"/><rect x="4" y="8" width="14" height="1"/><rect x="2" y="9" width="18" height="1"/><rect x="1" y="10" width="20" height="1"/><rect x="1" y="11" width="11" height="1"/><rect x="20" y="11" width="1" height="1"/><rect x="0" y="12" width="12" height="1"/><rect x="20" y="12" width="2" height="1"/><rect x="0" y="13" width="22" height="1"/><rect x="0" y="14" width="22" height="1"/><rect x="0" y="15" width="22" height="1"/><rect x="0" y="16" width="22" height="1"/><rect x="1" y="17" width="20" height="1"/><rect x="2" y="18" width="18" height="1"/><rect x="4" y="19" width="15" height="1"/></g><g class="hb-px-v" fill="#191B28"><rect x="12" y="11" width="8" height="1"/><rect x="12" y="12" width="8" height="1"/></g></svg>
+              {t.agent.lines.map((l, i) => (i === 0 ? <p class="hb-m">{l}</p> : <p><i>●</i>{l}</p>))}
+              <p class="hb-o"><i>●</i>{t.agent.ask}</p>
+              <p class="hb-m">{t.agent.done}</p>
+            </div>
+          </article>
+          <article class="hb-share">
+            <h3>{t.share.title}</h3>
+            <p>{t.share.sub}</p>
+            <div class="hb-chat" data-ui aria-hidden="true">
+              <div class="hb-who"><i>M</i><span><b>{t.share.client}</b><em>{t.share.online}</em></span></div>
+              <div class="hb-talk">
+                <div class="hb-mine"><span class="hb-card"><img src={ref("handhold")} alt="" width="96" height="80" loading="lazy" decoding="async" /><span><b>Criterio</b><small>criterio.design</small></span></span>{t.share.out}<time>10:42 <u>✓✓</u></time></div>
+                <div class="hb-theirs">{t.share.in}<time>10:51</time></div>
+              </div>
+            </div>
+          </article>
+          <article class="hb-versions">
+            <h3>{t.versions.title}</h3>
+            <div class="hb-list" data-ui aria-hidden="true">
+              <p>{t.versions.board}</p>
+              {t.versions.list.map((v, i) => <div class:list={{ "hb-on": i === 0 }}>{v.face ? <img src={`/assets/vault/equipo/${v.face}.jpg`} alt="" width="24" height="24" loading="lazy" /> : <i><svg viewBox="0 0 20 20"><path d="M3.5 10a6.5 6.5 0 1 0 1.9-4.6" /><path d="M3.5 3.5v3h3" /><path d="M10 6.5V10l2.5 1.5" /></svg></i>}<span><b>{v.who}</b><em>{v.what}</em></span><span class="hb-tag"><b>{v.tag}</b><em>{v.when}</em></span></div>)}
+            </div>
+          </article>
+        </div>
+      </div>
+    );
+  })}
+</section>
+
+<script>
+  // its loops only run while it is on screen
+  const bento = document.getElementById("archivo")!;
+  new IntersectionObserver(([e]) => bento.classList.toggle("hb-off", !e.isIntersecting)).observe(bento);
+</script>
+
+<style>
+  section.hb-off :global(*) { animation-play-state: paused !important; }
+  /* wider than the page's column, so the four tiles breathe */
+  section { --w: min(1240px, 100vw - 2 * var(--gut)); width: max(100%, var(--w)); margin: clamp(104px, 18svh, 176px) 0 0 min(0px, (100% - var(--w)) / 2); scroll-margin-top: 72px; }
+  h2 { margin: 0; font: var(--h-w) clamp(31px, 4.4vw, 48px)/1.08 var(--display); letter-spacing: var(--h-ls); text-wrap: balance; }
+  h2 span { display: block; }
+  h2 span + span { color: var(--h-2); }
+  h3 { margin: 0; font: 400 clamp(23px, 2.2vw, 31px)/1.1 var(--display); letter-spacing: var(--h-ls); text-wrap: balance; }
+  .hb-grid { display: grid; grid-template-columns: repeat(24, minmax(0, 1fr)); grid-auto-rows: minmax(300px, auto); gap: 16px; margin-top: clamp(20px, 2.6svh, 28px); }
+  article { position: relative; display: flex; flex-direction: column; min-width: 0; padding: 26px 28px; overflow: hidden; border-radius: 14px; background: #F3F2EE; color: #1B1B18; }
+  article > p { margin: 4px 0 0; font-size: 15px; }
+  .hb-search { grid-column: span 14; }
+  .hb-agent { grid-column: span 10; grid-row: span 2; background: #191B28; color: #E9EAFB; }
+  .hb-agent h3 { color: #F4F4FE; font-size: clamp(25px, 2.75vw, 40px); }
+  .hb-share { grid-column: span 7; background: #FBF1C7; }
+  .hb-versions { grid-column: span 7; background: #E8892B; }
+
+  .hb-q { display: flex; flex: none; align-items: center; gap: 8px; height: 42px; margin-top: 20px; padding: 0 14px; border-radius: 10px; background: #FFF; font-size: 15px; }
+  .hb-q svg { flex: none; width: 18px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; }
+  .hb-q span { overflow: hidden; padding-right: 1px; border-right: 2px solid #E8892B; white-space: nowrap; animation: hb-type 13s infinite; }
+  @keyframes hb-type { 0% { clip-path: inset(0 100% 0 0); animation-timing-function: steps(26); } 18%, 92% { clip-path: inset(0); } 97%, 100% { clip-path: inset(0 100% 0 0); } }
+  .hb-found { display: grid; flex: 1; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; align-content: center; align-items: center; margin-top: 20px; }
+  .hb-found img { display: block; width: 100%; height: auto; aspect-ratio: 8 / 5; object-fit: cover; object-position: 50% 0; border-radius: 7px; animation: hb-miss 13s infinite; }
+  .hb-found .hb-hit { outline: 2.5px solid transparent; animation-name: hb-hit; }
+  @keyframes hb-miss { 0%, 20%, 96%, 100% { opacity: 1; } 28%, 88% { opacity: .14; } }
+  @keyframes hb-hit { 0%, 20%, 96%, 100% { outline-color: transparent; transform: none; } 28%, 88% { outline-color: #E8892B; transform: translateY(-3px); } }
+
+  .hb-term { display: flex; flex: 1; flex-direction: column; justify-content: flex-end; gap: 10px; margin-top: 18px; font: 14.5px/1.35 var(--mono); }
+  .hb-term p { margin: 0; color: #C4C7F4; animation: hb-line 12s infinite both; }
+  .hb-term p i { margin-right: 9px; color: #E9EAFB; font-size: .8em; font-style: normal; }
+  .hb-term .hb-u { margin: 0 -28px; padding: 5px 28px; background: #373737; color: #F4F4FE; animation: none; }
+  .hb-u span { display: inline-block; animation: hb-cmd 12s infinite both; }
+  .hb-term .hb-m { color: #A3A5B8; }
+  .hb-term .hb-o, .hb-term .hb-o i { color: #F6A848; }
+  .hb-term p:nth-of-type(2) { animation-delay: .8s; } .hb-term p:nth-of-type(3) { animation-delay: 1.4s; } .hb-term p:nth-of-type(4) { animation-delay: 1.8s; } .hb-term p:nth-of-type(5) { animation-delay: 2.2s; } .hb-term p:nth-of-type(6) { animation-delay: 2.6s; } .hb-term p:nth-of-type(7) { animation-delay: 3.2s; }
+  @keyframes hb-line { 0% { opacity: 0; } 2%, 88% { opacity: 1; } 92%, 100% { opacity: 0; } }
+  @keyframes hb-cmd { 0% { clip-path: inset(0 100% 0 0); animation-timing-function: steps(16); } 6%, 92% { clip-path: inset(0); } 96%, 100% { clip-path: inset(0 100% 0 0); } }
+  /* Tino in pixels breathes and blinks while the agent reads */
+  .hb-px { flex: none; width: 120px; margin: 8px 0; overflow: visible; animation: hb-bob 2.4s steps(2) infinite; }
+  .hb-px :global(.hb-px-v) { transform-box: fill-box; transform-origin: 50% 50%; animation: hb-blink 6s steps(1) infinite; }
+  @keyframes hb-bob { 50% { transform: translateY(5%); } }
+  @keyframes hb-blink { 0%, 88%, 100% { transform: none; } 90%, 94% { transform: scaleY(.5); } }
+
+  .hb-chat { margin-top: 18px; overflow: hidden; border-radius: 14px; background: #EFEAE2; color: #111B21; font: 13px/1.35 system-ui, sans-serif; }
+  .hb-who { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: #F0F2F5; }
+  .hb-who i { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: #DFE5E7; color: #54656F; font: 600 12px/1 system-ui, sans-serif; }
+  .hb-who span, .hb-card > span { display: grid; gap: 1px; }
+  .hb-who em { color: #54656F; font-style: normal; }
+  .hb-talk { display: grid; gap: 6px; padding: 10px; }
+  .hb-mine, .hb-theirs { max-width: 86%; padding: 5px 8px 7px; border-radius: 8px; }
+  .hb-mine { justify-self: end; background: #D9FDD3; }
+  .hb-theirs { justify-self: start; background: #FFF; }
+  .hb-card { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+  .hb-card img { width: 48px; height: 40px; border-radius: 6px; object-fit: cover; object-position: 50% 0; }
+  .hb-card small { color: #54656F; font-size: 12px; }
+  time { float: right; margin: 5px 0 -4px 10px; color: #54656F; font-size: 11.5px; }
+  time u { margin-left: 2px; color: #027EB5; letter-spacing: -.2em; text-decoration: none; }
+
+  .hb-list { margin-top: 18px; padding: 4px; border: 1px solid #4A4A44; border-radius: 10px; background: #1E1E1C; color: #EDE6D6; font-size: 14px; line-height: 1.3; box-shadow: 0 16px 40px rgb(0 0 0 / .35); }
+  .hb-list > p { margin: 0; padding: 8px 10px 6px; font-size: 13px; font-weight: 600; }
+  .hb-list > div { display: flex; align-items: center; gap: 9px; padding: 8px; border-radius: 10px; }
+  .hb-list .hb-on { background: #32302C; }
+  .hb-list img, .hb-list div > i { flex: none; width: 24px; height: 24px; border-radius: 50%; object-fit: cover; }
+  .hb-list div > i { display: grid; place-items: center; color: #A49E92; }
+  .hb-list svg { width: 18px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+  .hb-list span { display: grid; gap: 2px; min-width: 0; }
+  .hb-list b { font-weight: 600; }
+  .hb-list em { color: #A49E92; font-size: 12.5px; font-style: normal; }
+  .hb-list .hb-tag { margin-left: auto; justify-items: end; white-space: nowrap; }
+
+  @media (max-width: 1080px) { .hb-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: auto; } .hb-search, .hb-agent { grid-column: 1 / -1; } .hb-share, .hb-versions { grid-column: auto; } }
+  @media (max-width: 700px) { .hb-grid { grid-template-columns: minmax(0, 1fr); } article { padding: 22px 20px; } .hb-found { grid-template-columns: repeat(2, minmax(0, 1fr)); } .hb-term .hb-u { margin-inline: -20px; padding-inline: 20px; } .hb-px { width: 96px; } }
+  @media (prefers-reduced-motion: reduce) { .hb-q span, .hb-found img, .hb-term p, .hb-u span, .hb-px, .hb-px :global(.hb-px-v) { animation: none; } .hb-found .hb-hit { outline-color: #E8892B; } .hb-found img:not(.hb-hit) { opacity: .3; } }
+</style>

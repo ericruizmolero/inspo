@@ -1,0 +1,92 @@
+---
+// The questions, after the plans, as in /landing/: you ask Tino and he answers with the face that suits it. Tino himself
+// is the page's (video/landing/plantilla.html): he comes to .hq-tino while it shows and grows from there into the close.
+// Without JavaScript every answer reads under its question. With it, every answer keeps its place in the balloon, so
+// choosing one never changes the height (nothing from criterio.md down may: it would move the light and dark change)
+import { LOCALES, type Locale } from "../i18n";
+import { homeCopy } from "../home-copy";
+
+interface Props { locale: Locale }
+const { locale: shown } = Astro.props;
+---
+<section id="preguntas">
+  {LOCALES.map((locale) => {
+    const t = homeCopy[locale].ask;
+    return (
+      <div class="hq-ask" lang={locale} data-locale={locale} hidden={locale !== shown}>
+        <div>
+          <h2><span>{t.headline}</span> <span>{t.sub}</span></h2>
+          <div class="hq-keys" role="group" aria-label={t.label}><p>{t.label}</p>{t.list.map((x) => <button type="button" aria-pressed="false" data-face={x.face}>{x.q}</button>)}</div>
+        </div>
+        <div>
+          <div class="hq-say">
+            <div class="hq-open hq-on"><h3>{t.open.q}</h3><p>{t.open.a}</p></div>
+            {t.list.map((x) => <div><h3>{x.q}</h3><p>{x.a}</p></div>)}
+          </div>
+          <p class="sr" aria-live="polite"></p>
+          <span class="hq-tino" aria-hidden="true"></span>
+        </div>
+      </div>
+    );
+  })}
+</section>
+
+<script>
+  const still = matchMedia("(prefers-reduced-motion: reduce)");
+  document.querySelectorAll<HTMLElement>("#preguntas .hq-ask").forEach((ask) => {
+    const keys = [...ask.querySelectorAll<HTMLButtonElement>("button")], says = [...ask.querySelectorAll<HTMLElement>(".hq-say > div")], said = ask.querySelector<HTMLElement>("[aria-live]")!;
+    let typing = 0;
+    ask.classList.add("hq-live");
+    const show = (i: number) => {
+      keys.forEach((k, j) => k.setAttribute("aria-pressed", String(j === i)));
+      says.forEach((s, j) => s.classList.toggle("hq-on", j === i + 1));
+      // on a phone the answer may be below the fold
+      const say = ask.querySelector<HTMLElement>(".hq-say")!, under = say.getBoundingClientRect().bottom + 24 - innerHeight;
+      if (under > 0) scrollBy({ top: under, behavior: still.matches ? "instant" : "smooth" });
+      const p = says[i + 1].querySelector("p")!, text = p.textContent!;
+      said.textContent = `${keys[i].textContent} ${text}`;
+      dispatchEvent(new CustomEvent("tino:ask", { detail: keys[i].dataset.face }));
+      clearTimeout(typing);
+      if (still.matches) return;
+      // the rest of the answer waits in its place, unseen, so the lines never move while he writes
+      const step = Math.min(18, 900 / text.length);
+      let n = 0;
+      const rest = document.createElement("span");
+      rest.style.visibility = "hidden";
+      const write = () => { n += 1; rest.textContent = text.slice(n); p.replaceChildren(text.slice(0, n), rest); if (n < text.length) typing = window.setTimeout(write, step); };
+      says.forEach((s) => { const q = s.querySelector("p")!; if (q !== p) q.textContent = q.textContent; });
+      write();
+    };
+    keys.forEach((key, i) => key.addEventListener("click", () => show(i)));
+  });
+</script>
+
+<style>
+  section { margin: 0 0 clamp(170px, 27svh, 300px); scroll-margin-top: 72px; color: var(--ink); transition: --ink var(--ti), --paper-l var(--ts), --text-2 var(--ti); }
+  :global(html.dark) section { --ink: #F1EEE5; --paper-l: #161512; --text-2: #A29E93; }
+  .hq-ask { display: grid; gap: 32px; }
+  .hq-ask[hidden] { display: none; }
+  h2 { margin: 0; font: var(--h-w) clamp(31px, 4.4vw, 48px)/1.08 var(--display); letter-spacing: var(--h-ls); }
+  h2 span { display: block; }
+  h2 span + span { color: var(--h-2); }
+  .hq-keys { display: none; flex-wrap: wrap; gap: 8px; margin-top: clamp(30px, 5svh, 45px); }
+  .hq-keys p { flex-basis: 100%; margin: 0; font-size: 15px; font-weight: 600; }
+  button { margin: 0 0 4px; padding: 9px 14px; border: 1.5px solid #1B1B18; border-radius: 10px; background: #F6F1E6; color: #1B1B18; box-shadow: var(--bevel), 0 3px 0 #1B1B18; font: 500 15px/1.2 var(--sans); text-align: left; cursor: pointer; transition: transform .09s steps(2), box-shadow .09s steps(2), background-color .12s; }
+  @media (hover: hover) and (pointer: fine) { button:hover { transform: translateY(2px); box-shadow: var(--bevel-in), 0 1px 0 #1B1B18; background: #FBF1C7; } }
+  button[aria-pressed="true"] { transform: translateY(3px); box-shadow: var(--bevel-in), 0 0 0 #1B1B18; background: #FBF1C7; }
+  button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  @media (pointer: coarse) { button { min-height: 44px; } }
+  .hq-say { display: grid; gap: 22px; }
+  .hq-open, .hq-tino { display: none; }
+  h3 { margin: 0; font: 400 clamp(23px, 2vw, 28px)/1.2 var(--display); letter-spacing: var(--h-ls); text-wrap: balance; }
+  .hq-say p { margin: 6px 0 0; font-size: 16px; line-height: 1.45; text-wrap: pretty; }
+  .hq-live .hq-open { display: block; }
+  .hq-live .hq-keys { display: flex; }
+  .hq-live .hq-say { position: relative; gap: 0; padding: 16px 18px 18px; border: 1.5px solid #1B1B18; border-radius: 14px; background: #FBF1C7; color: #1B1B18; box-shadow: var(--bevel); }
+  .hq-live .hq-say::after { content: ""; position: absolute; left: 50%; bottom: -8px; width: 14px; height: 14px; translate: -50% 0; rotate: 45deg; border: solid #1B1B18; border-width: 0 1.5px 1.5px 0; background: #FBF1C7; }
+  .hq-live .hq-say > div { grid-area: 1 / 1; visibility: hidden; }
+  .hq-live .hq-say > .hq-on { visibility: visible; }
+  /* where Tino stands: his picture leaves air above the ears, so the place goes up under the balloon */
+  .hq-live .hq-tino { --s: clamp(190px, 20vw, 250px); display: block; width: var(--s); margin: calc(var(--s) * -.2) auto calc(var(--s) * -.06); aspect-ratio: 1; }
+  @media (min-width: 900px) { .hq-ask { grid-template-columns: minmax(0, 6fr) minmax(0, 5fr); align-items: center; gap: clamp(48px, 7vw, 96px); } }
+</style>
