@@ -1,7 +1,7 @@
 ---
 title: Hasta el lanzamiento, la portada no lleva cabecera, ni Precios ni Entrar ni el Tino en píxeles
 date: 2026-11-23
-status: vigente
+status: sustituida
 kind: producto
 supersedes: Sin sesión, app.criterio.design es el login, y la portada de criterio.design lleva Entrar (2026-11-22), solo en lo de la cabecera
 ---

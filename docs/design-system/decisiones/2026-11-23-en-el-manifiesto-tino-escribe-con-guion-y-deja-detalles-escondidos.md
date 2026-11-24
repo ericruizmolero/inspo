@@ -1,7 +1,7 @@
 ---
 title: En el manifiesto Tino escribe con guion y deja detalles escondidos
 date: 2026-11-23
-status: vigente
+status: sustituida
 kind: diseño
 ---
 **Contexto.** El manifiesto de la portada (criterio.md, sección `#mf`) se escribía letra a letra con Tino de cursor, pero se leía plano. Eric lo comparó con el manifiesto de wabi.ai, que mete dibujitos dentro del propio texto, y con el de human-md.ai, cuyas ideas quería que resonaran sin copiarlas.

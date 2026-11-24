@@ -1,0 +1,25 @@
+---
+title: La portada lleva el logo con el menú, el bento y las preguntas de /landing/, y el antes y el después se comparan arrastrando
+date: 2026-11-24
+status: vigente
+kind: diseño
+supersedes: Hasta el lanzamiento, la portada no lleva cabecera (2026-11-23), salvo en que sigue sin ofrecer Entrar
+---
+**Contexto.** La portada no llevaba cabecera desde el 23-11 y la landing completa, aparcada en `/landing/`, tenía piezas que explican lo que la portada solo enseña. El antes y el después (`.brief`) eran dos capturas, una al lado de otra.
+
+**Decisión.** Cuatro componentes en `marketing-site/src/components/`, con su texto en `src/home-copy.ts` y sus clases con prefijo (la plantilla usa nombres cortos globales: `.menu`, `.bar`, `.chat`, `.open`):
+- `SiteHeader` (`hh-`, nació como `HomeHeader`): Tino en píxeles con "criterio", que se va con el scroll, y la tecla Menú, fija, de la que se abre el panel. Dentro, las secciones de la página, el vídeo (abre el mismo de la ventana), Privacidad, Términos, el otro idioma y Apuntarme a la lista. Entrar solo sale con el registro abierto (`html.signup-open`). Los enlaces a criterio-landing.vercel.app y las etiquetas en mono y mayúsculas de `/landing/` no se traen.
+- `HomeCompare` (`hc-`): las dos webs de Plomo superpuestas. Se arrastra en cualquier punto; con teclado, las flechas (`input type="range"`).
+- `HomeBento` (`hb-`): buscar como hablas, el agente que pregunta antes de inventar, con Tino en píxeles que respira y parpadea, compartir con el cliente y volver a una versión, con las referencias del tablón de la portada. Como en `/landing/`: baldosas sin borde (`#F3F2EE`, butter, ember y `#191B28`), con el agente a dos filas y las de compartir y versiones igual de anchas. El bento mide hasta 1240 px, más que la columna de la página.
+- `HomeQuestions` (`hq-`), entre los planes y el cierre, como en `/landing/`: titular a dos tonos, teclas y un globo butter con rabo. Tino va de la esquina a su sitio (`.hq-tino`) con el lienzo grande del cierre (`#bigT`, en `plantilla.html`), contesta con la cara de cada pregunta (`tino:ask`) y escribe la respuesta; cuando sube el cierre vuelve a la esquina y crece desde ahí, porque creciendo desde las preguntas tapaba el titular y el correo. Cada respuesta ocupa siempre su sitio: la altura no cambia. Sin JavaScript se leen todas.
+- Los titulares de sección van a dos tonos (`--h-2`, `#8C887E`): "Same brief. / Two landings.", "One price per team, / not per person.", "Ask Tino. / Knows almost everything.".
+- Cada cosa se dice una vez. Fuera: las preguntas que repetían los pasos y el bento (qué hace, cómo traigo lo mío, si el cliente necesita cuenta), la mitad de precio en el pie de los planes, quién hace Criterio bajo la ventana (ya están las caras), los nombres en "3 autores" y la frase del cierre que repetía el manifiesto (ahora "Todo empieza por lo que te gusta."). Studio y Agency dicen "Todo lo de Duo" y "Todo lo de Studio, para cada cliente" en vez de copiar la lista, también en la app. Acción de IA y revisión de landing se explican solo en las preguntas.
+- El cierre lleva debajo del formulario Privacidad, Términos y el otro idioma (`.end-l`), y todo va en un solo eje: la casilla también, centrada.
+- Los cuatro pasos en texto se probaron y salieron: sin imagen no contaban nada que la ventana de arriba no enseñe. También salieron la línea bajo el correo y la nota bajo la ventana.
+- Las caras hablan en una frase con presentación: "This is Alberto. I exist because of him." / "Te presento a Alberto. Existo gracias a él.".
+- `/pricing/` y la comparación de planes salen: los planes solo están en la portada y el Worker lleva `/pricing/` y `/es/pricing/` a `#pricing` (302).
+- Orden: héroe, ventana, antes y después, bento, criterio.md, planes, preguntas, cierre. `construir.py` los pone en `%%HEADER%%`, `%%AFTER_WINDOW%%` y `%%QUESTIONS%%`.
+
+**Por qué.** Alberto, 24-11: "traete el header con el menú de /landing, busca también elementos que tengan sentido adaptando a los copies de la actual" y, después, "no has traído las animaciones de tino", "también hay textos repetidos", "no están igual los estilos", "añade los visuales aquí como en la landing o no, quítalos", "make bento a bit wider", "remove the compare for now and remove the /pricing page", "add the rest of the links to the footer", "check it's not aligned". Del antes y el después, "haz las típicas dos imágenes superpuestas donde puedo comparar resultados". Qué piezas se traen y cuáles no es interpretación nuestra.
+
+**Cómo aplicarlo.** Una sección nueva de la portada es un componente con su prefijo de clase y su texto en `home-copy.ts`, en los dos idiomas; si sale en el menú, su id va en `SECTIONS`. De criterio.md hacia abajo, con claro y oscuro y sin cambiar de altura.
