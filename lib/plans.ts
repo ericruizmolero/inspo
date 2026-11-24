@@ -2,7 +2,7 @@
 // more workspaces. Its owner asks for one in Settings, Plan and a partner sets it in /admin/plans
 // (lib/plan-requests.ts), or by hand with `npx tsx scripts/set-plan.ts <slug> <plan>`.
 // Quotas are monthly (calendar month), counted on the ai_usage table across the account's workspaces.
-// The marketing site's /pricing/ shows a copy (marketing-site/src/plans.ts): change both, or
+// The marketing site's home shows a copy (marketing-site/src/plans.ts): change both, or
 // tests/marketing-site-copy.test.ts fails. The same goes for the plans' text in lib/i18n/<locale>/plans.ts.
 
 export type PlanKey = "free" | "duo" | "studio" | "agency";

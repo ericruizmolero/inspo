@@ -15,12 +15,11 @@ test("the site's plans have the app's figures: prices, people, workspaces, AI ac
   expect(site.PLANS).toEqual(PLANS);
 });
 
-test("the site says what the app says about each plan and about payment, in both languages", () => {
+test("the site says what the app says about each plan and its period, in both languages", () => {
   expect(site.PLAN_TEXT).toEqual({ en: enPlans, es: esPlans });
   for (const [locale, ui] of [["en", enUi], ["es", esUi]] as const) {
     const lines = site.PLAN_LINES[locale];
-    expect({ forGood: lines.forGood, perMonth: lines.perMonth, foot: lines.foot }).toEqual({ forGood: ui.plans.forGood, perMonth: ui.plans.perMonth, foot: ui.plans.foot });
-    expect(lines.orYearly("X")).toBe(ui.plans.orYearly("X"));
+    expect({ forGood: lines.forGood, perMonth: lines.perMonth }).toEqual({ forGood: ui.plans.forGood, perMonth: ui.plans.perMonth });
     for (const p of PLANS) for (const n of [p.price.month, p.price.year]) expect(site.fmtPrice(n, locale)).toBe(fmtPrice(n, locale));
   }
 });

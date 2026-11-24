@@ -158,7 +158,7 @@ const en: LegalCopy = {
           "We look at every notice promptly, remove or block what should not be here, and tell you what we did and why. We also tell the workspace that saved it, which can answer if it believes the notice is wrong. Accounts that infringe again and again are closed.",
         ] },
         { heading: "Plans and payment", body: [
-          "Each plan has limits, shown in Settings and at criterio.design/pricing. Paid plans are not charged yet. Once they are, what follows applies, and you see the price and the conditions before you pay anything.",
+          "Each plan has limits, shown in Settings and at criterio.design. Paid plans are not charged yet. Once they are, what follows applies, and you see the price and the conditions before you pay anything.",
           "Prices are in euros or US dollars, depending on your country, with the same figures in both. They do not include VAT:",
           [
             "In Spain, we add Spanish VAT (21%).",
@@ -331,7 +331,7 @@ const es: LegalCopy = {
           "Miramos cada aviso con rapidez, retiramos o bloqueamos lo que no debe estar aquí, y te contamos qué hemos hecho y por qué. También avisamos al espacio que lo guardó, que puede responder si cree que el aviso es un error. Las cuentas que infringen una y otra vez se cierran.",
         ] },
         { heading: "Planes y pago", body: [
-          "Cada plan tiene límites, que se ven en Ajustes y en criterio.design/es/pricing. Los planes de pago todavía no se cobran. Cuando se cobren, se aplica lo que sigue, y verás el precio y las condiciones antes de pagar nada.",
+          "Cada plan tiene límites, que se ven en Ajustes y en criterio.design/es. Los planes de pago todavía no se cobran. Cuando se cobren, se aplica lo que sigue, y verás el precio y las condiciones antes de pagar nada.",
           "Los precios están en euros o en dólares, según tu país, con las mismas cifras en los dos. No incluyen el IVA:",
           [
             "En España sumamos el IVA español (21 %).",

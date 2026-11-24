@@ -4,6 +4,8 @@
 const APP_URL = "https://app.criterio.design";
 // The app keeps this cookie on .criterio.design while the browser has a session (lib/signed-in-cookie.ts in the app)
 const SIGNED_IN = /(?:^|;\s*)criterio_signed_in=1(?:;|$)/;
+// The plans had a page of their own until 24/11: they are on the home now
+const PLANS: Record<string, string> = { "/pricing": "/#pricing", "/es/pricing": "/es/#pricing" };
 const HOMES = new Set(["/", "/es", "/es/"]);
 
 export default {
@@ -13,6 +15,8 @@ export default {
       url.hostname = url.hostname.slice(4);
       return Response.redirect(url.toString(), 301);
     }
+    const plans = PLANS[url.pathname.replace(/\/$/, "")];
+    if (plans) return Response.redirect(new URL(plans, url).toString(), 302);
     // ?landing shows the landing page anyway
     if (HOMES.has(url.pathname) && !url.searchParams.has("landing") && SIGNED_IN.test(request.headers.get("cookie") ?? "")) {
       return Response.redirect(`${APP_URL}/`, 302);

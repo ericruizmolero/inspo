@@ -1,31 +1,25 @@
 ---
-import { PAGES, type Locale, type PageKey } from "../i18n";
+import { PAGES, copy, type Locale, type PageKey } from "../i18n";
 
 interface Props { locale: Locale; page: PageKey }
 const { locale, page } = Astro.props;
-// What the footer links: prices and the legal pages. Resources, Skills and the extension keep their pages and their
-// names (the waitlist page links them), but not a place here (Eric, 24-11)
-const FOOTER = ["pricing", "privacy", "terms"] as const satisfies readonly PageKey[];
-const links = FOOTER.map((key) => ({ key, href: PAGES[key].path[locale], label: PAGES[key].nav[locale] }));
+const other = copy[locale].other;
+// What the footer links, as the home's close does: the legal pages and the page in the other language. Resources, Skills
+// and the extension keep their pages and their names, but not a place here (Eric, 24-11)
+const FOOTER = ["privacy", "terms"] as const satisfies readonly PageKey[];
 ---
-<footer class="foot">
+<footer>
   <nav>
-    {links.map(({ key, href, label }) => (
-      <a href={href} aria-current={key === page ? "page" : undefined}>{label}</a>
-    ))}
+    {FOOTER.map((key) => <a href={PAGES[key].path[locale]} aria-current={key === page ? "page" : undefined}>{PAGES[key].nav[locale]}</a>)}
+    <a href={PAGES[page].path[other.lang]} hreflang={other.lang} lang={other.lang}>{other.label}</a>
   </nav>
 </footer>
 
 <style>
-  .foot { max-width: 1080px; margin: 0 auto; padding: 0 24px 40px; }
-  nav { display: flex; flex-wrap: wrap; gap: 8px 20px; padding-top: 20px; border-top: 1px solid var(--border); font-size: 14px; }
-  a {
-    color: var(--text-2);
-    text-decoration: underline;
-    text-decoration-color: var(--border);
-    text-underline-offset: 3px;
-    transition: color 150ms ease;
-  }
-  a:hover, a[aria-current="page"] { color: var(--ink); text-decoration-color: currentColor; }
-  a:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: 2px; }
+  footer { padding: 24px 24px 44px; }
+  nav { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 22px; font-size: 14px; }
+  @media (pointer: coarse) { nav { gap: 0 8px; } nav a { padding: 12px; } }
+  a { padding: 5px 0; color: var(--text-2); text-underline-offset: 3px; transition: color .15s ease; }
+  a[aria-current="page"] { color: var(--ink); }
+  @media (hover: hover) and (pointer: fine) { a:hover { color: var(--ink); } }
 </style>

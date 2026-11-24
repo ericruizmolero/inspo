@@ -1,12 +1,13 @@
 ---
-// The plans on the home (/, /es/), between criterio.md and the closing sign-up. Same source as /pricing/ and the app
-// (plans.ts), so the home cannot drift from either. Drawn in the home's own language (its tokens, the display serif,
+// The plans on the home (/, /es/), between criterio.md and the closing sign-up. Same source as the app
+// (plans.ts), so the home cannot drift from it. Drawn in the home's own language (its tokens, the display serif,
 // the ink-bordered cream of its email field and its key), which the generated page defines on :root. While signup is
 // invite-only the key goes to the waitlist form; once it is open, signup-mode.ts turns it into "Start free".
 // Every language is in the page and only the page's own is shown. The home's script switches its text with ?lang=
 // after load, and with it which data-locale is shown
-import { LOCALES, PAGES, copy, type Locale } from "../i18n";
-import { PLANS, PLAN_LINES, PLAN_TEXT, fmtPrice, isPaid } from "../plans";
+import PlanYear from "./PlanYear.astro";
+import { LOCALES, copy, type Locale } from "../i18n";
+import { PLANS, PLAN_LINES, PLAN_TEXT, RECOMMENDED, fmtPrice } from "../plans";
 
 interface Props { locale: Locale }
 const { locale: shown } = Astro.props;
@@ -16,22 +17,22 @@ const { locale: shown } = Astro.props;
     const t = copy[locale], lines = PLAN_LINES[locale], text = PLAN_TEXT[locale];
     return (
       <section lang={locale} data-locale={locale} hidden={locale !== shown} aria-labelledby={`pricing-h-${locale}`}>
-        <h2 id={`pricing-h-${locale}`}>{t.pricing.section.headline}</h2>
-        <p class="pricing-sub">{t.pricing.section.sub}</p>
+        <h2 id={`pricing-h-${locale}`}><span>{t.pricing.section.headline}</span> <span>{t.pricing.section.headline2}</span></h2>
+        <p class="pricing-sub"><span data-open-text={t.pricing.section.sub}>{t.pricing.section.subWaitlist}</span> {t.pricing.section.vault}</p>
         <ul>
           {PLANS.map((p) => (
-            <li>
+            <li class:list={{ recommended: p.key === RECOMMENDED }}>
               <h3>{text[p.key].name}</h3>
-              <p class="plan-tag">{text[p.key].tagline}</p>
+              <p class="plan-tag">{text[p.key].tagline}{p.key === RECOMMENDED && <b>{lines.recommended}</b>}</p>
               <p class="plan-price"><b>{fmtPrice(p.price.month, locale)}</b> <span>{lines.perMonth}</span></p>
-              <p class="plan-year">{isPaid(p) ? lines.orYearly(fmtPrice(p.price.year, locale)) : lines.forGood}</p>
+              <p class="plan-year"><PlanYear plan={p} locale={locale} /></p>
               <ul class="plan-has">{text[p.key].features.map((f) => <li>{f}</li>)}</ul>
             </li>
           ))}
         </ul>
         <div class="pricing-foot">
           <a class="btn" href="#mail" data-open-href={t.login.href} data-open-label={t.pricing.start}>{t.waitlist.join}</a>
-          <p>{lines.foot} <a href={PAGES.pricing.path[locale]}>{t.pricing.section.all}</a></p>
+          <p>{lines.foot}</p>
         </div>
       </section>
     );
@@ -40,18 +41,24 @@ const { locale: shown } = Astro.props;
 
 <style>
   .pricing { max-width: 1180px; margin: clamp(104px, 18svh, 176px) 0 clamp(120px, 22svh, 210px); }
-  h2 { margin: 0; font: var(--h-w) clamp(31px, 3.4vw, 48px)/1.05 var(--display); letter-spacing: var(--h-ls); text-wrap: balance; }
-  .pricing-sub { max-width: 35em; margin: clamp(10px, 1.8svh, 16px) 0 0; color: var(--text-2); text-wrap: pretty; }
+  h2 { margin: 0; font: var(--h-w) clamp(31px, 4.4vw, 48px)/1.05 var(--display); letter-spacing: var(--h-ls); text-wrap: balance; }
+  h2 span { display: block; }
+  h2 span + span { color: var(--h-2); }
+  .pricing-sub { max-width: 40em; margin: clamp(10px, 1.8svh, 16px) 0 0; color: var(--text-2); text-wrap: pretty; }
 
   /* Each card shares its rows with the others (subgrid), so prices and lists line up whatever the tagline's length */
   ul { margin: 0; padding: 0; list-style: none; }
   section > ul { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-top: clamp(28px, 4.6svh, 44px); }
   section > ul > li { display: grid; grid-row: span 5; grid-template-rows: subgrid; row-gap: 0; min-width: 0; padding: 24px 22px 26px; border: 1.5px solid var(--ink); border-radius: var(--r); background: var(--paper-l); }
+  /* The recommended plan stands on the same ink edge as the product window */
+  section > ul > li.recommended { box-shadow: 0 6px 0 var(--ink); }
+  .plan-tag b { display: block; color: var(--ink); font-weight: 600; }
   h3 { margin: 0; font: 400 clamp(26px, 2.2vw, 32px)/1.1 var(--display); letter-spacing: -.02em; }
   .plan-tag { margin: 6px 0 0; color: var(--text-2); font-size: 15px; line-height: 1.4; text-wrap: pretty; }
   .plan-price { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px; margin: 22px 0 0; }
   .plan-price b { font: 400 clamp(40px, 3.4vw, 48px)/1 var(--display); letter-spacing: var(--h-ls); font-variant-numeric: tabular-nums; }
   .plan-price span, .plan-year { color: var(--text-2); font-size: 15px; }
+  .plan-year :global(b) { color: var(--ink); font-weight: 600; }
   .plan-year { margin: 6px 0 0; line-height: 1.4; text-wrap: pretty; }
   .plan-has { display: grid; align-content: start; gap: 9px; margin-top: 20px; padding-top: 18px; border-top: 1.5px dashed color-mix(in srgb, var(--ink) 18%, transparent); font-size: 15px; line-height: 1.4; }
   .plan-has li { position: relative; padding-left: 22px; text-wrap: pretty; }
@@ -60,7 +67,6 @@ const { locale: shown } = Astro.props;
   .pricing-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 28px; margin-top: 26px; }
   .pricing-foot .btn { text-decoration: none; }
   .pricing-foot p { flex: 1 1 360px; max-width: 64ch; margin: 0; color: var(--text-2); font-size: 14px; line-height: 1.5; text-wrap: pretty; }
-  .pricing-foot p a { color: var(--ink); font-weight: 600; text-underline-offset: 3px; }
 
   /* The home turns dark while criterio.md fills the screen and from the closing section on (html.dark): the plans follow, ink and cream swapped.
      --ink, --paper-l and --text-2 are registered with @property on the home and only .pricing transitions them (the page's --ts for the cream, --ti for ink and grey text), so every

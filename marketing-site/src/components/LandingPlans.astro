@@ -1,8 +1,9 @@
 ---
-// The plans on the full landing (/landing/, /es/landing/), between the bento and the questions. Same source as /pricing/
-// (plans.ts, a checked copy of the app's plans), so the landing cannot drift from either. Buttons and type come from the
+// The plans on the full landing (/landing/, /es/landing/), between the bento and the questions. Same source as the home
+// (plans.ts, a checked copy of the app's plans), so the landing cannot drift from it. Buttons and type come from the
 // landing's own styles (.btn, .hd2, --display); cards are told apart by fill, like the bento's
-import { PAGES, copy, type Locale } from "../i18n";
+import PlanYear from "./PlanYear.astro";
+import { copy, type Locale } from "../i18n";
 import { PLANS, PLAN_LINES, PLAN_TEXT, fmtPrice, isPaid } from "../plans";
 
 interface Props { locale: Locale }
@@ -12,20 +13,20 @@ const lines = PLAN_LINES[locale];
 const text = PLAN_TEXT[locale];
 ---
 <section class="precios" id="precios" aria-labelledby="precios-h"><div class="wrap">
-  <h2 class="hd2" id="precios-h"><span>{t.section.headline}</span><span>{t.section.sub}</span></h2>
+  <h2 class="hd2" id="precios-h"><span>{t.section.headline} {t.section.headline2}</span><span>{t.section.sub}</span></h2>
   <ul class="plans">
     {PLANS.map((p) => (
       <li class="plan">
         <h3>{text[p.key].name}</h3>
         <p class="plan-tag">{text[p.key].tagline}</p>
         <p class="plan-pr"><b>{fmtPrice(p.price.month, locale)}</b> <span>{lines.perMonth}</span></p>
-        <p class="plan-yr">{isPaid(p) ? lines.orYearly(fmtPrice(p.price.year, locale)) : lines.forGood}</p>
+        <p class="plan-yr"><PlanYear plan={p} locale={locale} /></p>
         <a class="btn btn-paper" href={copy[locale].login.href}>{isPaid(p) ? t.section.ask(text[p.key].name) : t.start}</a>
         <ul class="plan-ft">{text[p.key].features.map((f) => <li>{f}</li>)}</ul>
       </li>
     ))}
   </ul>
-  <div class="precios-pie"><p>{lines.foot}</p><a href={PAGES.pricing.path[locale]}>{t.section.all} <i aria-hidden="true">→</i></a></div>
+  <div class="precios-pie"><p>{lines.foot}</p></div>
 </div></section>
 
 <style>

@@ -1876,7 +1876,7 @@ export const ui: typeof EnUi = {
     overSeatsAfter: " o amplíes el plan.",
     pendingInvites: (n: number): string => (n === 1 ? "1 invitación sin aceptar, que también ocupa plaza." : `${n} invitaciones sin aceptar, que también ocupan plaza.`),
     yourPlan: "Tu plan",
-    foot: "Precios de lanzamiento: en la beta, el anual va a mitad de precio. Todavía no hay pago en la web: al pedir un plan te escribimos y lo activamos en el día. Precios sin IVA.",
+    foot: "Oferta de lanzamiento: en la beta pagas la mitad del precio anual. Todavía no hay pago en la web: al pedir un plan te escribimos y lo activamos en el día. Precios sin IVA.",
     aiShared: (n: number): string => `Los ${n} espacios de este plan comparten estas acciones y búsquedas de IA. Las personas cuentan en cada uno.`,
     account: {
       title: "Espacios de este plan",

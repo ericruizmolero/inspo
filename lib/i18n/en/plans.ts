@@ -17,8 +17,8 @@ export const plans = {
     name: "Duo",
     tagline: "For two people designing together.",
     features: [
-      "You and one more person",
       "The whole Vault, code included, for your agent",
+      "You and one more person",
       "Shared memory across your projects",
       "Unlimited projects and references",
       "Landing checks, fair use",
@@ -28,25 +28,11 @@ export const plans = {
   studio: {
     name: "Studio",
     tagline: "For a design or product team.",
-    features: [
-      "Up to 5 people",
-      "The whole Vault for the whole team",
-      "Shared memory across your projects",
-      "Unlimited projects and references",
-      "Landing checks, fair use",
-      "500 AI actions a month",
-    ],
+    features: ["Everything in Duo", "Up to 5 people", "500 AI actions a month"],
   },
   agency: {
     name: "Agency",
-    tagline: "For an agency, one criterio per client.",
-    features: [
-      "Up to 15 people in each workspace",
-      "10 workspaces on one plan",
-      "The whole Vault in every client workspace",
-      "Shared memory for each client",
-      "Landing checks, fair use",
-      "2,000 AI actions a month",
-    ],
+    tagline: "For an agency, one criterio.md per client.",
+    features: ["Everything in Studio, for each client", "Up to 15 people in each workspace", "10 workspaces on one plan", "2,000 AI actions a month"],
   },
 };

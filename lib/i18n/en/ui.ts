@@ -1894,7 +1894,7 @@ export const ui = {
     overSeatsAfter: " or move up a plan.",
     pendingInvites: (n: number): string => (n === 1 ? "1 invitation not yet accepted, which also takes a seat." : `${n} invitations not yet accepted, which also take a seat.`),
     yourPlan: "Your plan",
-    foot: "Launch prices: during the beta, the annual plan is half price. There is no payment on the site yet: ask for a plan and we write back and switch it on the same day. Prices without VAT.",
+    foot: "Launch offer: during the beta, you pay half of the yearly price. There is no payment on the site yet: ask for a plan and we write back and switch it on the same day. Prices without VAT.",
     aiShared: (n: number): string => `The ${n} workspaces on this plan share these AI actions and searches. People count in each one.`,
     account: {
       title: "Workspaces on this plan",

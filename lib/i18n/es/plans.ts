@@ -17,8 +17,8 @@ export const plans: typeof EnPlans = {
     name: "Duo",
     tagline: "Para dos personas que diseñan juntas.",
     features: [
-      "Tú y una persona más",
       "El Vault entero, con su código, para tu agente",
+      "Tú y una persona más",
       "Memoria compartida en tus proyectos",
       "Proyectos y referencias sin límite",
       "Revisiones de landing, uso razonable",
@@ -28,25 +28,11 @@ export const plans: typeof EnPlans = {
   studio: {
     name: "Studio",
     tagline: "Para un equipo de diseño o de producto.",
-    features: [
-      "Hasta 5 personas",
-      "El Vault entero para todo el equipo",
-      "Memoria compartida en tus proyectos",
-      "Proyectos y referencias sin límite",
-      "Revisiones de landing, uso razonable",
-      "500 acciones de IA al mes",
-    ],
+    features: ["Todo lo de Duo", "Hasta 5 personas", "500 acciones de IA al mes"],
   },
   agency: {
     name: "Agency",
-    tagline: "Para una agencia, con un criterio por cliente.",
-    features: [
-      "Hasta 15 personas en cada espacio",
-      "10 espacios en un plan",
-      "El Vault entero en cada espacio de cliente",
-      "Memoria compartida por cliente",
-      "Revisiones de landing, uso razonable",
-      "2.000 acciones de IA al mes",
-    ],
+    tagline: "Para una agencia, con un criterio.md por cliente.",
+    features: ["Todo lo de Studio, para cada cliente", "Hasta 15 personas en cada espacio", "10 espacios en un plan", "2.000 acciones de IA al mes"],
   },
 };

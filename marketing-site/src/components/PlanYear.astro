@@ -1,0 +1,10 @@
+---
+// What a plan costs by the year: the beta's price beside the list's, or the free plan's line
+import { PLAN_LINES, betaYear, fmtPrice, isPaid, type Plan } from "../plans";
+import type { Locale } from "../i18n";
+
+interface Props { plan: Plan; locale: Locale }
+const { plan, locale } = Astro.props;
+const lines = PLAN_LINES[locale];
+---
+{isPaid(plan) ? <>{lines.yearly.before} <b>{fmtPrice(betaYear(plan), locale)}</b> {lines.yearly.after} <s>{fmtPrice(plan.price.year, locale)}</s></> : lines.forGood}

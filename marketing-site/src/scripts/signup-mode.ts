@@ -1,7 +1,7 @@
 // The waitlist forms and whether the app lets anyone in (app/api/access/mode, the switch in the app's /admin).
 // While signup is invite-only the forms post to the waitlist. Once it is open, <html> gets .signup-open: each form
 // shows its "Start free" key in place of the email field, and every link with data-open-href goes to the sign-in,
-// labelled with its data-open-label. Shared by the home, the parked waitlist home (waitlist.ts) and the full landing.
+// labelled with its data-open-label; a text with data-open-text says that instead. Shared by the home, the parked waitlist home (waitlist.ts) and the full landing.
 import { APP_URL } from "../i18n";
 
 export const signupOpen = () => document.documentElement.classList.contains("signup-open");
@@ -15,5 +15,6 @@ fetch(`${APP_URL}/api/access/mode`)
       a.href = a.dataset.openHref!;
       if (a.dataset.openLabel) a.textContent = a.dataset.openLabel;
     });
+    document.querySelectorAll<HTMLElement>("[data-open-text]").forEach((e) => { e.textContent = e.dataset.openText!; });
   })
   .catch(() => {});

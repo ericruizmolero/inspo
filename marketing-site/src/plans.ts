@@ -1,6 +1,6 @@
-// The plans on /pricing/: a copy of the app's PLANS (lib/plans.ts), their text (lib/i18n/<locale>/plans.ts) and the
-// lines its plan page says about price and payment (plans in lib/i18n/<locale>/ui.ts). The site cannot import the
-// app; tests/marketing-site-copy.test.ts fails when this copy and the app drift apart.
+// The plans on the home: a copy of the app's PLANS (lib/plans.ts), their text (lib/i18n/<locale>/plans.ts)
+// and its words for the period. The site cannot import the app; tests/marketing-site-copy.test.ts fails when this copy
+// and the app drift apart.
 import type { Locale } from "./i18n";
 
 export type PlanKey = "free" | "duo" | "studio" | "agency";
@@ -48,12 +48,12 @@ export const PLAN_TEXT: Record<Locale, Record<PlanKey, { name: string; tagline: 
       tagline: "To try it out.",
       features: ["You and one more person", "1 project with up to 12 references", "Browse the Vault, with the code of the free pieces", "10 landing checks a month", "Your first criterio.md spends no AI actions", "30 AI actions a month"],
     },
-    duo: { name: "Duo", tagline: "For two people designing together.", features: ["You and one more person", "The whole Vault, code included, for your agent", "Shared memory across your projects", "Unlimited projects and references", "Landing checks, fair use", "300 AI actions a month"] },
-    studio: { name: "Studio", tagline: "For a design or product team.", features: ["Up to 5 people", "The whole Vault for the whole team", "Shared memory across your projects", "Unlimited projects and references", "Landing checks, fair use", "500 AI actions a month"] },
+    duo: { name: "Duo", tagline: "For two people designing together.", features: ["The whole Vault, code included, for your agent", "You and one more person", "Shared memory across your projects", "Unlimited projects and references", "Landing checks, fair use", "300 AI actions a month"] },
+    studio: { name: "Studio", tagline: "For a design or product team.", features: ["Everything in Duo", "Up to 5 people", "500 AI actions a month"] },
     agency: {
       name: "Agency",
-      tagline: "For an agency, one criterio per client.",
-      features: ["Up to 15 people in each workspace", "10 workspaces on one plan", "The whole Vault in every client workspace", "Shared memory for each client", "Landing checks, fair use", "2,000 AI actions a month"],
+      tagline: "For an agency, one criterio.md per client.",
+      features: ["Everything in Studio, for each client", "Up to 15 people in each workspace", "10 workspaces on one plan", "2,000 AI actions a month"],
     },
   },
   es: {
@@ -62,29 +62,37 @@ export const PLAN_TEXT: Record<Locale, Record<PlanKey, { name: string; tagline: 
       tagline: "Para probarlo.",
       features: ["Tú y una persona más", "1 proyecto con hasta 12 referencias", "El Vault para mirar, con el código de las piezas gratis", "10 revisiones de landing al mes", "Tu primer criterio.md no gasta acciones de IA", "30 acciones de IA al mes"],
     },
-    duo: { name: "Duo", tagline: "Para dos personas que diseñan juntas.", features: ["Tú y una persona más", "El Vault entero, con su código, para tu agente", "Memoria compartida en tus proyectos", "Proyectos y referencias sin límite", "Revisiones de landing, uso razonable", "300 acciones de IA al mes"] },
-    studio: { name: "Studio", tagline: "Para un equipo de diseño o de producto.", features: ["Hasta 5 personas", "El Vault entero para todo el equipo", "Memoria compartida en tus proyectos", "Proyectos y referencias sin límite", "Revisiones de landing, uso razonable", "500 acciones de IA al mes"] },
+    duo: { name: "Duo", tagline: "Para dos personas que diseñan juntas.", features: ["El Vault entero, con su código, para tu agente", "Tú y una persona más", "Memoria compartida en tus proyectos", "Proyectos y referencias sin límite", "Revisiones de landing, uso razonable", "300 acciones de IA al mes"] },
+    studio: { name: "Studio", tagline: "Para un equipo de diseño o de producto.", features: ["Todo lo de Duo", "Hasta 5 personas", "500 acciones de IA al mes"] },
     agency: {
       name: "Agency",
-      tagline: "Para una agencia, con un criterio por cliente.",
-      features: ["Hasta 15 personas en cada espacio", "10 espacios en un plan", "El Vault entero en cada espacio de cliente", "Memoria compartida por cliente", "Revisiones de landing, uso razonable", "2.000 acciones de IA al mes"],
+      tagline: "Para una agencia, con un criterio.md por cliente.",
+      features: ["Todo lo de Studio, para cada cliente", "Hasta 15 personas en cada espacio", "10 espacios en un plan", "2.000 acciones de IA al mes"],
     },
   },
 };
 
-/** What the app's plan page says under the prices: the words for the period, and that there is no payment yet */
+/** In the beta a paid plan's year costs half (docs/design-system/decisiones/2026-11-24-la-portada-dice-que-se-gana-y-ensena-el-antes-y-el-despues.md) */
+export const betaYear = (p: Plan) => p.price.year / 2;
+
+/** The plan the site recommends */
+export const RECOMMENDED: PlanKey = "studio";
+
+/** The lines around the prices. `forGood` and `perMonth` are the app's; the rest is the site's, where nobody asks for a plan or pays */
 export const PLAN_LINES = {
   en: {
     forGood: "For good",
     perMonth: "a month",
-    orYearly: (price: string) => `or ${price} a year, 2 months free`,
-    foot: "Launch prices: during the beta, the annual plan is half price. There is no payment on the site yet: ask for a plan and we write back and switch it on the same day. Prices without VAT.",
+    yearly: { before: "or", after: "a year in the beta, instead of" },
+    recommended: "The one we recommend.",
+    foot: "Prices without VAT.",
   },
   es: {
     forGood: "Para siempre",
     perMonth: "al mes",
-    orYearly: (price: string) => `o ${price} al año, 2 meses gratis`,
-    foot: "Precios de lanzamiento: en la beta, el anual va a mitad de precio. Todavía no hay pago en la web: al pedir un plan te escribimos y lo activamos en el día. Precios sin IVA.",
+    yearly: { before: "o", after: "al año en la beta, en vez de" },
+    recommended: "El que recomendamos.",
+    foot: "Precios sin IVA.",
   },
 } satisfies Record<Locale, unknown>;
 
@@ -96,6 +104,3 @@ export function fmtPrice(n: number, locale: Locale): string {
     style: "currency", currency: locale === "es" ? "EUR" : "USD", currencyDisplay: "narrowSymbol", maximumFractionDigits: 0, useGrouping: "always",
   } as Intl.NumberFormatOptions).format(n);
 }
-
-/** A count with the language's thousands separator: "2,000", "2.000" */
-export const fmtCount = (n: number, locale: Locale) => new Intl.NumberFormat(INTL[locale], { useGrouping: "always" } as Intl.NumberFormatOptions).format(n);
