@@ -5,7 +5,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getSessionCookie } from "better-auth/cookies";
 import { LANG_COOKIE, LANG_COOKIE_MAX_AGE, DEFAULT_LOCALE, isLocale, localeFromHeader } from "@/lib/i18n/locale";
 import { cleanInvite, INVITE_COOKIE, INVITE_COOKIE_MAX_AGE, INVITE_PARAM } from "@/lib/invite-code";
-import { PREVIEW_BOT } from "@/lib/preview-bots";
+import { PREVIEW_BOT, isAiReader } from "@/lib/preview-bots";
 import { SIGNED_IN_COOKIE, SIGNED_IN_COOKIE_MAX_AGE, signedInCookieDomain } from "@/lib/signed-in-cookie";
 
 // Everything else needs a session, the home page (/) too: signed out, app.criterio.design is the sign-in.
@@ -110,7 +110,10 @@ export function proxy(request: NextRequest) {
 
   // A reference's link pasted in Telegram, WhatsApp, Slack…: the preview app reads its name and picture
   // (lib/share-card.ts), and its picture is open to anyone. A person still goes to the login
-  if (/^\/i\/[\w-]+\/preview$/.test(pathname) || (/^\/i\/[\w-]+$/.test(pathname) && PREVIEW_BOT.test(request.headers.get("user-agent") ?? ""))) return next();
+  const ua = request.headers.get("user-agent");
+  if (/^\/i\/[\w-]+\/preview$/.test(pathname) || (/^\/i\/[\w-]+$/.test(pathname) && PREVIEW_BOT.test(ua ?? ""))) return next();
+  // The same link pasted in Claude, ChatGPT…: the AI reads the reference whole (lib/share-reader.ts), not the login
+  if (/^\/i\/[\w-]+$/.test(pathname) && isAiReader(ua)) return NextResponse.rewrite(new URL(`${pathname}/read`, request.url));
 
   if (pathname.startsWith("/api/")) {
     // Signed out there's no user locale: answer with the cookie it brings, or English

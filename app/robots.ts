@@ -12,6 +12,12 @@ export default function robots(): MetadataRoute.Robots {
       allow: ["/", "/i/"],
       disallow: ["/api/", "/settings", "/admin", "/library", "/invite/", "/extension/", "/mcp", "/unsubscribe", "/.well-known/"],
     }, {
+      // The AIs that open a link pasted in their chat obey this file: a reference's link is meant for them
+      // (lib/share-reader.ts), as are its pictures. Each one says noindex
+      userAgent: ["Claude-User", "Claude-Web", "anthropic-ai", "ChatGPT-User", "Perplexity-User", "MistralAI-User", "DuckAssistBot", "Google-Extended"],
+      allow: ["/", "/i/", "/api/files/"],
+      disallow: ["/api/", "/settings", "/admin", "/library", "/invite/", "/extension/", "/mcp", "/unsubscribe", "/.well-known/"],
+    }, {
       userAgent: "*",
       // A file link handed out of the app (lib/file-links.ts): AI fetchers obey this file, and the link is meant for
       // them. Unsigned it still answers 401, and each file says noindex
