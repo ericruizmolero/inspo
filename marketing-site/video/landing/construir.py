@@ -36,8 +36,8 @@ h = re.sub(r' (src|href|poster)="([^"]*\$\{)', r'\\x20\1="\2', h)
 h = re.sub(r'<(script|style)(?=[\s>])', r'<\1 is:inline', h)
 
 T = {
-    'en': dict(at='/', title='Criterio: give your landing some taste', desc='Gather references from everywhere, vote with your team and connect your agent with criterio MCP. Join the waitlist and we’ll email you when your invite is ready.', alt='Give your landing some taste. AI slop, struck through, above the Criterio board.', loc='en_US'),
-    'es': dict(at='/es/', title='Criterio: ponle criterio a tu landing', desc='Recopila inspiración, comenta con tu equipo y conecta tu agente con Criterio MCP. Apúntate a la lista y te invitamos cuando llegue tu turno.', alt='Ponle criterio a tu landing. AI slop, tachado, sobre el tablón de Criterio.', loc='es_ES'),
+    'en': dict(at='/', title='Give your landing some taste | Criterio', og='Give your landing some taste.', desc='Gather references from everywhere, vote with your team and connect your agent with criterio MCP. Join the waitlist.', alt='Give your landing some taste. AI slop, struck through, above the Criterio app.', loc='en_US'),
+    'es': dict(at='/es/', title='Ponle criterio a tu landing | Criterio', og='Ponle criterio a tu landing.', desc='Recopila inspiración, comenta con tu equipo y conecta tu agente con Criterio MCP. Apúntate a la lista de espera.', alt='Ponle criterio a tu landing. AI slop, tachado, sobre la app de Criterio.', loc='es_ES'),
 }
 for l, x in T.items():
     p = re.sub(r'<html lang="[a-z]+">', f'<html lang="{l}" data-lang="{l}" data-es="/es/" data-en="/">', h, count=1)
@@ -52,7 +52,7 @@ for l, x in T.items():
 <meta property="og:site_name" content="Criterio">
 <meta property="og:locale" content="{x["loc"]}">
 <meta property="og:url" content="{SITE}{x["at"]}">
-<meta property="og:title" content="{x["title"]}">
+<meta property="og:title" content="{x["og"]}">
 <meta property="og:description" content="{x["desc"]}">
 <meta property="og:image" content="{SITE}/og-home-{l}.jpg">
 <meta property="og:image:width" content="1200">
