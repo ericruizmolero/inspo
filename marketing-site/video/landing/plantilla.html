@@ -50,7 +50,7 @@ main { max-width: 1040px; margin-inline: auto; }
 h1 { margin: var(--h1-m) 0 0; font: var(--h-w) calc(clamp(min(36px, 10.6vw), 5.6vw, 66px) * var(--h-s))/1.05 var(--display); letter-spacing: var(--h-ls); text-wrap: balance; }
 h1 > span { display: block; margin-bottom: .14em; } h1 .slop span { display: inline; } h1 em { font-style: normal; }
 /* el logo va dentro del titular: Tino en píxeles delante de la palabra, sin separarse de ella al partir línea */
-.h1-m { white-space: nowrap; } .h1-m svg { width: auto; height: .88em; margin-right: .17em; vertical-align: -.07em; fill: currentColor; overflow: visible; shape-rendering: crispEdges; }
+.h1-m { white-space: nowrap; } .h1-m svg { width: auto; height: .88em; margin-right: .17em; vertical-align: -.07em; fill: currentColor; overflow: visible; } /* no crispEdges: at its fractional pixel size it rounds rows apart and leaves a 1px seam (Eric, 25-11) */
 .sub { max-width: 35em; margin: clamp(12px, 2svh, 18px) 0 0; color: var(--text-2); text-wrap: balance; }
 /* "AI slop", tachado a mano como con un boli: zigzag de tres pasadas casi paralelas, sin levantar el boli (giros cerrados en los extremos),
    grosor de boli casi constante y algo más fino en los giros; cada pasada se destapa con su máscara. Medidas en em: escala con el titular.
