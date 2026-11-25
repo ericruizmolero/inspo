@@ -32,7 +32,7 @@ const TEAM = [{ id: "alberto", name: "Alberto", x: "albertogalca" }, { id: "ando
               return <span class="hm-u">{
                 x.mark === "refs" ? <span class="hm-refs" role="img" aria-label={x.word}>{REFS.map((r) => <img src={`/assets/vault/refs/i-${r}.jpg`} alt="" width="320" height="200" loading="lazy" decoding="async" />)}</span>
                 : x.mark === "sign" ? <span class="hm-sign">{x.word}<svg viewBox="0 0 220 26" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="M3 12C52 5 122 2 217 6C168 8 96 12 46 18C92 15 150 15 188 20" /></svg></span>
-                : x.mark === "big" || x.mark === "version" || x.mark === "smile" ? <span class={`hm-${x.mark}`}>{x.word}</span>
+                : x.mark === "big" || x.mark === "version" || x.mark === "smile" || x.mark === "forget" ? <span class={`hm-${x.mark}`}>{x.word}</span>
                 : x.mark === "hover" ? <span class="hm-hover">{x.word}<svg viewBox={ICON.hands.box} aria-hidden="true" set:html={ICON.hands.art} /></span>
                 : x.mark === "swap" ? <span class="hm-swap" data-from={x.from}><span>{x.word}</span><i aria-hidden="true">Alberto</i></span>
                 : <span class:list={["hm-chip", `hm-${x.mark}`]}><svg viewBox={ICON[x.mark].box} aria-hidden="true" set:html={ICON[x.mark].art} />{x.word}</span>
@@ -112,7 +112,8 @@ const TEAM = [{ id: "alberto", name: "Alberto", x: "albertogalca" }, { id: "ando
     -webkit-mask: radial-gradient(circle, #0000 var(--r), #000 calc(var(--r) + .5px)) calc(var(--t) / -2) calc(var(--t) / -2) / var(--t) var(--t) round, linear-gradient(#000 0 0) center / calc(100% - var(--t)) calc(100% - var(--t)) no-repeat;
     mask: radial-gradient(circle, #0000 var(--r), #000 calc(var(--r) + .5px)) calc(var(--t) / -2) calc(var(--t) / -2) / var(--t) var(--t) round, linear-gradient(#000 0 0) center / calc(100% - var(--t)) calc(100% - var(--t)) no-repeat;
   }
-  .hm-forget { background: #D3CFC5; text-decoration: line-through .07em; }
+  /* "forget" is the plain word, only struck through: no chip, no icon (Eric, 25-11) */
+  .hm-forget { text-decoration: line-through .06em; }
   .hm-hands { background: #B1B9F8; }
   .hm-mine svg, .hm-hands svg { fill: currentColor; stroke: none; shape-rendering: crispEdges; }
   .hm-refs { display: inline-flex; vertical-align: -.16em; margin: 0 .1em; }
