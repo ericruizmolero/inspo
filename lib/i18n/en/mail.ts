@@ -18,6 +18,9 @@ export const mail = {
     },
     stop: "Stop these emails",
     stopNote: "(one click, no sign-in)",
+    privacy: "Privacy",
+    terms: "Terms",
+    taxId: "tax number",
   },
 
   /** A plan asked for from Settings, Plan (lib/plan-requests.ts): `period` also fills the template that acknowledges it */

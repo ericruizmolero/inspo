@@ -11,6 +11,9 @@ export const mail: typeof EnMail = {
     },
     stop: "Dejar de recibir estos correos",
     stopNote: "(un clic, sin entrar)",
+    privacy: "Privacidad",
+    terms: "Términos",
+    taxId: "NIF",
   },
 
   plans: {

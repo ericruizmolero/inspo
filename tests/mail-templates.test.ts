@@ -5,7 +5,8 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { afterEach, expect, test, vi } from "vitest";
 import { TEMPLATES, TEMPLATE_KEYS, aliasOf, letter, mail, resendVariables, textPart, throughTwins, variablesOf, type Mail } from "@/lib/mail-templates";
-import { BODY_END, BODY_START, bodyOf, button, code, greeting, heading, htmlText, join, layoutHtml, layoutText, para, quote } from "@/lib/mail-layout";
+import { LEGAL } from "../marketing-site/src/legal";
+import { BODY_END, BODY_START, SENDER, bodyOf, button, code, greeting, heading, htmlText, join, layoutHtml, layoutText, para, quote } from "@/lib/mail-layout";
 import { overCapacityMail, welcomeMail, replyMail } from "@/lib/mail";
 
 // tests/setup.ts blocks sendMail everywhere; here it is the thing under test, with fetch stubbed
@@ -120,7 +121,12 @@ Te llega porque estás en {{{TEAM_PLAIN}}} en criterio.design.
 Dejar de recibir estos correos (un clic, sin entrar):
 {{{STOP_URL_PLAIN}}}
 
-criterio.design`);
+criterio.design
+Privacidad: https://criterio.design/es/privacy/
+Términos: https://criterio.design/es/terms/
+
+© Savvia CB, NIF E75239277
+Jaitzubia 197 Parcela 310, 20280 Hondarribia (Gipuzkoa), España`);
   expect(throughTwins("reply", text), "running it again changes nothing").toBe(text);
   expect(textPart("welcome", "en", "<p>Save {{{GOAL}}} references</p>"), "a number reads as itself").toContain("Save {{{GOAL}}} references");
 
@@ -160,6 +166,15 @@ test("the layout wraps a body between markers, so laying it out again changes no
   expect(layoutHtml({ locale: "es" }, "<p>x</p>"), "no stop link where the email has none").not.toContain("STOP_URL");
   expect(layoutHtml({ locale: "es" }, "<p>x</p>")).toContain("Eric, Andoni y Alberto");
   expect(layoutText({ locale: "en", stop: "vault" }, "{{{BODY_TEXT}}}")).toContain("{{{STOP_URL}}}");
+});
+
+test("every foot links the legal pages in the reader's language and names the entity the website names", () => {
+  expect(SENDER).toEqual({ entity: LEGAL.entity, taxId: LEGAL.taxId, address: LEGAL.address });
+  for (const [locale, at] of [["en", "https://criterio.design"], ["es", "https://criterio.design/es"]] as const) {
+    for (const foot of [layoutHtml({ locale }, "<p>x</p>"), layoutHtml({ locale, stop: "team" }, "<p>x</p>"), layoutText({ locale }, "x")]) {
+      for (const said of [`${at}/privacy/`, `${at}/terms/`, LEGAL.entity, LEGAL.taxId, LEGAL.address]) expect(foot).toContain(said);
+    }
+  }
 });
 
 test("the greeting uses the first name, and none when the account has no name or only its address", () => {

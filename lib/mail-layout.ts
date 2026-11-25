@@ -27,6 +27,12 @@ export const BODY_END = "<!--/criterio:body-->";
  *  email's white but not over a picture, and ink on its black would not show. Made by scripts/mail-images.ts */
 export const LOGO_URL = "https://criterio.design/assets/correo/tino.png";
 export const SITE_URL = "https://criterio.design";
+/** Who sends the emails, in every foot: the same as LEGAL in marketing-site/src/legal.ts (a test says if they part) */
+export const SENDER = {
+  entity: "Savvia CB",
+  taxId: "E75239277",
+  address: "Jaitzubia 197 Parcela 310, 20280 Hondarribia (Gipuzkoa), España",
+} as const;
 
 const INK = "#1B1B18", PAPER = "#EDE6D6", TEXT_2 = "#5A5850", MUTED = "#6E695F", LINE = "#D9D1BF", WELL = "#F6F1E6";
 const FONT = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
@@ -98,13 +104,26 @@ const why = (f: Frame) => {
   return f.stop === "team" ? c.why.team("{{{TEAM}}}") : f.stop ? c.why[f.stop] : null;
 };
 
+/** The foot's legal lines: the pages in the reader's language and who sends the email */
+function legal(locale: Locale) {
+  const c = COPY[locale], page = (name: string) => `${SITE_URL}${locale === "es" ? "/es" : ""}/${name}/`;
+  return {
+    pages: [{ label: c.privacy, href: page("privacy") }, { label: c.terms, href: page("terms") }],
+    sender: `${SENDER.entity}, ${c.taxId} ${SENDER.taxId}`,
+    address: SENDER.address,
+  };
+}
+
 /** The whole email around `body`, which is either a template's HTML or {{{BODY}}} for the letter */
 export function layoutHtml(f: Frame, body: string): string {
   const c = COPY[f.locale];
   const reason = why(f);
+  const law = legal(f.locale);
+  const quiet = `color:${MUTED};text-decoration:underline;`;
   const foot = [
-    reason && `${escapeHtml(reason)}<br><a href="{{{STOP_URL}}}" style="color:${MUTED};text-decoration:underline;">${escapeHtml(c.stop)}</a> ${escapeHtml(c.stopNote)}`,
-    `<a href="${SITE_URL}" style="color:${MUTED};text-decoration:none;">criterio.design</a><br>&copy; Criterio`,
+    reason && `${escapeHtml(reason)}<br><a href="{{{STOP_URL}}}" style="${quiet}">${escapeHtml(c.stop)}</a> ${escapeHtml(c.stopNote)}`,
+    [`<a href="${SITE_URL}" style="${quiet}">criterio.design</a>`, ...law.pages.map((p) => `<a href="${p.href}" style="${quiet}">${escapeHtml(p.label)}</a>`)].join(" &nbsp; "),
+    `&copy; ${escapeHtml(law.sender)}<br>${escapeHtml(law.address)}`,
   ].filter(Boolean).map((line) => `<p style="margin:0 0 12px;">${line}</p>`).join("");
   return `<!doctype html>
 <html lang="${f.locale}">
@@ -139,7 +158,12 @@ ${BODY_END}
 export function layoutText(f: Frame, body: string): string {
   const c = COPY[f.locale];
   const reason = why(f);
-  return [`{{{GREETING}}}`, body, c.signature, reason && `${reason}\n${c.stop} ${c.stopNote}:\n{{{STOP_URL}}}`, "criterio.design"].filter(Boolean).join("\n\n");
+  const law = legal(f.locale);
+  return [
+    `{{{GREETING}}}`, body, c.signature, reason && `${reason}\n${c.stop} ${c.stopNote}:\n{{{STOP_URL}}}`,
+    ["criterio.design", ...law.pages.map((p) => `${p.label}: ${p.href}`)].join("\n"),
+    `© ${law.sender}\n${law.address}`,
+  ].filter(Boolean).join("\n\n");
 }
 
 const ENTITIES: Record<string, string> = { amp: "&", lt: "<", gt: ">", quot: "\"", apos: "'", nbsp: " ", copy: "©" };
