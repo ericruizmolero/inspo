@@ -100,7 +100,16 @@ const TEAM = [{ id: "alberto", name: "Alberto", x: "albertogalca" }, { id: "ando
   .hm-chip { display: inline-flex; align-items: center; gap: .26em; margin: 0 .04em; padding: .02em .36em .06em .28em; border-radius: .3em; color: #1B1B18; line-height: 1.1; white-space: nowrap; }
   .hm-chip svg { flex: none; width: auto; height: .62em; overflow: visible; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
   .hm-time { background: #FBF1C7; }
-  .hm-mine { background: #E8892B; }
+  /* "yours" is a postage stamp, the size the chip had: perforated edge (a mask of holes on a grid that rounds to the
+     box, so they land whole at any size), grainy paper and ink blue, without a frame (Eric, 25-11) */
+  .hm-mine {
+    --t: .22em; --r: .075em;
+    border-radius: 0; color: #24489C;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .32 0 0 0 0 .26 0 0 0 .22 0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E") 0 0 / 60px 60px, #F3EFE6;
+    text-shadow: 0 .02em 0 rgb(20 40 90 / .25);
+    -webkit-mask: radial-gradient(circle, #0000 var(--r), #000 calc(var(--r) + .5px)) calc(var(--t) / -2) calc(var(--t) / -2) / var(--t) var(--t) round, linear-gradient(#000 0 0) center / calc(100% - var(--t)) calc(100% - var(--t)) no-repeat;
+    mask: radial-gradient(circle, #0000 var(--r), #000 calc(var(--r) + .5px)) calc(var(--t) / -2) calc(var(--t) / -2) / var(--t) var(--t) round, linear-gradient(#000 0 0) center / calc(100% - var(--t)) calc(100% - var(--t)) no-repeat;
+  }
   .hm-forget { background: #D3CFC5; text-decoration: line-through .07em; }
   .hm-hands { background: #B1B9F8; }
   .hm-mine svg, .hm-hands svg { fill: currentColor; stroke: none; shape-rendering: crispEdges; }
