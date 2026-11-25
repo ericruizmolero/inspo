@@ -116,6 +116,7 @@ Después, en `landing/plantilla.html`, poner la fecha del día en `VIDEO_V` y vo
 Cómo funciona por dentro, para no romperlo:
 - `grabar.cjs` deja correr el bucle de la demo una vez y apunta cuándo empieza cada parte (`marks.json`).
 - `montar.cjs` corta la grabación en seis tramos (hasta el 24/11 eran siete, con la web acabada a pantalla completa) y da a cada uno la duración de su bloque de voz. Si un tramo tendría que ir a menos de 0,8×, se queda en su último fotograma en vez de ralentizarse.
+- Entre «Y por qué» y «Luego toca pulir» queda alrededor de un segundo, como en los demás cambios: el bloque 3 entra 0,55 s después de que acabe el archivo del bloque 2, aunque el tramo de Pulido haya empezado antes (hasta el 25/11 esperaba al corte y se quedaba en 1,5 s; Eric: «tarda mucho»).
 - La entrada (Tino, «Criterio» y el visor que se abre hasta ser la ventana) dura lo que la primera frase de la voz.
 - Los cortes caen en el compás de la música: la ventana llega en tiempo fuerte y cada cambio de paso en un tiempo.
 
