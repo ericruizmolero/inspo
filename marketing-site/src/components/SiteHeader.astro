@@ -8,14 +8,16 @@ interface Props {
   locale: Locale;
   /** Left out on a page with no address of its own (404), which serves both languages */
   page?: PageKey;
+  /** Only Tino, without the word, standing over the page's text column with his centre on its first letter (the legal pages) */
+  column?: boolean;
 }
-const { locale: shown, page } = Astro.props;
+const { locale: shown, page, column = false } = Astro.props;
 const locales = page ? [shown] : LOCALES;
 ---
 {locales.map((locale) => (
-  <header class="hh-nav" lang={locale} data-locale={locale} hidden={locale !== shown}>
+  <header class:list={["hh-nav", { "hh-nav--column": column }]} lang={locale} data-locale={locale} hidden={locale !== shown}>
     <a class="hh-logo" href={PAGES.home.path[locale]} aria-label={homeCopy[locale].menu.home}>
-      <svg viewBox="0 0 46 42" aria-hidden="true"><g fill="currentColor"><path class="ear ear-l" d="M8 2h4v1h-4zM8 3h4v1h-4zM8 4h6v1h-6zM8 5h6v1h-6zM6 6h10v1h-10zM6 7h10v1h-10zM6 8h12v1h-12zM6 9h12v1h-12zM6 10h12v1h-12zM6 11h12v1h-12zM6 12h12v1h-12zM6 13h12v1h-12zM6 14h12v1h-12z"/><path class="ear ear-r" d="M22 0h4v1h-4zM22 1h4v1h-4zM22 2h6v1h-6zM22 3h6v1h-6zM20 4h8v1h-8zM20 5h8v1h-8zM20 6h10v1h-10zM20 7h10v1h-10zM20 8h10v1h-10zM20 9h10v1h-10zM18 10h12v1h-12zM18 11h12v1h-12zM18 12h12v1h-12zM18 13h12v1h-12zM18 14h16v1h-16z"/><path d="M6 15h28v1h-28zM8 16h30v1h-30zM8 17h30v1h-30zM4 18h38v1h-38zM4 19h38v1h-38zM2 20h42v1h-42zM2 21h42v1h-42zM2 22h22v1h-22zM42 22h2v1h-2zM2 23h22v1h-22zM42 23h2v1h-2zM0 24h24v1h-24zM42 24h4v1h-4zM0 25h24v1h-24zM42 25h4v1h-4zM0 26h24v1h-24zM42 26h4v1h-4zM0 27h24v1h-24zM42 27h4v1h-4zM0 28h46v1h-46zM0 29h46v1h-46zM0 30h46v1h-46zM0 31h46v1h-46zM0 32h46v1h-46zM0 33h46v1h-46zM0 34h46v1h-46zM0 35h46v1h-46zM2 36h42v1h-42zM2 37h42v1h-42zM4 38h38v1h-38zM4 39h38v1h-38zM8 40h32v1h-32zM8 41h32v1h-32z"/></g><rect x="24" y="22" width="18" height="6" fill="var(--paper)" /></svg><span>criterio</span>
+      <svg viewBox="0 0 46 42" aria-hidden="true"><g fill="currentColor"><path class="ear ear-l" d="M8 2h4v1h-4zM8 3h4v1h-4zM8 4h6v1h-6zM8 5h6v1h-6zM6 6h10v1h-10zM6 7h10v1h-10zM6 8h12v1h-12zM6 9h12v1h-12zM6 10h12v1h-12zM6 11h12v1h-12zM6 12h12v1h-12zM6 13h12v1h-12zM6 14h12v1h-12z"/><path class="ear ear-r" d="M22 0h4v1h-4zM22 1h4v1h-4zM22 2h6v1h-6zM22 3h6v1h-6zM20 4h8v1h-8zM20 5h8v1h-8zM20 6h10v1h-10zM20 7h10v1h-10zM20 8h10v1h-10zM20 9h10v1h-10zM18 10h12v1h-12zM18 11h12v1h-12zM18 12h12v1h-12zM18 13h12v1h-12zM18 14h16v1h-16z"/><path d="M6 15h28v1h-28zM8 16h30v1h-30zM8 17h30v1h-30zM4 18h38v1h-38zM4 19h38v1h-38zM2 20h42v1h-42zM2 21h42v1h-42zM2 22h22v1h-22zM42 22h2v1h-2zM2 23h22v1h-22zM42 23h2v1h-2zM0 24h24v1h-24zM42 24h4v1h-4zM0 25h24v1h-24zM42 25h4v1h-4zM0 26h24v1h-24zM42 26h4v1h-4zM0 27h24v1h-24zM42 27h4v1h-4zM0 28h46v1h-46zM0 29h46v1h-46zM0 30h46v1h-46zM0 31h46v1h-46zM0 32h46v1h-46zM0 33h46v1h-46zM0 34h46v1h-46zM0 35h46v1h-46zM2 36h42v1h-42zM2 37h42v1h-42zM4 38h38v1h-38zM4 39h38v1h-38zM8 40h32v1h-32zM8 41h32v1h-32z"/></g><rect x="24" y="22" width="18" height="6" fill="var(--paper)" /></svg>{!column && <span>criterio</span>}
     </a>
   </header>
 ))}
@@ -27,4 +29,8 @@ const locales = page ? [shown] : LOCALES;
   .hh-logo svg { width: 32px; height: 29px; }
   .hh-logo span { margin-bottom: -3px; font: 400 27px/1 var(--display); letter-spacing: -0.045em; }
   @media (max-width: 760px) { .hh-nav { left: 22px; right: 22px; } }
+  /* Same column as LegalPage's .doc (728px wide, 24px in). Tino's 32px sit centred on the title's first letter,
+     which is about half an em of that title's size (clamp(40px, 5.4vw, 66px)) */
+  .hh-nav--column { left: 0; right: 0; max-width: 728px; margin: 0 auto; }
+  .hh-nav--column .hh-logo { left: calc(24px + clamp(40px, 5.4vw, 66px) * 0.26 - 16px); }
 </style>
