@@ -19,7 +19,7 @@ function piece(x: number, y: number, i: number): Piece {
 }
 
 /** `shape` is an SVG path of 24 by 24 that some of the pieces take */
-export function confetti(x: number, y: number, shape?: string | null): void {
+export function confetti(x: number, y: number, shape?: string): void {
   const canvas = document.createElement("canvas"), ctx = canvas.getContext("2d");
   if (!ctx) return;
   const vw = innerWidth, vh = innerHeight, dpr = Math.min(2, devicePixelRatio || 1);

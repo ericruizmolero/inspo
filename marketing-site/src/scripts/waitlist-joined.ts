@@ -39,5 +39,6 @@ addEventListener("waitlist:joined", async (e) => {
   if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
   await keyToTick(sender);
   const { x, y } = centre(sender.querySelector(".joined-row i")!);
-  confetti(x, y, document.querySelector(".h1-m path")?.getAttribute("d"));
+  const tino = [...document.querySelectorAll(".h1-m path")].map((p) => p.getAttribute("d")).join("");   // ears and body are a path each
+  confetti(x, y, tino);
 });
