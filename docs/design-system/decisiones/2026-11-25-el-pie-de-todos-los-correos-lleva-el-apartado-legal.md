@@ -1,7 +1,7 @@
 ---
 title: El pie de todos los correos lleva el apartado legal
 date: 2026-11-25
-status: vigente
+status: sustituida
 kind: diseño
 ---
 **Contexto.** El pie de los correos decía "criterio.design" y "© Criterio", sin las páginas legales ni quién los manda.

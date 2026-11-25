@@ -125,8 +125,7 @@ criterio.design
 Privacidad: https://criterio.design/es/privacy/
 Términos: https://criterio.design/es/terms/
 
-© Savvia CB, NIF E75239277
-Jaitzubia 197 Parcela 310, 20280 Hondarribia (Gipuzkoa), España`);
+© Savvia CB, NIF E75239277`);
   expect(throughTwins("reply", text), "running it again changes nothing").toBe(text);
   expect(textPart("welcome", "en", "<p>Save {{{GOAL}}} references</p>"), "a number reads as itself").toContain("Save {{{GOAL}}} references");
 
@@ -169,10 +168,11 @@ test("the layout wraps a body between markers, so laying it out again changes no
 });
 
 test("every foot links the legal pages in the reader's language and names the entity the website names", () => {
-  expect(SENDER).toEqual({ entity: LEGAL.entity, taxId: LEGAL.taxId, address: LEGAL.address });
+  expect(SENDER).toEqual({ entity: LEGAL.entity, taxId: LEGAL.taxId });
   for (const [locale, at] of [["en", "https://criterio.design"], ["es", "https://criterio.design/es"]] as const) {
     for (const foot of [layoutHtml({ locale }, "<p>x</p>"), layoutHtml({ locale, stop: "team" }, "<p>x</p>"), layoutText({ locale }, "x")]) {
-      for (const said of [`${at}/privacy/`, `${at}/terms/`, LEGAL.entity, LEGAL.taxId, LEGAL.address]) expect(foot).toContain(said);
+      for (const said of [`${at}/privacy/`, `${at}/terms/`, LEGAL.entity, LEGAL.taxId]) expect(foot).toContain(said);
+      expect(foot).not.toContain(LEGAL.address);
     }
   }
 });
