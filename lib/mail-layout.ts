@@ -23,8 +23,9 @@ export interface Body { html: Html; text: string }
 
 export const BODY_START = "<!--criterio:body-->";
 export const BODY_END = "<!--/criterio:body-->";
-/** Tino in pixels, the mark under marketing-site/public/assets/marca/, as PNG: Gmail and Outlook show no SVG */
-export const LOGO_URL = "https://criterio.design/assets/marca/conejo-icono.png";
+/** Tino in pixels as PNG (Gmail and Outlook show no SVG), on his own white tile: a client in dark mode paints over the
+ *  email's white but not over a picture, and ink on its black would not show. Made by scripts/mail-images.ts */
+export const LOGO_URL = "https://criterio.design/assets/correo/tino.png";
 export const SITE_URL = "https://criterio.design";
 
 const INK = "#1B1B18", PAPER = "#EDE6D6", TEXT_2 = "#5A5850", MUTED = "#6E695F", LINE = "#D9D1BF", WELL = "#F6F1E6";
@@ -118,7 +119,7 @@ export function layoutHtml(f: Frame, body: string): string {
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#FFFFFF" style="background:#FFFFFF;"><tr><td align="center" style="padding:40px 16px;">
 <!--[if mso]><table role="presentation" width="480" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:480px;width:100%;">
-<tr><td style="padding:0 0 32px;"><a href="${SITE_URL}"><img src="${LOGO_URL}" width="32" height="32" alt="Criterio" style="display:block;border:0;width:32px;height:32px;font-size:11px;line-height:32px;color:${INK};text-decoration:none;"></a></td></tr>
+<tr><td style="padding:0 0 32px;"><a href="${SITE_URL}"><img src="${LOGO_URL}" width="40" height="40" alt="Criterio" style="display:block;border:0;width:40px;height:40px;font-size:11px;line-height:40px;color:${INK};text-decoration:none;"></a></td></tr>
 <tr><td style="font-family:${FONT};font-size:15px;line-height:1.6;color:${INK};text-align:left;">
 <p style="margin:0 0 16px;">{{{GREETING}}}</p>
 ${BODY_START}
