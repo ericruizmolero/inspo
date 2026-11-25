@@ -49,8 +49,8 @@ main { max-width: 1040px; margin-inline: auto; }
 @media (min-width: 761px) { .hero { align-items: center; text-align: center; } .hero .sub { margin-inline: auto; } .hero .invite { align-items: center; } .hero .consent { align-self: center; } }
 h1 { margin: var(--h1-m) 0 0; font: var(--h-w) calc(clamp(min(36px, 10.6vw), 5.6vw, 66px) * var(--h-s))/1.05 var(--display); letter-spacing: var(--h-ls); text-wrap: balance; }
 h1 > span { display: block; margin-bottom: .14em; } h1 .slop span { display: inline; } h1 em { font-style: normal; }
-/* "Sin AI slop" va al 85 % del titular, 56 px frente a 66 (Eric, 25-11: con 3 px menos "no se nota") */
-h1 > .h1-s { margin-bottom: 0; font-size: .85em; }
+/* "Sin AI slop" va al 85 % del titular en escritorio, 56 px frente a 66 (Eric, 25-11: con 3 px menos "no se nota"); en el móvil, al mismo tamaño */
+h1 > .h1-s { margin-bottom: 0; } @media (min-width: 761px) { h1 > .h1-s { font-size: .85em; } }
 /* el logo va dentro del titular: Tino en píxeles delante de la palabra, sin separarse de ella al partir línea */
 .h1-m { white-space: nowrap; } .h1-m svg { width: auto; height: .88em; margin-right: .17em; vertical-align: -.07em; fill: currentColor; overflow: visible; }
 .sub { max-width: 35em; margin: clamp(12px, 2svh, 18px) 0 0; color: var(--text-2); text-wrap: balance; }
