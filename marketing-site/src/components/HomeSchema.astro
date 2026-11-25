@@ -15,7 +15,7 @@ const graph = [
   { "@type": "WebSite", "@id": site, name: "Criterio", url: at("/"), inLanguage: ["en", "es"], publisher: { "@id": org } },
   {
     "@type": "SoftwareApplication", name: "Criterio", url, applicationCategory: "DesignApplication", operatingSystem: "Web",
-    inLanguage: locale, image: at(`/og-home-${locale}.jpg`), publisher: { "@id": org },
+    inLanguage: locale, image: at(`/og-home-${locale}.jpg?v=20261125`), publisher: { "@id": org },
     offers: PLANS.map((p) => ({
       "@type": "Offer", name: PLAN_TEXT[locale][p.key].name, description: PLAN_TEXT[locale][p.key].tagline, price: p.price.month, priceCurrency, url: `${url}#pricing`,
       ...(isPaid(p) && { priceSpecification: { "@type": "UnitPriceSpecification", price: p.price.month, priceCurrency, billingDuration: "P1M", valueAddedTaxIncluded: false } }),

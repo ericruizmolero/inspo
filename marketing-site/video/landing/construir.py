@@ -64,7 +64,7 @@ for l, x in T.items():
 <meta property="og:url" content="{SITE}{x["at"]}">
 <meta property="og:title" content="{x["og"]}">
 <meta property="og:description" content="{x["desc"]}">
-<meta property="og:image" content="{SITE}/og-home-{l}.jpg">
+<meta property="og:image" content="{SITE}/og-home-{l}.jpg?v=20261125">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="{x["alt"]}">
