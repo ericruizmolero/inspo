@@ -63,7 +63,8 @@ const { locale } = Astro.props;
 </script>
 
 <style>
-  section { margin: 0 0 clamp(170px, 27svh, 300px); scroll-margin-top: 72px; color: var(--ink); transition: --ink var(--ti), --paper-l var(--ts), --text-2 var(--ti); }
+  /* as wide as the bento and the plans, out of the column by the same rule, so the three line up (Eric, 25-11) */
+  section { --w: min(1240px, 100vw - 2 * var(--gut)); width: max(100%, var(--w)); margin: 0 0 clamp(170px, 27svh, 300px) min(0px, (100% - var(--w)) / 2); scroll-margin-top: 72px; color: var(--ink); transition: --ink var(--ti), --paper-l var(--ts), --text-2 var(--ti); }
   :global(html.dark) section { --ink: #F1EEE5; --paper-l: #161512; --text-2: #A29E93; }
   .hq-ask { display: grid; gap: 32px; }
   h2 { margin: 0; font: var(--h-w) clamp(31px, 4.4vw, 48px)/1.08 var(--display); letter-spacing: var(--h-ls); }
