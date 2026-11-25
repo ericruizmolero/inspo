@@ -14,4 +14,4 @@ kind: producto
 
 **Por qué.** Alberto: "integra ahora el mensaje de cookies en criterio y también google analytics". Medir solo la web y los cuatro eventos son propuesta nuestra.
 
-**Cómo aplicarlo.** Un evento nuevo entra en `Events` y responde a una decisión, sin nada que diga quién es la persona. Si cambia lo que se guarda o durante cuánto, cambia la privacidad en los dos idiomas en el mismo trabajo. `tests/marketing-consent.test.ts` fija que nada sale antes del sí.
+**Cómo aplicarlo.** Los ajustes de Google (dirección recortada, dominio y duración de las cookies, anuncios apagados) van en `gtag("set")` antes de `js`: el contenedor se inicia solo y descarta los de `config`. Tras tocar `analytics.ts` se mira en producción la petición a `/g/collect` y las cookies `_ga`. Un evento nuevo entra en `Events` y responde a una decisión, sin nada que diga quién es la persona. Si cambia lo que se guarda o durante cuánto, cambia la privacidad en los dos idiomas en el mismo trabajo. `tests/marketing-consent.test.ts` fija que nada sale antes del sí.
