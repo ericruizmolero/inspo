@@ -67,6 +67,8 @@ test("nothing is asked of Google, and no event leaves, before a yes; after it, g
   expect(scripts[0]).toContain("googletagmanager.com/gtag/js");
   const sent = ((globalThis as { dataLayer?: IArguments[] }).dataLayer ?? []).map((a) => [...a]);
   expect(sent[0]).toEqual(["consent", "default", expect.objectContaining({ ad_storage: "denied", ad_user_data: "denied", ad_personalization: "denied" })]);
+  expect(sent.map(([command]) => command), "the settings go in set, before js, or the tag drops them").toEqual(["consent", "set", "js", "config"]);
+  expect(sent[1][1]).toMatchObject({ page_location: "https://criterio.design/", cookie_domain: "none", cookie_expires: 395 * 24 * 60 * 60, allow_google_signals: false, allow_ad_personalization_signals: false });
   expect(JSON.stringify(sent), "what happened before the yes is dropped").not.toContain("video_opened");
   delete (globalThis as { dataLayer?: unknown }).dataLayer;
 });

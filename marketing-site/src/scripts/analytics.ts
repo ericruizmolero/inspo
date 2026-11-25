@@ -43,8 +43,9 @@ export function startAnalytics(): void {
   // gtag.js reads the arguments object itself; a rest array is ignored
   window.gtag = function () { window.dataLayer!.push(arguments); };
   window.gtag("consent", "default", { analytics_storage: "granted", ad_storage: "denied", ad_user_data: "denied", ad_personalization: "denied" });
-  window.gtag("js", new Date());
-  window.gtag("config", GA_MEASUREMENT_ID, {
+  // `set`, and before `js`: the tag starts on its own when gtag.js loads and drops whatever comes in `config` (seen on
+  // 25/11: whole addresses went out, with cookies on .criterio.design)
+  window.gtag("set", {
     page_location: reportedUrl(location.href),
     page_referrer: reportedReferrer(document.referrer, location.origin),
     allow_google_signals: false,
@@ -52,6 +53,8 @@ export function startAnalytics(): void {
     cookie_domain: "none",   // criterio.design alone: the app, on app.criterio.design, never receives it
     cookie_expires: 395 * 24 * 60 * 60,   // 13 months, as the privacy policy says
   });
+  window.gtag("js", new Date());
+  window.gtag("config", GA_MEASUREMENT_ID);
   const script = document.createElement("script");
   script.async = true;
   script.src = `https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`;
