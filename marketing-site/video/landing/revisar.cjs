@@ -14,7 +14,7 @@ let bad = 0; const say = (ok, ...a) => { if (!ok) bad++; console.log(ok ? '  ok 
       for (const [v, w, h] of [['d', 1280, 720], ['m', 390, 844]]) for (const lang of ['es', 'en']) {
         const ctx = await b.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: v === 'm' ? 2 : 1, hasTouch: v === 'm' }); const p = await ctx.newPage(); const e = [];
         p.on('console', (m) => m.type() === 'error' && e.push(m.text().slice(0, 160))); p.on('pageerror', (x) => e.push('E ' + String(x).slice(0, 200))); p.on('response', (r) => r.status() >= 400 && e.push(r.status() + ' ' + r.url().slice(-70)));
-        let went = null; await p.route('**://app.criterio.design/**', (r) => { went = r.request().url(); r.abort(); });
+        let went = null; await p.route('**/api/waitlist', (r) => { went = r.request().postData(); r.fulfill({ json: { ok: true }, headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': '*' } }); });
         console.log(`== ${eng === 'c' ? 'Chrome' : 'WebKit'} ${w}x${h} ${lang}`);
         await p.goto(URLS[lang], { waitUntil: 'load' }); await p.waitForTimeout(1800);
         const m = await p.evaluate(() => ({ lang: document.documentElement.lang, title: document.title, h1: document.querySelector('h1').innerText.replace(/\n/g, ' '), over: document.documentElement.scrollWidth - innerWidth, robots: document.querySelector('meta[name=robots]')?.content || '', canon: document.querySelector('link[rel=canonical]')?.href || '', og: document.querySelector('meta[property="og:image"]')?.content || '' }));
@@ -24,8 +24,8 @@ let bad = 0; const say = (ok, ...a) => { if (!ok) bad++; console.log(ok ? '  ok 
         const note = () => p.evaluate(() => document.querySelector('#note').textContent);
         await p.fill('#mail', 'nada'); await p.click('#invite button[type=submit]'); const n1 = await note();
         await p.fill('#mail', 'prueba@example.com'); await p.click('#invite button[type=submit]'); const n2 = await note();
-        await p.check('#ok'); await p.click('#invite button[type=submit]'); const n3 = await note(); await p.waitForTimeout(1500);
-        say(n1 && n2 && n3 && n1 !== n2 && n2 !== n3, 'formulario:', n1, '/', n2, '/', n3); say(/app\.criterio\.design\/login/.test(went || ''), 'lleva a', went);
+        await p.check('#ok'); await p.click('#invite button[type=submit]'); await p.waitForTimeout(900); const done = await p.evaluate(() => ({ text: document.querySelector('#invite .joined').innerText, forms: document.querySelectorAll('.invite.is-joined').length, confetti: document.querySelectorAll('body > canvas').length }));
+        say(n1 && n2 && n1 !== n2, 'formulario:', n1, '/', n2); say(done.text.includes('prueba@example.com') && done.forms === 2 && done.confetti === 1, 'confirmación', JSON.stringify(done)); const body = JSON.parse(went || '{}'); say(body.locale === lang && body.consent === true, 'manda', went);
         await p.goto(URLS[lang], { waitUntil: 'load' }); await p.waitForTimeout(1500);
         // vídeo
         await p.evaluate(() => { const f = document.querySelector('#frame').getBoundingClientRect(); scrollTo({ top: scrollY + f.top - Math.max(8, (innerHeight - f.height) / 2), behavior: 'instant' }); }); await p.waitForTimeout(500);

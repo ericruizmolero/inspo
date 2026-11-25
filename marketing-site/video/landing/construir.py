@@ -87,6 +87,7 @@ for l, x in T.items():
         '"%%WAITLIST%%"': '{WAITLIST_URL}',
         '"%%LOGIN%%"': f'{{copy.{l}.login.href}}',
         '%%SIGNUP_MODE%%': f'<script>import "{up}scripts/signup-mode";</script>',
+        '%%JOINED%%': f'<script>import "{up}scripts/waitlist-joined";</script>',
         '%%SCHEMA%%': f'<HomeSchema locale="{l}" />',
         '%%MANIFESTO%%': f'<HomeManifesto locale="{l}" />',
         '%%BENTO%%': f'<HomeBento locale="{l}" />',

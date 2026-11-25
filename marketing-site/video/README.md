@@ -31,7 +31,8 @@ Las páginas que sirve la web, **generadas** por `construir.py` y que no se edit
 ### Lo que la portada toma de la web
 
 Lo que no puede escribirse en la plantilla sin desincronizarse de la app va como marca `%%…%%`, y `construir.py` la cambia por código de la web:
-- `%%WAITLIST%%`, el `action` de los dos formularios: `POST /api/waitlist` de la app (`WAITLIST_URL` en `src/i18n.ts`). El formulario manda el correo con el consentimiento y el campo trampa, y dice «Ya estás en la lista» sin salir de la página.
+- `%%WAITLIST%%`, el `action` de los dos formularios: `POST /api/waitlist` de la app (`WAITLIST_URL` en `src/i18n.ts`). El formulario manda el correo con el consentimiento y el campo trampa, y, al terminar, lanza `waitlist:joined` sin salir de la página.
+- `%%JOINED%%`, antes de `</body>`: `src/scripts/waitlist-joined.ts`, que escucha `waitlist:joined`, vuelve los dos formularios su confirmación (`.is-joined`), anima el cambio y lanza el confeti (`src/scripts/confetti.ts`).
 - `%%LOGIN%%`, la tecla «Empieza gratis» de cada formulario y el enlace «Entrar» de la cabecera: el login de la app (`copy.<idioma>.login.href`).
 - `%%SIGNUP_MODE%%`, antes de `</body>`: `src/scripts/signup-mode.ts`, empaquetado por Astro. Si `GET /api/access/mode` de la app dice `open`, pone `.signup-open` en `<html>` y cada formulario es solo su «Empieza gratis».
 - `%%MANIFESTO%%`, `%%BENTO%%` y `%%QUESTIONS%%`: las secciones que son componentes (`HomeManifesto`, `HomeBento`, `HomeQuestions`; `HomeCompare` está oculto por ahora), con su texto en `src/home-copy.ts` y sus clases con prefijo, porque los nombres cortos de la plantilla son globales.
