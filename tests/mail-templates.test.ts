@@ -166,8 +166,8 @@ test("the greeting uses the first name, and none when the account has no name or
   expect(greeting("en", "Ana María López")).toBe("Hi Ana,");
   expect(greeting("en", null)).toBe("Hi there,");
   expect(greeting("en", "ana@example.test")).toBe("Hi there,");
-  expect(greeting("es", "Bea")).toBe("Hola, Bea:");
-  expect(greeting("es", "")).toBe("Hola:");
+  expect(greeting("es", "Bea")).toBe("Hola, Bea,");
+  expect(greeting("es", "")).toBe("Hola,");
 });
 
 afterEach(() => { vi.unstubAllGlobals(); delete process.env.RESEND_API_KEY; });
@@ -181,7 +181,7 @@ test("sendMail sends the template by alias with its variables, and List-Unsubscr
   await sendMail("nobody@example.invalid", replyMail({ who: "Bea", mine: "a", theirs: "b", url: "https://app.test/p/1" }, { team: "T", stopUrl: "https://app.test/unsubscribe?k=replies" }, "en"), { replyTo: "bea@example.invalid" });
 
   expect(sent[0].url).toBe("https://api.resend.com/emails");
-  expect(sent[0].body).toMatchObject({ to: ["nobody@example.invalid"], template: { id: "criterio-welcome-es", variables: { URL: "https://app.test", GOAL: 3, GREETING: "Hola:" } } });
+  expect(sent[0].body).toMatchObject({ to: ["nobody@example.invalid"], template: { id: "criterio-welcome-es", variables: { URL: "https://app.test", GOAL: 3, GREETING: "Hola," } } });
   expect(sent[0].body).not.toHaveProperty("headers");
   expect(sent[0].body, "a template sends no html or text of its own").not.toHaveProperty("html");
   expect(sent[1].body).toMatchObject({

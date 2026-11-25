@@ -2,7 +2,7 @@ import type { mail as EnMail } from "../en/mail";
 
 export const mail: typeof EnMail = {
   layout: {
-    greeting: (name?: string): string => (name ? `Hola, ${name}:` : "Hola:"),
+    greeting: (name?: string): string => (name ? `Hola, ${name},` : "Hola,"),
     signature: "Eric, Andoni y Alberto",
     why: {
       team: (team: string): string => `Te llega porque estás en ${team} en criterio.design.`,
