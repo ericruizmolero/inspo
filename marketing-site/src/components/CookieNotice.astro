@@ -1,0 +1,52 @@
+---
+// Everything the website loads to measure itself, for every page: the notice, in a <template> that scripts/cookie-notice.ts
+// puts on the page for whoever has to be asked, and Google Analytics after a yes. Yes and no are the same key, side by side.
+// On the home it lies over the template's own tokens, which change to dark as you scroll, so its colours are fixed
+import { GA_MEASUREMENT_ID } from "../measurement";
+import { PAGES, copy, type Locale } from "../i18n";
+
+interface Props { locale: Locale }
+const { locale } = Astro.props;
+const t = copy[locale].cookies;
+---
+{GA_MEASUREMENT_ID && <template id="cookies-template">
+  <section id="cookies" class="ck" aria-labelledby="cookies-t" tabindex="-1">
+    <h2 id="cookies-t">{t.title}</h2>
+    <p>{t.text} <a href={PAGES.privacy.path[locale]}>{t.more}</a></p>
+    <div>
+      <button type="button" data-cookie-answer="denied">{t.no}</button>
+      <button type="button" data-cookie-answer="granted">{t.yes}</button>
+    </div>
+  </section>
+</template>}
+
+<script>
+  import { GA_MEASUREMENT_ID } from "../measurement";
+  import { startAnalytics, trackPage } from "../scripts/analytics";
+  import { enforceRefusal, onConsent } from "../scripts/consent";
+  import { setUpCookieNotice } from "../scripts/cookie-notice";
+
+  if (GA_MEASUREMENT_ID) {
+    enforceRefusal();
+    onConsent(startAnalytics);
+    trackPage();
+    setUpCookieNotice();
+  }
+</script>
+
+<style>
+  .ck { position: fixed; z-index: 45; left: max(16px, env(safe-area-inset-left)); bottom: max(16px, env(safe-area-inset-bottom)); box-sizing: border-box; width: min(340px, calc(100vw - 32px)); padding: 16px; border-radius: 14px; outline: 0; background: #F6F1E6; color: #1B1B18; font: 500 14px/1.4 "Satoshi", system-ui, sans-serif; box-shadow: 0 0 0 1px rgb(27 27 24 / .12), 0 12px 32px rgb(27 27 24 / .18); animation: ck-in .26s cubic-bezier(.23, 1, .32, 1); }
+  .ck h2 { margin: 0; font: inherit; font-size: 15px; font-weight: 700; letter-spacing: normal; }
+  .ck p { margin: 4px 0 0; color: #5A5850; text-wrap: pretty; }
+  .ck a { color: #1B1B18; text-underline-offset: 3px; }
+  .ck div { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
+  .ck button { min-height: 40px; margin: 0 0 3px; padding: 0 10px; border: 1.5px solid #1B1B18; border-radius: 9px; background: #FCFAF6; color: #1B1B18; font: 700 15px/1 "Satoshi", system-ui, sans-serif; box-shadow: inset 2px 2px 0 rgb(255 255 255 / .65), inset -2px -3px 0 rgb(27 27 24 / .22), 0 3px 0 #1B1B18; cursor: pointer; transition: transform .09s steps(2), box-shadow .09s steps(2); }
+  .ck button:active { transform: translateY(3px); box-shadow: inset 2px 3px 0 rgb(27 27 24 / .22), 0 0 0 #1B1B18; }
+  .ck :is(a, button):focus-visible { outline: 2px solid #1B1B18; outline-offset: 3px; }
+  @media (hover: hover) and (pointer: fine) { .ck button:hover { background: #F6F1E6; } }
+  @media (max-width: 480px) { .ck { right: max(16px, env(safe-area-inset-right)); width: auto; } }
+  @media (pointer: coarse) { .ck button { min-height: 44px; } }
+  @keyframes ck-in { from { opacity: 0; transform: translateY(8px); } }
+  @media (prefers-reduced-motion: reduce) { .ck { animation: none; } .ck button { transition: none; } }
+  @media print { .ck { display: none; } }
+</style>

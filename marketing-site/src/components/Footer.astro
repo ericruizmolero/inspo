@@ -1,4 +1,5 @@
 ---
+import CookieLink from "./CookieLink.astro";
 import { PAGES, copy, type Locale, type PageKey } from "../i18n";
 
 interface Props { locale: Locale; page: PageKey }
@@ -11,6 +12,7 @@ const FOOTER = ["privacy", "terms"] as const satisfies readonly PageKey[];
 <footer>
   <nav>
     {FOOTER.map((key) => <a href={PAGES[key].path[locale]} aria-current={key === page ? "page" : undefined}>{PAGES[key].nav[locale]}</a>)}
+    <CookieLink locale={locale} />
     <a href={PAGES[page].path[other.lang]} hreflang={other.lang} lang={other.lang}>{other.label}</a>
   </nav>
 </footer>
@@ -19,6 +21,7 @@ const FOOTER = ["privacy", "terms"] as const satisfies readonly PageKey[];
   footer { padding: 24px 24px 44px; }
   nav { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 22px; font-size: 14px; }
   @media (pointer: coarse) { nav { gap: 0 8px; } nav a { padding: 12px; } }
+  nav { color: var(--text-2); }
   a { padding: 5px 0; color: var(--text-2); text-underline-offset: 3px; transition: color .15s ease; }
   a[aria-current="page"] { color: var(--ink); }
   @media (hover: hover) and (pointer: fine) { a:hover { color: var(--ink); } }

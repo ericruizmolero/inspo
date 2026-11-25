@@ -81,12 +81,14 @@ for l, x in T.items():
     # van en todos los idiomas, cada uno con su data-locale: el script de la plantilla enseña el de ?lang= y oculta el resto
     up = '../' if l == 'en' else '../../'
     p = '\n'.join(['---', '// Generada por marketing-site/video/landing/construir.py desde plantilla.html: no se edita a mano',
-                   *(f'import {c} from "{up}components/{c}.astro";' for c in ('HomeSchema', 'HomeManifesto', 'HomeBento', 'HomePlans', 'HomeQuestions')),
+                   *(f'import {c} from "{up}components/{c}.astro";' for c in ('HomeSchema', 'HomeManifesto', 'HomeBento', 'HomePlans', 'HomeQuestions', 'CookieNotice', 'CookieLink')),
                    f'import {{ LOCALES, PAGES, WAITLIST_URL, copy }} from "{up}i18n";', '---', p])
     for mark, astro in {
         '"%%WAITLIST%%"': '{WAITLIST_URL}',
         '"%%LOGIN%%"': f'{{copy.{l}.login.href}}',
         '%%SIGNUP_MODE%%': f'<script>import "{up}scripts/signup-mode";</script>',
+        '%%COOKIES%%': f'<CookieNotice locale="{l}" />',
+        '%%COOKIES_LINK%%': f'<CookieLink locale="{l}" />',
         '%%JOINED%%': f'<script>import "{up}scripts/waitlist-joined";</script>',
         '%%SCHEMA%%': f'<HomeSchema locale="{l}" />',
         '%%MANIFESTO%%': f'<HomeManifesto locale="{l}" />',

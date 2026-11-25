@@ -1,4 +1,5 @@
 ---
+import CookieNotice from "../components/CookieNotice.astro";
 import { PAGES, type Locale, type PageKey } from "../i18n";
 
 interface Props {
@@ -42,6 +43,7 @@ const canonical = page ? at(PAGES[page].path[lang]) : undefined;
   </head>
   <body>
     <slot />
+    <CookieNotice locale={lang} />
   </body>
 </html>
 

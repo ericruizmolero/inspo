@@ -58,6 +58,7 @@ const en: LegalCopy = {
           "AI use: which AI actions ran in your workspace and what they cost, to apply your plan's limits.",
           "Feedback: what you send with the feedback tool, with the page it was about.",
           "The waitlist: your email, what you answer when you join (name, role, team size, tools, website, what you would use criterio for), your language, where you came from and when you agreed to hear from us.",
+          "The website, criterio.design: the pages you see, where you came from, the buttons you press, your browser, your kind of device and roughly where you are, with Google Analytics and only if it is on for you (see Cookies).",
           "The browser extension has its own page: criterio.design/extension/privacy.",
         ]] },
         { heading: "What your references contain", body: [
@@ -69,6 +70,7 @@ const en: LegalCopy = {
           "To write to you about your account: sign-in links, invitations and notices about the service. Also the contract.",
           "To write to you from the waitlist: news about criterio.design, when there is room for you, and to send you your invite. The basis is your consent, and you can take it back whenever you like.",
           "To keep the service secure and see how it is used, so we can improve it. The basis is our legitimate interest.",
+          "To see which parts of the website help people, with Google Analytics. Where the law asks for it, the basis is your consent, and you can take it back whenever you like.",
           "To comply with the law when it obliges us.",
         ], "We do not sell your data, show ads or build advertising profiles."] },
         { heading: "AI", body: [
@@ -84,13 +86,17 @@ const en: LegalCopy = {
             "Resend: the emails we send you.",
             "Better Stack: error reports and uptime checks. A report holds the error and the page, never your email or what you wrote.",
             "OpenRouter, Typesafe and the model providers behind them: the AI features.",
+            "Google Analytics: how the website is used, only if it is on for you.",
             "Google, Apple and X: only if you sign in with them.",
           ],
           "Some of them are outside the European Economic Area. Those transfers rely on the European Commission's standard contractual clauses or on the EU-US Data Privacy Framework.",
           "A few things load straight from others: a site's icon comes from Google's favicon service, and a video from X, YouTube or Vimeo plays from their servers. They see your IP address when that happens, as on any page that embeds them.",
         ] },
         { heading: "Cookies", body: [
-          "Only the ones the app needs to work: your session, your language and whether the sidebar is open. Your theme is kept in the browser's own storage. There are no analytics or advertising cookies, so there is no banner to accept.",
+          "In the app, only the ones it needs to work: your session, your language and whether the sidebar is open. Your theme is kept in the browser's own storage.",
+          "On the website, Google Analytics sets _ga and one more whose name starts with _ga_, for 13 months. They hold a random number, not your name or your email, that tells a first visit from a return. Its advertising features and Google Signals are off, page addresses are trimmed before they are sent, and Google keeps the data for 14 months at most. There are no advertising cookies.",
+          "If you visit from the EU, the European Economic Area, the UK or Switzerland, nothing of Google Analytics loads until you say yes. Elsewhere it is on and you can turn it off. If your browser sends Global Privacy Control, it is off unless you say yes. Cloudflare tells the website which country you are in, to know whether to ask.",
+          "Your answer stays in your browser and we ask again after six months. Change it whenever you like with Cookies, at the foot of every page. Saying no deletes those cookies, and the website works the same.",
         ] },
         { heading: "How long we keep it", body: [
           "For as long as your account is open. When a reference is deleted, the files that were only its own go with it. When you ask us to close your account we delete it, and what only you owned, within 30 days; what belongs to a team's workspace stays with the team. Copies in backups expire on their own some days later.",
@@ -231,6 +237,7 @@ const es: LegalCopy = {
           "Uso de la IA: qué acciones de IA se han ejecutado en tu espacio y cuánto han costado, para aplicar los límites de tu plan.",
           "Comentarios: lo que envías con la herramienta de comentarios, con la página a la que se refieren.",
           "La lista de espera: tu correo, lo que respondes al apuntarte (nombre, rol, tamaño del equipo, herramientas, web, para qué usarías criterio), tu idioma, de dónde llegaste y cuándo aceptaste que te escribamos.",
+          "La web, criterio.design: las páginas que ves, de dónde llegas, los botones que pulsas, tu navegador, el tipo de dispositivo y más o menos dónde estás, con Google Analytics y solo si lo tienes encendido (mira Cookies).",
           "La extensión del navegador tiene su propia página: criterio.design/es/extension/privacy.",
         ]] },
         { heading: "Qué contienen tus referencias", body: [
@@ -242,6 +249,7 @@ const es: LegalCopy = {
           "Para escribirte sobre tu cuenta: enlaces de acceso, invitaciones y avisos del servicio. También el contrato.",
           "Para escribirte desde la lista de espera: novedades de criterio.design, cuando haya sitio para ti, y para enviarte tu invitación. La base es tu consentimiento, y puedes retirarlo cuando quieras.",
           "Para mantener el servicio seguro y ver cómo se usa, y así mejorarlo. La base es nuestro interés legítimo.",
+          "Para ver qué partes de la web ayudan a la gente, con Google Analytics. Donde la ley lo pide, la base es tu consentimiento, y puedes retirarlo cuando quieras.",
           "Para cumplir la ley cuando nos obliga.",
         ], "No vendemos tus datos, no mostramos anuncios ni hacemos perfiles publicitarios."] },
         { heading: "IA", body: [
@@ -257,13 +265,17 @@ const es: LegalCopy = {
             "Resend: los correos que te enviamos.",
             "Better Stack: los informes de errores y las comprobaciones de que la app sigue en pie. Un informe lleva el error y la página, nunca tu correo ni lo que escribiste.",
             "OpenRouter, Typesafe y los proveedores de modelos que hay detrás: las funciones de IA.",
+            "Google Analytics: cómo se usa la web, solo si lo tienes encendido.",
             "Google, Apple y X: solo si entras con ellos.",
           ],
           "Algunas están fuera del Espacio Económico Europeo. Esas transferencias se apoyan en las cláusulas contractuales tipo de la Comisión Europea o en el Marco de Privacidad de Datos UE-EE. UU.",
           "Unas pocas cosas se cargan directamente de terceros: el icono de una web viene del servicio de favicons de Google, y un vídeo de X, YouTube o Vimeo se reproduce desde sus servidores. En ese momento ven tu dirección IP, como en cualquier página que los incrusta.",
         ] },
         { heading: "Cookies", body: [
-          "Solo las que la app necesita para funcionar: tu sesión, tu idioma y si el menú lateral está abierto. El tema se guarda en el almacenamiento del propio navegador. No hay cookies de analítica ni de publicidad, así que no hay aviso que aceptar.",
+          "En la app, solo las que necesita para funcionar: tu sesión, tu idioma y si el menú lateral está abierto. El tema se guarda en el almacenamiento del propio navegador.",
+          "En la web, Google Analytics pone _ga y otra cuyo nombre empieza por _ga_, durante 13 meses. Guardan un número al azar, no tu nombre ni tu correo, que distingue una primera visita de una vuelta. Sus funciones de publicidad y Google Signals están apagadas, las direcciones se recortan antes de enviarlas y Google conserva los datos 14 meses como máximo. No hay cookies de publicidad.",
+          "Si nos visitas desde la UE, el Espacio Económico Europeo, Reino Unido o Suiza, no se carga nada de Google Analytics hasta que dices que sí. Desde otros países está encendido y puedes apagarlo. Si tu navegador envía Global Privacy Control, está apagado salvo que digas que sí. Cloudflare le dice a la web en qué país estás, para saber si tiene que preguntar.",
+          "Tu respuesta se queda en tu navegador y volvemos a preguntar a los seis meses. Cámbiala cuando quieras con Cookies, al pie de cada página. Decir que no borra esas cookies, y la web funciona igual.",
         ] },
         { heading: "Cuánto tiempo lo guardamos", body: [
           "Mientras tu cuenta esté abierta. Al borrar una referencia se borran los ficheros que eran solo suyos. Cuando nos pides cerrar tu cuenta la eliminamos, junto con lo que era solo tuyo, en un plazo de 30 días; lo que pertenece al espacio de un equipo se queda con el equipo. Las copias de seguridad caducan solas unos días después.",

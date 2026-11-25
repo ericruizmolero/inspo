@@ -1,0 +1,14 @@
+---
+// Opens the cookie notice again, from a footer: saying no later is as easy as saying yes was
+import { GA_MEASUREMENT_ID } from "../measurement";
+import { copy, type Locale } from "../i18n";
+
+interface Props { locale: Locale }
+const { locale } = Astro.props;
+---
+{GA_MEASUREMENT_ID && <button type="button" class="ck-link" data-cookie-settings>{copy[locale].cookies.link}</button>}
+
+<style>
+  .ck-link { padding: 5px 0; border: 0; background: none; color: inherit; font: inherit; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+  @media (pointer: coarse) { .ck-link { min-height: 44px; padding: 0 12px; } }
+</style>

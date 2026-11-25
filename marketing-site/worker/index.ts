@@ -1,12 +1,20 @@
 // http (only behind Cloudflare: `wrangler dev` serves plain http and must not leave) and www.criterio.design redirect to https://criterio.design, path and query kept. Someone already signed in to the app who opens
 // the home page goes straight into the app (meeting 13/10). English is the default for everyone: / is never redirected
 // to /es/ by country or browser language (Alberto, 10-11); Spanish is only for whoever opens /es/. Everything else is the static site.
+import { asksFirst } from "./consent-regions";
+
 const APP_URL = "https://app.criterio.design";
 // The app keeps this cookie on .criterio.design while the browser has a session (lib/signed-in-cookie.ts in the app)
 const SIGNED_IN = /(?:^|;\s*)criterio_signed_in=1(?:;|$)/;
 // The plans had a page of their own until 24/11: they are on the home now
 const PLANS: Record<string, string> = { "/pricing": "/#pricing", "/es/pricing": "/es/#pricing" };
 const HOMES = new Set(["/", "/es", "/es/"]);
+
+/** The runtime's own, as far as it is used here */
+declare class HTMLRewriter {
+  on(selector: string, handlers: { element(el: { setAttribute(name: string, value: string): void }): void }): HTMLRewriter;
+  transform(response: Response): Response;
+}
 
 export default {
   async fetch(request: Request, env: { ASSETS: { fetch(request: Request): Promise<Response> } }): Promise<Response> {
@@ -22,6 +30,9 @@ export default {
     if (HOMES.has(url.pathname) && !url.searchParams.has("landing") && SIGNED_IN.test(request.headers.get("cookie") ?? "")) {
       return Response.redirect(`${APP_URL}/`, 302);
     }
-    return env.ASSETS.fetch(request);
+    const response = await env.ASSETS.fetch(request);
+    // The cookie notice asks every visitor except those whose country does not ask first (src/scripts/consent.ts)
+    if (asksFirst(request.headers.get("cf-ipcountry")) || !response.headers.get("content-type")?.startsWith("text/html")) return response;
+    return new HTMLRewriter().on("html", { element: (el) => { el.setAttribute("data-consent", "implied"); } }).transform(response);
   },
 };
