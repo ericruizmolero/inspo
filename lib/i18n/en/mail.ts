@@ -55,7 +55,7 @@ export const mail = {
   // Only to whoever reads the whole Vault; its foot says why it came and how to stop it.
   vaultRelease: {
     subject: (n: number): string => (n === 1 ? "New in the Vault: 1 piece" : `New in the Vault: ${n} pieces`),
-    intro: (n: number): string => `${n === 1 ? "There is a new piece" : `There are ${n} new pieces`} in the Vault. Their code is yours: your agent reads it through the connector when it builds.`,
+    intro: (n: number): string => `${n === 1 ? "There is a new piece" : `There are ${n} new pieces`} in the Vault. Their code is yours, and your agent reads it through the connector when it builds.`,
   },
 
   // ─── Team emails (lib/notify.ts) ───────────────────────────────────────────

@@ -44,7 +44,7 @@ export const mail: typeof EnMail = {
   // ─── Nuevo en el Vault (lib/vault-release.ts) ──────────────────────────────
   vaultRelease: {
     subject: (n: number): string => (n === 1 ? "Nuevo en el Vault: 1 pieza" : `Nuevo en el Vault: ${n} piezas`),
-    intro: (n: number): string => `${n === 1 ? "Hay una pieza nueva" : `Hay ${n} piezas nuevas`} en el Vault. Su código es tuyo: tu agente lo lee por el conector cuando construye.`,
+    intro: (n: number): string => `${n === 1 ? "Hay una pieza nueva" : `Hay ${n} piezas nuevas`} en el Vault. Su código es tuyo y tu agente lo lee por el conector cuando construye.`,
   },
 
   // ─── Correos de equipo (lib/notify.ts) ─────────────────────────────────────
