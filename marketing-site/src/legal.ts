@@ -22,7 +22,7 @@ export const LEGAL: LegalFacts = {
 };
 
 /** The day the texts last changed (YYYY-MM-DD) */
-export const LEGAL_UPDATED = "2026-11-24";
+export const LEGAL_UPDATED = "2026-11-25";
 
 /** The free plan's caps, read from the plans so the Terms cannot drift from them */
 const free = PLANS.find((p) => p.key === "free")!;
@@ -67,7 +67,7 @@ const en: LegalCopy = {
         { heading: "Why we use it", body: [[
           "To give you the service you signed up for: your account, your library, your team. The basis is our contract with you.",
           "To write to you about your account: sign-in links, invitations and notices about the service. Also the contract.",
-          "To write to you from the waitlist: when there is room for you, and to send you your invite. Nothing else. The basis is your consent, and you can take it back whenever you like.",
+          "To write to you from the waitlist: news about criterio.design, when there is room for you, and to send you your invite. The basis is your consent, and you can take it back whenever you like.",
           "To keep the service secure and see how it is used, so we can improve it. The basis is our legitimate interest.",
           "To comply with the law when it obliges us.",
         ], "We do not sell your data, show ads or build advertising profiles."] },
@@ -240,7 +240,7 @@ const es: LegalCopy = {
         { heading: "Para qué lo usamos", body: [[
           "Para darte el servicio en el que te has registrado: tu cuenta, tu librería, tu equipo. La base es nuestro contrato contigo.",
           "Para escribirte sobre tu cuenta: enlaces de acceso, invitaciones y avisos del servicio. También el contrato.",
-          "Para escribirte desde la lista de espera: cuando haya sitio para ti, y para enviarte tu invitación. Nada más. La base es tu consentimiento, y puedes retirarlo cuando quieras.",
+          "Para escribirte desde la lista de espera: novedades de criterio.design, cuando haya sitio para ti, y para enviarte tu invitación. La base es tu consentimiento, y puedes retirarlo cuando quieras.",
           "Para mantener el servicio seguro y ver cómo se usa, y así mejorarlo. La base es nuestro interés legítimo.",
           "Para cumplir la ley cuando nos obliga.",
         ], "No vendemos tus datos, no mostramos anuncios ni hacemos perfiles publicitarios."] },
