@@ -111,6 +111,8 @@ ffmpeg -y -ss 9.5 -i entrega/criterio-es.mp4 -frames:v 1 -vf scale=1600:-2 -q:v 
 
 Lo mismo con `en`. **Siempre los dos idiomas.**
 
+Después, en `landing/plantilla.html`, poner la fecha del día en `VIDEO_V` y volver a correr `construir.py`. La web guarda el vídeo y el póster un día en caché con la misma URL: sin cambiar `VIDEO_V`, quien ya vio la portada sigue viendo el vídeo viejo.
+
 Cómo funciona por dentro, para no romperlo:
 - `grabar.cjs` deja correr el bucle de la demo una vez y apunta cuándo empieza cada parte (`marks.json`).
 - `montar.cjs` corta la grabación en seis tramos (hasta el 24/11 eran siete, con la web acabada a pantalla completa) y da a cada uno la duración de su bloque de voz. Si un tramo tendría que ir a menos de 0,8×, se queda en su último fotograma en vez de ralentizarse.
